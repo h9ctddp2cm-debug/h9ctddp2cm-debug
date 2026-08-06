@@ -809,22 +809,22 @@ function isPortrait(){
 function setupTargets(){
   const cw = gameCanvas.width, ch = gameCanvas.height;
   const portrait = isPortrait();
-  const ty = portrait ? (ch - 75) : (ch - 95);
-  const tw = Math.min(cw*0.38, 140);
+  const tw = Math.min(cw * 0.44, 210);  // 碟子寬：約原來3倍，最多佔44%螢幕寬
   const th = tw * 0.62;
+  const ty = portrait ? (ch - th/2 - 8) : (ch - th/2 - 12);  // 貼底對齊
 
   targets = [];
   if(state.level === 'easy'){
     if(state.gameType === 'grasp'){
-      targets.push({ type:'charsiu',   label:'叉燒包', img:imgCharsiu,   x: cw*0.27, y: ty, w: tw, h: th, color:'#1A6B5A' });
-      targets.push({ type:'lotusrice', label:'糯米雞', img:imgLotusrice, x: cw*0.73, y: ty, w: tw, h: th, color:'#E07B39' });
+      targets.push({ type:'charsiu',   label:'叉燒包', img:imgCharsiu,   x: cw*0.25, y: ty, w: tw, h: th, color:'#1A6B5A' });
+      targets.push({ type:'lotusrice', label:'糯米雞', img:imgLotusrice, x: cw*0.75, y: ty, w: tw, h: th, color:'#E07B39' });
     } else {
-      targets.push({ type:'siumai', label:'燒賣', img:imgSiumai, x: cw*0.27, y: ty, w: tw, h: th, color:'#1A6B5A' });
-      targets.push({ type:'hargau', label:'蝦餃', img:imgHargau, x: cw*0.73, y: ty, w: tw, h: th, color:'#E07B39' });
+      targets.push({ type:'siumai', label:'燒賣', img:imgSiumai, x: cw*0.25, y: ty, w: tw, h: th, color:'#1A6B5A' });
+      targets.push({ type:'hargau', label:'蝦餃', img:imgHargau, x: cw*0.75, y: ty, w: tw, h: th, color:'#E07B39' });
     }
   } else {
-    targets.push({ type:'A', label:'碗 A', x: cw*0.27, y: ty, w: tw, h: th, color:'#1A6B5A' });
-    targets.push({ type:'B', label:'碗 B', x: cw*0.73, y: ty, w: tw, h: th, color:'#E07B39' });
+    targets.push({ type:'A', label:'碗 A', x: cw*0.25, y: ty, w: tw, h: th, color:'#1A6B5A' });
+    targets.push({ type:'B', label:'碗 B', x: cw*0.75, y: ty, w: tw, h: th, color:'#E07B39' });
   }
 }
 
