@@ -865,7 +865,7 @@ function isPortrait(){
 function setupTargets(){
   const cw = gameCanvas.width, ch = gameCanvas.height;
   const portrait = isPortrait();
-  const tw = Math.min(cw * 0.46, 260);  // 碟子寬：更大，方便長者
+  const tw = Math.min(cw * 0.48, 300);  // 碟子寬：最大化，長者易放
   const th = tw * 0.62;
   const ty = portrait ? (ch - th/2 - 8) : (ch - th/2 - 12);  // 貼底對齊
 
@@ -908,11 +908,45 @@ function spawnFood(){
   };
 }
 
+function spawnFoodNoOverlap(existingFoods){
+  // Try up to 40 times to find a non-overlapping position
+  const cw = gameCanvas.width, ch = gameCanvas.height;
+  const portrait = isPortrait();
+  const r = portrait ? 120 : 156;
+  const defs = state.gameType === 'grasp' ? FOOD_DEFS_GRASP : (state.level === 'easy' ? FOOD_DEFS_EASY : FOOD_DEFS_HARD);
+  const def = defs[Math.floor(Math.random()*defs.length)];
+  const minDist = r * 2.3; // minimum distance between food centres
+  for(let attempt=0; attempt<40; attempt++){
+    const x = randRange(r*1.1, cw - r*1.1);
+    const y = randRange(ch*0.12, ch*0.50);
+    let overlaps = false;
+    for(const f of existingFoods){
+      if(f.removed) continue;
+      if(Math.hypot(x - f.x, y - f.y) < minDist){ overlaps = true; break; }
+    }
+    if(!overlaps){
+      return {
+        id: foodIdSeq++, type: def.type, label: def.label,
+        targetType: def.targetType, img: def.img || null, color: def.color || null,
+        x, y, r, baseX: x, baseY: y, held: false, removed: false,
+      };
+    }
+  }
+  // Fallback: place anyway (better than infinite loop)
+  const x = randRange(r*1.1, cw - r*1.1);
+  const y = randRange(ch*0.12, ch*0.50);
+  return {
+    id: foodIdSeq++, type: def.type, label: def.label,
+    targetType: def.targetType, img: def.img || null, color: def.color || null,
+    x, y, r, baseX: x, baseY: y, held: false, removed: false,
+  };
+}
+
 function spawnInitialFoods(){
   foods = [];
   const count = state.level === 'hard' ? 4 : 3;
   for(let i=0;i<count;i++){
-    foods.push(spawnFood());
+    foods.push(spawnFoodNoOverlap(foods));
   }
 }
 
@@ -920,7 +954,7 @@ function ensureFoodCount(){
   const target = state.level === 'hard' ? 4 : 3;
   const active = foods.filter(f=>!f.removed);
   while(active.length < target){
-    const f = spawnFood();
+    const f = spawnFoodNoOverlap(active);
     foods.push(f);
     active.push(f);
   }
@@ -1063,8 +1097,10 @@ function updateGameLogic(){
     if(heldItem && gripActive){
       let onPlate = null;
       for(const t of targets){
-        const withinX = cursorX >= (t.x - t.w/2 - 130) && cursorX <= (t.x + t.w/2 + 130);
-        const withinY = cursorY >= (t.y - t.h/2 - 130) && cursorY <= (t.y + t.h/2 + 130);
+        // Score when any part of food overlaps the plate (food radius + plate boundary)
+        const foodR = heldItem ? heldItem.r : 60;
+        const withinX = cursorX >= (t.x - t.w/2 - foodR) && cursorX <= (t.x + t.w/2 + foodR);
+        const withinY = cursorY >= (t.y - t.h/2 - foodR) && cursorY <= (t.y + t.h/2 + foodR);
         if(withinX && withinY){ onPlate = t; break; }
       }
       if(onPlate && still){
@@ -1147,8 +1183,10 @@ function updateGraspLogic(){
     if(!isGrasping){
       let onPlate = null;
       for(const t of targets){
-        const withinX = cursorX >= (t.x - t.w/2 - 130) && cursorX <= (t.x + t.w/2 + 130);
-        const withinY = cursorY >= (t.y - t.h/2 - 130) && cursorY <= (t.y + t.h/2 + 130);
+        // Score when any part of food overlaps the plate (food radius + plate boundary)
+        const foodR = heldItem ? heldItem.r : 60;
+        const withinX = cursorX >= (t.x - t.w/2 - foodR) && cursorX <= (t.x + t.w/2 + foodR);
+        const withinY = cursorY >= (t.y - t.h/2 - foodR) && cursorY <= (t.y + t.h/2 + foodR);
         if(withinX && withinY){ onPlate = t; break; }
       }
       if(onPlate){
