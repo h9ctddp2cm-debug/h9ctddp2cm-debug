@@ -185,15 +185,13 @@ html,body{
     </div>
 
     <div class="card">
-      <h2><span class="icon">✋</span>遊戲類型</h2>
+      <h2>遊戲類型</h2>
       <div class="option-row" id="gameTypeOptions">
         <button class="option-btn selected" data-gametype="reach">
-          <span class="opt-emoji">🥢</span>
           <span style="font-size:16px;font-weight:700;">Pinch 訓練</span>
           <span style="font-size:11px;color:var(--muted);font-weight:500;display:block;margin-top:2px;">練習手指捏力、靈活度與精細動作控制</span>
         </button>
         <button class="option-btn" data-gametype="grasp">
-          <span class="opt-emoji">✊</span>
           <span style="font-size:16px;font-weight:700;">手指握放訓練</span>
           <span style="font-size:11px;color:var(--muted);font-weight:500;display:block;margin-top:2px;">握拳拿點心 + 張開手放下點心</span>
         </button>
@@ -203,7 +201,7 @@ html,body{
 
 
     <div class="card">
-      <h2><span class="icon">🎯</span>選擇難度</h2>
+      <h2>選擇難度</h2>
       <div class="option-row" id="levelOptions">
         <button class="option-btn selected" data-level="easy">
           <span class="opt-emoji" id="easyLevelEmoji">🥟🦐</span>
@@ -211,7 +209,6 @@ html,body{
           <span style="font-size:11px;color:var(--muted);font-weight:500;" id="easyLevelFoods">燒賣 + 蝦餃</span>
         </button>
         <button class="option-btn" data-level="hard">
-          <span class="opt-emoji">🍜🍚</span>
           進階：四種食物
           <span style="font-size:11px;color:var(--muted);font-weight:500;">燒鵝／瀨粉／炒飯／粥</span>
         </button>
@@ -219,15 +216,13 @@ html,body{
     </div>
 
     <div class="card">
-      <h2><span class="icon">🧠</span>訓練模式</h2>
+      <h2>訓練模式</h2>
       <div class="option-row" id="modeOptions">
         <button class="option-btn selected" data-mode="single">
-          <span class="opt-emoji">🖐️</span>
           單一任務
           <span style="font-size:11px;color:var(--muted);font-weight:500;">只需夾取食物</span>
         </button>
         <button class="option-btn" data-mode="dual">
-          <span class="opt-emoji">🧩</span>
           雙重任務
           <span style="font-size:11px;color:var(--muted);font-weight:500;">夾取＋認知指令</span>
         </button>
@@ -235,25 +230,22 @@ html,body{
     </div>
 
     <div class="card">
-      <h2><span class="icon">⏱️</span>遊戲時間</h2>
+      <h2>遊戲時間</h2>
       <div class="option-row" id="durationOptions">
         <button class="option-btn selected" data-duration="300">
-          <span class="opt-emoji">🕔</span>
           5 分鐘
         </button>
         <button class="option-btn" data-duration="600">
-          <span class="opt-emoji">🕙</span>
           10 分鐘
         </button>
         <button class="option-btn" data-duration="900">
-          <span class="opt-emoji">🕒</span>
           15 分鐘
         </button>
       </div>
     </div>
 
     <div class="card">
-      <h2><span class="icon">🎯</span>停留時間</h2>
+      <h2>停留時間</h2>
       <div class="option-row" id="dwellOptions" style="flex-wrap:wrap;gap:8px;">
         <button class="option-btn" data-dwell="1000" style="flex:1 1 auto;min-width:60px;">1秒</button>
         <button class="option-btn" data-dwell="2000" style="flex:1 1 auto;min-width:60px;">2秒</button>
@@ -267,7 +259,7 @@ html,body{
     </div>
 
     <div class="card">
-      <h2><span class="icon">🔤</span>字體大小</h2>
+      <h2>字體大小</h2>
       <div class="option-row" id="fontOptions">
         <button class="option-btn" data-font="24">細</button>
         <button class="option-btn selected" data-font="36">中</button>
@@ -276,7 +268,7 @@ html,body{
       </div>
     </div>
 
-    <button class="btn-primary" id="btnGoCalib">進入相機校準 →</button>
+    <button class="btn-primary" id="btnGoCalib">進入相機校準</button>
   </div>
 
   <!-- ============ CALIBRATION SCREEN ============ -->
@@ -743,7 +735,7 @@ function initGame(){
   // ── 關卡說明 banner ──
   const banner = document.getElementById('levelIntroBanner');
   if(state.gameType === 'grasp'){
-    banner.innerHTML = '本關卡為「<b>手指握放訓練</b>」<br>請跟著指令 <span style="background:#e07b39;border-radius:4px;padding:1px 6px;">【握拳拿點心】</span> 與 <span style="background:#1a6b5a;border-radius:4px;padding:1px 6px;">【張開手放下點心】</span> 來完成任務';
+    banner.innerHTML = '本關卡為「手指握放訓練」，請跟著指令【握拳拿點心】與【張開手放下點心】來完成任務';
     banner.style.display = 'block';
     setTimeout(()=>{ banner.style.display='none'; }, 5000);
   } else {
