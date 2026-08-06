@@ -179,7 +179,6 @@ html,body{
   <!-- ============ START SCREEN ============ -->
   <div id="screen-start" class="screen active">
     <div class="title-block">
-      <div class="emoji-row">🥟🖐️🦶</div>
       <h1>仁濟茶樓</h1>
       <p class="subtitle">上肢功能復康訓練遊戲</p>
     </div>
@@ -204,7 +203,6 @@ html,body{
       <h2>選擇難度</h2>
       <div class="option-row" id="levelOptions">
         <button class="option-btn selected" data-level="easy">
-          <span class="opt-emoji" id="easyLevelEmoji">🥟🦐</span>
           簡單：分類配對
           <span style="font-size:11px;color:var(--muted);font-weight:500;" id="easyLevelFoods">燒賣 + 蝦餃</span>
         </button>
@@ -388,10 +386,10 @@ function updateEasyLevelLabel(){
   const emoji = document.getElementById('easyLevelEmoji');
   const foodsEl = document.getElementById('easyLevelFoods');
   if(state.gameType === 'grasp'){
-    emoji.textContent = '🥟🍚';
+    // emoji removed
     foodsEl.textContent = '叉燒包 + 糯米雞';
   } else {
-    emoji.textContent = '🥟🦐';
+    // emoji removed
     foodsEl.textContent = '燒賣 + 蝦餃';
   }
 }
@@ -889,7 +887,7 @@ function randRange(a,b){ return a + Math.random()*(b-a); }
 function spawnFood(){
   const cw = gameCanvas.width, ch = gameCanvas.height;
   const portrait = isPortrait();
-  const r = portrait ? 120 : 156;  // 3x bigger for elderly visibility
+  const r = portrait ? 80 : 100;   // slightly smaller food
   const defs = state.gameType === 'grasp' ? FOOD_DEFS_GRASP : (state.level === 'easy' ? FOOD_DEFS_EASY : FOOD_DEFS_HARD);
   const def = defs[Math.floor(Math.random()*defs.length)];
   const x = randRange(r*1.1, cw - r*1.1);
@@ -912,7 +910,7 @@ function spawnFoodNoOverlap(existingFoods){
   // Try up to 40 times to find a non-overlapping position
   const cw = gameCanvas.width, ch = gameCanvas.height;
   const portrait = isPortrait();
-  const r = portrait ? 120 : 156;
+  const r = portrait ? 80 : 100;
   const defs = state.gameType === 'grasp' ? FOOD_DEFS_GRASP : (state.level === 'easy' ? FOOD_DEFS_EASY : FOOD_DEFS_HARD);
   const def = defs[Math.floor(Math.random()*defs.length)];
   const minDist = r * 2.3; // minimum distance between food centres
@@ -1158,7 +1156,7 @@ function updateGraspLogic(){
       for(const f of foods){
         if(f.removed) continue;
         const d = dist(cursorX, cursorY, f.x, f.y);
-        if(d < f.r + 80){  // larger grab zone
+        if(d < f.r + 120){  // easy pickup zone
           f.held = true;
           heldItem = f;
           grabCount++;
@@ -1172,7 +1170,7 @@ function updateGraspLogic(){
     } else if(isGrasping){
       statusBar.textContent = '✊ 握拳夾起！移近食物';
     } else {
-      statusBar.textContent = '🖐️ 張開手 → 移到食物上方';
+      statusBar.textContent = '張開手 → 移到食物上方';
     }
   } else {
     // 正握住食物：跟隨游標移動
@@ -1209,7 +1207,7 @@ function updateGraspLogic(){
         heldItem.x = heldItem.baseX;
         heldItem.y = heldItem.baseY;
         heldItem = null;
-        statusBar.textContent = '🖐️ 已鬆開，移到食物再握緊';
+        statusBar.textContent = '已鬆開，移到食物再握緊';
       }
     } else {
       statusBar.textContent = '✊ 保持握緊 → 移到碟上';
@@ -1318,7 +1316,7 @@ function renderGame(){
         ctx.font = 'bold 22px -apple-system,"PingFang TC","Noto Sans TC",sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('🖐️', cursorX, cursorY);
+        // no emoji cursor
       }
     } else {
       const still = dwellActive || dwellTarget;
