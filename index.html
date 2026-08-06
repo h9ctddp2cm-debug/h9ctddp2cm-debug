@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>點心復康夾夾樂</title>
+<title>仁濟茶樓</title>
 <style>
 :root{
   --bg:#FDF6EC; --surface:#FFF; --border:#E8D5B0;
@@ -180,8 +180,8 @@ html,body{
   <div id="screen-start" class="screen active">
     <div class="title-block">
       <div class="emoji-row">🥟🖐️🦶</div>
-      <h1>點心復康夾夾樂</h1>
-      <p class="subtitle">FTHUE Level 6 — 上肢功能復康訓練遊戲</p>
+      <h1>仁濟茶樓</h1>
+      <p class="subtitle">上肢功能復康訓練遊戲</p>
     </div>
 
     <div class="card">
@@ -189,13 +189,13 @@ html,body{
       <div class="option-row" id="gameTypeOptions">
         <button class="option-btn selected" data-gametype="reach">
           <span class="opt-emoji">🥢</span>
-          向前伸展
-          <span style="font-size:11px;color:var(--muted);font-weight:500;">食指尖控制 + 停留夾取</span>
+          <span style="font-size:16px;font-weight:700;">Pinch 訓練</span>
+          <span style="font-size:11px;color:var(--muted);font-weight:500;display:block;margin-top:2px;">練習手指捏力、靈活度與精細動作控制</span>
         </button>
         <button class="option-btn" data-gametype="grasp">
           <span class="opt-emoji">✊</span>
-          握放練習
-          <span style="font-size:11px;color:var(--muted);font-weight:500;">握拳夾起 + 張開放低</span>
+          <span style="font-size:16px;font-weight:700;">手指握放訓練</span>
+          <span style="font-size:11px;color:var(--muted);font-weight:500;display:block;margin-top:2px;">握拳拿點心 + 張開手放下點心</span>
         </button>
       </div>
     </div>
@@ -327,6 +327,7 @@ html,body{
   <!-- ============ GAME SCREEN ============ -->
   <div id="screen-game" class="screen">
     <div class="game-stage">
+      <div id="levelIntroBanner" style="display:none;position:absolute;top:0;left:0;right:0;z-index:30;background:rgba(0,0,0,0.82);color:#fff;text-align:center;padding:10px 12px;font-size:14px;line-height:1.5;pointer-events:none;"></div>
       <video id="gameVideo" playsinline autoplay muted></video>
       <canvas id="gameCanvas"></canvas>
       <div class="hud">
@@ -787,6 +788,17 @@ const FOOD_DEFS_HARD = [
 
 function initGame(){
   DWELL_MS = state.dwellMs; // 套用用家選擇嘅停留時間
+
+  // ── 關卡說明 banner ──
+  const banner = document.getElementById('levelIntroBanner');
+  if(state.gameType === 'grasp'){
+    banner.innerHTML = '本關卡為「<b>手指握放訓練</b>」<br>請跟著指令 <span style="background:#e07b39;border-radius:4px;padding:1px 6px;">【握拳拿點心】</span> 與 <span style="background:#1a6b5a;border-radius:4px;padding:1px 6px;">【張開手放下點心】</span> 來完成任務';
+    banner.style.display = 'block';
+    setTimeout(()=>{ banner.style.display='none'; }, 5000);
+  } else {
+    banner.style.display = 'none';
+  }
+
   score = 0; correctCount = 0; grabCount = 0;
   heldItem = null; foods = []; targets = [];
   gripActive = false;
