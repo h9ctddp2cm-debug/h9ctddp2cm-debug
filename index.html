@@ -293,6 +293,7 @@ html,body{
   <!-- ============ GAME SCREEN ============ -->
   <div id="screen-game" class="screen">
     <div class="game-stage">
+      <div id="feedbackOverlay" style="display:none;position:absolute;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;pointer-events:none;font-size:180px;opacity:0;transition:opacity 0.15s;"></div>
       <div id="levelIntroBanner" style="display:none;position:absolute;top:0;left:0;right:0;z-index:30;background:rgba(0,0,0,0.82);color:#fff;text-align:center;padding:10px 12px;font-size:14px;line-height:1.5;pointer-events:none;"></div>
       <video id="gameVideo" playsinline autoplay muted></video>
       <canvas id="gameCanvas"></canvas>
@@ -420,6 +421,8 @@ document.getElementById('fontOptions').addEventListener('click', e=>{
 });
 
 document.getElementById('btnGoCalib').addEventListener('click', async ()=>{
+  // Unlock AudioContext on first interaction (Safari)
+  try{ const c = getAudioCtx(); if(c.state === 'suspended') await c.resume(); }catch(e){}
   showScreen('calib');
   document.getElementById('btnStartGame').disabled = true;
   document.getElementById('pixelCount').textContent = '尚未偵測';
@@ -729,6 +732,59 @@ const FOOD_DEFS_HARD = [
   { type:'congee', label:'粥', color:'#F5F0E6', targetType:'B' },
 ];
 
+/* ========== Audio Feedback ========== */
+let audioCtx = null;
+function getAudioCtx(){
+  if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function playCorrectSound(){
+  try{
+    const ctx = getAudioCtx();
+    // Two rising tones: cheerful ding
+    [[523.25, 0, 0.12],[659.25, 0.1, 0.12],[783.99, 0.2, 0.18]].forEach(([freq, when, dur])=>{
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type = 'sine'; o.frequency.value = freq;
+      g.gain.setValueAtTime(0.35, ctx.currentTime + when);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + when + dur);
+      o.start(ctx.currentTime + when);
+      o.stop(ctx.currentTime + when + dur + 0.05);
+    });
+  }catch(e){}
+}
+function playWrongSound(){
+  try{
+    const ctx = getAudioCtx();
+    // Low buzz: error tone
+    [[180, 0, 0.18],[160, 0.15, 0.25]].forEach(([freq, when, dur])=>{
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type = 'sawtooth'; o.frequency.value = freq;
+      g.gain.setValueAtTime(0.25, ctx.currentTime + when);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + when + dur);
+      o.start(ctx.currentTime + when);
+      o.stop(ctx.currentTime + when + dur + 0.05);
+    });
+  }catch(e){}
+}
+function showFeedback(correct){
+  const el = document.getElementById('feedbackOverlay');
+  el.textContent = correct ? '✅' : '❌';
+  el.style.opacity = '1';
+  el.style.display = 'flex';
+  setTimeout(()=>{ el.style.opacity = '0'; }, 600);
+  setTimeout(()=>{ el.style.display = 'none'; }, 800);
+}
+function triggerFeedback(correct){
+  if(correct){ playCorrectSound(); showFeedback(true); }
+  else { playWrongSound(); showFeedback(false); }
+}
+/* ===================================== */
+
+
 function initGame(){
   DWELL_MS = state.dwellMs; // 套用用家選擇嘅停留時間
 
@@ -1021,8 +1077,10 @@ function updateGameLogic(){
           // 放下
           if(onPlate.type === heldItem.targetType){
             score += 10; correctCount++;
+            triggerFeedback(true);
           } else {
             score = Math.max(0, score - 3);
+            triggerFeedback(false);
           }
           updateHUD();
           heldItem.removed = true;
@@ -1030,7 +1088,7 @@ function updateGameLogic(){
           gripActive = false;
           dwellTarget = null;
           ensureFoodCount();
-          statusBar.textContent = '✅ 放低！';
+          statusBar.textContent = '放低！';
         } else {
           dwellActive = true;
           lastDwellPct = elapsed / DWELL_MS;
@@ -1096,15 +1154,17 @@ function updateGraspLogic(){
       if(onPlate){
         if(heldItem.targetType === onPlate.type){
           score += 10; correctCount++;
+          triggerFeedback(true);
         } else {
           score = Math.max(0, score - 3);
+          triggerFeedback(false);
         }
         updateHUD();
         heldItem.removed = true;
         heldItem.held = false;
         heldItem = null;
         ensureFoodCount();
-        statusBar.textContent = '✅ 放低！';
+        statusBar.textContent = '放低！';
       } else {
         // 未到碟上便鬆手：放返原位（唔移除）
         heldItem.held = false;
