@@ -200,26 +200,7 @@ html,body{
       </div>
     </div>
 
-    <div class="card" id="graspTypeCard" style="display:none;">
-      <h2><span class="icon">👆</span>握力偵測方式</h2>
-      <div class="option-row" id="graspTypeOptions">
-        <button class="option-btn selected" data-grasptype="full">
-          <span class="opt-emoji">✊</span>
-          全握
-          <span style="font-size:11px;color:var(--muted);font-weight:500;">5隻手指全屈曲</span>
-        </button>
-        <button class="option-btn" data-grasptype="tripod">
-          <span class="opt-emoji">🤌</span>
-          三指捏
-          <span style="font-size:11px;color:var(--muted);font-weight:500;">拇指＋食指＋中指</span>
-        </button>
-        <button class="option-btn" data-grasptype="any">
-          <span class="opt-emoji">🖐️</span>
-          任何屈曲
-          <span style="font-size:11px;color:var(--muted);font-weight:500;">較寬鬆</span>
-        </button>
-      </div>
-    </div>
+
 
     <div class="card">
       <h2><span class="icon">🎯</span>選擇難度</h2>
@@ -293,13 +274,6 @@ html,body{
         <button class="option-btn" data-font="52">大</button>
         <button class="option-btn" data-font="70">特大</button>
       </div>
-    </div>
-
-    <div class="sticker-box" id="stickerBox">
-      🖐️ 免貼紙！系統自動偵測<b>食指尖</b>位置作為游標。<br>
-      食指移到食物上方，停留指定時間 → 自動夾起<br>
-      移到碟上再停留 → 自動放低
-      <div class="arrow-demo">⏱️ 停住唔郁即夾起／放低</div>
     </div>
 
     <button class="btn-primary" id="btnGoCalib">進入相機校準 →</button>
@@ -377,7 +351,7 @@ const state = {
   running: false,
   paused: false,
   gameType: 'reach',     // 'reach' | 'grasp'
-  graspType: 'full',     // 'full' | 'tripod' | 'any'
+  graspType: 'any',      // fixed: open-hand detection
 };
 
 /* ==================== DOM 快取 ==================== */
@@ -414,16 +388,7 @@ document.getElementById('gameTypeOptions').addEventListener('click', e=>{
   document.querySelectorAll('#gameTypeOptions .option-btn').forEach(b=>b.classList.remove('selected'));
   btn.classList.add('selected');
   state.gameType = btn.dataset.gametype;
-  document.getElementById('graspTypeCard').style.display = state.gameType === 'grasp' ? '' : 'none';
-  updateStickerBox();
   updateEasyLevelLabel();
-});
-document.getElementById('graspTypeOptions').addEventListener('click', e=>{
-  const btn = e.target.closest('.option-btn');
-  if(!btn) return;
-  document.querySelectorAll('#graspTypeOptions .option-btn').forEach(b=>b.classList.remove('selected'));
-  btn.classList.add('selected');
-  state.graspType = btn.dataset.grasptype;
 });
 
 function updateEasyLevelLabel(){
@@ -438,20 +403,6 @@ function updateEasyLevelLabel(){
   }
 }
 
-function updateStickerBox(){
-  const box = document.getElementById('stickerBox');
-  if(state.gameType === 'grasp'){
-    box.innerHTML = '✊ 免貼紙！系統自動偵測<b>手部握放</b>動作作為控制。<br>' +
-      '握緊拳頭移到食物上方 → 自動夾起<br>' +
-      '移到碟上再張開手 → 自動放低' +
-      '<div class="arrow-demo">✊➡️🖐️ 握緊夾起／張開放低</div>';
-  } else {
-    box.innerHTML = '🖐️ 免貼紙！系統自動偵測<b>食指尖</b>位置作為游標。<br>' +
-      '食指移到食物上方，停留指定時間 → 自動夾起<br>' +
-      '移到碟上再停留 → 自動放低' +
-      '<div class="arrow-demo">⏱️ 停住唔郁即夾起／放低</div>';
-  }
-}
 
 document.getElementById('durationOptions').addEventListener('click', e=>{
   const btn = e.target.closest('.option-btn');
