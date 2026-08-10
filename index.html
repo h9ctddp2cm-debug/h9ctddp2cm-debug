@@ -727,8 +727,8 @@ html,body{
         <div class="research-field">
           <label for="researchArm" id="pilotArmLabel">研究組別</label>
           <select id="researchArm">
-            <option value="traditional_control">傳統復康對照組</option>
-            <option value="active_control_game">主動對照組（遊戲）</option>
+            <option value="active_motor_control">主動動作對照組</option>
+            <option value="game_intervention">遊戲介入組</option>
           </select>
         </div>
         <div class="research-field">
@@ -755,7 +755,7 @@ html,body{
         </div>
         <fieldset class="research-trad-group">
           <legend id="pilotTradLegend">傳統復康活動記錄</legend>
-          <p class="research-scenario-help" id="pilotTradRule">傳統復康對照組：最少兩項體能復康活動，每項 15 分鐘。主動對照組（遊戲）：一項 15 分鐘傳統復康活動＋一節 15 分鐘遊戲訓練；只有當參加者可耐受超過 30 分鐘時，方可加入額外一項傳統活動。</p>
+          <p class="research-scenario-help" id="pilotTradRule">主動動作對照組：最少兩項傳統上肢動作訓練，每項 15 分鐘。遊戲介入組：一項 15 分鐘傳統上肢動作訓練＋一節 15 分鐘遊戲訓練；只有當參加者可耐受超過 30 分鐘時，方可加入額外一項傳統活動。</p>
           <div class="research-trad-rows" id="researchTradRows">
             <div class="research-trad-row">
               <input id="tradName1" maxlength="40" placeholder="活動 1" aria-label="傳統活動 1">
@@ -838,6 +838,10 @@ html,body{
       <div class="research-protocol" id="pilotProtocol">
         <b>標準化流程：</b>每節先作簡短 FTHUE Level 確認，由系統篩選合適遊戲，再由患者選擇情境。所有合資格情境維持相同訓練重複次數、核心分類規則、動作判定及指定難度。完整 FTHUE 建議於 Session 1 前及 Session 5 後進行。
       </div>
+      <details class="research-data-manager" id="pilotNeuroFramework">
+        <summary id="pilotNeuroSummary">顯示神經科學導向研究框架</summary>
+        <div class="research-manager-body research-protocol" id="pilotNeuroBody"></div>
+      </details>
       <div class="research-privacy" id="pilotPrivacy">資料只暫存於本次頁面記憶體，完成後須由治療師下載 CSV。不使用 cookies、本機儲存或雲端上載；重新整理頁面會清除未下載資料。</div>
       <details class="research-data-manager" id="researchDataManager">
         <summary id="pilotManagerSummary">資料管理（本次開啟頁面）</summary>
@@ -1207,7 +1211,7 @@ html,body{
             <div class="feedback-field"><label for="fieldPinchStrength" data-zh="患側捏力平均（kg，自動計算）" data-en="Affected-side pinch mean (kg, calculated)">患側捏力平均（kg，自動計算）</label><input id="fieldPinchStrength" type="number" min="0" max="50" step="0.1" readonly data-feedback="pinch_strength_kg"></div>
             <div class="feedback-field"><label for="fieldAssessorBlinded" data-zh="評估者保持盲法" data-en="Assessor remained blinded">評估者保持盲法</label><select id="fieldAssessorBlinded" data-feedback="assessor_blinded"><option value="" data-zh="未記錄" data-en="Not recorded">未記錄</option><option value="yes" data-zh="是" data-en="Yes">是</option><option value="no" data-zh="否" data-en="No">否</option><option value="not_applicable" data-zh="不適用" data-en="Not applicable">不適用</option></select></div>
             <div class="feedback-field"><label for="fieldBlindingBroken" data-zh="評估期間是否揭盲" data-en="Was blinding broken?">評估期間是否揭盲</label><select id="fieldBlindingBroken" data-feedback="blinding_broken"><option value="" data-zh="未記錄" data-en="Not recorded">未記錄</option><option value="no" data-zh="否" data-en="No">否</option><option value="yes" data-zh="是" data-en="Yes">是</option></select></div>
-            <div class="feedback-field full"><label for="fieldAssessorGuess" data-zh="評估者估計組別（選填）" data-en="Assessor allocation guess (optional)">評估者估計組別（選填）</label><select id="fieldAssessorGuess" data-feedback="assessor_group_guess"><option value="" data-zh="未作估計" data-en="No guess">未作估計</option><option value="active_control_game" data-zh="遊戲組" data-en="Game group">遊戲組</option><option value="traditional_control" data-zh="傳統訓練組" data-en="Traditional-training group">傳統訓練組</option><option value="unsure" data-zh="不確定" data-en="Unsure">不確定</option></select></div>
+            <div class="feedback-field full"><label for="fieldAssessorGuess" data-zh="評估者估計組別（選填）" data-en="Assessor allocation guess (optional)">評估者估計組別（選填）</label><select id="fieldAssessorGuess" data-feedback="assessor_group_guess"><option value="" data-zh="未作估計" data-en="No guess">未作估計</option><option value="game_intervention" data-zh="遊戲介入組" data-en="Game intervention group">遊戲介入組</option><option value="active_motor_control" data-zh="主動動作對照組" data-en="Active motor control group">主動動作對照組</option><option value="unsure" data-zh="不確定" data-en="Unsure">不確定</option></select></div>
             <div class="feedback-field">
               <label for="fieldFeedingScore" data-zh="進食正式項目分數" data-en="Formal feeding item score">進食正式項目分數</label>
               <input id="fieldFeedingScore" type="number" step="0.1" data-feedback="feeding_item_score">
@@ -1407,8 +1411,10 @@ html,body{
               <select id="feedbackFavouriteScenario" data-feedback="session5_favourite_scenario">
                 <option value="" data-zh="未記錄" data-en="Not recorded">未記錄</option>
                 <option value="dimsum" data-zh="茶樓飲茶" data-en="Tea house">茶樓飲茶</option>
-                <option value="pilot_laundry" data-zh="衣物分類" data-en="Laundry sorting">衣物分類</option>
-                <option value="pilot_cards" data-zh="啤牌分類" data-en="Card-suit sorting">啤牌分類</option>
+                <option value="mahjong" data-zh="麻雀" data-en="Mahjong">麻雀</option>
+                <option value="cards" data-zh="啤牌" data-en="Playing cards">啤牌</option>
+                <option value="laundry" data-zh="晾衫／衣物分類" data-en="Laundry sorting">晾衫／衣物分類</option>
+                <option value="flowers" data-zh="插花" data-en="Flower arranging">插花</option>
               </select>
             </div>
             <div class="feedback-field full">
@@ -1446,11 +1452,12 @@ const state = {
   graspType: 'any',      // fixed: open-hand detection
   qaMode: false,         // QA-only: 經 hook 注入游標，不需相機
 };
-const RESEARCH_VERSION = 'pilot-4.2.0';
-const PILOT_ELIGIBLE_SCENARIOS = {
-  '45':['dimsum','pilot_laundry','pilot_cards'],
-  '67':['dimsum','pilot_laundry','pilot_cards'],
+const RESEARCH_VERSION = 'pilot-5.0.0-neuroscience';
+const PILOT_TRAINING_SCENARIOS = {
+  '45':['flowers','dimsum','laundry','cards','mahjong'],
+  '67':['flowers','dimsum','laundry','cards','mahjong'],
 };
+const PILOT_ASSESSMENT_SCENARIOS = ['dimsum'];
 const researchArchive = [];
 let pilotLang = 'zh';
 const RESEARCH_FEEDBACK_FIELDS = [
@@ -1537,7 +1544,7 @@ function emptyPhaseMetrics(){
     pinch_attempts:0, pinch_success:0, pinch_maintenance_fail:0,
     placement_error_sum:0, placement_error_n:0,
     cursor_path_px:0, transport_path_px:0, transport_straight_px:0,
-    completion_time_sum_ms:0, completion_time_n:0,
+    completion_time_sum_ms:0, completion_time_sq_sum_ms2:0, completion_time_n:0,
     cog_total:0, cog_correct:0, cog_rt_sum_ms:0,
     cog_hits:0, cog_misses:0, cog_false_alarms:0, cog_correct_rejections:0,
     tracking_loss_ms:0, technical_failures:0,
@@ -1556,7 +1563,9 @@ function pilotRecordPlacement(target, now){
   m.placement_error_sum += Math.hypot(cursorX - target.x, cursorY - target.y);
   m.placement_error_n += 1;
   if(transportStartAt){
-    m.completion_time_sum_ms += Math.max(0, now - transportStartAt);
+    const movementTimeMs = Math.max(0, now - transportStartAt);
+    m.completion_time_sum_ms += movementTimeMs;
+    m.completion_time_sq_sum_ms2 += movementTimeMs * movementTimeMs;
     m.completion_time_n += 1;
     m.transport_straight_px += Math.hypot(cursorX - transportStartX, cursorY - transportStartY);
   }
@@ -1580,7 +1589,7 @@ const research = {
   events:[], trackingLostAt:0, totalTrackingLossMs:0, pauseCount:0, completed:false,
   trackingPresent:false, feedback:emptyResearchFeedback(),
   // Pilot 3.0 additions
-  visit:'s1', visitKind:'train', studyDate:'', studyArm:'active_control_game',
+  visit:'s1', visitKind:'train', studyDate:'', studyArm:'game_intervention',
   stratum:'5', blockOrder:PILOT_BLOCK_ORDERS[0], blockOrderSource:'therapist_choice',
   tradActivities:[], phasePlan:[], phaseRemaining:0, phaseStartedAt:0,
   phaseMetrics:null, phaseRows:[], dtc:null,
@@ -1751,15 +1760,25 @@ function researchClosePhase(reason){
   const minutes = durationSec / 60;
   const isRest = phase && phase.kind === 'rest';
   const isCogOnly = phase && phase.kind === 'cognitive';
+  const correctObserved = Math.max(m.correct, correctCount - b.correct);
+  const wrongObserved = Math.max(m.wrong, totalWrong - b.wrong);
+  const grabsObserved = Math.max(m.grasp_attempts + m.pinch_attempts, grabCount - b.grabs);
+  const movementMean = m.completion_time_n ? m.completion_time_sum_ms / m.completion_time_n : 0;
+  const movementVariance = m.completion_time_n > 1
+    ? Math.max(0, (m.completion_time_sq_sum_ms2 -
+      (m.completion_time_sum_ms * m.completion_time_sum_ms / m.completion_time_n)) /
+      (m.completion_time_n - 1)) : 0;
+  const movementSd = m.completion_time_n > 1 ? Math.sqrt(movementVariance) : 0;
+  const screenDiagonal = gameCanvas ? Math.hypot(gameCanvas.width, gameCanvas.height) : 0;
   const summary = {
     ...researchBaseRow(), row_type:'summary', event_type:'phase_summary',
-    score:score - b.score, correct:m.correct, grabs:m.grasp_attempts + m.pinch_attempts,
-    wrong:m.wrong, tracking_status:'', cursor_x:'', cursor_y:'',
+    score:score - b.score, correct:correctObserved, grabs:grabsObserved,
+    wrong:wrongObserved, tracking_status:'', cursor_x:'', cursor_y:'',
     phase_duration_sec:durationSec,
-    correct_placements:isRest ? '' : m.correct,
-    wrong_placements:isRest ? '' : m.wrong,
+    correct_placements:isRest ? '' : correctObserved,
+    wrong_placements:isRest ? '' : wrongObserved,
     drops:isRest ? '' : m.drops,
-    motor_accuracy:(isRest || isCogOnly) ? '' : pilotRatio(m.correct, m.correct + m.wrong + m.drops),
+    motor_accuracy:(isRest || isCogOnly) ? '' : pilotRatio(correctObserved, correctObserved + wrongObserved + m.drops),
     grasp_attempts:(isRest || isCogOnly) ? '' : m.grasp_attempts,
     grasp_success:(isRest || isCogOnly) ? '' : m.grasp_success,
     grasp_success_rate:(isRest || isCogOnly) ? '' : pilotRatio(m.grasp_success, m.grasp_attempts),
@@ -1770,11 +1789,18 @@ function researchClosePhase(reason){
     pinch_success_rate:(isRest || isCogOnly) ? '' : pilotRatio(m.pinch_success, m.pinch_attempts),
     pinch_maintenance_failures:(isRest || isCogOnly) ? '' : m.pinch_maintenance_fail,
     placement_accuracy_px:m.placement_error_n ? Number((m.placement_error_sum / m.placement_error_n).toFixed(1)) : '',
-    completion_time_mean_ms:m.completion_time_n ? Math.round(m.completion_time_sum_ms / m.completion_time_n) : '',
-    correct_per_min:(isRest || isCogOnly || !minutes) ? '' : Number((m.correct / minutes).toFixed(3)),
+    placement_accuracy_screen_diag:m.placement_error_n && screenDiagonal
+      ? Number(((m.placement_error_sum / m.placement_error_n) / screenDiagonal).toFixed(4)) : '',
+    completion_time_mean_ms:m.completion_time_n ? Math.round(movementMean) : '',
+    completion_time_sd_ms:m.completion_time_n > 1 ? Math.round(movementSd) : '',
+    completion_time_cv:m.completion_time_n > 1 && movementMean
+      ? Number((movementSd / movementMean).toFixed(3)) : '',
+    correct_per_min:(isRest || isCogOnly || !minutes) ? '' : Number((correctObserved / minutes).toFixed(3)),
     cursor_path_px:(isRest || isCogOnly) ? '' : Math.round(m.cursor_path_px),
     straight_line_px:(isRest || isCogOnly) ? '' : Math.round(m.transport_straight_px),
     path_efficiency:(isRest || isCogOnly) ? '' : pilotRatio(m.transport_straight_px, m.transport_path_px),
+    cursor_path_screen_diag:(isRest || isCogOnly || !screenDiagonal) ? ''
+      : Number((m.cursor_path_px / screenDiagonal).toFixed(3)),
     cognitive_trials:m.cog_total || (isRest ? '' : 0),
     cognitive_hits:m.cog_total ? m.cog_hits : '',
     cognitive_misses:m.cog_total ? m.cog_misses : '',
@@ -1974,8 +2000,9 @@ const RESEARCH_CSV_COLUMNS = ['row_type','version','timestamp','participant','vi
   'phase_duration_sec','correct_placements','wrong_placements','drops','motor_accuracy',
   'grasp_attempts','grasp_success','grasp_success_rate','premature_release','release_success',
   'pinch_attempts','pinch_success','pinch_success_rate','pinch_maintenance_failures',
-  'placement_accuracy_px','completion_time_mean_ms','correct_per_min',
-  'cursor_path_px','straight_line_px','path_efficiency',
+  'placement_accuracy_px','placement_accuracy_screen_diag','completion_time_mean_ms',
+  'completion_time_sd_ms','completion_time_cv','correct_per_min',
+  'cursor_path_px','cursor_path_screen_diag','straight_line_px','path_efficiency',
   'cognitive_trials','cognitive_hits','cognitive_misses','cognitive_false_alarms',
   'cognitive_correct_rejections','cognitive_accuracy','therapist_recorded_response_latency_ms','cognitive_mean_rt_ms',
   'tracking_loss_ms','technical_failures','actual_session_time_sec','actual_game_flow_time_sec',
@@ -2064,12 +2091,12 @@ const PILOT_TEXT = {
     visit:'研究時間點',
     visitLabels:{t0:'T0 基線評估',s1:'訓練節 1',s2:'訓練節 2',s3:'訓練節 3',s4:'訓練節 4',s5:'訓練節 5',t1:'T1 後測（24–48 小時）',fu:'出院跟進（選填）'},
     studyDate:'研究日期', studyArm:'研究組別',
-    arms:{traditional_control:'傳統 remedial 對照組',active_control_game:'主動對照／遊戲組'},
+    arms:{active_motor_control:'主動動作對照組',game_intervention:'遊戲介入組'},
     blockOrder:'評估區組次序', randomise:'隨機排序',
     blockOrderNote:'同一參加者的 T0、T1 及跟進須使用同一次序；請依已記錄次序選擇。',
     blockNames:{motor:'單一動作',cognitive:'單一認知',dual:'雙重'},
     tradLegend:'傳統復康活動記錄',
-    tradRule:'傳統復康對照組：最少兩項體能復康活動，每項 15 分鐘。主動對照組（遊戲）：一項 15 分鐘傳統復康活動＋一節 15 分鐘遊戲訓練；只有當參加者可耐受超過 30 分鐘時，方可加入額外一項傳統活動。',
+    tradRule:'主動動作對照組：最少兩項傳統上肢動作訓練，每項 15 分鐘。遊戲介入組：一項 15 分鐘傳統上肢動作訓練＋一節 15 分鐘遊戲訓練；只有當參加者可耐受超過 30 分鐘時，方可加入額外一項傳統活動。',
     tradPlaceholders:['活動 1','活動 2','活動 3（選填）'],
     tradMinutes:'分鐘', tradReps:'訓練重複次數',
     planTitle:'本次執行步驟', planTotal:'遊戲畫面流程（不包括即時回顧）',
@@ -2092,22 +2119,28 @@ const PILOT_TEXT = {
     safetyClearance:'開始前安全確認',
     safetyOptions:['尚未確認','已確認：醫療穩定、安全坐姿、疼痛及疲勞可接受，並已核對病房活動限制','未通過：不可開始訓練'],
     dataUse:'紀錄用途', dataUses:['正式研究資料','治療師試玩','病人練習／系統測試'],
-    scenario:'由患者選擇遊戲情境', scenarioHelp:'以下只顯示符合本節 FTHUE Level 的遊戲',
+    scenario:'遊戲情境', scenarioHelp:'訓練節由患者從五款合適遊戲中選擇；煮飯不納入研究。T0／T1固定使用茶樓飲茶作標準化比較',
     schedule:'顯示五節研究安排',
     sessionPlans:['完整基線評估＋當日 FTHUE 篩選＋患者選擇','簡短 FTHUE 確認＋患者選擇','簡短 FTHUE 確認＋患者選擇','簡短 FTHUE 確認＋患者選擇','當日 FTHUE 篩選＋患者選擇＋完整終期評估'],
-    scenarioNames:{dimsum:'茶樓飲茶',pilot_laundry:'衣物分類',pilot_cards:'啤牌分類'},
-    scenarioGoals:{dimsum:'將點心放到相同款式的蒸籠',pilot_laundry:'將衣物放到相同顏色的洗衣籃',pilot_cards:'將啤牌放到相同花色的牌堆'},
+    scenarioNames:{flowers:'插花',dimsum:'茶樓飲茶',laundry:'晾衫／衣物分類',cards:'啤牌',mahjong:'麻雀'},
+    scenarioGoals:{flowers:'設計自己的花束',dimsum:'將點心放到相同款式的蒸籠',laundry:'將衣物放到相同顏色的洗衣籃',cards:'收集相同花色的啤牌',mahjong:'選一組牌食糊'},
     track:'Motor + Cognitive Dual Task 難度', simple:'簡單版',
     simpleDesc:'辨認兩類物件並放到相應目標。適合需要較多提示、視覺搜尋較慢或首次接受訓練的參加者。',
     advanced:'進階版',
     advancedDesc:'完成相同分類任務，同時抑制動物干擾物。每節使用預先選定的固定難度，不會在節內自動升級。',
     note:'治療師按當日 FTHUE、理解、疲勞、視覺搜尋及安全選擇起始難度。連續兩個區組的動作及認知正確率均達 80% 才可只提升一項難度；60–79% 維持；低於 60% 只降低一項。評估模式不會自動調整。',
-    protocol:'<b>研究定位：</b>FTHUE 4–7 分層、患者自選情境的上肢 motor-cognitive dual-task 遊戲，作為職業治療的附加訓練。主要評估安全性、可行性、可接受性及技術穩定性；功能結果只作探索。' +
+    protocol:'<b>研究定位：</b>FTHUE 4–7 分層、患者自選情境的上肢 motor-cognitive dual-task 遊戲，作為職業治療的附加訓練。訓練節可自選插花、茶樓飲茶、晾衫／衣物分類、啤牌或麻雀；煮飯不納入研究。主要評估安全性、可行性、可接受性及技術穩定性；功能及機制結果只作探索。' +
       '<br><br><b>五節訓練：</b>每節共 15 分鐘：2 分鐘校準及引導練習、5 分鐘計分雙重任務、1 分鐘休息、5 分鐘同難度計分雙重任務、2 分鐘即時回顧。不可寫成 15 分鐘主動遊戲。' +
-      '<br><b>T0／T1 評估：</b>單一動作、單一認知及雙重任務各 2 分鐘，區組間休息 1 分鐘；同一參加者 T0、T1 使用相同工具、患手、坐姿、物件及目標大小、位置、時間、認知難度及區組次序。T0 於首次訓練前 24 小時內，T1 於第五節後 24–48 小時。評估時關閉獎勵及難度自動調整。' +
+      '<br><b>T0／T1 評估：</b>固定使用茶樓飲茶；單一動作、單一認知及雙重任務各 2 分鐘，區組間休息 1 分鐘。同一參加者 T0、T1 使用相同工具、患手、坐姿、物件及目標大小、位置、時間、認知難度及區組次序。T0 於首次訓練前 24 小時內，T1 於第五節後 24–48 小時。評估時關閉獎勵及難度自動調整。' +
       '<br><b>主要結果：</b>招募、留住及五節完成率；實際時間；技術故障及追蹤中斷；不良事件；疼痛、疲勞、接受程度及設定時間。' +
       '<br><b>探索性結果：</b>FTHUE、握力、捏力、進食／梳洗／上衣穿著、標準化 motor 及 cognitive dual-task cost；可選擇加入真實活動轉移測試。系統只偵測捏放動作，不量度捏力。' +
       '<br><b>分析及限制：</b>以百分比、中位數及四分位距、個別變化圖、效量及信賴區間為主，p 值只作探索。各 FTHUE 分層分開描述，不比較哪一級最好。可總結為「具可行性，值得進行較大型對照研究」，不可聲稱已證實療效或神經可塑性。',
+    neuroSummary:'顯示神經科學導向研究框架',
+    neuroBody:'<b>研究題目：</b>FTHUE分層、患者自選情境的上肢motor-cognitive dual-task遊戲對中風患者認知動作干擾、動作控制及早期動作學習的可行性：隨機對照先導研究' +
+      '<br><br><b>行為機制鏈：</b>重複、目標導向的 reaching–grasp／pinch–transport–release，加上同步認知目標監察，可能改變 cognitive-motor interference、動作準確度、路徑效率及節內動作變異。' +
+      '<br><b>主要先導結果：</b>安全性、完成率、可接受性、技術穩定性及執行可行性。' +
+      '<br><b>探索性機制結果：</b>motor DTC、cognitive accuracy DTC、正確放置／分鐘、grasp／pinch及release成功率、過早放手、完成時間、完成時間變異、路徑效率，以及相機估算的軀幹及上肢活動指標。' +
+      '<br><b>推論界線：</b>這些是行為及相機估算指標；沒有EEG、fMRI或TMS時，不可聲稱已直接量度皮質重組或神經可塑性。',
     privacy:'資料只暫存於本次頁面記憶體，完成後須由治療師下載 CSV。不使用 cookies、本機儲存或雲端上載；重新整理頁面會清除未下載資料。',
     manager:'資料管理（本次開啟頁面）', exportFormal:'匯出正式研究資料',
     exportNonFormal:'匯出試玩／非正式資料', managerEmpty:'尚未有完成的研究紀錄',
@@ -2130,12 +2163,12 @@ const PILOT_TEXT = {
     visit:'Study visit',
     visitLabels:{t0:'T0 baseline',s1:'Training Session 1',s2:'Training Session 2',s3:'Training Session 3',s4:'Training Session 4',s5:'Training Session 5',t1:'T1 post-test (24–48 h)',fu:'Discharge follow-up (optional)'},
     studyDate:'Study date', studyArm:'Study arm',
-    arms:{traditional_control:'Traditional remedial control group',active_control_game:'Active control / game group'},
+    arms:{active_motor_control:'Active motor control group',game_intervention:'Game intervention group'},
     blockOrder:'Assessment block order', randomise:'Randomise',
     blockOrderNote:'Use the same order for T0, T1 and follow-up in the same participant; select the recorded order.',
     blockNames:{motor:'Single motor',cognitive:'Single cognitive',dual:'Dual'},
     tradLegend:'Traditional remedial activity record',
-    tradRule:'Traditional remedial control: at least two physical remedial activities, 15 minutes each. Active control (game): one 15-minute traditional remedial activity plus one 15-minute game session. An additional traditional activity is permitted only if the participant tolerates more than 30 minutes in total.',
+    tradRule:'Active motor control: at least two traditional physical upper-limb activities, 15 minutes each. Game intervention: one 15-minute traditional upper-limb activity plus one 15-minute game session. An additional traditional activity is permitted only if the participant tolerates more than 30 minutes in total.',
     tradPlaceholders:['Activity 1','Activity 2','Activity 3 (optional)'],
     tradMinutes:'Minutes', tradReps:'Training repetitions',
     planTitle:'Session plan', planTotal:'On-screen game sequence (excluding immediate review)',
@@ -2158,22 +2191,28 @@ const PILOT_TEXT = {
     safetyClearance:'Pre-session safety check',
     safetyOptions:['Not yet confirmed','Confirmed: medically stable, safe sitting, acceptable pain and fatigue, and ward activity restrictions checked','Not cleared: do not begin training'],
     dataUse:'Record purpose', dataUses:['Formal study data','Therapist trial','Patient practice / system test'],
-    scenario:'Patient chooses a game scenario', scenarioHelp:'Only games eligible for this session’s FTHUE Level are shown',
+    scenario:'Game scenario', scenarioHelp:'During training, the patient chooses from five eligible games; cooking is excluded. T0/T1 use Tea house as the standardised comparison task',
     schedule:'Show five-session study plan',
     sessionPlans:['Full baseline assessment + daily FTHUE filter + patient choice','Brief FTHUE check + patient choice','Brief FTHUE check + patient choice','Brief FTHUE check + patient choice','Daily FTHUE filter + patient choice + full final assessment'],
-    scenarioNames:{dimsum:'Tea house',pilot_laundry:'Laundry sorting',pilot_cards:'Card-suit sorting'},
-    scenarioGoals:{dimsum:'Match each dim sum to the same steamer',pilot_laundry:'Sort clothes into the same-colour basket',pilot_cards:'Sort cards into the same suit pile'},
+    scenarioNames:{flowers:'Flower arranging',dimsum:'Tea house',laundry:'Laundry sorting',cards:'Playing cards',mahjong:'Mahjong'},
+    scenarioGoals:{flowers:'Design a personal flower arrangement',dimsum:'Match each dim sum to the same steamer',laundry:'Sort clothes into the same-colour basket',cards:'Collect cards of the target suit',mahjong:'Select a winning tile group'},
     track:'Motor + Cognitive Dual Task level', simple:'Basic',
     simpleDesc:'Identify two object categories and place each object at its corresponding target. Suitable for participants who require more cueing, have slower visual search, or are new to training.',
     advanced:'Advanced',
     advancedDesc:'Complete the same sorting task while inhibiting animal distractors. The preselected difficulty remains fixed within each session.',
     note:'The therapist selects the starting level using current FTHUE, comprehension, fatigue, visual search and safety. Increase only one difficulty variable after motor and cognitive accuracy are both at least 80% in two consecutive blocks; maintain at 60–79%; reduce one variable below 60%. Assessment mode never auto-adjusts.',
-    protocol:'<b>Study positioning:</b> An FTHUE 4–7 stratified, patient-selected upper-limb motor-cognitive dual-task game used as an adjunct to occupational therapy. Primary aims are safety, feasibility, acceptability and technical stability; functional outcomes are exploratory.' +
+    protocol:'<b>Study positioning:</b> An FTHUE 4–7 stratified, patient-selected upper-limb motor-cognitive dual-task game used as an adjunct to occupational therapy. Training choices are Flower arranging, Tea house, Laundry sorting, Playing cards, and Mahjong; Cooking is excluded. Primary aims are safety, feasibility, acceptability and technical stability; functional and mechanistic outcomes are exploratory.' +
       '<br><br><b>Five training sessions:</b> Each 15-minute session comprises 2 minutes of calibration and guided practice, 5 minutes of scored dual-task training, 1 minute of rest, another 5-minute scored dual-task block at the same difficulty, and a 2-minute immediate review. Do not describe this as 15 minutes of active gameplay.' +
-      '<br><b>T0/T1 assessment:</b> Single motor, single cognitive and dual-task blocks last 2 minutes each with 1-minute rests. Within each participant, T0 and T1 use the same tool, affected hand, seating, object and target size and location, duration, cognitive difficulty and block order. Complete T0 within 24 hours before Session 1 and T1 24–48 hours after Session 5. Rewards and automatic progression are disabled during assessment.' +
+      '<br><b>T0/T1 assessment:</b> Tea house is the fixed standardised task. Single motor, single cognitive and dual-task blocks last 2 minutes each with 1-minute rests. Within each participant, T0 and T1 use the same tool, affected hand, seating, object and target size and location, duration, cognitive difficulty and block order. Complete T0 within 24 hours before Session 1 and T1 24–48 hours after Session 5. Rewards and automatic progression are disabled during assessment.' +
       '<br><b>Primary outcomes:</b> recruitment, retention and five-session completion; actual session time; technical and tracking failures; adverse events; pain, fatigue, acceptability and setup time.' +
       '<br><b>Exploratory outcomes:</b> FTHUE, grip strength, pinch strength, feeding, grooming and upper-body dressing, plus standardised motor and cognitive dual-task cost. An optional real-world transfer probe may be added. The system detects pinch-and-release movement but does not measure pinch force.' +
       '<br><b>Analysis and limits:</b> emphasise feasibility percentages, medians and interquartile ranges, individual change plots, effect sizes and confidence intervals; p values are exploratory. Describe FTHUE strata separately and do not rank them. Conclude that the intervention is feasible and warrants a larger controlled study, not that efficacy or neuroplasticity has been proven.',
+    neuroSummary:'Show the neuroscience-informed research framework',
+    neuroBody:'<b>Study title:</b> Feasibility and Preliminary Behavioural Mechanisms of an FTHUE-Stratified, Patient-Selected Upper-Limb Motor-Cognitive Dual-Task Game After Stroke: A Randomized Controlled Pilot Study' +
+      '<br><br><b>Behavioural mechanism chain:</b> Repeated goal-directed reaching–grasp/pinch–transport–release with concurrent cognitive target monitoring may alter cognitive-motor interference, movement accuracy, path efficiency, and within-session movement variability.' +
+      '<br><b>Primary pilot outcomes:</b> Safety, completion, acceptability, technical stability, and implementation feasibility.' +
+      '<br><b>Exploratory mechanistic outcomes:</b> motor DTC, cognitive-accuracy DTC, correct placements/min, grasp/pinch and release success, premature release, movement time and variability, path efficiency, and camera-estimated trunk and upper-limb movement.' +
+      '<br><b>Inference boundary:</b> These are behavioural and camera-derived proxies. Without EEG, fMRI, or TMS, the study must not claim direct measurement of cortical reorganisation or neuroplasticity.',
     privacy:'Data remain in temporary page memory only and must be downloaded by the therapist as a CSV after the session. No cookies, local storage or cloud upload are used. Refreshing the page deletes unsaved data.',
     manager:'Data management (current page session)', exportFormal:'Export formal study data',
     exportNonFormal:'Export trials / non-formal data', managerEmpty:'No completed research records yet',
@@ -2218,7 +2257,11 @@ function renderPilotScenarioOptions(){
   const t = PILOT_TEXT[pilotLang];
   const levelGroup = pilotLevelGroup();
   const previous = document.querySelector('input[name="researchScenario"]:checked')?.value || '';
-  const eligible = PILOT_ELIGIBLE_SCENARIOS[levelGroup] || [];
+  const visit = document.getElementById('researchVisit').value;
+  const assessment = pilotVisitKind(visit) === 'assess';
+  const eligible = assessment
+    ? PILOT_ASSESSMENT_SCENARIOS
+    : (PILOT_TRAINING_SCENARIOS[levelGroup] || []);
   const container = document.getElementById('researchScenarioOptions');
   container.innerHTML = '';
   eligible.forEach((id,index)=>{
@@ -2229,7 +2272,8 @@ function renderPilotScenarioOptions(){
     const input = document.createElement('input');
     input.type = 'radio'; input.name = 'researchScenario'; input.value = id;
     input.id = 'researchScenario-' + id;
-    input.checked = previous ? previous === id : index === 0;
+    input.checked = eligible.includes(previous) ? previous === id : index === 0;
+    input.disabled = assessment;
     const img = document.createElement('img');
     img.src = theme.thumbnail; img.alt = theme.thumbnailAlt || '';
     const copy = document.createElement('span');
@@ -2351,6 +2395,8 @@ function renderPilotLanguage(){
   document.getElementById('pilotAdvancedDesc').textContent = t.advancedDesc;
   document.getElementById('pilotTrackNote').textContent = t.note;
   document.getElementById('pilotProtocol').innerHTML = t.protocol;
+  document.getElementById('pilotNeuroSummary').textContent = t.neuroSummary;
+  document.getElementById('pilotNeuroBody').innerHTML = t.neuroBody;
   document.getElementById('pilotPrivacy').textContent = t.privacy;
   document.getElementById('pilotManagerSummary').textContent = t.manager;
   document.getElementById('btnExportFormal').textContent = t.exportFormal;
@@ -2407,7 +2453,10 @@ document.getElementById('btnResearchMode').addEventListener('click', ()=>{
   renderPilotLanguage();
   showScreen('research');
 });
-document.getElementById('researchVisit').addEventListener('change', pilotRenderPlanPreview);
+document.getElementById('researchVisit').addEventListener('change', ()=>{
+  pilotRenderPlanPreview();
+  renderPilotScenarioOptions();
+});
 document.getElementById('researchBlockOrder').addEventListener('change', ()=>{
   research.blockOrderSource = 'therapist_choice';
   pilotRenderPlanPreview();
@@ -4970,8 +5019,8 @@ function endGame(){
       }[research.progressionRecommendation] || research.progressionRecommendation) + '</div></div>');
     rr.innerHTML = pilotLang === 'en'
       ? '<b>Research record complete</b><br><div>Visit: ' + pilotVisitLabel(research.visit,'en') +
-        ' · FTHUE stratum ' + research.stratum + ' · ' + (research.studyArm === 'traditional_control'
-          ? 'Traditional remedial control group' : 'Active control / game group') +
+        ' · FTHUE stratum ' + research.stratum + ' · ' +
+        (PILOT_TEXT.en.arms[research.studyArm] || research.studyArm) +
         '</div><div>Scenario: ' + pilotScenarioName(research.scenarioId) +
         '</div><div>Block order: ' + research.blockOrder.split(',').join(' > ') +
         ' (' + research.blockOrderSource + ')</div>' + phaseTable + dtcHtml + progressionHtml +
@@ -4980,8 +5029,8 @@ function endGame(){
         Math.round(research.totalTrackingLossMs/1000) + ' seconds; ' + research.pauseCount +
         ' pauses.</div><div>Download the CSV before leaving. Refreshing the page deletes the data.</div>'
       : '<b>研究紀錄已完成</b><br><div>訪次：' + pilotVisitLabel(research.visit,'zh') +
-        ' · FTHUE 分層 ' + research.stratum + ' · ' + (research.studyArm === 'traditional_control'
-          ? '傳統 remedial 對照組' : '主動對照／遊戲組') +
+        ' · FTHUE 分層 ' + research.stratum + ' · ' +
+        (PILOT_TEXT.zh.arms[research.studyArm] || research.studyArm) +
         '</div><div>本節情境：' + pilotScenarioName(research.scenarioId) +
         '</div><div>區組次序：' + research.blockOrder.split(',').join(' > ') +
         '（' + research.blockOrderSource + '）</div>' + phaseTable + dtcHtml + progressionHtml +
@@ -7070,7 +7119,7 @@ function cardsUpdate(){
   } else {
     cards.combo = 0;
     score = Math.max(0, score - 3);
-    grabCount++;
+    grabCount++; totalWrong++;
     updateHUD();
     triggerFeedback(false);
     cards.msg = '呢張係' + CARD_SUIT_NAME[c.suit] + '，要揀' + CARD_SUIT_NAME[cards.suit] + '。';
@@ -7296,7 +7345,7 @@ function laundryUpdate(){
       g.x = g.baseX; g.y = g.baseY;
       laundry.wrong++;
       score = Math.max(0, score - 3);
-      grabCount++;
+      grabCount++; totalWrong++;
       updateHUD();
       triggerFeedback(false);
       laundry.msg = b ? ('呢個係' + LAUNDRY_COLORS[b.color].name + '籃，' + g.name + '要放' +
@@ -7509,6 +7558,8 @@ function flowersUpdate(){
         flowerSnapToVase(existing, vase);
         flowers.sel = placedIdx;
         flowers.msg = '已調整' + existing.name + '的位置。';
+        correctCount++; grabCount++;
+        updateHUD();
       } else {
         const item = {
           id:'f' + (flowers.idSeq++), kind:p.kind, name:p.name,
@@ -7517,6 +7568,8 @@ function flowersUpdate(){
         flowerSnapToVase(item, vase);
         flowers.placed.push(item);
         flowers.sel = flowers.placed.length - 1;
+        correctCount++; grabCount++;
+        updateHUD();
         rewardSmall({
           achievement:'已插入 ' + p.name,
           detail:'花束現有 ' + flowers.placed.length + ' 枝',
@@ -7532,8 +7585,12 @@ function flowersUpdate(){
       existing.y = flowers.moveOrigin.y;
       existing.rot = flowers.moveOrigin.rot;
       flowers.msg = '請把花材放回花瓶口。';
+      totalWrong++; grabCount++;
+      updateHUD();
     } else if(p){
       flowers.msg = '未放到花瓶口，請再試一次。';
+      totalWrong++; grabCount++;
+      updateHUD();
       speakCantonese('請將花材放到花瓶口。');
     }
     if(p){
@@ -8209,7 +8266,7 @@ window.__qa = {
     research.visitKind = pilotVisitKind(research.visit);
     research.sessionNo = (PILOT_VISITS[research.visit] || PILOT_VISITS.s1).session;
     research.studyDate = opts.studyDate || '2026-08-10';
-    research.studyArm = opts.studyArm || 'active_control_game';
+    research.studyArm = opts.studyArm || 'game_intervention';
     research.affectedSide = opts.affectedSide || 'left';
     research.assistance = opts.assistance || 'none'; research.startedAt = new Date().toISOString();
     research.dualTaskLevel = opts.dualTaskLevel || 'simple_sort_motor';

@@ -112,6 +112,30 @@
 
 ---
 
+## 2026-08-10 Neuroscience Research Mode v5.0.0
+
+- Pilot Study 訓練節改為先由治療師按當日 FTHUE Level 4–7 篩選，再讓患者自行選擇五個動作需求相近的情境：插花、茶樓飲茶、衣物分類、啤牌及麻雀；煮飯不納入研究訓練。
+- T0、T1 及可選出院前追蹤評估固定使用「茶樓飲茶」，避免不同遊戲刺激影響前後比較。
+- 組別統一為「主動動作對照組」及「遊戲介入組」：前者記錄兩項各 15 分鐘傳統上肢動作活動；後者記錄一項 15 分鐘傳統活動加一節 15 分鐘遊戲。額外活動只在患者可耐受時記錄。
+- 加入中英文 Neuroscience Framework，清楚連結 motor learning、speed–accuracy control、cognitive-motor interference、movement variability 及 behavioural mechanism chain；明示沒有 EEG、fMRI 或 TMS 時不能直接聲稱神經可塑性。
+- 研究 CSV 新增螢幕對角線標準化準確度及路徑、完成時間標準差與變異係數，並保留正確／錯誤放置、grasp／pinch／release、追蹤中斷、認知正確率及反應時間等指標。
+- 修正啤牌、衣物分類及插花的結果計數，讓成功、嘗試及錯誤事件可納入研究摘要。
+
+### 最終 QA
+
+- `tools/checkjs.sh` 兩個 inline JavaScript block 通過，`git diff --check` 通過。
+- 標準 `web_game_playwright_client.js` 回歸測試成功，兩輪均進入研究模式並輸出可讀狀態。
+- 桌面 1440px、iPad 橫向 1180×820 及手機直向 390×844 完成視覺及水平溢出檢查；五個研究情境全部可選，煮飯未出現。
+- T0 評估只顯示已鎖定的「茶樓飲茶」；中文／英文切換及 Neuroscience Framework 內容均可正常顯示。
+- 沒有 console error、重複元素 ID，亦沒有 localStorage、sessionStorage 或 IndexedDB。
+
+### 研究限制
+
+- 這些數據支援可行性、接受程度、task-specific motor learning、movement control 及 cognitive-motor interference 的探索性分析，但不能單獨證明皮質重組或神經可塑性。
+- MediaPipe 指標屬 2D webcam-based movement estimates；正式收數據前仍須以目標中風長者完成 usability run，鎖定鏡頭距離、光線、門檻及研究版本。
+
+---
+
 ## 2026-08-08 試玩回饋修訂
 
 - 規則頁改為進入後自動播放廣東話，播放完畢自動開始；只保留「跳過規則，立即開始」，移除「讀出規則」及遊戲內喇叭按鈕。
