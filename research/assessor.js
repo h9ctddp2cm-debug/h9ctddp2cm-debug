@@ -38,7 +38,9 @@
     return {
       participantId: '', timepoint: 'T0', datetime: RC.nowLocalInput(), assessorCode: '', affectedSide: '',
       blindGroup: false, blindRecords: false, possibleUnblinding: false, breachReason: '', breachAssessor: '',
-      medicalStable: '', painPre: null, fatiguePre: null, readyToStart: '', pauseReason: '',
+      medicalStable: '', painPre: null, fatiguePre: null,
+      painMethodPre: '', painVerbalPre: '', fatigueMethodPre: '', fatigueVerbalPre: '',
+      readyToStart: '', pauseReason: '',
       fthue: { level: '', completed: '', unableReason: '', assistance: '', cues: '', trunk: '', painLimited: '', fatigueLimited: '' },
       grip: { dynId: '', handle: '', t1: '', t2: '', t3: '', unable: false, unableReason: '' },
       pinch: { type: '', t1: '', t2: '', t3: '', unable: false, unableReason: '' },
@@ -46,14 +48,16 @@
       setup: {
         fthue: '', motorTask: '', tool: '', foodSize: '', plateSize: '', camera: '',
         cognitiveTask: 'auditory_target', cognitiveDifficulty: '', duration: 120,
-        order: 'motor,cognitive,dual', locked: false, randomizedOnce: false
+        order: 'motor,cognitive,dual', feedbackOff: false,
+        locked: false, randomizedOnce: false
       },
       cond: {
         motor: { motor: blankMotor(), cog: null },
         cognitive: { motor: null, cog: blankCog() },
         dual: { motor: blankMotor(), cog: blankCog() }
       },
-      post: { painPost: null, fatiguePost: null, newSymptom: '', adverseEvent: '', aeDescription: '', completed: '' },
+      post: { painPost: null, fatiguePost: null, painMethodPost: '', painVerbalPost: '',
+        fatigueMethodPost: '', fatigueVerbalPost: '', newSymptom: '', adverseEvent: '', aeDescription: '', completed: '' },
       rest: new RC.RestLogger(),
       audit: [],
       locked: false,
@@ -106,10 +110,10 @@
   }
   function setScale(key, val) {
     if (S.locked) return alertLocked();
-    if (key === 'painPre') S.painPre = val;
-    else if (key === 'fatiguePre') S.fatiguePre = val;
-    else if (key === 'painPost') S.post.painPost = val;
-    else if (key === 'fatiguePost') S.post.fatiguePost = val;
+    if (key === 'painPre') { S.painPre = val; S.painMethodPre = 'numeric_0_10'; S.painVerbalPre = ''; }
+    else if (key === 'fatiguePre') { S.fatiguePre = val; S.fatigueMethodPre = 'numeric_0_10'; S.fatigueVerbalPre = ''; }
+    else if (key === 'painPost') { S.post.painPost = val; S.post.painMethodPost = 'numeric_0_10'; S.post.painVerbalPost = ''; }
+    else if (key === 'fatiguePost') { S.post.fatiguePost = val; S.post.fatigueMethodPost = 'numeric_0_10'; S.post.fatigueVerbalPost = ''; }
     markDirty();
     syncScales();
     renderAutoSummary();
@@ -128,6 +132,37 @@
         b.setAttribute('aria-pressed', String(Number(b.getAttribute('data-val')) === v));
       });
     });
+    $$('.rs-simple-rating').forEach(function (c) {
+      var key = c.getAttribute('data-simple-rating');
+      var v = verbalValue(key);
+      $$('button', c).forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-val') === v)); });
+    });
+  }
+  function verbalValue(key) {
+    if (key === 'painPre') return S.painMethodPre === 'unable' ? 'unable' : S.painVerbalPre;
+    if (key === 'fatiguePre') return S.fatigueMethodPre === 'unable' ? 'unable' : S.fatigueVerbalPre;
+    if (key === 'painPost') return S.post.painMethodPost === 'unable' ? 'unable' : S.post.painVerbalPost;
+    return S.post.fatigueMethodPost === 'unable' ? 'unable' : S.post.fatigueVerbalPost;
+  }
+  function setVerbal(key, val) {
+    if (S.locked) return alertLocked();
+    var method = val === 'unable' ? 'unable' : 'verbal_4';
+    if (key === 'painPre') { S.painMethodPre = method; S.painVerbalPre = val === 'unable' ? '' : val; S.painPre = null; }
+    else if (key === 'fatiguePre') { S.fatigueMethodPre = method; S.fatigueVerbalPre = val === 'unable' ? '' : val; S.fatiguePre = null; }
+    else if (key === 'painPost') { S.post.painMethodPost = method; S.post.painVerbalPost = val === 'unable' ? '' : val; S.post.painPost = null; }
+    else { S.post.fatigueMethodPost = method; S.post.fatigueVerbalPost = val === 'unable' ? '' : val; S.post.fatiguePost = null; }
+    markDirty(); syncScales(); renderAutoSummary();
+  }
+  function ratingComplete(key) {
+    if (key === 'painPre') return !!S.painMethodPre;
+    if (key === 'fatiguePre') return !!S.fatigueMethodPre;
+    if (key === 'painPost') return !!S.post.painMethodPost;
+    return !!S.post.fatigueMethodPost;
+  }
+  function ratingText(method, verbal, numeric) {
+    if (method === 'numeric_0_10') return numeric + '/10';
+    if (method === 'unable') return '未能可靠回答';
+    return ({ none: '無', mild: '少少', moderate: '幾', severe: '好' })[verbal] || '—';
   }
 
   /* ---------------- Y/N toggle buttons ---------------- */
@@ -220,6 +255,10 @@
       if (S.locked) { syncFields(); return alertLocked(); }
       S.pinch.unable = this.checked; renderPinch(); markDirty();
     });
+    $('#chkFeedbackOff').addEventListener('change', function () {
+      if (S.locked) { syncFields(); return alertLocked(); }
+      S.setup.feedbackOff = this.checked; markDirty();
+    });
 
     $$('[data-yn]').forEach(function (b) {
       b.addEventListener('click', function () {
@@ -233,6 +272,9 @@
 
     $$('[data-voice]').forEach(function (b) {
       b.addEventListener('click', function () { RC.speak(b.getAttribute('data-voice')); });
+    });
+    $$('.rs-simple-rating button').forEach(function (b) {
+      b.addEventListener('click', function () { setVerbal(b.parentNode.getAttribute('data-simple-rating'), b.getAttribute('data-val')); });
     });
   }
 
@@ -248,6 +290,7 @@
     $('#breachBlock').classList.toggle('rs-hidden', !S.possibleUnblinding);
     $('#chkGripUnable').checked = S.grip.unable;
     $('#chkPinchUnable').checked = S.pinch.unable;
+    $('#chkFeedbackOff').checked = S.setup.feedbackOff;
     syncScales(); syncYN(); renderGrip(); renderPinch(); renderSetupLock();
   }
 
@@ -292,8 +335,8 @@
     });
   }
   function currentContext() {
-    if (ui.step === 8) return 'Step 8 · ' + COND_LABEL[condOrder()[ui.condIndex]];
-    return 'Step ' + ui.step;
+    if (ui.step === 8) return '第 8 步 · ' + COND_LABEL[condOrder()[ui.condIndex]];
+    return '第 ' + ui.step + ' 步';
   }
   function startRest(context) {
     if (S.rest.active) return;
@@ -433,15 +476,15 @@
     if (ui.condIndex >= order.length) ui.condIndex = 0;
     var key = order[ui.condIndex];
     var slot = S.cond[key];
-    $('[data-testid="text-condition-progress"]').textContent = 'Condition ' + (ui.condIndex + 1) + ' of 3 — ' + COND_LABEL[key];
+    $('[data-testid="text-condition-progress"]').textContent = '第 ' + (ui.condIndex + 1) + ' 個，共 3 個：' + COND_LABEL[key];
     var instr = key === 'motor' ? INSTR_MOTOR : (key === 'dual' ? INSTR_DUAL : INSTR_COG);
     var html = '<div class="rs-note rs-note-info" data-testid="text-condition-instruction"><span class="rs-note-icon" aria-hidden="true">🗣</span><span><b>指示 Instruction：</b>' + RC.esc(instr) + '</span></div>' +
       '<div class="rs-inline">' +
-      '<button type="button" class="rs-btn rs-btn-secondary rs-btn-small" data-testid="button-condition-voice">🔊 播放指示 Voice</button>' +
-      '<button type="button" class="rs-btn rs-btn-small" data-testid="button-condition-start">▶ 開始計時 Start</button>' +
-      '<button type="button" class="rs-btn rs-btn-secondary rs-btn-small" data-testid="button-condition-stop">■ 完成計時 Stop</button>' +
-      '<button type="button" class="rs-btn rs-btn-rest rs-btn-small" data-testid="button-condition-rest">⏸ 開始休息 Rest</button>' +
-      '<span data-testid="text-condition-timer">Active time 00:00（已暫停 paused）</span></div>';
+      '<button type="button" class="rs-btn rs-btn-secondary rs-btn-small" data-testid="button-condition-voice">🔊 播放指示</button>' +
+      '<button type="button" class="rs-btn rs-btn-small" data-testid="button-condition-start">▶ 開始計時</button>' +
+      '<button type="button" class="rs-btn rs-btn-secondary rs-btn-small" data-testid="button-condition-stop">■ 完成計時</button>' +
+      '<button type="button" class="rs-btn rs-btn-rest rs-btn-small" data-testid="button-condition-rest">⏸ 患者需要休息</button>' +
+      '<span data-testid="text-condition-timer">測試時間 00:00（已暫停）</span></div>';
 
     if (slot.motor) {
       var m = slot.motor;
@@ -522,6 +565,11 @@
   }
   function motorDTC() { return RC.dtc(motorCPM('motor'), motorCPM('dual')); }
   function cogDTC() { return RC.dtc(cogAcc('cognitive'), cogAcc('dual')); }
+  function ratePerMin(value, sec) { return RC.perMinute(value, sec); }
+  function cogCorrect(c) {
+    if (!c || !RC.isNum(c.hits) || !RC.isNum(c.cr)) return null;
+    return Number(c.hits) + Number(c.cr);
+  }
   function renderDTC() {
     var sm = motorCPM('motor'), dm = motorCPM('dual');
     var md = motorDTC();
@@ -541,7 +589,8 @@
 
   /* ---------------- setup lock / T0-T1 ---------------- */
   var SETUP_LOCK_IDS = ['#selSetupFthue', '#selMotorTask', '#selSetupTool', '#selFoodSize', '#selPlateSize',
-    '#selCameraPosition', '#selCognitiveTask', '#selCognitiveDifficulty', '#inpConditionDuration', '#selConditionOrder'];
+    '#selCameraPosition', '#selCognitiveTask', '#selCognitiveDifficulty', '#inpConditionDuration',
+    '#selConditionOrder', '#chkFeedbackOff'];
   function renderSetupLock() {
     var locked = S.setup.locked;
     SETUP_LOCK_IDS.forEach(function (sel) { var e = $(sel); if (e) e.disabled = locked; });
@@ -561,6 +610,7 @@
   }
   function onTimepointChange() {
     $('#t1UploadBlock').classList.toggle('rs-hidden', S.timepoint !== 'T1');
+    $('#t1RetentionNote').classList.toggle('rs-hidden', S.timepoint !== 'T1');
     $('#adlT1Reminder') && $('#adlT1Reminder').classList.toggle('rs-hidden', S.timepoint !== 'T1');
     renderSetupLock();
   }
@@ -585,6 +635,9 @@
       cognitive_difficulty: S.setup.cognitiveDifficulty,
       condition_duration_sec: S.setup.duration,
       condition_order: S.setup.order,
+      corrective_feedback: S.setup.feedbackOff ? 'off' : 'on',
+      pain_rating_method: S.painMethodPre,
+      fatigue_rating_method: S.fatigueMethodPre,
       dynamometer_id: S.grip.dynId,
       handle_setting: S.grip.handle,
       test_record: RC.isTestId(S.participantId)
@@ -605,6 +658,7 @@
     S.setup.cognitiveDifficulty = obj.cognitive_difficulty || '';
     S.setup.duration = obj.condition_duration_sec || 120;
     S.setup.order = obj.condition_order || 'motor,cognitive,dual';
+    S.setup.feedbackOff = obj.corrective_feedback === 'off';
     S.grip.dynId = obj.dynamometer_id || S.grip.dynId;
     S.grip.handle = obj.handle_setting || S.grip.handle;
     S.setup.locked = true;
@@ -664,8 +718,12 @@
     add('unblinding_reason', S.breachReason, 'Reason for possible unblinding');
     add('unblinding_logged_by', S.breachAssessor, 'Assessor code logging the breach');
     add('medical_stability', S.medicalStable, 'Medically stable (yes/no)');
-    add('pain_pre', S.painPre, 'Pain 0-10 before assessment');
-    add('fatigue_pre', S.fatiguePre, 'Fatigue 0-10 before assessment');
+    add('pain_pre_method', S.painMethodPre, 'Pain response method: verbal_4 / numeric_0_10 / unable');
+    add('pain_pre_verbal', S.painVerbalPre, 'Pain verbal category');
+    add('pain_pre_0_10', S.painPre, 'Pain numeric score, blank unless numeric method used');
+    add('fatigue_pre_method', S.fatigueMethodPre, 'Fatigue response method');
+    add('fatigue_pre_verbal', S.fatigueVerbalPre, 'Fatigue verbal category');
+    add('fatigue_pre_0_10', S.fatiguePre, 'Fatigue numeric score, blank unless numeric method used');
     add('ready_to_start', S.readyToStart, 'Participant ready to start');
     add('pause_reason', S.pauseReason, 'Reason if assessment paused');
     add('fthue_level', S.fthue.level, 'Official FTHUE-HK level 1-7');
@@ -711,6 +769,7 @@
     add('setup_cognitive_difficulty', S.setup.cognitiveDifficulty, 'Cognitive presentation rate');
     add('setup_condition_duration_sec', S.setup.duration, 'Planned duration per condition (s)');
     add('setup_condition_order', S.setup.order, 'Locked condition order');
+    add('setup_corrective_feedback', S.setup.feedbackOff ? 'off' : 'on', 'Corrective feedback and score display during standardized assessment');
     add('setup_locked', S.setup.locked ? 'yes' : 'no', 'Setup locked');
     add('t0_settings_imported', S.t0Import ? 'yes' : 'no', 'T1 loaded settings from the T0 settings file');
     ['motor', 'cognitive', 'dual'].forEach(function (k) {
@@ -723,12 +782,17 @@
         add(k + '_assistance', slot.motor.assistance, COND_LABEL[k] + ' — assistance');
         add(k + '_trunk_compensation', slot.motor.trunk, COND_LABEL[k] + ' — trunk compensation');
         add(k + '_correct_per_min', motorCPM(k), COND_LABEL[k] + ' — auto correct/min');
+        add(k + '_wrong_per_min', ratePerMin(slot.motor.wrong, slot.motor.activeSec), COND_LABEL[k] + ' — auto wrong/min');
+        add(k + '_drops_per_min', ratePerMin(slot.motor.drops, slot.motor.activeSec), COND_LABEL[k] + ' — auto drops/min');
       }
       if (slot.cog) {
         add(k + '_hits', nn(slot.cog.hits), COND_LABEL[k] + ' — hits');
         add(k + '_misses', nn(slot.cog.misses), COND_LABEL[k] + ' — misses');
         add(k + '_false_alarms', nn(slot.cog.fa), COND_LABEL[k] + ' — false alarms');
         add(k + '_correct_rejections', nn(slot.cog.cr), COND_LABEL[k] + ' — correct rejections');
+        add(k + '_cognitive_correct_responses', cogCorrect(slot.cog), COND_LABEL[k] + ' — hits plus correct rejections');
+        add(k + '_cognitive_incorrect_responses', nn(slot.cog.fa), COND_LABEL[k] + ' — false alarms');
+        add(k + '_cognitive_missed_responses', nn(slot.cog.misses), COND_LABEL[k] + ' — misses');
         add(k + '_accuracy_pct', cogAcc(k), COND_LABEL[k] + ' — auto accuracy %');
       }
     });
@@ -740,10 +804,14 @@
     add('rest_count', S.rest.count(), 'Number of participant-responsive rests');
     add('rest_total_sec', S.rest.totalSec(), 'Total rest duration (s)');
     add('active_time_total_sec', activeTimeTotal(), 'Total active condition time (s)');
-    add('pain_post', S.post.painPost, 'Pain 0-10 after assessment');
-    add('fatigue_post', S.post.fatiguePost, 'Fatigue 0-10 after assessment');
-    add('pain_delta', delta(S.painPre, S.post.painPost), 'Auto pain delta (post - pre)');
-    add('fatigue_delta', delta(S.fatiguePre, S.post.fatiguePost), 'Auto fatigue delta (post - pre)');
+    add('pain_post_method', S.post.painMethodPost, 'Pain response method after assessment');
+    add('pain_post_verbal', S.post.painVerbalPost, 'Pain verbal category after assessment');
+    add('pain_post_0_10', S.post.painPost, 'Pain numeric score after assessment');
+    add('fatigue_post_method', S.post.fatigueMethodPost, 'Fatigue response method after assessment');
+    add('fatigue_post_verbal', S.post.fatigueVerbalPost, 'Fatigue verbal category after assessment');
+    add('fatigue_post_0_10', S.post.fatiguePost, 'Fatigue numeric score after assessment');
+    add('pain_delta_0_10', S.painMethodPre === 'numeric_0_10' && S.post.painMethodPost === 'numeric_0_10' ? delta(S.painPre, S.post.painPost) : '', 'Numeric delta only when both use 0-10');
+    add('fatigue_delta_0_10', S.fatigueMethodPre === 'numeric_0_10' && S.post.fatigueMethodPost === 'numeric_0_10' ? delta(S.fatiguePre, S.post.fatiguePost) : '', 'Numeric delta only when both use 0-10');
     add('new_symptom', S.post.newSymptom, 'New symptom reported');
     add('adverse_event', S.post.adverseEvent, 'Adverse event occurred');
     add('adverse_event_description', S.post.aeDescription, 'Adverse event description');
@@ -767,10 +835,11 @@
     if (!S.datetime) err('缺少評估日期及時間 Missing assessment date-time。');
     if (!S.blindGroup || !S.blindRecords) warn('盲法確認未全部勾選 Blinding confirmations incomplete。');
     if (S.possibleUnblinding && (!S.breachReason || !S.breachAssessor)) err('已標示可能解除盲法，必須填寫原因及評估員代碼。');
-    if (S.painPre === null) err('缺少評估前疼痛評分 Missing pre-assessment pain。');
-    if (S.fatiguePre === null) err('缺少評估前疲勞評分 Missing pre-assessment fatigue。');
-    if (S.post.painPost === null) err('缺少評估後疼痛評分 Missing post-assessment pain。');
-    if (S.post.fatiguePost === null) err('缺少評估後疲勞評分 Missing post-assessment fatigue。');
+    if (!ratingComplete('painPre')) err('缺少評估前疼痛回答。');
+    if (!ratingComplete('fatiguePre')) err('缺少評估前疲勞回答。');
+    if (!ratingComplete('painPost')) err('缺少評估後疼痛回答。');
+    if (!ratingComplete('fatiguePost')) err('缺少評估後疲勞回答。');
+    if (S.painMethodPre === 'unable' || S.fatigueMethodPre === 'unable' || S.post.painMethodPost === 'unable' || S.post.fatigueMethodPost === 'unable') warn('病人有項目未能可靠回答；已保留為 missing，不會當作 0。');
     [['painPre', S.painPre], ['fatiguePre', S.fatiguePre], ['painPost', S.post.painPost], ['fatiguePost', S.post.fatiguePost]]
       .forEach(function (p) { if (p[1] !== null && (p[1] < 0 || p[1] > 10)) err(p[0] + ' 超出 0–10 範圍 out of range。'); });
     if (!S.fthue.level) warn('缺少 FTHUE-HK level。');
@@ -789,6 +858,7 @@
       if (!S.setup[k]) warn('標準化設定缺少欄位 Missing setup field：' + k + '。');
     });
     if (!S.setup.locked) warn('標準化設定尚未鎖定 Setup not locked。');
+    if (!S.setup.feedbackOff) warn('標準化測試應關閉得分及更正提示。');
     // T0/T1 consistency
     if (S.timepoint === 'T1') {
       if (!S.t0Import) err('T1 必須上載 T0 設定檔 T1 requires the T0 settings file。');
@@ -799,6 +869,9 @@
         if (t.condition_order && t.condition_order !== S.setup.order) err('T0／T1 condition order 不一致 order mismatch。');
         if (t.cognitive_difficulty && t.cognitive_difficulty !== S.setup.cognitiveDifficulty) err('T0／T1 cognitive difficulty 不一致 mismatch。');
         if (t.affected_side && t.affected_side !== S.affectedSide) err('T0／T1 患側不一致 affected side mismatch。');
+        if (t.corrective_feedback && t.corrective_feedback !== (S.setup.feedbackOff ? 'off' : 'on')) err('T0／T1 corrective feedback 設定不一致。');
+        if (t.pain_rating_method && S.painMethodPre && t.pain_rating_method !== S.painMethodPre) warn('T1 疼痛問法與 T0 不同；如病人能力許可，請沿用相同問法。');
+        if (t.fatigue_rating_method && S.fatigueMethodPre && t.fatigue_rating_method !== S.fatigueMethodPre) warn('T1 疲勞問法與 T0 不同；如病人能力許可，請沿用相同問法。');
       }
     }
     // condition data
@@ -860,7 +933,7 @@
       if (el.id === 'selTestPreset') return;
       el.disabled = on;
     });
-    $$('#assessorShell [data-yn], #assessorShell .rs-scale button').forEach(function (b) { b.disabled = on; });
+    $$('#assessorShell [data-yn], #assessorShell .rs-scale button, #assessorShell .rs-simple-rating button').forEach(function (b) { b.disabled = on; });
   }
   function populateCorrectionFields() {
     var sel = $('#selCorrectionField');
@@ -903,9 +976,12 @@
   function renderAutoSummary() {
     var el = $('[data-testid="text-auto-summary"]');
     if (!el) return;
-    var pd = delta(S.painPre, S.post.painPost), fd = delta(S.fatiguePre, S.post.fatiguePost);
-    el.textContent = '自動摘要 Auto summary：疼痛變化 pain Δ ' + (pd === null ? '—' : pd) +
-      ' · 疲勞變化 fatigue Δ ' + (fd === null ? '—' : fd) +
+    var painPreText = ratingText(S.painMethodPre, S.painVerbalPre, S.painPre);
+    var painPostText = ratingText(S.post.painMethodPost, S.post.painVerbalPost, S.post.painPost);
+    var fatiguePreText = ratingText(S.fatigueMethodPre, S.fatigueVerbalPre, S.fatiguePre);
+    var fatiguePostText = ratingText(S.post.fatigueMethodPost, S.post.fatigueVerbalPost, S.post.fatiguePost);
+    el.textContent = '自動摘要：疼痛 ' + painPreText + ' → ' + painPostText +
+      ' · 疲勞 ' + fatiguePreText + ' → ' + fatiguePostText +
       ' · Active time ' + (activeTimeTotal() === null ? '—' : activeTimeTotal() + ' 秒') +
       ' · 休息 ' + S.rest.count() + ' 次 / ' + S.rest.totalSec() + ' 秒';
   }
@@ -942,15 +1018,20 @@
   }
   function downloadConditions() {
     var rows = [['participant_id', 'timepoint', 'condition_index', 'condition', 'instruction_given',
-      'correct', 'wrong', 'drops', 'active_sec', 'assistance', 'trunk_compensation', 'correct_per_min',
-      'hits', 'misses', 'false_alarms', 'correct_rejections', 'accuracy_pct', 'test_record']];
+      'correct', 'wrong', 'drops', 'active_sec', 'assistance', 'trunk_compensation',
+      'correct_per_min', 'wrong_per_min', 'drops_per_min',
+      'hits', 'misses', 'false_alarms', 'correct_rejections',
+      'cognitive_correct_responses', 'cognitive_incorrect_responses',
+      'cognitive_missed_responses', 'accuracy_pct', 'test_record']];
     condOrder().forEach(function (k, i) {
       var slot = S.cond[k], m = slot.motor, c = slot.cog;
       rows.push([S.participantId, S.timepoint, i + 1, k,
         k === 'motor' ? INSTR_MOTOR : (k === 'dual' ? INSTR_DUAL : INSTR_COG),
         m ? nn(m.correct) : '', m ? nn(m.wrong) : '', m ? nn(m.drops) : '', m ? nn(m.activeSec) : '',
         m ? m.assistance : '', m ? m.trunk : '', m ? motorCPM(k) : '',
-        c ? nn(c.hits) : '', c ? nn(c.misses) : '', c ? nn(c.fa) : '', c ? nn(c.cr) : '', c ? cogAcc(k) : '',
+        m ? ratePerMin(m.wrong, m.activeSec) : '', m ? ratePerMin(m.drops, m.activeSec) : '',
+        c ? nn(c.hits) : '', c ? nn(c.misses) : '', c ? nn(c.fa) : '', c ? nn(c.cr) : '',
+        c ? cogCorrect(c) : '', c ? nn(c.fa) : '', c ? nn(c.misses) : '', c ? cogAcc(k) : '',
         RC.isTestId(S.participantId) ? 'TEST' : '']);
     });
     var name = baseName() + '_conditions.csv';
@@ -1013,7 +1094,7 @@
     }
     if (ui.step === 2) {
       if (S.medicalStable === '' || S.readyToStart === '') { showBlocker('請完成安全確認 Complete safety questions。'); return false; }
-      if (S.painPre === null || S.fatiguePre === null) { showBlocker('請完成疼痛及疲勞評分 Pain and fatigue are required。'); return false; }
+      if (!ratingComplete('painPre') || !ratingComplete('fatiguePre')) { showBlocker('請各選一個疼痛及疲勞答案；答不到可選「未能可靠回答」。'); return false; }
       if (S.medicalStable === 'no' || S.readyToStart === 'no') {
         if (!S.pauseReason) { showBlocker('暫停評估：必須填寫原因 Pause reason required。'); return false; }
         showBlocker('暫停評估 Assessment paused — 不可繼續。已記錄原因；如情況改善可重新確認安全狀態。');
@@ -1043,7 +1124,8 @@
     S.affectedSide = 'right';
     S.blindGroup = true; S.blindRecords = true;
     S.medicalStable = 'yes'; S.readyToStart = 'yes';
-    S.painPre = 2; S.fatiguePre = 3;
+    S.painMethodPre = 'verbal_4'; S.painVerbalPre = 'mild'; S.painPre = null;
+    S.fatigueMethodPre = 'verbal_4'; S.fatigueVerbalPre = 'mild'; S.fatiguePre = null;
     S.fthue = { level: '5', completed: 'yes', unableReason: '', assistance: 'none', cues: '2', trunk: 'mild', painLimited: 'no', fatigueLimited: 'no' };
     S.grip = { dynId: 'DYN-01', handle: '2', t1: '10', t2: '12', t3: '11', unable: false, unableReason: '' };
     S.pinch = { type: 'three_jaw', t1: '2', t2: '3', t3: '4', unable: false, unableReason: '' };
@@ -1053,13 +1135,14 @@
     S.setup = {
       fthue: '5', motorTask: 'grasp_release', tool: 'chopsticks', foodSize: 'medium', plateSize: 'medium',
       camera: 'front_table', cognitiveTask: 'auditory_target', cognitiveDifficulty: 'standard', duration: 120,
-      order: 'motor,cognitive,dual', locked: true, randomizedOnce: true
+      order: 'motor,cognitive,dual', feedbackOff: true, locked: true, randomizedOnce: true
     };
     S.cond.motor.motor = { correct: '20', wrong: '2', drops: '1', activeSec: '120', assistance: 'none', trunk: 'none' };
     S.cond.cognitive.cog = { hits: '9', misses: '1', fa: '2', cr: '18' };
     S.cond.dual.motor = { correct: '15', wrong: '3', drops: '2', activeSec: '120', assistance: 'verbal', trunk: 'mild' };
     S.cond.dual.cog = { hits: '7', misses: '3', fa: '4', cr: '16' };
-    S.post = { painPost: 4, fatiguePost: 6, newSymptom: 'no', adverseEvent: 'no', aeDescription: '', completed: 'yes' };
+    S.post = { painPost: null, fatiguePost: null, painMethodPost: 'verbal_4', painVerbalPost: 'moderate',
+      fatigueMethodPost: 'verbal_4', fatigueVerbalPost: 'moderate', newSymptom: 'no', adverseEvent: 'no', aeDescription: '', completed: 'yes' };
 
     if (code === 'TEST001') {
       // complete T0 + a matching T1 import available via downloaded settings
@@ -1079,7 +1162,7 @@
       S.cond.cognitive.cog = { hits: '0', misses: '10', fa: '0', cr: '0' };
       S.cond.motor.motor.correct = '0';
       S.cond.motor.motor.activeSec = '20';
-      S.post.painPost = null;
+      S.post.painMethodPost = ''; S.post.painVerbalPost = ''; S.post.painPost = null;
     }
     S.touched = true;
     syncFields(); renderRest(); renderRestLog(); renderAdl(); renderCondition(); renderAutoSummary(); renderDownloadStatus();

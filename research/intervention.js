@@ -22,7 +22,8 @@
     fthue: '', affectedSide: '', deliveryType: '', scenario: '', tool: '', difficulty: '',
     conventional: '', plannedMin: 15, activeSec: '', correct: '', wrong: '', drops: '',
     assistance: '', trunk: '', painPre: '', painPost: '', fatiguePre: '', fatiguePost: '',
-    techFailure: '', techDetail: '', adverseEvent: '', aeDetail: '', deviation: '', deviationDetail: '',
+    patientDifficulty: '', patientMotivation: '', acceptability: '', movementQuality: '', setupMin: '', therapistComment: '',
+    techFailure: '', interrupted: '', techDetail: '', adverseEvent: '', aeSerious: '', aeRelated: '', aeDetail: '', deviation: '', deviationDetail: '',
     completion: '', fidelity: {}
   };
   var rest = new RC.RestLogger();
@@ -30,6 +31,8 @@
   var dirty = false;
   var restTick = null;
   var timer = { running: false, startMs: 0, acc: 0 };
+  var uiStep = 1;
+  var STEP_NAMES = ['病人及節數', '今節數據', '完成及下載'];
 
   var MAP = [
     ['#inpParticipantId', 'participantId'], ['#selGroup', 'group'], ['#selSession', 'session'],
@@ -39,8 +42,12 @@
     ['#inpPlannedMin', 'plannedMin'], ['#inpActiveSec', 'activeSec'], ['#inpCorrect', 'correct'],
     ['#inpWrong', 'wrong'], ['#inpDrops', 'drops'], ['#selAssistance', 'assistance'], ['#selTrunk', 'trunk'],
     ['#inpPainPre', 'painPre'], ['#inpPainPost', 'painPost'], ['#inpFatiguePre', 'fatiguePre'],
-    ['#inpFatiguePost', 'fatiguePost'], ['#selTechFailure', 'techFailure'], ['#inpTechDetail', 'techDetail'],
-    ['#selAdverseEvent', 'adverseEvent'], ['#inpAeDetail', 'aeDetail'], ['#selDeviation', 'deviation'],
+      ['#inpFatiguePost', 'fatiguePost'], ['#selPatientDifficulty', 'patientDifficulty'],
+    ['#selPatientMotivation', 'patientMotivation'], ['#selAcceptability', 'acceptability'], ['#selMovementQuality', 'movementQuality'],
+    ['#inpSetupMin', 'setupMin'], ['#inpTherapistComment', 'therapistComment'],
+    ['#selTechFailure', 'techFailure'], ['#selInterrupted', 'interrupted'], ['#inpTechDetail', 'techDetail'],
+    ['#selAdverseEvent', 'adverseEvent'], ['#selAeSerious', 'aeSerious'], ['#selAeRelated', 'aeRelated'],
+    ['#inpAeDetail', 'aeDetail'], ['#selDeviation', 'deviation'],
     ['#inpDeviationDetail', 'deviationDetail'], ['#selCompletion', 'completion']
   ];
 
@@ -74,7 +81,63 @@
     $('[data-testid="button-add-session"]').addEventListener('click', addSession);
     $('[data-testid="button-download-sessions"]').addEventListener('click', downloadSessions);
     $('[data-testid="button-download-rest-log"]').addEventListener('click', downloadRestLog);
+    $('#btnMarkNormal').addEventListener('click', markNormalSession);
     $('#selTestPreset').addEventListener('change', function () { applyPreset(this.value); });
+    $('#btnInterventionPrev').addEventListener('click', function () { gotoStep(uiStep - 1); });
+    $('#btnInterventionNext').addEventListener('click', function () {
+      if (validateStep(uiStep)) gotoStep(uiStep + 1);
+    });
+    $('#btnFinishDownload').addEventListener('click', function () {
+      if (addSession()) downloadSessions();
+    });
+  }
+  function showBlocker(msg) {
+    $('#interventionBlocker').innerHTML = msg ? '<div class="rs-note rs-note-danger"><span class="rs-note-icon">✖</span><span>' + RC.esc(msg) + '</span></div>' : '';
+  }
+  function validateStep(step) {
+    showBlocker('');
+    if (step === 1) {
+      var id = RC.validateId(F.participantId);
+      if (!id.ok) { showBlocker(id.msg); return false; }
+      if (!F.group || !F.fthue || !F.affectedSide || !F.therapistCode || !F.datetime) {
+        showBlocker('請填完這頁'); return false;
+      }
+    }
+    if (step === 2) {
+      if (!F.deliveryType) { showBlocker('請選擇訓練'); return false; }
+      if ((F.deliveryType === 'game' || F.deliveryType === 'mixed') && (!F.scenario || !F.tool || !F.difficulty)) {
+        showBlocker('請選擇遊戲、工具和難度'); return false;
+      }
+    }
+    return true;
+  }
+  function gotoStep(next) {
+    uiStep = Math.max(1, Math.min(3, next));
+    $$('.rs-intervention-step').forEach(function (el) {
+      el.classList.toggle('rs-hidden', Number(el.getAttribute('data-intervention-step')) !== uiStep);
+    });
+    $('#interventionProgressLabel').textContent = uiStep + ' / 3　' + STEP_NAMES[uiStep - 1];
+    $('#interventionProgressBar').style.width = (uiStep * 100 / 3) + '%';
+    $('#btnInterventionPrev').disabled = uiStep === 1;
+    $('#btnInterventionNext').classList.toggle('rs-hidden', uiStep === 3);
+    showBlocker('');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  function markNormalSession() {
+    F.techFailure = 'no';
+    F.interrupted = 'no';
+    F.techDetail = '';
+    F.adverseEvent = 'no';
+    F.aeSerious = 'no';
+    F.aeRelated = 'no';
+    F.aeDetail = '';
+    F.deviation = 'no';
+    F.deviationDetail = '';
+    F.completion = 'yes';
+    FIDELITY.forEach(function (f) { F.fidelity[f[0]] = true; });
+    sync();
+    markDirty();
+    feedback('已記錄「今節一切正常」。如情況有變，可展開「有問題或未能完成時才填」修改。');
   }
   function validateId() {
     var r = RC.validateId(F.participantId);
@@ -136,7 +199,7 @@
   function renderRest() {
     var t = rest.active ? Math.round((Date.now() - rest.active.startMs) / 1000) : 0;
     $('#restTimer').textContent = '休息中 Resting ' + RC.mmss(t);
-    $('#restSummary').textContent = '休息次數 ' + rest.count() + ' · 總休息時間 ' + RC.mmss(rest.totalSec());
+    $('#restSummary').textContent = '休息 ' + rest.count() + ' 次 · ' + RC.mmss(rest.totalSec());
   }
 
   /* session timer */
@@ -165,14 +228,21 @@
   setInterval(function () { if (timer.running) renderTimer(); }, 1000);
 
   function renderAuto() {
-    var pd = (RC.isNum(F.painPre) && RC.isNum(F.painPost)) ? (Number(F.painPost) - Number(F.painPre)) : null;
-    var fd = (RC.isNum(F.fatiguePre) && RC.isNum(F.fatiguePost)) ? (Number(F.fatiguePost) - Number(F.fatiguePre)) : null;
     var cpm = RC.perMinute(F.correct, F.activeSec);
     $('[data-testid="text-session-auto"]').textContent =
-      '自動摘要：active ' + (RC.isNum(F.activeSec) ? F.activeSec + ' 秒' : '—') +
-      ' · rest ' + rest.totalSec() + ' 秒（' + rest.count() + ' 次）' +
-      ' · 正確／分鐘 ' + (cpm === null ? '—' : cpm) +
-      ' · 疼痛 Δ ' + (pd === null ? '—' : pd) + ' · 疲勞 Δ ' + (fd === null ? '—' : fd);
+      '訓練 ' + (RC.isNum(F.activeSec) ? F.activeSec + ' 秒' : '—') +
+      ' · 休息 ' + rest.totalSec() + ' 秒' +
+      ' · 正確／分鐘 ' + (cpm === null ? '—' : cpm);
+  }
+  function symptomText(v) {
+    return ({ none: '無', mild: '少少', moderate: '幾', severe: '好', unable: '未能可靠回答' })[v] || '—';
+  }
+  function symptomOrdinal(v) {
+    return ({ none: 0, mild: 1, moderate: 2, severe: 3 })[v];
+  }
+  function symptomDelta(pre, post) {
+    var a = symptomOrdinal(pre), b = symptomOrdinal(post);
+    return a === undefined || b === undefined ? '' : b - a;
   }
 
   /* sessions list + export */
@@ -194,18 +264,32 @@
       difficulty_track: F.difficulty,
       conventional_activities: F.conventional,
       planned_min: F.plannedMin,
+      planned_training_sec: RC.isNum(F.plannedMin) ? Number(F.plannedMin) * 60 : '',
       active_training_sec: F.activeSec,
+      training_delivered_pct: RC.isNum(F.plannedMin) && Number(F.plannedMin) > 0 && RC.isNum(F.activeSec)
+        ? Math.round(Number(F.activeSec) / (Number(F.plannedMin) * 60) * 1000) / 10 : '',
+      session_interrupted: F.interrupted,
       rest_count: rest.count(),
       rest_total_sec: rest.totalSec(),
       correct: F.correct, wrong: F.wrong, drops: F.drops,
       correct_per_min: RC.perMinute(F.correct, F.activeSec),
       assistance: F.assistance, trunk_compensation: F.trunk,
+      symptom_rating_method: 'verbal_4_or_unable',
       pain_pre: F.painPre, pain_post: F.painPost,
-      pain_delta: (RC.isNum(F.painPre) && RC.isNum(F.painPost)) ? Number(F.painPost) - Number(F.painPre) : '',
+      pain_delta: symptomDelta(F.painPre, F.painPost),
+      pain_increased: symptomDelta(F.painPre, F.painPost) === '' ? '' : (symptomDelta(F.painPre, F.painPost) > 0 ? 'yes' : 'no'),
       fatigue_pre: F.fatiguePre, fatigue_post: F.fatiguePost,
-      fatigue_delta: (RC.isNum(F.fatiguePre) && RC.isNum(F.fatiguePost)) ? Number(F.fatiguePost) - Number(F.fatiguePre) : '',
+      fatigue_delta: symptomDelta(F.fatiguePre, F.fatiguePost),
+      fatigue_increased: symptomDelta(F.fatiguePre, F.fatiguePost) === '' ? '' : (symptomDelta(F.fatiguePre, F.fatiguePost) > 0 ? 'yes' : 'no'),
+      patient_perceived_difficulty: F.patientDifficulty,
+      patient_wants_continue: F.patientMotivation,
+      patient_acceptability_1_5: F.acceptability,
+      observed_movement_quality: F.movementQuality,
+      therapist_setup_min: F.setupMin,
+      therapist_comment: F.therapistComment,
       technical_failure: F.techFailure, technical_detail: F.techDetail,
-      adverse_event: F.adverseEvent, adverse_event_detail: F.aeDetail,
+      adverse_event: F.adverseEvent, adverse_event_serious: F.aeSerious,
+      adverse_event_related: F.aeRelated, adverse_event_detail: F.aeDetail,
       protocol_deviation: F.deviation, deviation_detail: F.deviationDetail,
       session_completion: F.completion,
       fidelity_score: fidelityScore(),
@@ -217,12 +301,13 @@
   }
   function addSession() {
     var r = RC.validateId(F.participantId);
-    if (!r.ok) { feedback('未能加入：' + RC.esc(r.msg), 'danger'); return; }
-    if (!F.group) { feedback('未能加入：請選擇研究組別。', 'danger'); return; }
+    if (!r.ok) { feedback('未能加入：' + RC.esc(r.msg), 'danger'); return false; }
+    if (!F.group) { feedback('未能加入：請選擇組別。', 'danger'); return false; }
     sessions.push(rowObject());
     renderSessions();
     dirty = true; renderStatus();
     feedback('已加入 Session ' + RC.esc(F.session) + '（記憶體）。請記得下載 CSV。');
+    return true;
   }
   function renderSessions() {
     $('#sessionBody').innerHTML = sessions.length ? sessions.map(function (s, i) {
@@ -269,8 +354,12 @@
     F.difficulty = 'simple_sort_motor'; F.conventional = 'Peg board / 15 / 60';
     F.activeSec = 780; F.correct = 24; F.wrong = 3; F.drops = 1;
     F.assistance = 'verbal'; F.trunk = 'mild';
-    F.painPre = 2; F.painPost = 3; F.fatiguePre = 3; F.fatiguePost = 6;
-    F.techFailure = 'no'; F.adverseEvent = 'no'; F.deviation = 'no'; F.completion = 'yes';
+    F.painPre = 'mild'; F.painPost = 'mild'; F.fatiguePre = 'mild'; F.fatiguePost = 'moderate';
+    F.patientDifficulty = 'just_right'; F.patientMotivation = 'yes'; F.movementQuality = 'better';
+    F.acceptability = '4';
+    F.setupMin = '3'; F.therapistComment = '操作順暢';
+    F.techFailure = 'no'; F.interrupted = 'no'; F.adverseEvent = 'no'; F.aeSerious = 'no'; F.aeRelated = 'no';
+    F.deviation = 'no'; F.completion = 'yes';
     FIDELITY.forEach(function (f) { F.fidelity[f[0]] = true; });
     if (code === 'TEST002') {
       var r1 = rest.start('Fatigue 疲勞', 'Session 1'); r1.startMs = Date.now() - 110000; rest.resume();
@@ -279,6 +368,7 @@
     if (code === 'TEST003') {
       F.group = 'conventional_control'; F.deliveryType = 'conventional'; F.scenario = '';
       F.correct = ''; F.wrong = ''; F.painPost = ''; F.completion = 'partial';
+      F.interrupted = 'yes'; F.acceptability = '';
       F.deviation = 'yes'; F.deviationDetail = '節次縮短至 9 分鐘（參加者疲勞）。';
       FIDELITY.forEach(function (f, i) { F.fidelity[f[0]] = i < 4; });
     }
@@ -293,8 +383,9 @@
     sync();
     renderSessions();
     renderStatus();
+    gotoStep(1);
     RC.installUnloadGuard(function () { return dirty; });
   }
   document.addEventListener('DOMContentLoaded', init);
-  window.__interventionQA = { form: function () { return F; }, sessions: function () { return sessions; }, row: rowObject };
+  window.__interventionQA = { form: function () { return F; }, sessions: function () { return sessions; }, row: rowObject, step: function () { return uiStep; } };
 })();
