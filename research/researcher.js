@@ -7,7 +7,7 @@
   'use strict';
   var $ = RC.$, $$ = RC.$$;
 
-  /* SHA-256 of the documented temporary default passcode `YCH-PILOT-2026`.
+  /* SHA-256 of the temporary researcher passcode.
      Operational blinding barrier only — not production authentication.
      Must be changed before formal use. */
   var PASSCODE_HASH = '2c358df2c25f9bb565cdb7d4f8f50336250ba7280b30b1f93919bf3d4154490a';

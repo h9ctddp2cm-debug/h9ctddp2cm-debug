@@ -396,7 +396,7 @@
 
 - Assessor bundle 不載入、不參照、不 fetch、不儲存任何 allocation／group／session-training 資料；QA 實測 assessor 頁面對 `intervention.js`／`researcher.js` 的網絡請求為 0。
 - Assessor DOM／JS state／匯出檔案的違禁字詞掃描結果為空（遊戲介入組、對照組、conventional、adherence、fidelity、Session 1、chosen_scenario、difficulty_track 等）。唯一出現「研究組別」的地方是 protocol 指定的盲法確認句「我不知道participant的研究組別」。
-- 研究員頁使用 client-side passcode barrier，只儲存 SHA-256 雜湊（Web Crypto 比對）。**臨時預設通行碼：`YCH-PILOT-2026`**。頁面已顯示警告：此為 operational blinding barrier，並非 production authentication，正式使用前必須更改。Assessor bundle 完全沒有此 passcode。
+- 研究員頁使用 client-side passcode barrier，只儲存 SHA-256 雜湊（Web Crypto 比對）。臨時預設通行碼只在交付訊息中提供，不寫入網站檔案。頁面已顯示警告：此為 operational blinding barrier，並非 production authentication，正式使用前必須更改。Assessor bundle 完全沒有此 passcode。
 
 ### 評估員 wizard（Step 1–10）
 
@@ -434,7 +434,7 @@
 - TEST003：捏力 unable → mean 及 trial 全部空白（非 0）；握力缺一次 → 平均值空白；single 表現為 0 → 兩個 DTC 顯示「不能計算，請報告raw scores」。
 - 下載實測：5 個檔案成功下載，assessment CSV 117 欄、含 UTF-8 BOM，settings JSON 21 個欄位可重新解析並於 T1 載入及鎖定；ID 不符時顯示明確錯誤及預期檔名。
 - 流程實測：ID 格式警告、breach 必填、暫停評估封鎖、休息原因必填、休息期間 condition 計時暫停、ADL 三個小畫面、Condition 1→3 依序、鎖定後輸入停用並可 append 更正（原始值保留）。
-- 研究員實測：錯誤 passcode 被拒、`YCH-PILOT-2026` 可解鎖、序列 6A／6B 平衡且同 seed 可重現、指派後仍隱藏、按揭示才顯示、匯入評估 CSV 後進度表更新、匯出資料集不含 allocation 欄位。
+- 研究員實測：錯誤 passcode 被拒、臨時通行碼可解鎖、序列 6A／6B 平衡且同 seed 可重現、指派後仍隱藏、按揭示才顯示、匯入評估 CSV 後進度表更新、匯出資料集不含 allocation 欄位。
 - beforeunload 實測：有未下載資料時彈出瀏覽器離開確認。
 - 版面：1440×900 及 1180×820 四頁均無水平溢出、無 console error、所有互動元素 ≥44px；瀏覽器儲存 API 使用量為 0（localStorage／sessionStorage／cookie 皆空）。
 - 標準 browser-game client 回歸測試通過（`qa/blinded-pilot/`），主頁遊戲、`?role=intervention` 深層連結及情境選擇正常。
@@ -446,3 +446,11 @@
 - Blinding 依賴使用流程（評估員只用 assessor 頁面、不接觸 allocation.csv），技術上無法防止人為在同一部裝置開啟研究員頁面。
 - ADL 及 FTHUE-HK 只記錄醫院正式評估結果，系統不提供評分規則，亦不可取代正式評估。
 - 本系統為 pilot／research prototype，並非醫療儀器，不能保證任何臨床療效或課程評分。
+
+### 交付前補充 QA 與修正
+
+- 修正 `/research` clean URL 的 base path、CSS 及三個角色入口連結；`/research` 與 `/research/index.html` 均可正常顯示並開啟正確頁面。
+- 研究入口卡片取消瀏覽器預設底線，維持清晰的醫院系統視覺層級。
+- 研究員頁不再顯示或記錄臨時通行碼明文；網站檔案只保留 SHA-256 雜湊值，通行碼只於交付訊息提供。
+- 再次完成 research JavaScript 語法、主頁 inline JavaScript、實際瀏覽器儲存 API、assessor 禁止披露字詞、assessor script imports 及通行碼明文掃描，全部通過。
+- 以標準 browser-game Playwright client 再測 FTHUE Level 4–5 遊戲庫；六個情境、圖片、難度標籤及返回主頁按鈕正常，`render_game_to_text` 回報的 level、mode、duration 及 activities 與畫面一致。
