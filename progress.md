@@ -378,3 +378,71 @@
 - 研究紀錄只存在當次頁面記憶體，重新整理前必須下載 CSV。
 - MediaPipe 數據是螢幕互動及追蹤指標，不可當作臨床級運動學量度。
 - 完整量度框架可提升 scientific rigour 及報告可分析性，但不能保證課程評分。
+
+## 2026-08-10 Blinded pilot data-collection system（研究模式重建）v5.0.0
+
+### 架構決定 Architecture
+
+- 研究模式由單一頁面重建為 **四個獨立頁面／bundle**，放在 `research/`：
+  - `research/index.html` — 角色入口 hub，只有三個大按鈕：盲法評估員、介入治療師、研究員／資料管理。
+  - `research/assessor.html` + `assessor.js` — 盲法評估員 10 步 wizard（T0／T1）。
+  - `research/intervention.html` + `intervention.js` — 介入治療師 Session 1–5 紀錄及 fidelity checklist。
+  - `research/researcher.html` + `researcher.js` — passcode barrier、randomization、allocation、進度、合併及匯出。
+  - `research/research.css` + `research/research-common.js` — 共用樣式及工具，內含 **零** allocation／組別／訓練資料。
+- 主頁「研究模式」按鈕改為導向 `research/index.html`；原本頁內治療師設定畫面保留，並改由 `index.html?role=intervention` 深層連結開啟，確保現有全部遊戲、患者自選情境及 CSV 流程不受影響。
+- 全部相對路徑（`../index.html`、`research.css`），可直接部署到 S3 靜態網站。
+
+### Blinding 設計
+
+- Assessor bundle 不載入、不參照、不 fetch、不儲存任何 allocation／group／session-training 資料；QA 實測 assessor 頁面對 `intervention.js`／`researcher.js` 的網絡請求為 0。
+- Assessor DOM／JS state／匯出檔案的違禁字詞掃描結果為空（遊戲介入組、對照組、conventional、adherence、fidelity、Session 1、chosen_scenario、difficulty_track 等）。唯一出現「研究組別」的地方是 protocol 指定的盲法確認句「我不知道participant的研究組別」。
+- 研究員頁使用 client-side passcode barrier，只儲存 SHA-256 雜湊（Web Crypto 比對）。**臨時預設通行碼：`YCH-PILOT-2026`**。頁面已顯示警告：此為 operational blinding barrier，並非 production authentication，正式使用前必須更改。Assessor bundle 完全沒有此 passcode。
+
+### 評估員 wizard（Step 1–10）
+
+- 每頁一個主要任務、`Step N of 10` 進度條、大按鈕 Previous／Save draft／Next、speechSynthesis 語音指示、可摺疊詳細指引、全部互動元素有 `data-testid`、繁體中文＋英文臨床詞、高對比大字。
+- 持續顯示的 participant-responsive 休息控制（所有步驟可用）：暫停 condition 計時、開始休息計時、必須選擇原因（Fatigue／Pain／Discomfort／Postural adjustment／Participant request／Therapist safety decision／Other）、Resume 按鈕文字為「患者已準備好，繼續評估」，記錄次數、每次時長、總時長、原因及是否已繼續。**沒有固定 1 分鐘休息。**
+- Step 1 匿名 ID 嚴格 `[A-Z0-9_-]`，拒絕空格／姓名／MRN 並顯示警告；盲法確認及「可能已解除盲法」（需原因＋評估員代碼，資料保留並記錄 breach）。
+- Step 2 疼痛／疲勞 0–10 大按鈕（數字＋非顏色圖示標籤），包含指定粵語指導語；不安全或未準備好即封鎖 Next、顯示暫停評估並要求原因。
+- Step 3 FTHUE-HK 只記錄醫院正式評估結果，顯示指定提示語，不自訂評分規則。
+- Step 4／5 握力及捏力三次測試，unable 記為 N.A.（永不為 0），三次齊全才自動平均；設有 start rest 及 ready-next-trial 控制。
+- Step 6 ADL 三個內部小畫面（進食／梳洗／穿上衣），採用醫院正式分數；T1 顯示指定一致性提示語。
+- Step 7 標準化設定：固定情境「茶樓飲茶」，T0 只可隨機排序一次後鎖定；T1 必須上載 `ParticipantID_T0_settings.json`，核對 ID 後載入並鎖定患側、motor task、工具、pinch type、食物／碟大小、相機位置、認知任務及難度、時間及次序，T1 沒有隨機排序。
+- Step 8 每次只顯示一個 `Condition N of 3`，依鎖定次序；三段指導語按 protocol 原文；自動 correct/min、accuracy=(hits+CR)/total×100、Motor DTC 及 Cognitive Accuracy DTC，分母為 0 時顯示「不能計算，請報告raw scores」。
+- Step 9 休息紀錄檢視；Step 10 評估後疼痛／疲勞、新症狀、AE、完成情況、自動 delta 及 active／rest 時間、驗證畫面（缺失、範圍、unable 無原因、T0／T1 不一致、active time 不足）、返回修改／確認鎖定；鎖定後只能透過 append-only audit trail 更正（保留原始值、更正值、原因、時間、評估員代碼）。
+
+### 匯出
+
+- T0：`P001_T0_assessment.csv`、`P001_T0_settings.json`；T1：上載 settings JSON 後下載 `P001_T1_assessment.csv`。
+- 另設 data dictionary、condition-level raw CSV、rest／adverse-event（含更正紀錄）CSV。全部 UTF-8 BOM、CSV 注入防護、可重新解析。
+- 顯著「尚未下載」狀態、下載成功提示，以及未下載時的 beforeunload 警告。
+
+### 介入治療師及研究員
+
+- 介入治療師頁標題「介入治療師模式：Session 1–5」，記錄組別、節次、FTHUE、遊戲／傳統治療、患者選擇的情境、工具、難度、實際 active 時間、participant-responsive 休息、表現、協助、軀幹代償、疼痛／疲勞、技術問題、AE、deviation 及 8 項 fidelity checklist；active 與 rest 時間分開；可於新分頁開啟現有訓練遊戲。
+- 全站刪除固定「休息 1 分鐘」：`PILOT_REST_SECONDS` 改為 0，休息階段改為向上計時並等待「患者已準備好，繼續訓練」按鈕；中英文 protocol 文字同步更新。
+- 研究員頁：passcode → 1:1 permuted-block randomization（block 2／4／混合，seed 可重現）、分配標籤在按「揭示」前隱藏、參加者進度（T0／T1／S1–S5／缺失／breach／deviation）、CSV／JSON 匯入、只以匿名 ID 合併、分開匯出 `merged_dataset_anonymized.csv` 及 `allocation.csv`。
+
+### 測試模式
+
+- Assessor 及 intervention 均設 TEST001（完整）、TEST002（休息／暫停）、TEST003（捏力 unable＋缺失資料）預設；研究員可一次載入 TEST001–TEST003。測試資料以斜紋橫額及 `test_record=TEST` 欄清楚標示。
+
+### 本輪 QA
+
+- `node --check`：4 個 research JS 檔及 index.html 兩個 inline block 全部通過；無重複 id／data-testid。
+- 公式實測：握力 10／12／11 → 11.00；捏力 2／3／4 → 3.00；single motor 20 correct／120 s = 10 CPM，dual 15／120 s = 7.5 CPM → Motor DTC 25%；single cognitive 9／1／2／18 → 90%，dual 7／3／4／16 → 76.7% → Cognitive DTC 14.8%；pain Δ 2、fatigue Δ 3。
+- TEST003：捏力 unable → mean 及 trial 全部空白（非 0）；握力缺一次 → 平均值空白；single 表現為 0 → 兩個 DTC 顯示「不能計算，請報告raw scores」。
+- 下載實測：5 個檔案成功下載，assessment CSV 117 欄、含 UTF-8 BOM，settings JSON 21 個欄位可重新解析並於 T1 載入及鎖定；ID 不符時顯示明確錯誤及預期檔名。
+- 流程實測：ID 格式警告、breach 必填、暫停評估封鎖、休息原因必填、休息期間 condition 計時暫停、ADL 三個小畫面、Condition 1→3 依序、鎖定後輸入停用並可 append 更正（原始值保留）。
+- 研究員實測：錯誤 passcode 被拒、`YCH-PILOT-2026` 可解鎖、序列 6A／6B 平衡且同 seed 可重現、指派後仍隱藏、按揭示才顯示、匯入評估 CSV 後進度表更新、匯出資料集不含 allocation 欄位。
+- beforeunload 實測：有未下載資料時彈出瀏覽器離開確認。
+- 版面：1440×900 及 1180×820 四頁均無水平溢出、無 console error、所有互動元素 ≥44px；瀏覽器儲存 API 使用量為 0（localStorage／sessionStorage／cookie 皆空）。
+- 標準 browser-game client 回歸測試通過（`qa/blinded-pilot/`），主頁遊戲、`?role=intervention` 深層連結及情境選擇正常。
+
+### 已知限制
+
+- 靜態 client-side passcode 只是 operational blinding barrier，任何人檢視原始碼即可看到雜湊值；不是 production authentication，正式研究前必須更換並配合行政管控。
+- 資料只存在於當前頁面記憶體，重新整理或關閉前必須下載；沒有伺服器備份。
+- Blinding 依賴使用流程（評估員只用 assessor 頁面、不接觸 allocation.csv），技術上無法防止人為在同一部裝置開啟研究員頁面。
+- ADL 及 FTHUE-HK 只記錄醫院正式評估結果，系統不提供評分規則，亦不可取代正式評估。
+- 本系統為 pilot／research prototype，並非醫療儀器，不能保證任何臨床療效或課程評分。

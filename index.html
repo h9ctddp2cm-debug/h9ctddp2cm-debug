@@ -686,7 +686,7 @@ html,body{
     </div>
     <button class="research-entry" id="btnResearchMode">
       研究模式（Pilot Study）
-      <small>治療師使用</small>
+      <small>盲法評估員 · 介入治療師 · 研究員／資料管理</small>
     </button>
     <footer style="margin-top:32px;padding:16px 12px 8px;text-align:center;font-size:11px;color:var(--muted);line-height:1.6;border-top:1px solid var(--border);opacity:0.75;max-width:760px;width:100%;">
       訓練由仁濟醫院職業治療師鄧姑娘設計，網頁由 AI 協助製作
@@ -697,7 +697,7 @@ html,body{
   <div id="screen-research" class="screen">
     <div class="research-card">
       <div class="research-head">
-        <h2 id="pilotTitle">Pilot Study 研究模式</h2>
+        <h2 id="pilotTitle">介入治療師模式：Session 1–5</h2>
         <button class="research-lang" id="btnPilotLang" type="button">English</button>
       </div>
       <p class="intro" id="pilotIntro">供治療師執行標準化研究訓練。只可輸入匿名研究編號，不可輸入姓名、病歷號碼或其他可識別資料。</p>
@@ -1013,7 +1013,8 @@ html,body{
       <div class="pilot-rest" id="pilotRestOverlay" role="status" aria-live="assertive">
         <strong id="pilotRestTitle">休息</strong>
         <span id="pilotRestBody">放下雙手，放鬆肩膀。</span>
-        <div class="pilot-rest-count" id="pilotRestCount">60</div>
+        <div class="pilot-rest-count" id="pilotRestCount">00:00</div>
+        <button type="button" id="btnPilotRestResume" data-testid="button-pilot-rest-resume" style="min-height:56px;padding:14px 22px;border:2px solid #fff;border-radius:12px;background:#fff;color:#0C3F35;font:900 19px/1.2 inherit;cursor:pointer;">患者已準備好，繼續訓練</button>
       </div>
       <div class="game-controls">
         <button class="game-control-btn" id="btnGameBack" aria-label="返回活動選擇">← 返回</button>
@@ -1496,15 +1497,18 @@ const PILOT_VISITS = {
   t1:{ kind:'assess', session:0 }, fu:{ kind:'assess', session:0 },
 };
 const PILOT_BLOCK_SECONDS = 120;
-const PILOT_REST_SECONDS = 60;
+// Participant-responsive rest: rest phases have NO fixed duration. The rest
+// timer counts elapsed rest time and only ends when the therapist confirms the
+// participant is ready. Active time and rest time are recorded separately.
+const PILOT_REST_SECONDS = 0;
 // Training-session plan: 2 min guided calibration/practice, 5 min scored dual task,
-// 1 min rest, then 5 min scored dual task. The 2-minute post-session review is
-// completed on the result screen. Total session duration is 15 min; structured
-// motor practice is 12 min and scored dual-task training is 10 min.
+// a participant-responsive rest, then 5 min scored dual task. The 2-minute
+// post-session review is completed on the result screen. Planned session length is
+// 15 min of active training; rest time is additional and logged separately.
 const PILOT_TRAIN_PLAN = [
   { id:'practice', kind:'practice', seconds:120 },
   { id:'dual1',    kind:'dual',     seconds:300 },
-  { id:'rest1',    kind:'rest',     seconds:60  },
+  { id:'rest1',    kind:'rest',     seconds:0   },
   { id:'dual2',    kind:'dual',     seconds:300 },
 ];
 const PILOT_BLOCK_ORDERS = ['motor,cognitive,dual','motor,dual,cognitive','cognitive,motor,dual',
@@ -1854,7 +1858,7 @@ function researchStartPhase(index){
   research.phaseIndex = index;
   const phase = pilotCurrentPhase();
   if(!phase) return;
-  research.phaseRemaining = phase.seconds;
+  research.phaseRemaining = phase.kind === 'rest' ? 0 : phase.seconds;
   research.phaseStartedAt = nowMs();
   research.phaseBaseline = researchPhaseSnapshot();
   research.phaseMetrics = emptyPhaseMetrics();
@@ -1868,6 +1872,14 @@ function researchStartPhase(index){
 function researchMaybeAdvancePhase(){
   if(!research.active || !research.phasePlan.length) return;
   if(state.paused) return;
+  const currentPhase = pilotCurrentPhase();
+  if(currentPhase && currentPhase.kind === 'rest'){
+    // Participant-responsive rest: count elapsed rest time upwards and wait for
+    // the therapist to confirm readiness. There is no fixed rest duration.
+    research.phaseRemaining = research.phaseRemaining + 1;
+    pilotRenderPhaseHud();
+    return;
+  }
   research.phaseRemaining = Math.max(0, research.phaseRemaining - 1);
   pilotRenderPhaseHud();
   if(research.phaseRemaining > 0) return;
@@ -1876,6 +1888,17 @@ function researchMaybeAdvancePhase(){
     researchStartPhase(research.phaseIndex + 1);
   }
 }
+/* Ends a participant-responsive rest when the therapist confirms readiness. */
+function pilotResumeFromRest(){
+  const phase = pilotCurrentPhase();
+  if(!research.active || !phase || phase.kind !== 'rest') return false;
+  researchClosePhase('rest_ended_participant_ready');
+  if(research.phaseIndex + 1 < research.phasePlan.length){
+    researchStartPhase(research.phaseIndex + 1);
+  }
+  return true;
+}
+window.pilotResumeFromRest = pilotResumeFromRest;
 function pilotFormatClock(sec){
   const s = Math.max(0, Math.round(sec));
   return String(Math.floor(s / 60)).padStart(2,'0') + ':' + String(s % 60).padStart(2,'0');
@@ -2084,7 +2107,7 @@ function exportArchive(kind){
 
 const PILOT_TEXT = {
   zh:{
-    title:'Pilot Study 研究模式', toggle:'English',
+    title:'介入治療師模式：Session 1–5', toggle:'English',
     intro:'供治療師執行標準化研究訓練。只可輸入匿名研究編號，不可輸入姓名、病歷號碼或其他可識別資料。',
     principle:'由治療師按照患者當日的 FTHUE level 篩選合適遊戲，再由患者自行選擇遊戲情境的個人化上肢 motor-cognitive dual-task 訓練',
     participant:'匿名 Participant ID', placeholder:'例如 P001', session:'研究節數',
@@ -2101,7 +2124,7 @@ const PILOT_TEXT = {
     tradMinutes:'分鐘', tradReps:'訓練重複次數',
     planTitle:'本次執行步驟', planTotal:'遊戲畫面流程（不包括即時回顧）',
     trainTimeNote:'遊戲畫面流程 13 分鐘，再預留 2 分鐘即時回顧，完整一節共 15 分鐘；結構化動作練習 12 分鐘，當中計分雙重任務 10 分鐘',
-    restTitle:'休息', restBody:'放下雙手，放鬆肩膀；此時不需操作。',
+    restTitle:'休息', restBody:'放下雙手，放鬆肩膀；此時不需操作。休息時間按參加者需要，準備好再繼續。',
     cogTarget:'指定目標：紅色圓形；只在見到目標時出聲',
     cogMeta:'正確／總數：', cogYes:'患者有回應', cogNo:'沒有回應',
     cogOnlyPrompt:'單一認知區組：只觀察圖形；見到紅色圓形時出聲。',
@@ -2130,8 +2153,8 @@ const PILOT_TEXT = {
     advancedDesc:'完成相同分類任務，同時抑制動物干擾物。每節使用預先選定的固定難度，不會在節內自動升級。',
     note:'治療師按當日 FTHUE、理解、疲勞、視覺搜尋及安全選擇起始難度。連續兩個區組的動作及認知正確率均達 80% 才可只提升一項難度；60–79% 維持；低於 60% 只降低一項。評估模式不會自動調整。',
     protocol:'<b>研究定位：</b>FTHUE 4–7 分層、患者自選情境的上肢 motor-cognitive dual-task 遊戲，作為職業治療的附加訓練。訓練節可自選插花、茶樓飲茶、晾衫／衣物分類、啤牌或麻雀；煮飯不納入研究。主要評估安全性、可行性、可接受性及技術穩定性；功能及機制結果只作探索。' +
-      '<br><br><b>五節訓練：</b>每節共 15 分鐘：2 分鐘校準及引導練習、5 分鐘計分雙重任務、1 分鐘休息、5 分鐘同難度計分雙重任務、2 分鐘即時回顧。不可寫成 15 分鐘主動遊戲。' +
-      '<br><b>T0／T1 評估：</b>固定使用茶樓飲茶；單一動作、單一認知及雙重任務各 2 分鐘，區組間休息 1 分鐘。同一參加者 T0、T1 使用相同工具、患手、坐姿、物件及目標大小、位置、時間、認知難度及區組次序。T0 於首次訓練前 24 小時內，T1 於第五節後 24–48 小時。評估時關閉獎勵及難度自動調整。' +
+      '<br><br><b>五節訓練：</b>每節計劃 15 分鐘 active training：2 分鐘校準及引導練習、5 分鐘計分雙重任務、按參加者需要的休息（沒有固定時間，另行記錄）、5 分鐘同難度計分雙重任務、2 分鐘即時回顧。不可寫成 15 分鐘主動遊戲。' +
+      '<br><b>T0／T1 評估：</b>固定使用茶樓飲茶；單一動作、單一認知及雙重任務各 2 分鐘，區組之間按參加者需要休息（participant-responsive，沒有固定 1 分鐘）。同一參加者 T0、T1 使用相同工具、患手、坐姿、物件及目標大小、位置、時間、認知難度及區組次序。T0 於首次訓練前 24 小時內，T1 於第五節後 24–48 小時。評估時關閉獎勵及難度自動調整。' +
       '<br><b>主要結果：</b>招募、留住及五節完成率；實際時間；技術故障及追蹤中斷；不良事件；疼痛、疲勞、接受程度及設定時間。' +
       '<br><b>探索性結果：</b>FTHUE、握力、捏力、進食／梳洗／上衣穿著、標準化 motor 及 cognitive dual-task cost；可選擇加入真實活動轉移測試。系統只偵測捏放動作，不量度捏力。' +
       '<br><b>分析及限制：</b>以百分比、中位數及四分位距、個別變化圖、效量及信賴區間為主，p 值只作探索。各 FTHUE 分層分開描述，不比較哪一級最好。可總結為「具可行性，值得進行較大型對照研究」，不可聲稱已證實療效或神經可塑性。',
@@ -2156,7 +2179,7 @@ const PILOT_TEXT = {
     safetyError:'正式研究資料必須先完成安全確認；未通過者不可開始訓練。',
   },
   en:{
-    title:'Pilot Study Mode', toggle:'繁體中文',
+    title:'Intervention therapist mode: Sessions 1–5', toggle:'繁體中文',
     intro:'For therapist-led, standardised research sessions. Enter an anonymous participant ID only. Do not enter a name, medical record number, or other identifiable information.',
     principle:'Personalised upper-limb motor-cognitive dual-task training: the therapist filters eligible games according to the patient’s FTHUE level that day, then the patient chooses a preferred game scenario.',
     participant:'Anonymous Participant ID', placeholder:'e.g. P001', session:'Session',
@@ -2173,7 +2196,7 @@ const PILOT_TEXT = {
     tradMinutes:'Minutes', tradReps:'Training repetitions',
     planTitle:'Session plan', planTotal:'On-screen game sequence (excluding immediate review)',
     trainTimeNote:'The on-screen game sequence lasts 13 minutes. Allow another 2 minutes for the immediate review, giving a 15-minute total session. Structured motor practice is 12 minutes, including 10 minutes of scored dual-task training',
-    restTitle:'Rest', restBody:'Lower both arms and relax the shoulders. No interaction is required now.',
+    restTitle:'Rest', restBody:'Lower both arms and relax the shoulders. Rest lasts as long as the participant needs; continue when ready.',
     cogTarget:'Target: red circle. Respond aloud only when the target appears',
     cogMeta:'Correct / total:', cogYes:'Patient responded', cogNo:'No response',
     cogOnlyPrompt:'Single cognitive block: monitor the shapes and respond aloud to the red circle only.',
@@ -2202,8 +2225,8 @@ const PILOT_TEXT = {
     advancedDesc:'Complete the same sorting task while inhibiting animal distractors. The preselected difficulty remains fixed within each session.',
     note:'The therapist selects the starting level using current FTHUE, comprehension, fatigue, visual search and safety. Increase only one difficulty variable after motor and cognitive accuracy are both at least 80% in two consecutive blocks; maintain at 60–79%; reduce one variable below 60%. Assessment mode never auto-adjusts.',
     protocol:'<b>Study positioning:</b> An FTHUE 4–7 stratified, patient-selected upper-limb motor-cognitive dual-task game used as an adjunct to occupational therapy. Training choices are Flower arranging, Tea house, Laundry sorting, Playing cards, and Mahjong; Cooking is excluded. Primary aims are safety, feasibility, acceptability and technical stability; functional and mechanistic outcomes are exploratory.' +
-      '<br><br><b>Five training sessions:</b> Each 15-minute session comprises 2 minutes of calibration and guided practice, 5 minutes of scored dual-task training, 1 minute of rest, another 5-minute scored dual-task block at the same difficulty, and a 2-minute immediate review. Do not describe this as 15 minutes of active gameplay.' +
-      '<br><b>T0/T1 assessment:</b> Tea house is the fixed standardised task. Single motor, single cognitive and dual-task blocks last 2 minutes each with 1-minute rests. Within each participant, T0 and T1 use the same tool, affected hand, seating, object and target size and location, duration, cognitive difficulty and block order. Complete T0 within 24 hours before Session 1 and T1 24–48 hours after Session 5. Rewards and automatic progression are disabled during assessment.' +
+      '<br><br><b>Five training sessions:</b> Each session plans 15 minutes of active training: 2 minutes of calibration and guided practice, 5 minutes of scored dual-task training, a participant-responsive rest (no fixed duration, logged separately), another 5-minute scored dual-task block at the same difficulty, and a 2-minute immediate review. Do not describe this as 15 minutes of active gameplay.' +
+      '<br><b>T0/T1 assessment:</b> Tea house is the fixed standardised task. Single motor, single cognitive and dual-task blocks last 2 minutes each, separated by participant-responsive rests (no fixed one-minute rest). Within each participant, T0 and T1 use the same tool, affected hand, seating, object and target size and location, duration, cognitive difficulty and block order. Complete T0 within 24 hours before Session 1 and T1 24–48 hours after Session 5. Rewards and automatic progression are disabled during assessment.' +
       '<br><b>Primary outcomes:</b> recruitment, retention and five-session completion; actual session time; technical and tracking failures; adverse events; pain, fatigue, acceptability and setup time.' +
       '<br><b>Exploratory outcomes:</b> FTHUE, grip strength, pinch strength, feeding, grooming and upper-body dressing, plus standardised motor and cognitive dual-task cost. An optional real-world transfer probe may be added. The system detects pinch-and-release movement but does not measure pinch force.' +
       '<br><b>Analysis and limits:</b> emphasise feasibility percentages, medians and interquartile ranges, individual change plots, effect sizes and confidence intervals; p values are exploratory. Describe FTHUE strata separately and do not rank them. Conclude that the intervention is feasible and warrants a larger controlled study, not that efficacy or neuroplasticity has been proven.',
@@ -2442,7 +2465,11 @@ function selectLevel(levelId){
 }
 document.getElementById('btnLevel45').addEventListener('click', ()=> selectLevel('45'));
 document.getElementById('btnLevel67').addEventListener('click', ()=> selectLevel('67'));
-document.getElementById('btnResearchMode').addEventListener('click', ()=>{
+/* Research Mode now routes to the separate role hub (research/index.html) so that
+   the blinded assessor bundle never shares a page with allocation or training data.
+   The in-page therapist setup below remains reachable via ?role=intervention, which
+   the intervention module uses to launch the existing training games unchanged. */
+function openInterventionSetup(){
   document.getElementById('researchError').textContent = '';
   const dateField = document.getElementById('researchDate');
   if(dateField && !dateField.value){
@@ -2452,7 +2479,21 @@ document.getElementById('btnResearchMode').addEventListener('click', ()=>{
   research.setupStartedAt = nowMs();
   renderPilotLanguage();
   showScreen('research');
+}
+document.getElementById('btnResearchMode').addEventListener('click', ()=>{
+  window.location.href = 'research/index.html';
 });
+window.addEventListener('load', ()=>{
+  try{
+    if(new URLSearchParams(window.location.search).get('role') === 'intervention'){
+      openInterventionSetup();
+    }
+  }catch(e){ console.warn('intervention deep link unavailable', e); }
+});
+const btnPilotRestResume = document.getElementById('btnPilotRestResume');
+if(btnPilotRestResume){
+  btnPilotRestResume.addEventListener('click', ()=>{ pilotResumeFromRest(); });
+}
 document.getElementById('researchVisit').addEventListener('change', ()=>{
   pilotRenderPlanPreview();
   renderPilotScenarioOptions();

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>介入治療師模式：Session 1–5</title>
+<meta name="description" content="Intervention therapist module: Session 1-5 delivery record and fidelity checklist for the YCH OT upper-limb pilot study.">
+<link rel="stylesheet" href="research.css">
+</head>
+<body data-page="intervention">
+<div class="rs-test-banner" data-testid="banner-test-mode">TEST MODE — 測試資料，不可用作研究分析 TEST DATA ONLY</div>
+
+<header class="rs-topbar">
+  <div>
+    <h1>介入治療師模式：Session 1–5</h1>
+    <span class="rs-sub">訓練執行及 fidelity 記錄 · Intervention delivery &amp; fidelity</span>
+  </div>
+  <div class="rs-topbar-actions">
+    <span class="rs-status-pill rs-status-pending" data-testid="status-download" id="statusDownload">⬤ 尚未下載 Not downloaded</span>
+    <a class="rs-btn rs-btn-secondary rs-btn-small" href="index.html" data-testid="link-back-hub">返回入口 Hub</a>
+  </div>
+</header>
+
+<main class="rs-shell" id="interventionShell">
+  <div class="rs-note rs-note-warn" data-testid="text-memory-warning">
+    <span class="rs-note-icon" aria-hidden="true">⚠</span>
+    <span>資料尚未永久保存。請先下載CSV，然後才關閉或重新整理頁面。（Memory-only — no localStorage / cloud upload.）</span>
+  </div>
+  <div class="rs-note rs-note-info" data-testid="text-blinding-note">
+    <span class="rs-note-icon" aria-hidden="true">🔒</span>
+    <span>本頁只供介入治療師使用。請勿向盲法評估員展示本頁內容或討論組別、訓練內容。</span>
+  </div>
+
+  <section class="rs-rest-dock" aria-label="參加者主導休息" data-testid="dock-rest">
+    <span aria-hidden="true">⏸</span>
+    <span data-testid="text-rest-summary" id="restSummary">休息次數 0 · 總休息時間 00:00</span>
+    <button type="button" class="rs-btn rs-btn-rest rs-btn-small" data-testid="button-rest-start" id="btnRestStart">開始休息 Rest（按參加者需要）</button>
+    <button type="button" class="rs-btn rs-btn-small rs-hidden" data-testid="button-rest-resume" id="btnRestResume">患者已準備好，繼續訓練</button>
+    <select class="rs-select rs-hidden" style="max-width:290px" data-testid="select-rest-reason" id="selRestReason" aria-label="休息原因"></select>
+    <span class="rs-hidden" data-testid="text-rest-timer" id="restTimer"></span>
+    <small style="font-weight:800;color:#5A3200">休息由參加者需要決定，沒有固定時間。No fixed rest duration.</small>
+  </section>
+
+  <section class="rs-card">
+    <h2>節次資料 Session information</h2>
+    <fieldset class="rs-fieldset">
+      <legend>基本資料</legend>
+      <div class="rs-grid">
+        <div class="rs-field"><label for="inpParticipantId">匿名 Participant ID</label>
+          <input id="inpParticipantId" class="rs-input rs-mono" data-testid="input-participant-id" maxlength="20" placeholder="例如 P001">
+          <span class="rs-hint" data-testid="text-id-error" id="idError"></span>
+          <span class="rs-hint">只可輸入匿名研究編號。嚴禁姓名、病歷號碼（MRN）或身分證號碼。</span></div>
+        <div class="rs-field"><label for="selGroup">研究組別 Group（由研究員提供）</label>
+          <select id="selGroup" class="rs-select" data-testid="select-group">
+            <option value="">請選擇 Select</option>
+            <option value="game_intervention">遊戲介入組 Game intervention</option>
+            <option value="conventional_control">傳統治療對照組 Conventional control</option>
+          </select></div>
+        <div class="rs-field"><label for="selSession">節次 Session</label>
+          <select id="selSession" class="rs-select" data-testid="select-session">
+            <option value="1">Session 1</option><option value="2">Session 2</option>
+            <option value="3">Session 3</option><option value="4">Session 4</option><option value="5">Session 5</option>
+          </select></div>
+        <div class="rs-field"><label for="inpSessionDatetime">日期及時間 Date &amp; time</label>
+          <input id="inpSessionDatetime" type="datetime-local" class="rs-input" data-testid="input-session-datetime"></div>
+        <div class="rs-field"><label for="inpTherapistCode">治療師代碼 Therapist code</label>
+          <input id="inpTherapistCode" class="rs-input rs-mono" data-testid="input-therapist-code" maxlength="12"></div>
+        <div class="rs-field"><label for="selFthue">本節 FTHUE level</label>
+          <select id="selFthue" class="rs-select" data-testid="select-fthue-level">
+            <option value="">請選擇</option><option value="4">4</option><option value="5">5</option>
+            <option value="6">6</option><option value="7">7</option></select></div>
+        <div class="rs-field"><label for="selAffectedSide">患側 Affected side</label>
+          <select id="selAffectedSide" class="rs-select" data-testid="select-affected-side">
+            <option value="">請選擇</option><option value="left">左 Left</option><option value="right">右 Right</option></select></div>
+      </div>
+    </fieldset>
+
+    <fieldset class="rs-fieldset">
+      <legend>訓練內容 Content delivered</legend>
+      <div class="rs-grid">
+        <div class="rs-field"><label for="selDeliveryType">介入類型 Delivery</label>
+          <select id="selDeliveryType" class="rs-select" data-testid="select-delivery-type">
+            <option value="">請選擇</option>
+            <option value="game">遊戲訓練 Game-based training</option>
+            <option value="conventional">傳統上肢訓練 Conventional upper-limb training</option>
+            <option value="mixed">遊戲＋傳統 Mixed</option>
+          </select></div>
+        <div class="rs-field"><label for="selScenario">患者選擇的遊戲情境 Chosen game scenario</label>
+          <select id="selScenario" class="rs-select" data-testid="select-scenario">
+            <option value="">未使用遊戲 Not applicable</option>
+            <option value="tea_house">茶樓飲茶 Dim sum tea house</option>
+            <option value="cooking">煮食 Cooking</option>
+            <option value="general">一般分類遊戲 General sorting</option>
+          </select>
+          <span class="rs-hint">遊戲情境由患者於符合 FTHUE level 的清單中自行選擇（患者選擇權保留）。</span></div>
+        <div class="rs-field"><label for="selTool">工具 Tool</label>
+          <select id="selTool" class="rs-select" data-testid="select-tool">
+            <option value="">請選擇</option><option value="none">不使用工具 None</option>
+            <option value="cloth_peg">衣夾／食物夾 Peg</option><option value="chopsticks">筷子 Chopsticks</option>
+            <option value="other">其他指定工具 Other</option></select></div>
+        <div class="rs-field"><label for="selDifficulty">難度版本 Difficulty track</label>
+          <select id="selDifficulty" class="rs-select" data-testid="select-difficulty">
+            <option value="">請選擇</option>
+            <option value="simple_sort_motor">簡單版 Sorting + Motor</option>
+            <option value="advanced_sort_motor">進階版 Sorting + Motor + Inhibition</option>
+          </select>
+          <span class="rs-hint">同一參加者五節須維持同一難度版本。</span></div>
+        <div class="rs-field"><label for="inpConventional">傳統訓練活動 Conventional activities（名稱／分鐘／重複次數）</label>
+          <input id="inpConventional" class="rs-input" data-testid="input-conventional-activities" maxlength="200" placeholder="例如 Peg board / 15 / 60"></div>
+      </div>
+    </fieldset>
+
+    <fieldset class="rs-fieldset">
+      <legend>時間 Time（計劃 15 分鐘；active 與 rest 分開記錄）</legend>
+      <div class="rs-note rs-note-info" data-testid="text-time-policy">
+        <span class="rs-note-icon" aria-hidden="true">⏱</span>
+        <span>計劃訓練時間為 15 分鐘，但實際 <b>active training time</b> 與 <b>rest time</b> 必須分開記錄。休息由參加者需要決定，<b>沒有固定休息時間</b>。</span>
+      </div>
+      <div class="rs-grid">
+        <div class="rs-field"><label for="inpPlannedMin">計劃時間（分鐘）Planned</label>
+          <input id="inpPlannedMin" type="number" min="0" max="60" step="1" value="15" class="rs-input" data-testid="input-planned-min"></div>
+        <div class="rs-field"><label for="inpActiveSec">實際 active training 時間（秒）</label>
+          <input id="inpActiveSec" type="number" min="0" max="7200" step="1" class="rs-input" data-testid="input-active-sec"></div>
+        <div class="rs-field"><label>訓練計時器 Session timer</label>
+          <div class="rs-inline">
+            <button type="button" class="rs-btn rs-btn-small" data-testid="button-timer-start">▶ 開始</button>
+            <button type="button" class="rs-btn rs-btn-secondary rs-btn-small" data-testid="button-timer-stop">■ 停止並填入</button>
+            <span data-testid="text-session-timer">00:00（已暫停）</span>
+          </div></div>
+      </div>
+    </fieldset>
+
+    <fieldset class="rs-fieldset">
+      <legend>表現及反應 Performance &amp; response</legend>
+      <div class="rs-grid">
+        <div class="rs-field"><label for="inpCorrect">正確次數 Correct</label><input id="inpCorrect" type="number" min="0" step="1" class="rs-input" data-testid="input-correct"></div>
+        <div class="rs-field"><label for="inpWrong">錯誤次數 Wrong</label><input id="inpWrong" type="number" min="0" step="1" class="rs-input" data-testid="input-wrong"></div>
+        <div class="rs-field"><label for="inpDrops">跌落次數 Drops</label><input id="inpDrops" type="number" min="0" step="1" class="rs-input" data-testid="input-drops"></div>
+        <div class="rs-field"><label for="selAssistance">協助 Assistance</label>
+          <select id="selAssistance" class="rs-select" data-testid="select-assistance">
+            <option value="">未記錄</option><option value="none">無 None</option>
+            <option value="verbal">口頭提示 Verbal</option><option value="physical">身體協助 Physical</option></select></div>
+        <div class="rs-field"><label for="selTrunk">軀幹代償 Trunk compensation</label>
+          <select id="selTrunk" class="rs-select" data-testid="select-trunk">
+            <option value="">未記錄</option><option value="none">無 None</option>
+            <option value="mild">輕微 Mild</option><option value="marked">明顯 Marked</option></select></div>
+        <div class="rs-field"><label for="inpPainPre">訓練前疼痛 Pain pre (0–10)</label><input id="inpPainPre" type="number" min="0" max="10" step="1" class="rs-input" data-testid="input-pain-pre"></div>
+        <div class="rs-field"><label for="inpPainPost">訓練後疼痛 Pain post (0–10)</label><input id="inpPainPost" type="number" min="0" max="10" step="1" class="rs-input" data-testid="input-pain-post"></div>
+        <div class="rs-field"><label for="inpFatiguePre">訓練前疲勞 Fatigue pre (0–10)</label><input id="inpFatiguePre" type="number" min="0" max="10" step="1" class="rs-input" data-testid="input-fatigue-pre"></div>
+        <div class="rs-field"><label for="inpFatiguePost">訓練後疲勞 Fatigue post (0–10)</label><input id="inpFatiguePost" type="number" min="0" max="10" step="1" class="rs-input" data-testid="input-fatigue-post"></div>
+      </div>
+      <p class="rs-lead" data-testid="text-session-auto">自動摘要：—</p>
+    </fieldset>
+
+    <fieldset class="rs-fieldset">
+      <legend>安全、技術及 protocol</legend>
+      <div class="rs-grid">
+        <div class="rs-field"><label for="selTechFailure">技術問題 Technical failure</label>
+          <select id="selTechFailure" class="rs-select" data-testid="select-tech-failure">
+            <option value="">未記錄</option><option value="no">否 No</option><option value="yes">是 Yes</option></select></div>
+        <div class="rs-field"><label for="inpTechDetail">技術問題描述</label><input id="inpTechDetail" class="rs-input" data-testid="input-tech-detail" maxlength="200"></div>
+        <div class="rs-field"><label for="selAdverseEvent">不良事件 Adverse event</label>
+          <select id="selAdverseEvent" class="rs-select" data-testid="select-adverse-event">
+            <option value="">未記錄</option><option value="no">否 No</option><option value="yes">是 Yes</option></select></div>
+        <div class="rs-field"><label for="inpAeDetail">不良事件描述</label><input id="inpAeDetail" class="rs-input" data-testid="input-ae-detail" maxlength="240"></div>
+        <div class="rs-field"><label for="selDeviation">Protocol deviation</label>
+          <select id="selDeviation" class="rs-select" data-testid="select-deviation">
+            <option value="">未記錄</option><option value="no">否 No</option><option value="yes">是 Yes</option></select></div>
+        <div class="rs-field"><label for="inpDeviationDetail">Deviation 描述及處理</label><input id="inpDeviationDetail" class="rs-input" data-testid="input-deviation-detail" maxlength="240"></div>
+        <div class="rs-field"><label for="selCompletion">本節完成情況 Completion</label>
+          <select id="selCompletion" class="rs-select" data-testid="select-completion">
+            <option value="">未記錄</option><option value="yes">全部完成 Yes</option>
+            <option value="partial">部分完成 Partially</option><option value="no">未完成 No</option></select></div>
+      </div>
+    </fieldset>
+
+    <fieldset class="rs-fieldset">
+      <legend>Fidelity checklist（依 protocol 執行）</legend>
+      <div class="rs-stack" id="fidelityList" data-testid="container-fidelity"></div>
+      <p class="rs-lead" data-testid="text-fidelity-score">Fidelity：0 / 8</p>
+    </fieldset>
+
+    <fieldset class="rs-fieldset">
+      <legend>訓練遊戲 Training games</legend>
+      <p class="rs-lead">現有訓練遊戲保持不變，並由患者在符合 FTHUE level 的清單中選擇情境。</p>
+      <div class="rs-inline">
+        <a class="rs-btn" href="../index.html?role=intervention" target="_blank" rel="noopener" data-testid="link-launch-training">▶ 開啟訓練遊戲（新分頁）Launch training</a>
+        <a class="rs-btn rs-btn-secondary" href="../index.html" target="_blank" rel="noopener" data-testid="link-open-home">開啟主頁遊戲選單 Home</a>
+      </div>
+      <p class="rs-hint">在新分頁開啟，本頁紀錄不會遺失（本頁資料只存於記憶體）。</p>
+    </fieldset>
+
+    <fieldset class="rs-fieldset">
+      <legend>本次頁面已記錄的節次 Sessions in memory</legend>
+      <div class="rs-inline">
+        <button type="button" class="rs-btn" data-testid="button-add-session">＋ 加入本節到清單 Add session</button>
+        <button type="button" class="rs-btn rs-btn-secondary" data-testid="button-download-sessions">下載 session CSV</button>
+        <button type="button" class="rs-btn rs-btn-secondary" data-testid="button-download-rest-log">下載 rest／AE log CSV</button>
+        <select class="rs-select" style="max-width:240px" data-testid="select-test-preset" id="selTestPreset" aria-label="測試模式">
+          <option value="">測試模式：關 Test mode: off</option>
+          <option value="TEST001">TEST001 完整節次</option>
+          <option value="TEST002">TEST002 休息／暫停</option>
+          <option value="TEST003">TEST003 缺失資料</option>
+        </select>
+      </div>
+      <div class="rs-table-wrap" style="margin-top:14px">
+        <table class="rs-table" data-testid="table-sessions">
+          <thead><tr><th>#</th><th>ID</th><th>Session</th><th>組別</th><th>Active (s)</th><th>Rest (s)</th><th>Fidelity</th><th>Deviation</th><th>TEST</th></tr></thead>
+          <tbody id="sessionBody"></tbody>
+        </table>
+      </div>
+      <div id="downloadFeedback" data-testid="text-download-feedback" style="margin-top:12px"></div>
+    </fieldset>
+  </section>
+</main>
+
+<script src="research-common.js"></script>
+<script src="intervention.js"></script>
+</body>
+</html>

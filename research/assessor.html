@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>盲法評估員模式｜T0／T1 標準化評估</title>
+<meta name="description" content="Blinded assessor module: T0/T1 standardized assessment and data collection for the YCH OT upper-limb pilot study.">
+<link rel="stylesheet" href="research.css">
+</head>
+<body data-page="assessor">
+<div class="rs-test-banner" data-testid="banner-test-mode">TEST MODE — 測試資料，不可用作研究分析 TEST DATA ONLY</div>
+
+<header class="rs-topbar">
+  <div>
+    <h1>盲法評估員模式 Blinded Assessor</h1>
+    <span class="rs-sub">T0／T1 標準化評估及資料收集 · Standardized assessment</span>
+  </div>
+  <div class="rs-topbar-actions">
+    <span class="rs-status-pill rs-status-pending" data-testid="status-download" id="statusDownload">⬤ 尚未下載 Not downloaded</span>
+    <button type="button" class="rs-btn rs-btn-secondary rs-btn-small" data-testid="button-toggle-voice" id="btnToggleVoice">🔊 語音：開</button>
+    <a class="rs-btn rs-btn-secondary rs-btn-small" href="index.html" data-testid="link-back-hub">返回入口 Hub</a>
+  </div>
+</header>
+
+<main class="rs-shell" id="assessorShell">
+
+  <div class="rs-note rs-note-warn" data-testid="text-memory-warning">
+    <span class="rs-note-icon" aria-hidden="true">⚠</span>
+    <span id="memoryWarningText">資料尚未永久保存。請先下載CSV及settings file，然後才關閉或重新整理頁面。（Memory-only: no localStorage / cloud upload.）</span>
+  </div>
+
+  <!-- persistent participant-responsive rest control -->
+  <section class="rs-rest-dock" aria-label="參加者主導休息 Participant-responsive rest" data-testid="dock-rest">
+    <span aria-hidden="true">⏸</span>
+    <span data-testid="text-rest-summary" id="restSummary">休息次數 0 · 總休息時間 00:00</span>
+    <button type="button" class="rs-btn rs-btn-rest rs-btn-small" data-testid="button-rest-start" id="btnRestStart">開始休息 Rest（按參加者需要）</button>
+    <button type="button" class="rs-btn rs-btn-small rs-hidden" data-testid="button-rest-resume" id="btnRestResume">患者已準備好，繼續評估</button>
+    <span class="rs-hidden" data-testid="text-rest-timer" id="restTimer"></span>
+    <select class="rs-select rs-hidden" style="max-width:290px" data-testid="select-rest-reason" id="selRestReason" aria-label="休息原因 Rest reason"></select>
+    <small style="font-weight:800;color:#5A3200">休息由參加者需要決定，沒有固定 1 分鐘。No fixed one-minute rest.</small>
+  </section>
+
+  <div class="rs-progress-wrap">
+    <div class="rs-progress-label" data-testid="text-progress-label" id="progressLabel">Step 1 of 10</div>
+    <div class="rs-progress-track"><div class="rs-progress-bar" id="progressBar" data-testid="bar-progress"></div></div>
+  </div>
+
+  <div class="rs-note rs-note-danger rs-hidden" data-testid="text-blocker" id="blockerNote">
+    <span class="rs-note-icon" aria-hidden="true">✖</span><span id="blockerText"></span>
+  </div>
+
+  <!-- ================= STEP 1 ================= -->
+  <section class="rs-card rs-step" data-step="1" data-testid="step-1">
+    <h2>1. 參加者資料 Participant</h2>
+    <p class="rs-lead">本頁只收集匿名研究編號。Anonymous ID only.</p>
+    <button type="button" class="rs-btn rs-btn-secondary rs-btn-small" data-testid="button-voice-1" data-voice="請輸入匿名研究編號，選擇評估時間點，然後完成盲法確認。">🔊 播放指示 Voice</button>
+
+    <div class="rs-note rs-note-warn" data-testid="text-id-warning">
+      <span class="rs-note-icon" aria-hidden="true">⚠</span>
+      <span>只可輸入匿名研究編號。嚴禁輸入姓名、病歷號碼（MRN）、身分證號碼、電話或出生日期。Anonymous study ID only — no name / MRN / HKID.</span>
+    </div>
+
+    <fieldset class="rs-fieldset">
+      <legend>基本資料 Basic information</legend>
+      <div class="rs-grid">
+        <div class="rs-field">
+          <label for="inpParticipantId">匿名 Participant ID <span class="rs-hint">A–Z、0–9、_、-</span></label>
+          <input id="inpParticipantId" class="rs-input rs-mono" data-testid="input-participant-id" maxlength="20" autocomplete="off" placeholder="例如 P001">
+          <span class="rs-hint" data-testid="text-id-error" id="idError"></span>
+        </div>
+        <div class="rs-field">
+          <label for="selTimepoint">評估時間點 Timepoint</label>
+          <select id="selTimepoint" class="rs-select" data-testid="select-timepoint">
+            <option value="T0">T0（基線 baseline）</option>
+            <option value="T1">T1（後測 post）</option>
+          </select>
+        </div>
+        <div class="rs-field">
+          <label for="inpAssessDatetime">評估日期及時間 Date &amp; time</label>
+          <input id="inpAssessDatetime" type="datetime-local" class="rs-input" data-testid="input-assessment-datetime">
+        </div>
+        <div class="rs-field">
+          <label for="inpAssessorCode">評估員代碼 Assessor code</label>
+          <input id="inpAssessorCode" class="rs-input rs-mono" data-testid="input-assessor-code" maxlength="12" placeholder="例如 AS01" autocomplete="off">
+        </div>
+        <div class="rs-field">
+          <label for="selAffectedSide">患側 Affected side</label>
+          <select id="selAffectedSide" class="rs-select" data-testid="select-affected-side">
+            <option value="">請選擇 Select</option>
+            <option value="left">左 Left</option>
+            <option value="right">右 Right</option>
+          </select>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset class="rs-fieldset">
+      <legend>盲法確認 Blinding confirmation</legend>
+      <div class="rs-stack">
+        <label class="rs-check" data-testid="check-blind-1-wrap">
+          <input type="checkbox" id="chkBlindGroup" data-testid="checkbox-blind-group">
+          <span>我不知道participant的研究組別</span>
+        </label>
+        <label class="rs-check" data-testid="check-blind-2-wrap">
+          <input type="checkbox" id="chkBlindRecords" data-testid="checkbox-blind-records">
+          <span>評估期間沒有查看訓練紀錄</span>
+        </label>
+        <label class="rs-check" data-testid="check-unblinding-wrap">
+          <input type="checkbox" id="chkPossibleUnblinding" data-testid="checkbox-possible-unblinding">
+          <span>可能已解除盲法（possible unblinding）</span>
+        </label>
+        <div class="rs-grid rs-hidden" id="breachBlock" data-testid="block-breach">
+          <div class="rs-field">
+            <label for="inpBreachReason">解除盲法原因 Breach reason（必填 required）</label>
+            <textarea id="inpBreachReason" class="rs-textarea" data-testid="input-breach-reason" maxlength="400" placeholder="描述事件經過，不可包含可識別資料"></textarea>
+          </div>
+          <div class="rs-field">
+            <label for="inpBreachAssessor">記錄者評估員代碼 Assessor code（必填 required）</label>
+            <input id="inpBreachAssessor" class="rs-input rs-mono" data-testid="input-breach-assessor-code" maxlength="12">
+            <span class="rs-hint">評估資料會照常保留，事件會寫入 breach log。Assessment data is retained and the breach is logged.</span>
+          </div>
+        </div>
+      </div>
+    </fieldset>
+
+    <details class="rs-details" data-testid="details-guidance-1">
+      <summary>詳細指引 Detailed guidance</summary>
+      <div class="rs-details-body">
+        評估員不應查閱任何訓練紀錄或與介入治療師討論參加者的訓練內容。若評估期間意外得知資料，請勾選「可能已解除盲法」並如實記錄，不要中止或修改已收集的評估數值。
+      </div>
+    </details>
+  </section>
+
+  <!-- ================= STEP 2 ================= -->
+  <section class="rs-card rs-step rs-hidden" data-step="2" data-testid="step-2">
+    <h2>2. 安全、疼痛及疲勞 Safety / Pain / Fatigue</h2>
+    <button type="button" class="rs-btn rs-btn-secondary rs-btn-small" data-testid="button-voice-2" data-voice="你而家患側上肢有幾痛？0係完全唔痛，10係你可以想像最嚴重嘅痛。">🔊 播放疼痛指示 Voice</button>
+
+    <fieldset class="rs-fieldset">
+      <legend>醫療穩定 Medical stability</legend>
+      <div class="rs-inline">
+        <button type="button" class="rs-btn rs-btn-secondary" data-testid="button-medstable-yes" data-yn="medicalStable" data-val="yes" aria-pressed="false">✔ 是 Yes</button>
+        <button type="button" class="rs-btn rs-btn-secondary" data-testid="button-medstable-no" data-yn="medicalStable" data-val="no" aria-pressed="false">✖ 否 No</button>
+      </div>
+    </fieldset>
+
+    <fieldset class="rs-fieldset">
+      <legend>疼痛 Pain（0–10）</legend>
+      <p class="rs-lead" data-testid="text-pain-script">你而家患側上肢有幾痛？0係完全唔痛，10係你可以想像最嚴重嘅痛。</p>
+      <div class="rs-scale" id="scalePainPre" data-scale="painPre" data-testid="scale-pain-pre"></div>
+      <div class="rs-scale-ends"><span>0 完全唔痛 No pain</span><span>10 最嚴重 Worst</span></div>
+    </fieldset>
+
+    <fieldset class="rs-fieldset">
+      <legend>疲勞 Fatigue（0–10）</legend>
+      <p class="rs-lead" data-testid="text-fatigue-script">你而家有幾攰？0係完全唔攰，10係攰到完全做唔到活動。</p>
+      <button type="button" class="rs-btn rs-btn-secondary rs-btn-small" data-testid="button-voice-2b" data-voice="你而家有幾攰？0係完全唔攰，10係攰到完全做唔到活動。">🔊 播放疲勞指示 Voice</button>
+      <div class="rs-scale" id="scaleFatiguePre" data-scale="fatiguePre" data-testid="scale-fatigue-pre"></div>
+      <div class="rs-scale-ends"><span>0 完全唔攰 None</span><span>10 極度疲勞 Extreme</span></div>
+    </fieldset>
+
+    <fieldset class="rs-fieldset">
+      <legend>參加者是否準備好開始 Ready to start</legend>
+      <div class="rs-inline">
+        <button type="button" class="rs-btn rs-btn-secondary" data-testid="button-ready-yes" data-yn="readyToStart" data-val="yes" aria-pressed="false">✔ 是 Yes</button>
+        <button type="button" class="rs-btn rs-btn-secondary" data-testid="button-ready-no" data-yn="readyToStart" data-val="no" aria-pressed="false">✖ 否 No</button>
+      </div>
+      <div class="rs-field rs-hidden" id="pauseBlock" data-testid="block-pause" style="margin-top:14px">
+        <div class="rs-note rs-note-danger"><span class="rs-note-icon" aria-hidden="true">⛔</span><span><b>暫停評估</b>　Assessment paused — 不可繼續下一步。</span></div>
+        <label for="inpPauseReason">暫停原因 Reason（必填 required）</label>
+        <textarea id="inpPauseReason" class="rs-textarea" data-testid="input-pause-reason" maxlength="400"></textarea>
+      </div>
+    </fieldset>
+
+    <details class="rs-details" data-testid="details-guidance-2">
+      <summary>詳細指引 Detailed guidance</summary>
+      <div class="rs-details-body">依醫院常規判斷醫療穩定性（生命表徵、醫囑活動限制、當日臨床狀況）。若參加者表示未準備好或安全未通過，須按 protocol 暫停評估並記錄原因，資料照樣保留。</div>
+    </details>
+  </section>
+
+  <!-- ================= STEP 3 ================= -->
+  <section class="rs-card rs-step rs-hidden" data-step="3" data-testid="step-3">
+    <h2>3. FTHUE-HK</h2>
+    <div class="rs-note rs-note-info" data-testid="text-fthue-reminder"><span class="rs-note-icon" aria-hidden="true">ℹ</span><span>請按照醫院正式FTHUE-HK評估程序完成評估。</span></div>
+    <button type="button" class="rs-btn rs-btn-secondary rs-btn-small" data-testid="button-voice-3" data-voice="請按照醫院正式FTHUE-HK評估程序完成評估。">🔊 播放指示 Voice</button>
+    <fieldset class="rs-fieldset">
+      <legend>官方結果 Official result</legend>
+      <div class="rs-grid">
+        <div class="rs-field">
+          <label for="selFthueLevel">FTHUE-HK level（1–7）</label>
+          <select id="selFthueLevel" class="rs-select" data-testid="select-fthue-level">
+            <option value="">未記錄 Not recorded</option>
+            <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+            <option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option>
+          </select>
+        </div>
+        <div class="rs-field">
+          <label for="selFthueCompleted">是否完成 Completed</label>
+          <select id="selFthueCompleted" class="rs-select" data-testid="select-fthue-completed">
+            <option value="">未記錄</option><option value="yes">是 Yes</option><option value="no">否 No</option>
+          </select>
+        </div>
+        <div class="rs-field">
+          <label for="inpFthueUnableReason">未能完成原因 Unable reason</label>
+          <input id="inpFthueUnableReason" class="rs-input" data-testid="input-fthue-unable-reason" maxlength="200">
+        </div>
+        <div class="rs-field">
+          <label for="selFthueAssistance">協助程度 Assistance</label>
+          <select id="selFthueAssistance" class="rs-select" data-testid="select-fthue-assistance">
+            <option value="">未記錄</option>
+            <option value="none">無 None</option>
+            <option value="setup">擺位／準備 Set-up</option>
+            <option value="verbal">口頭提示 Verbal</option>
+            <option value="physical">身體協助 Physical</option>
+          </select>
+        </div>
+        <div class="rs-field">
+          <label for="inpFthueCues">口頭提示次數 Verbal cues (count)</label>
+          <input id="inpFthueCues" type="number" min="0" max="99" step="1" class="rs-input" data-testid="input-fthue-cues">
+        </div>
+        <div class="rs-field">
+          <label for="selFthueTrunk">軀幹代償 Trunk compensation</label>
+          <select id="selFthueTrunk" class="rs-select" data-testid="select-fthue-trunk">
+            <option value="">未記錄</option><option value="none">無 None</option>
+            <option value="mild">輕微 Mild</option><option value="marked">明顯 Marked</option>
+          </select>
+        </div>
+        <div class="rs-field">
+          <label for="selFthuePain">疼痛限制表現 Pain limited</label>
+          <select id="selFthuePain" class="rs-select" data-testid="select-fthue-pain-limited">
+            <option value="">未記錄</option><option value="no">否 No</option><option value="yes">是 Yes</option>
+          </select>
+        </div>
+        <div class="rs-field">
+          <label for="selFthueFatigue">疲勞限制表現 Fatigue limited</label>
+          <select id="selFthueFatigue" class="rs-select" data-testid="select-fthue-fatigue-limited">
+            <option value="">未記錄</option><option value="no">否 No</option><option value="yes">是 Yes</option>
+          </select>
+        </div>
+      </div>
+    </fieldset>
+    <details class="rs-details" data-testid="details-guidance-3">
+      <summary>詳細指引 Detailed guidance</summary>
+      <div class="rs-details-body">本系統只記錄醫院正式 FTHUE-HK 評估的結果，不提供評分規則、不代替正式評估程序，亦不會自動推算 level。</div>
+    </details>
+  </section>
+
+  <!-- ================= STEP 4 ================= -->
+  <section class="rs-card rs-step rs-hidden" data-step="4" data-testid="step-4">
+    <h2>4. 握力 Grip strength</h2>
+    <button type="button" class="rs-btn rs-btn-secondary rs-btn-small" data-testid="button-voice-4" data-voice="請按標準姿勢進行三次握力測試。每次之間可按參加者需要休息。">🔊 播放指示 Voice</button>
+    <fieldset class="rs-fieldset">
+      <legend>儀器設定 Dynamometer</legend>
+      <div class="rs-grid">
+        <div class="rs-field"><label for="inpDynamometerId">Dynamometer ID</label>
+          <input id="inpDynamometerId" class="rs-input rs-mono" data-testid="input-dynamometer-id" maxlength="24"></div>
+        <div class="rs-field"><label for="selHandleSetting">Handle setting（1–5）</label>
+          <select id="selHandleSetting" class="rs-select" data-testid="select-handle-setting">
+            <option value="">未記錄</option><option value="1">1</option><option value="2">2</option>
+            <option value="3">3</option><option value="4">4</option><option value="5">5</option>
+          </select></div>
+      </div>
+    </fieldset>
+    <fieldset class="rs-fieldset">
+      <legend>三次測試 Trials（kg）</legend>
+      <div class="rs-grid">
+        <div class="rs-field"><label for="inpGrip1">Trial 1 (kg)</label><input id="inpGrip1" type="number" min="0" max="120" step="0.1" class="rs-input" data-testid="input-grip-trial-1"></div>
+        <div class="rs-field"><label for="inpGrip2">Trial 2 (kg)</label><input id="inpGrip2" type="number" min="0" max="120" step="0.1" class="rs-input" data-testid="input-grip-trial-2"></div>
+        <div class="rs-field"><label for="inpGrip3">Trial 3 (kg)</label><input id="inpGrip3" type="number" min="0" max="120" step="0.1" class="rs-input" data-testid="input-grip-trial-3"></div>
+      </div>
+      <div class="rs-inline" style="margin-top:14px">
+        <label class="rs-check" style="max-width:420px"><input type="checkbox" id="chkGripUnable" data-testid="checkbox-grip-unable"><span>未能完成 Unable（記錄為 N.A.，不會當作 0）</span></label>
+        <input id="inpGripUnableReason" class="rs-input rs-hidden" style="max-width:360px" data-testid="input-grip-unable-reason" maxlength="200" placeholder="未能完成原因 Unable reason">
+      </div>
+      <p class="rs-lead" style="margin-top:12px" data-testid="text-grip-mean">平均值 Mean：—</p>
+      <div class="rs-inline">
+        <button type="button" class="rs-btn rs-btn-rest rs-btn-small" data-testid="button-grip-rest" data-rest-context="Grip trials">開始休息 Start rest</button>
+        <button type="button" class="rs-btn rs-btn-secondary rs-btn-small" data-testid="button-grip-ready-next-trial">參加者已準備好下一次測試 Ready for next trial</button>
+        <span class="rs-hint" data-testid="text-grip-trial-note"></span>
+      </div>
+    </fieldset>
+    <details class="rs-details" data-testid="details-guidance-4">
+      <summary>詳細指引 Detailed guidance</summary>
+      <div class="rs-details-body">使用醫院標準姿勢及同一部 dynamometer；T0 與 T1 必須使用相同 handle setting。三次測試全部有效時系統才會計算平均值；任何一次缺失，平均值保持空白。未能完成記錄為 N.A.，不會寫成 0。</div>
+    </details>
+  </section>
+
+  <!-- ================= STEP 5 ================= -->
+  <section class="rs-card rs-step rs-hidden" data-step="5" data-testid="step-5">
+    <h2>5. 捏力 Pinch strength</h2>
+    <button type="button" class="rs-btn rs-btn-secondary rs-btn-small" data-testid="button-voice-5" data-voice="請按標準姿勢進行三次捏力測試。">🔊 播放指示 Voice</button>
+    <fieldset class="rs-fieldset">
+      <legend>捏力類型 Pinch type</legend>
+      <div class="rs-field" style="max-width:420px">
+        <label for="selPinchType">Type</label>
+        <select id="selPinchType" class="rs-select" data-testid="select-pinch-type">
+          <option value="">請選擇 Select</option>
+          <option value="tip">指尖捏 Tip</option>
+          <option value="three_jaw">三爪捏 Three-jaw chuck</option>
+          <option value="lateral">側捏 Lateral</option>
+        </select>
+        <span class="rs-hint" data-testid="text-pinch-lock-note"></span>
+      </div>
+    </fieldset>
+    <fieldset class="rs-fieldset">
+      <legend>三次測試 Trials（kg）</legend>
+      <div class="rs-grid">
+        <div class="rs-field"><label for="inpPinch1">Trial 1 (kg)</label><input id="inpPinch1" type="number" min="0" max="40" step="0.1" class="rs-input" data-testid="input-pinch-trial-1"></div>
+        <div class="rs-field"><label for="inpPinch2">Trial 2 (kg)</label><input id="inpPinch2" type="number" min="0" max="40" step="0.1" class="rs-input" data-testid="input-pinch-trial-2"></div>
+        <div class="rs-field"><label for="inpPinch3">Trial 3 (kg)</label><input id="inpPinch3" type="number" min="0" max="40" step="0.1" class="rs-input" data-testid="input-pinch-trial-3"></div>
+      </div>
+      <div class="rs-inline" style="margin-top:14px">
+        <label class="rs-check" style="max-width:420px"><input type="checkbox" id="chkPinchUnable" data-testid="checkbox-pinch-unable"><span>未能完成 Unable（記錄為 N.A.，不會當作 0）</span></label>
+        <input id="inpPinchUnableReason" class="rs-input rs-hidden" style="max-width:360px" data-testid="input-pinch-unable-reason" maxlength="200" placeholder="未能完成原因 Unable reason">
+      </div>
+      <p class="rs-lead" style="margin-top:12px" data-testid="text-pinch-mean">平均值 Mean：—</p>
+      <div class="rs-inline">
+        <button type="button" class="rs-btn rs-btn-rest rs-btn-small" data-testid="button-pinch-rest" data-rest-context="Pinch trials">開始休息 Start rest</button>
+        <button type="button" class="rs-btn rs-btn-secondary rs-btn-small" data-testid="button-pinch-ready-next-trial">參加者已準備好下一次測試 Ready for next trial</button>
+      </div>
+    </fieldset>
+  </section>
+
+  <!-- ================= STEP 6 ================= -->
+  <section class="rs-card rs-step rs-hidden" data-step="6" data-testid="step-6">
+    <h2>6. ADL 觀察 ADL observation</h2>
+    <p class="rs-lead" data-testid="text-adl-substep">項目 1 of 3</p>
+    <div class="rs-note rs-note-info rs-hidden" data-testid="text-adl-t1-reminder" id="adlT1Reminder">
+      <span class="rs-note-icon" aria-hidden="true">ℹ</span><span>請盡量使用與T0相同的食具、衣物、坐姿、環境、assistive device及assistance rules。</span>
+    </div>
+    <button type="button" class="rs-btn rs-btn-secondary rs-btn-small" data-testid="button-voice-6" data-voice="請按醫院正式ADL評估程序觀察，並記錄官方分數。">🔊 播放指示 Voice</button>
+    <div id="adlContainer" data-testid="container-adl"></div>
+    <div class="rs-inline" style="margin-top:14px">
+      <button type="button" class="rs-btn rs-btn-secondary" data-testid="button-adl-prev">◀ 上一項 Previous item</button>
+      <button type="button" class="rs-btn rs-btn-secondary" data-testid="button-adl-next">下一項 Next item ▶</button>
+    </div>
+    <details class="rs-details" data-testid="details-guidance-6">
+      <summary>詳細指引 Detailed guidance</summary>
+      <div class="rs-details-body">分數必須採用醫院正式使用的 ADL 評分工具；本系統不提供、不推算亦不假設任何評分規則。完成時間為選填。</div>
+    </details>
+  </section>
+
+  <!-- ================= STEP 7 ================= -->
+  <section class="rs-card rs-step rs-hidden" data-step="7" data-testid="step-7">
+    <h2>7. 標準化設定 Standardized setup</h2>
+    <p class="rs-lead">固定情境 Fixed scenario：<b data-testid="text-scenario-fixed">茶樓飲茶</b></p>
+    <button type="button" class="rs-btn rs-btn-secondary rs-btn-small" data-testid="button-voice-7" data-voice="請確認標準化設定。T0設定一經鎖定，T1必須完全相同。">🔊 播放指示 Voice</button>
+
+    <div class="rs-note rs-note-info rs-hidden" id="t1UploadBlock" data-testid="block-t1-upload">
+      <span class="rs-note-icon" aria-hidden="true">⬆</span>
+      <span>
+        T1 必須上載 T0 設定檔（<span class="rs-mono" data-testid="text-expected-settings-filename">ParticipantID_T0_settings.json</span>）。
+        <input type="file" id="inpSettingsUpload" accept="application/json,.json" data-testid="input-settings-upload" style="display:block;margin-top:10px">
+        <span data-testid="text-settings-upload-status" id="settingsUploadStatus"></span>
+      </span>
+    </div>
+
+    <fieldset class="rs-fieldset">
+      <legend>設定欄位 Setup fields</legend>
+      <div class="rs-grid">
+        <div class="rs-field"><label for="selSetupFthue">FTHUE level 分層 (setup)</label>
+          <select id="selSetupFthue" class="rs-select" data-testid="select-setup-fthue">
+            <option value="">請選擇</option><option value="4">4</option><option value="5">5</option>
+            <option value="6">6</option><option value="7">7</option></select></div>
+        <div class="rs-field"><label for="selMotorTask">Motor task</label>
+          <select id="selMotorTask" class="rs-select" data-testid="select-motor-task">
+            <option value="">請選擇</option>
+            <option value="grasp_release">握放 Grasp–release</option>
+            <option value="pinch_place">捏放 Pinch–place</option>
+            <option value="tool_transfer">工具轉移 Tool transfer</option>
+          </select></div>
+        <div class="rs-field"><label for="selSetupTool">工具 Tool</label>
+          <select id="selSetupTool" class="rs-select" data-testid="select-setup-tool">
+            <option value="">請選擇</option><option value="none">不使用工具 None</option>
+            <option value="cloth_peg">衣夾／食物夾 Peg</option><option value="chopsticks">筷子 Chopsticks</option>
+            <option value="other">其他指定工具 Other</option></select></div>
+        <div class="rs-field"><label for="selFoodSize">點心大小 Food size</label>
+          <select id="selFoodSize" class="rs-select" data-testid="select-food-size">
+            <option value="">請選擇</option><option value="small">小 Small</option>
+            <option value="medium">中 Medium</option><option value="large">大 Large</option></select></div>
+        <div class="rs-field"><label for="selPlateSize">碟大小 Plate size</label>
+          <select id="selPlateSize" class="rs-select" data-testid="select-plate-size">
+            <option value="">請選擇</option><option value="small">小 Small</option>
+            <option value="medium">中 Medium</option><option value="large">大 Large</option></select></div>
+        <div class="rs-field"><label for="selCameraPosition">相機位置 Camera position</label>
+          <select id="selCameraPosition" class="rs-select" data-testid="select-camera-position">
+            <option value="">請選擇</option><option value="front_table">正前方枱面 Front / table</option>
+            <option value="front_stand">正前方支架 Front / stand</option><option value="lateral">側面 Lateral</option></select></div>
+        <div class="rs-field"><label for="selCognitiveTask">Cognitive task</label>
+          <select id="selCognitiveTask" class="rs-select" data-testid="select-cognitive-task">
+            <option value="auditory_target">聽覺目標偵測 Auditory target detection（燒賣）</option>
+          </select></div>
+        <div class="rs-field"><label for="selCognitiveDifficulty">Cognitive difficulty</label>
+          <select id="selCognitiveDifficulty" class="rs-select" data-testid="select-cognitive-difficulty">
+            <option value="">請選擇</option>
+            <option value="slow">慢速 Slow (1 item / 5 s)</option>
+            <option value="standard">標準 Standard (1 item / 4 s)</option>
+            <option value="fast">快速 Fast (1 item / 3 s)</option></select></div>
+        <div class="rs-field"><label for="inpConditionDuration">每個 condition 時間（秒）Duration</label>
+          <input id="inpConditionDuration" type="number" min="30" max="600" step="10" value="120" class="rs-input" data-testid="input-condition-duration"></div>
+        <div class="rs-field"><label for="selConditionOrder">Condition order</label>
+          <select id="selConditionOrder" class="rs-select" data-testid="select-condition-order">
+            <option value="motor,cognitive,dual">單一動作 → 單一認知 → 雙重</option>
+            <option value="motor,dual,cognitive">單一動作 → 雙重 → 單一認知</option>
+            <option value="cognitive,motor,dual">單一認知 → 單一動作 → 雙重</option>
+            <option value="cognitive,dual,motor">單一認知 → 雙重 → 單一動作</option>
+            <option value="dual,motor,cognitive">雙重 → 單一動作 → 單一認知</option>
+            <option value="dual,cognitive,motor">雙重 → 單一認知 → 單一動作</option>
+          </select></div>
+      </div>
+      <div class="rs-inline" style="margin-top:14px">
+        <button type="button" class="rs-btn rs-btn-secondary" data-testid="button-randomize-order" id="btnRandomizeOrder">隨機排序一次 Randomize order (T0 only)</button>
+        <button type="button" class="rs-btn" data-testid="button-lock-setup" id="btnLockSetup">鎖定 T0 設定 Lock setup</button>
+        <span class="rs-status-pill rs-status-pending" data-testid="status-setup-lock" id="setupLockStatus">未鎖定 Unlocked</span>
+      </div>
+    </fieldset>
+    <details class="rs-details" data-testid="details-guidance-7">
+      <summary>詳細指引 Detailed guidance</summary>
+      <div class="rs-details-body">T0 只可隨機排序一次，鎖定後不可再更改。T1 不提供隨機排序，必須上載對應的 T0 設定檔；系統會核對 Participant ID 並鎖定所有設定欄位。</div>
+    </details>
+  </section>
+
+  <!-- ================= STEP 8 ================= -->
+  <section class="rs-card rs-step rs-hidden" data-step="8" data-testid="step-8">
+    <h2>8. 三個 conditions</h2>
+    <p class="rs-lead" data-testid="text-condition-progress">Condition 1 of 3</p>
+    <div id="conditionContainer" data-testid="container-condition"></div>
+    <div class="rs-inline" style="margin-top:14px">
+      <button type="button" class="rs-btn rs-btn-secondary" data-testid="button-condition-prev">◀ 上一個 condition</button>
+      <button type="button" class="rs-btn rs-btn-secondary" data-testid="button-condition-next">下一個 condition ▶</button>
+    </div>
+    <div class="rs-card" style="margin-top:16px;background:#FFFDF8" data-testid="card-dtc">
+      <h3>Dual-task cost（自動計算 auto）</h3>
+      <p data-testid="text-motor-dtc">Motor DTC：—</p>
+      <p data-testid="text-cognitive-dtc">Cognitive Accuracy DTC：—</p>
+      <p class="rs-hint">DTC 由系統自動計算，評估員無須手動運算。</p>
+    </div>
+  </section>
+
+  <!-- ================= STEP 9 ================= -->
+  <section class="rs-card rs-step rs-hidden" data-step="9" data-testid="step-9">
+    <h2>9. 休息紀錄檢視 Rest log review</h2>
+    <p class="rs-lead">休息由參加者需要決定，沒有固定 1 分鐘。Participant-responsive rest only.</p>
+    <div class="rs-table-wrap">
+      <table class="rs-table" data-testid="table-rest-log">
+        <thead><tr><th>#</th><th>階段 Context</th><th>原因 Reason</th><th>開始 Start</th><th>結束 End</th><th>時間（秒）</th><th>已繼續 Resumed</th></tr></thead>
+        <tbody id="restLogBody"></tbody>
+      </table>
+    </div>
+    <p class="rs-lead" style="margin-top:12px" data-testid="text-rest-totals">休息次數 0 · 總休息時間 0 秒</p>
+  </section>
+
+  <!-- ================= STEP 10 ================= -->
+  <section class="rs-card rs-step rs-hidden" data-step="10" data-testid="step-10">
+    <h2>10. 評估後紀錄及資料檢查 Post-assessment &amp; data review</h2>
+    <fieldset class="rs-fieldset">
+      <legend>評估後 疼痛 Pain（0–10）</legend>
+      <div class="rs-scale" id="scalePainPost" data-scale="painPost" data-testid="scale-pain-post"></div>
+    </fieldset>
+    <fieldset class="rs-fieldset">
+      <legend>評估後 疲勞 Fatigue（0–10）</legend>
+      <div class="rs-scale" id="scaleFatiguePost" data-scale="fatiguePost" data-testid="scale-fatigue-post"></div>
+    </fieldset>
+    <fieldset class="rs-fieldset">
+      <legend>安全及完成情況 Safety &amp; completion</legend>
+      <div class="rs-grid">
+        <div class="rs-field"><label for="selNewSymptom">新症狀 New symptom</label>
+          <select id="selNewSymptom" class="rs-select" data-testid="select-new-symptom">
+            <option value="">未記錄</option><option value="no">否 No</option><option value="yes">是 Yes</option></select></div>
+        <div class="rs-field"><label for="selAdverseEvent">不良事件 Adverse event</label>
+          <select id="selAdverseEvent" class="rs-select" data-testid="select-adverse-event">
+            <option value="">未記錄</option><option value="no">否 No</option><option value="yes">是 Yes</option></select></div>
+        <div class="rs-field"><label for="inpAeDescription">事件描述 Description</label>
+          <textarea id="inpAeDescription" class="rs-textarea" data-testid="input-ae-description" maxlength="400"></textarea></div>
+        <div class="rs-field"><label for="selAssessmentCompleted">評估完成情況 Assessment completed</label>
+          <select id="selAssessmentCompleted" class="rs-select" data-testid="select-assessment-completed">
+            <option value="">未記錄</option><option value="yes">Yes 全部完成</option>
+            <option value="partial">Partially 部分完成</option><option value="no">No 未完成</option></select></div>
+      </div>
+      <p class="rs-lead" style="margin-top:12px" data-testid="text-auto-summary">自動摘要 Auto summary：—</p>
+    </fieldset>
+
+    <fieldset class="rs-fieldset">
+      <legend>資料檢查 Validation</legend>
+      <button type="button" class="rs-btn rs-btn-secondary" data-testid="button-run-validation" id="btnRunValidation">執行資料檢查 Run validation</button>
+      <div id="validationResults" data-testid="container-validation" style="margin-top:14px"></div>
+      <div class="rs-inline" style="margin-top:14px">
+        <button type="button" class="rs-btn rs-btn-secondary" data-testid="button-return-modify" id="btnReturnModify">返回修改 Return &amp; modify</button>
+        <button type="button" class="rs-btn" data-testid="button-confirm-lock" id="btnConfirmLock">確認並鎖定 Confirm &amp; lock</button>
+        <span class="rs-status-pill rs-status-pending" data-testid="status-record-lock" id="recordLockStatus">未鎖定 Unlocked</span>
+      </div>
+    </fieldset>
+
+    <fieldset class="rs-fieldset rs-hidden" id="correctionBlock" data-testid="block-correction">
+      <legend>鎖定後更正 Post-lock correction（append-only audit）</legend>
+      <div class="rs-grid">
+        <div class="rs-field"><label for="selCorrectionField">欄位 Field</label><select id="selCorrectionField" class="rs-select" data-testid="select-correction-field"></select></div>
+        <div class="rs-field"><label for="inpCorrectionValue">更正值 Corrected value</label><input id="inpCorrectionValue" class="rs-input" data-testid="input-correction-value" maxlength="200"></div>
+        <div class="rs-field"><label for="inpCorrectionReason">更正原因 Reason</label><input id="inpCorrectionReason" class="rs-input" data-testid="input-correction-reason" maxlength="240"></div>
+        <div class="rs-field"><label for="inpCorrectionAssessor">評估員代碼 Assessor code</label><input id="inpCorrectionAssessor" class="rs-input rs-mono" data-testid="input-correction-assessor" maxlength="12"></div>
+      </div>
+      <button type="button" class="rs-btn rs-btn-warn" style="margin-top:12px" data-testid="button-add-correction" id="btnAddCorrection">加入更正紀錄 Append correction</button>
+      <div class="rs-table-wrap" style="margin-top:14px">
+        <table class="rs-table" data-testid="table-audit">
+          <thead><tr><th>#</th><th>欄位</th><th>原始值 Original</th><th>更正值 Corrected</th><th>原因</th><th>時間</th><th>評估員</th></tr></thead>
+          <tbody id="auditBody"></tbody>
+        </table>
+      </div>
+      <p class="rs-hint">原始值永不刪除；所有更正以 append-only audit trail 記錄並匯出。</p>
+    </fieldset>
+
+    <fieldset class="rs-fieldset">
+      <legend>下載 Downloads</legend>
+      <div class="rs-inline">
+        <button type="button" class="rs-btn" data-testid="button-download-assessment-csv" id="btnDownloadAssessment">下載評估摘要 CSV</button>
+        <button type="button" class="rs-btn" data-testid="button-download-settings-json" id="btnDownloadSettings">下載 settings JSON（T0）</button>
+        <button type="button" class="rs-btn rs-btn-secondary" data-testid="button-download-conditions-csv" id="btnDownloadConditions">下載 condition-level raw CSV</button>
+        <button type="button" class="rs-btn rs-btn-secondary" data-testid="button-download-restae-csv" id="btnDownloadRestAe">下載 rest／adverse event log CSV</button>
+        <button type="button" class="rs-btn rs-btn-secondary" data-testid="button-download-dictionary" id="btnDownloadDictionary">下載 data dictionary CSV</button>
+      </div>
+      <div id="downloadFeedback" data-testid="text-download-feedback" style="margin-top:12px"></div>
+    </fieldset>
+  </section>
+
+</main>
+
+<nav class="rs-navbar" aria-label="評估導覽 Wizard navigation">
+  <div class="rs-nav-group">
+    <button type="button" class="rs-btn rs-btn-secondary" data-testid="button-prev-step" id="btnPrev">◀ 上一步 Previous</button>
+  </div>
+  <div class="rs-nav-group">
+    <button type="button" class="rs-btn rs-btn-secondary" data-testid="button-save-draft" id="btnSaveDraft">💾 儲存草稿 Save draft</button>
+    <select class="rs-select" style="max-width:260px" data-testid="select-test-preset" id="selTestPreset" aria-label="測試模式 Test mode preset">
+      <option value="">測試模式：關 Test mode: off</option>
+      <option value="TEST001">TEST001 完整 T0＋T1</option>
+      <option value="TEST002">TEST002 休息／暫停</option>
+      <option value="TEST003">TEST003 捏力 unable＋缺失資料</option>
+    </select>
+    <button type="button" class="rs-btn" data-testid="button-next-step" id="btnNext">下一步 Next ▶</button>
+  </div>
+</nav>
+
+<script src="research-common.js"></script>
+<script src="assessor.js"></script>
+</body>
+</html>

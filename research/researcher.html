@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>研究員／資料管理｜Randomization &amp; data management</title>
+<meta name="description" content="Researcher / data management module: randomization, allocation, participant progress, data merge and anonymized export.">
+<link rel="stylesheet" href="research.css">
+</head>
+<body data-page="researcher">
+<div class="rs-test-banner" data-testid="banner-test-mode">TEST MODE — 測試資料，不可用作研究分析 TEST DATA ONLY</div>
+
+<header class="rs-topbar">
+  <div>
+    <h1>研究員／資料管理 Researcher &amp; Data Management</h1>
+    <span class="rs-sub">Randomization · allocation · 資料合併 · protocol deviation</span>
+  </div>
+  <div class="rs-topbar-actions">
+    <a class="rs-btn rs-btn-secondary rs-btn-small" href="index.html" data-testid="link-back-hub">返回入口 Hub</a>
+  </div>
+</header>
+
+<!-- ===== passcode gate ===== -->
+<main class="rs-shell" id="gateShell" data-testid="section-gate">
+  <section class="rs-card">
+    <h2>研究員通行碼 Researcher passcode</h2>
+    <div class="rs-note rs-note-warn" data-testid="text-gate-warning">
+      <span class="rs-note-icon" aria-hidden="true">⚠</span>
+      <span>此靜態 client-side passcode 只是 <b>operational blinding barrier</b>（避免評估員誤入本頁），<b>並非 production authentication</b>，亦不提供加密保護。正式使用前必須更改，並配合醫院的實體及行政管控。</span>
+    </div>
+    <div class="rs-field" style="max-width:420px">
+      <label for="inpPasscode">Passcode</label>
+      <input id="inpPasscode" type="password" class="rs-input rs-mono" data-testid="input-passcode" autocomplete="off">
+    </div>
+    <div class="rs-inline" style="margin-top:14px">
+      <button type="button" class="rs-btn" data-testid="button-unlock" id="btnUnlock">解鎖 Unlock</button>
+      <span data-testid="text-gate-error" id="gateError" style="color:#A32217;font-weight:900"></span>
+    </div>
+    <details class="rs-details" style="margin-top:16px" data-testid="details-passcode-doc">
+      <summary>臨時預設通行碼說明 Documented temporary default</summary>
+      <div class="rs-details-body">
+        本原型的臨時預設通行碼記錄於研究文件及 progress.md：<b>YCH-PILOT-2026</b>。頁面只儲存其 SHA-256 雜湊值（Web Crypto 比對），不會儲存明文。正式研究開始前必須更換，並由研究員保管。
+      </div>
+    </details>
+  </section>
+</main>
+
+<!-- ===== researcher workspace ===== -->
+<main class="rs-shell rs-hidden" id="workShell" data-testid="section-workspace">
+  <div class="rs-note rs-note-warn" data-testid="text-passcode-warning">
+    <span class="rs-note-icon" aria-hidden="true">⚠</span>
+    <span>提醒：靜態 client-side passcode 為 operational blinding barrier，不是 production authentication，正式使用前必須更改。所有資料只存於本頁記憶體，關閉前必須匯出。</span>
+  </div>
+
+  <section class="rs-card">
+    <h2>1. Randomization &amp; allocation</h2>
+    <p class="rs-lead">1:1 permuted-block randomization（block size 2 或 4），以研究員輸入的 seed 產生，可重現、可匯出。分配標籤在研究員按下「揭示」前保持隱藏（concealed）。</p>
+    <fieldset class="rs-fieldset">
+      <legend>產生分配序列 Generate sequence</legend>
+      <div class="rs-grid">
+        <div class="rs-field"><label for="inpSeed">Seed（研究文件記錄 recorded in study file）</label>
+          <input id="inpSeed" class="rs-input rs-mono" data-testid="input-seed" value="YCH-PILOT-SEED-01" maxlength="40"></div>
+        <div class="rs-field"><label for="inpNSlots">名額數目 Number of slots</label>
+          <input id="inpNSlots" type="number" min="2" max="200" step="2" value="12" class="rs-input" data-testid="input-slots"></div>
+        <div class="rs-field"><label for="selBlockSize">Block size</label>
+          <select id="selBlockSize" class="rs-select" data-testid="select-block-size">
+            <option value="2">2</option><option value="4" selected>4</option><option value="mixed">混合 2／4 Mixed</option>
+          </select></div>
+      </div>
+      <div class="rs-inline" style="margin-top:14px">
+        <button type="button" class="rs-btn" data-testid="button-generate-sequence" id="btnGenerate">產生序列 Generate</button>
+        <button type="button" class="rs-btn rs-btn-secondary" data-testid="button-download-allocation" id="btnDownloadAllocation">下載 allocation.csv</button>
+      </div>
+    </fieldset>
+
+    <fieldset class="rs-fieldset">
+      <legend>指派參加者 Assign participant</legend>
+      <div class="rs-grid">
+        <div class="rs-field"><label for="inpAssignId">匿名 Participant ID</label>
+          <input id="inpAssignId" class="rs-input rs-mono" data-testid="input-assign-id" maxlength="20" placeholder="例如 P001">
+          <span class="rs-hint" data-testid="text-assign-error" id="assignError"></span></div>
+        <div class="rs-field"><label for="inpAssignDate">分配日期 Allocation date</label>
+          <input id="inpAssignDate" type="date" class="rs-input" data-testid="input-assign-date"></div>
+      </div>
+      <button type="button" class="rs-btn" style="margin-top:14px" data-testid="button-assign-next-slot" id="btnAssign">指派下一個名額 Assign next slot</button>
+    </fieldset>
+
+    <div class="rs-table-wrap">
+      <table class="rs-table" data-testid="table-allocation">
+        <thead><tr><th>Slot</th><th>Block</th><th>Participant ID</th><th>分配日期</th><th>組別 Allocation</th><th>操作</th></tr></thead>
+        <tbody id="allocBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="rs-card">
+    <h2>2. 參加者進度 Participant progress</h2>
+    <p class="rs-lead">T0／T1 完成情況、Session 1–5 完成情況、缺失資料、blinding breach 及 protocol deviation。</p>
+    <div class="rs-table-wrap">
+      <table class="rs-table" data-testid="table-progress">
+        <thead><tr><th>Participant ID</th><th>組別</th><th>T0</th><th>T1</th><th>S1</th><th>S2</th><th>S3</th><th>S4</th><th>S5</th>
+          <th>缺失資料 Missing</th><th>Blinding breach</th><th>Deviations</th><th>TEST</th></tr></thead>
+        <tbody id="progressBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="rs-card">
+    <h2>3. 資料匯入及合併 Import &amp; merge</h2>
+    <p class="rs-lead">匯入評估員及治療師下載的 CSV／JSON。合併只以匿名 Participant ID 進行，系統不會接收任何可識別資料。</p>
+    <fieldset class="rs-fieldset">
+      <legend>匯入檔案 Import files</legend>
+      <div class="rs-grid">
+        <div class="rs-field"><label for="inpImportAssessment">評估 CSV（*_T0_assessment.csv／*_T1_assessment.csv）</label>
+          <input type="file" id="inpImportAssessment" accept=".csv,text/csv" multiple data-testid="input-import-assessment"></div>
+        <div class="rs-field"><label for="inpImportSession">Session CSV（*_intervention_sessions.csv）</label>
+          <input type="file" id="inpImportSession" accept=".csv,text/csv" multiple data-testid="input-import-session"></div>
+        <div class="rs-field"><label for="inpImportSettings">Settings JSON（*_T0_settings.json）</label>
+          <input type="file" id="inpImportSettings" accept=".json,application/json" multiple data-testid="input-import-settings"></div>
+      </div>
+      <div id="importLog" data-testid="text-import-log" style="margin-top:12px"></div>
+    </fieldset>
+    <div class="rs-inline">
+      <button type="button" class="rs-btn" data-testid="button-export-dataset" id="btnExportDataset">匯出合併匿名資料集 Export merged dataset</button>
+      <button type="button" class="rs-btn rs-btn-secondary" data-testid="button-export-deviations" id="btnExportDeviations">匯出 deviation／breach log</button>
+      <button type="button" class="rs-btn rs-btn-secondary" data-testid="button-load-test-data" id="btnLoadTestData">載入測試資料 TEST001–TEST003</button>
+    </div>
+    <div id="exportFeedback" data-testid="text-export-feedback" style="margin-top:12px"></div>
+  </section>
+
+  <section class="rs-card">
+    <h2>4. Protocol deviation 及 blinding breach</h2>
+    <fieldset class="rs-fieldset">
+      <legend>手動記錄 Manual entry</legend>
+      <div class="rs-grid">
+        <div class="rs-field"><label for="inpDevId">Participant ID</label><input id="inpDevId" class="rs-input rs-mono" data-testid="input-deviation-id" maxlength="20"></div>
+        <div class="rs-field"><label for="selDevType">類型 Type</label>
+          <select id="selDevType" class="rs-select" data-testid="select-deviation-type">
+            <option value="protocol_deviation">Protocol deviation</option>
+            <option value="blinding_breach">Blinding breach</option>
+            <option value="missing_data">Missing data</option>
+          </select></div>
+        <div class="rs-field"><label for="inpDevDetail">描述及處理 Description / action</label><input id="inpDevDetail" class="rs-input" data-testid="input-deviation-detail" maxlength="300"></div>
+        <div class="rs-field"><label for="inpDevBy">記錄者代碼 Recorded by</label><input id="inpDevBy" class="rs-input rs-mono" data-testid="input-deviation-by" maxlength="12"></div>
+      </div>
+      <button type="button" class="rs-btn rs-btn-warn" style="margin-top:12px" data-testid="button-add-deviation" id="btnAddDeviation">加入紀錄 Append</button>
+    </fieldset>
+    <div class="rs-table-wrap">
+      <table class="rs-table" data-testid="table-deviations">
+        <thead><tr><th>#</th><th>Participant</th><th>類型</th><th>描述</th><th>來源 Source</th><th>時間</th><th>記錄者</th></tr></thead>
+        <tbody id="deviationBody"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script src="research-common.js"></script>
+<script src="researcher.js"></script>
+</body>
+</html>
