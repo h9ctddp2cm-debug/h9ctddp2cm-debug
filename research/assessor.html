@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>訓練前／後評估記錄</title>
-<meta name="description" content="Blinded assessor module: T0/T1 standardized assessment and data collection for the YCH OT upper-limb pilot study.">
+<meta name="description" content="T0/T1 standardized assessment and data collection for the YCH OT upper-limb pilot study.">
 <link rel="stylesheet" href="research.css">
 </head>
 <body data-page="assessor">
@@ -18,7 +18,7 @@
   <div class="rs-topbar-actions">
     <span class="rs-status-pill rs-status-pending" data-testid="status-download" id="statusDownload">⬤ 尚未下載</span>
     <button type="button" class="rs-btn rs-btn-secondary rs-btn-small" data-testid="button-toggle-voice" id="btnToggleVoice">🔊 語音：開</button>
-    <a class="rs-btn rs-btn-secondary rs-btn-small" href="index.html" data-testid="link-back-hub">返回工作入口</a>
+    <a class="rs-btn rs-btn-secondary rs-btn-small" href="index.html" data-testid="link-back-hub">返回資料收集</a>
   </div>
 </header>
 
@@ -28,11 +28,6 @@
     <span class="rs-note-icon" aria-hidden="true">⚠</span>
     <span id="memoryWarningText">資料仍未正式保存。完成後請先下載檔案，才關閉或重新整理頁面。</span>
   </div>
-  <div class="rs-note rs-note-info" data-testid="text-assessor-role">
-    <span class="rs-note-icon" aria-hidden="true">人</span>
-    <span><b>職業治療師負責正式評估、臨床判斷及安全決定。</b>職業治療師助理可在其指示及監督下協助撳掣和輸入資料。</span>
-  </div>
-
   <!-- persistent participant-responsive rest control -->
   <section class="rs-rest-dock" aria-label="參加者主導休息 Participant-responsive rest" data-testid="dock-rest">
     <span aria-hidden="true">⏸</span>
@@ -57,7 +52,7 @@
   <section class="rs-card rs-step" data-step="1" data-testid="step-1">
     <h2>輸入病人編號</h2>
     <p class="rs-lead">只用匿名編號，例如 P001。不要輸入姓名或病歷號碼。</p>
-    <button type="button" class="rs-btn rs-btn-secondary rs-btn-small" data-testid="button-voice-1" data-voice="請輸入匿名研究編號，選擇訓練前或訓練後，然後完成評估員確認。">🔊 播放指示</button>
+    <button type="button" class="rs-btn rs-btn-secondary rs-btn-small" data-testid="button-voice-1" data-voice="請輸入匿名研究編號，選擇訓練前或訓練後。">🔊 播放指示</button>
 
     <div class="rs-note rs-note-warn" data-testid="text-id-warning">
       <span class="rs-note-icon" aria-hidden="true">⚠</span>
@@ -84,7 +79,7 @@
           <input id="inpAssessDatetime" type="datetime-local" class="rs-input" data-testid="input-assessment-datetime">
         </div>
         <div class="rs-field">
-          <label for="inpAssessorCode">評估員代碼</label>
+          <label for="inpAssessorCode">記錄者代碼</label>
           <input id="inpAssessorCode" class="rs-input rs-mono" data-testid="input-assessor-code" maxlength="12" placeholder="例如 AS01" autocomplete="off">
         </div>
         <div class="rs-field">
@@ -98,41 +93,6 @@
       </div>
     </fieldset>
 
-    <fieldset class="rs-fieldset">
-      <legend>評估員確認</legend>
-      <div class="rs-stack">
-        <label class="rs-check" data-testid="check-blind-1-wrap">
-          <input type="checkbox" id="chkBlindGroup" data-testid="checkbox-blind-group">
-          <span>我不知道這位病人屬於哪一組</span>
-        </label>
-        <label class="rs-check" data-testid="check-blind-2-wrap">
-          <input type="checkbox" id="chkBlindRecords" data-testid="checkbox-blind-records">
-          <span>評估期間沒有查看訓練紀錄</span>
-        </label>
-        <label class="rs-check" data-testid="check-unblinding-wrap">
-          <input type="checkbox" id="chkPossibleUnblinding" data-testid="checkbox-possible-unblinding">
-          <span>我可能已知道病人屬於哪一組</span>
-        </label>
-        <div class="rs-grid rs-hidden" id="breachBlock" data-testid="block-breach">
-          <div class="rs-field">
-            <label for="inpBreachReason">請簡單寫下怎樣得知組別（必填）</label>
-            <textarea id="inpBreachReason" class="rs-textarea" data-testid="input-breach-reason" maxlength="400" placeholder="描述事件經過，不可包含可識別資料"></textarea>
-          </div>
-          <div class="rs-field">
-            <label for="inpBreachAssessor">評估員代碼（必填）</label>
-            <input id="inpBreachAssessor" class="rs-input rs-mono" data-testid="input-breach-assessor-code" maxlength="12">
-            <span class="rs-hint">評估資料會保留，網站亦會記錄這件事。</span>
-          </div>
-        </div>
-      </div>
-    </fieldset>
-
-    <details class="rs-details" data-testid="details-guidance-1">
-      <summary>為甚麼評估員不可知道組別？</summary>
-      <div class="rs-details-body">
-        評估員不應查閱任何訓練紀錄或與介入治療師討論參加者的訓練內容。若評估期間意外得知資料，請勾選「可能已解除盲法」並如實記錄，不要中止或修改已收集的評估數值。
-      </div>
-    </details>
   </section>
 
   <!-- ================= STEP 2 ================= -->
@@ -537,7 +497,7 @@
         <div class="rs-field"><label for="selCorrectionField">欄位 Field</label><select id="selCorrectionField" class="rs-select" data-testid="select-correction-field"></select></div>
         <div class="rs-field"><label for="inpCorrectionValue">更正值 Corrected value</label><input id="inpCorrectionValue" class="rs-input" data-testid="input-correction-value" maxlength="200"></div>
         <div class="rs-field"><label for="inpCorrectionReason">更正原因 Reason</label><input id="inpCorrectionReason" class="rs-input" data-testid="input-correction-reason" maxlength="240"></div>
-        <div class="rs-field"><label for="inpCorrectionAssessor">評估員代碼 Assessor code</label><input id="inpCorrectionAssessor" class="rs-input rs-mono" data-testid="input-correction-assessor" maxlength="12"></div>
+        <div class="rs-field"><label for="inpCorrectionAssessor">記錄者代碼 Recorder code</label><input id="inpCorrectionAssessor" class="rs-input rs-mono" data-testid="input-correction-assessor" maxlength="12"></div>
       </div>
       <button type="button" class="rs-btn rs-btn-warn" style="margin-top:12px" data-testid="button-add-correction" id="btnAddCorrection">加入更正紀錄 Append correction</button>
       <div class="rs-table-wrap" style="margin-top:14px">

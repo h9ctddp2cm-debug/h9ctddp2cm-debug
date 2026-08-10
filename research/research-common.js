@@ -9,7 +9,7 @@
 
   var RC = {};
 
-  RC.VERSION = 'pilot-blinded-1.0.0';
+  RC.VERSION = 'pilot-single-researcher-1.1.0';
 
   /* ---------- anonymous ID ---------- */
   RC.ID_PATTERN = /^[A-Z0-9_-]{3,20}$/;

@@ -1,16 +1,11 @@
 /* ============================================================
-   Researcher / data-management bundle.
-   Holds randomization + allocation. NEVER referenced by the
-   blinded assessor bundle. Memory-only.
+   Single-researcher data-management bundle.
+   Organizes allocation, T0/T1 assessments and session records.
+   Memory-only.
    ============================================================ */
 (function () {
   'use strict';
   var $ = RC.$, $$ = RC.$$;
-
-  /* SHA-256 of the temporary researcher passcode.
-     Operational blinding barrier only — not production authentication.
-     Must be changed before formal use. */
-  var PASSCODE_HASH = '2c358df2c25f9bb565cdb7d4f8f50336250ba7280b30b1f93919bf3d4154490a';
 
   var GROUPS = { A: '遊戲介入組 Game intervention', B: '傳統治療對照組 Conventional control' };
 
@@ -18,7 +13,7 @@
   var assessments = [];      // imported assessment rows (no allocation inside)
   var sessionsRows = [];     // imported intervention rows
   var settingsFiles = [];    // imported T0 settings
-  var deviations = [];       // manual + imported deviation/breach entries
+  var deviations = [];       // manual + imported special-event entries
 
   /* ---------- deterministic PRNG (mulberry32 with string seed) ---------- */
   function hashSeed(str) {
@@ -105,7 +100,7 @@
   function participantIndex() {
     var map = {};
     function ensure(id) {
-      if (!map[id]) map[id] = { id: id, group: '', T0: false, T1: false, sessions: {}, missing: [], breach: false, deviations: 0, test: RC.isTestId(id) };
+      if (!map[id]) map[id] = { id: id, group: '', T0: false, T1: false, sessions: {}, missing: [], deviations: 0, test: RC.isTestId(id) };
       return map[id];
     }
     slots.forEach(function (s) { if (s.participantId) { var p = ensure(s.participantId); p.group = s.revealed ? GROUPS[s.group] : '🔒'; } });
@@ -113,7 +108,6 @@
       var p = ensure(a.participant_id);
       if (a.timepoint === 'T0') p.T0 = true;
       if (a.timepoint === 'T1') p.T1 = true;
-      if (String(a.possible_unblinding).toLowerCase() === 'yes') p.breach = true;
       ['fthue_level', 'grip_mean_kg', 'pinch_mean_kg', 'pain_post', 'fatigue_post'].forEach(function (k) {
         if (a[k] === '' || a[k] === undefined) p.missing.push(a.timepoint + ':' + k);
       });
@@ -125,8 +119,7 @@
     });
     deviations.forEach(function (d) {
       var p = ensure(d.participant_id);
-      if (d.type === 'blinding_breach') p.breach = true;
-      else p.deviations++;
+      p.deviations++;
     });
     return map;
   }
@@ -140,9 +133,9 @@
       }).join('');
       return '<tr data-testid="row-progress-' + RC.esc(id) + '"><td class="rs-mono">' + RC.esc(id) + '</td><td>' + RC.esc(p.group) +
         '</td><td>' + (p.T0 ? '✔' : '—') + '</td><td>' + (p.T1 ? '✔' : '—') + '</td>' + cells +
-        '<td>' + (p.missing.length ? '⚠ ' + p.missing.length : '—') + '</td><td>' + (p.breach ? '⚠ yes' : 'no') +
-        '</td><td>' + p.deviations + '</td><td>' + (p.test ? 'TEST' : '') + '</td></tr>';
-    }).join('') : '<tr><td colspan="13">未有資料 No data</td></tr>';
+        '<td>' + (p.missing.length ? '⚠ ' + p.missing.length : '—') + '</td><td>' + p.deviations +
+        '</td><td>' + (p.test ? 'TEST' : '') + '</td></tr>';
+    }).join('') : '<tr><td colspan="12">未有資料 No data</td></tr>';
   }
 
   /* ---------- import ---------- */
@@ -202,7 +195,7 @@
       rows.push([s.slot, s.block, s.participantId, s.date, s.group, GROUPS[s.group], seed, RC.nowISO()]);
     });
     RC.downloadCSV('allocation.csv', rows);
-    feedback('已下載 <b>allocation.csv</b>。此檔案只可由研究員保管，不可交予盲法評估員。');
+    feedback('已下載 <b>allocation.csv</b>。建議與評估檔分開保存，並在完成 T0 後才查看組別。');
   }
   function exportDataset() {
     var keys = {};
@@ -479,14 +472,8 @@
   function exportDeviations() {
     var rows = [['index', 'participant_id', 'type', 'detail', 'source', 'datetime', 'recorded_by']];
     deviations.forEach(function (d) { rows.push([d.index, d.participant_id, d.type, d.detail, d.source, d.datetime, d.by]); });
-    assessments.forEach(function (a) {
-      if (String(a.possible_unblinding).toLowerCase() === 'yes') {
-        rows.push([rows.length, a.participant_id, 'blinding_breach', a.unblinding_reason || '', 'assessment CSV',
-          a.assessment_datetime || '', a.unblinding_logged_by || '']);
-      }
-    });
-    RC.downloadCSV('deviation_breach_log.csv', rows);
-    feedback('已下載 <b>deviation_breach_log.csv</b>（' + (rows.length - 1) + ' 列）。');
+    RC.downloadCSV('special_event_log.csv', rows);
+    feedback('已下載 <b>special_event_log.csv</b>（' + (rows.length - 1) + ' 列）。');
   }
 
   /* ---------- deviations ---------- */
@@ -528,7 +515,7 @@
         setup_condition_duration_sec: '120', setup_condition_order: 'motor,cognitive,dual',
         setup_corrective_feedback: 'off', motor_correct_per_min: '10', cognitive_accuracy_pct: '90',
         dual_correct_per_min: '7.5', dual_accuracy_pct: '80', motor_dtc_pct: '25', cognitive_dtc_pct: '11.1',
-        pain_post: '4', fatigue_post: '6', possible_unblinding: 'no', test_record: 'TEST' },
+        pain_post: '4', fatigue_post: '6', test_record: 'TEST' },
       { participant_id: 'TEST001', timepoint: 'T1', assessment_datetime: '2026-08-08T14:00', assessor_code: 'TESTAS',
         affected_side: 'right', fthue_level: '6', grip_mean_kg: '13', pinch_mean_kg: '3.5',
         dynamometer_id: 'DYN-01', grip_handle_setting: '2', pinch_type: 'three_jaw',
@@ -537,9 +524,9 @@
         setup_condition_duration_sec: '120', setup_condition_order: 'motor,cognitive,dual',
         setup_corrective_feedback: 'off', motor_correct_per_min: '11', cognitive_accuracy_pct: '90',
         dual_correct_per_min: '9.5', dual_accuracy_pct: '88', motor_dtc_pct: '13.6', cognitive_dtc_pct: '2.2',
-        pain_post: '3', fatigue_post: '5', possible_unblinding: 'no', test_record: 'TEST' },
-      { participant_id: 'TEST002', timepoint: 'T0', fthue_level: '4', grip_mean_kg: '8', pinch_mean_kg: '2', pain_post: '5', fatigue_post: '7', possible_unblinding: 'yes', unblinding_reason: '測試：病房職員在評估期間提及訓練內容。', unblinding_logged_by: 'TESTAS', test_record: 'TEST' },
-      { participant_id: 'TEST003', timepoint: 'T0', fthue_level: '5', grip_mean_kg: '', pinch_mean_kg: '', pain_post: '', fatigue_post: '4', possible_unblinding: 'no', test_record: 'TEST' }
+        pain_post: '3', fatigue_post: '5', test_record: 'TEST' },
+      { participant_id: 'TEST002', timepoint: 'T0', fthue_level: '4', grip_mean_kg: '8', pinch_mean_kg: '2', pain_post: '5', fatigue_post: '7', test_record: 'TEST' },
+      { participant_id: 'TEST003', timepoint: 'T0', fthue_level: '5', grip_mean_kg: '', pinch_mean_kg: '', pain_post: '', fatigue_post: '4', test_record: 'TEST' }
     );
     [1, 2, 3, 4, 5].forEach(function (n) {
       sessionsRows.push({
@@ -567,22 +554,6 @@
     feedback('已載入 TEST001–TEST003 測試資料（全部標示 TEST，不可用作研究分析）。');
   }
 
-  /* ---------- gate ---------- */
-  function unlock() {
-    var val = $('#inpPasscode').value;
-    RC.sha256hex(val).then(function (h) {
-      if (h === PASSCODE_HASH) {
-        $('#gateShell').classList.add('rs-hidden');
-        $('#workShell').classList.remove('rs-hidden');
-        initWorkspace();
-      } else {
-        $('#gateError').textContent = '✖ 通行碼不正確 Incorrect passcode。';
-      }
-    }).catch(function () {
-      $('#gateError').textContent = '✖ 此瀏覽器不支援 Web Crypto，無法核對通行碼。';
-    });
-  }
-
   var wsReady = false;
   function initWorkspace() {
     if (wsReady) return;
@@ -605,12 +576,10 @@
   }
 
   document.addEventListener('DOMContentLoaded', function () {
-    $('#btnUnlock').addEventListener('click', unlock);
-    $('#inpPasscode').addEventListener('keydown', function (e) { if (e.key === 'Enter') unlock(); });
+    initWorkspace();
   });
 
   window.__researcherQA = {
-    unlockWith: function (code) { $('#inpPasscode').value = code; unlock(); },
     slots: function () { return slots; },
     generate: generateSequence,
     loadTestData: loadTestData,

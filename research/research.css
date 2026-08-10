@@ -1,7 +1,7 @@
 /* ============================================================
    YCH OT Pilot — shared research styles
    Contains NO allocation / group / session-training data.
-   Safe to load from the blinded assessor bundle.
+   Shared by the assessment, session and data-management pages.
    ============================================================ */
 :root{
   --bg:#FDF6EC; --surface:#FFFFFF; --border:#D9C49A;

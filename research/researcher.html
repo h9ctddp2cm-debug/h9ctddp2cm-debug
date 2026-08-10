@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>研究資料管理</title>
-<meta name="description" content="Researcher / data management module: randomization, allocation, participant progress, data merge and anonymized export.">
+<title>整理及比較數據</title>
+<meta name="description" content="Organize T0, Session 1–5 and T1 records by anonymous participant ID.">
 <link rel="stylesheet" href="research.css">
 </head>
 <body data-page="researcher">
@@ -12,44 +12,18 @@
 
 <header class="rs-topbar">
   <div>
-    <h1>研究資料管理</h1>
-    <span class="rs-sub">只供負責分組及整理檔案的指定同事使用</span>
+    <h1>整理及比較數據</h1>
+    <span class="rs-sub">按匿名編號整理訓練前後資料</span>
   </div>
   <div class="rs-topbar-actions">
-    <a class="rs-btn rs-btn-secondary rs-btn-small" href="index.html" data-testid="link-back-hub">返回入口 Hub</a>
+    <a class="rs-btn rs-btn-secondary rs-btn-small" href="index.html" data-testid="link-back-hub">返回資料收集</a>
   </div>
 </header>
 
-<!-- ===== passcode gate ===== -->
-<main class="rs-shell" id="gateShell" data-testid="section-gate">
-  <section class="rs-card">
-    <h2>輸入通行碼</h2>
-    <div class="rs-note rs-note-warn" data-testid="text-gate-warning">
-      <span class="rs-note-icon" aria-hidden="true">⚠</span>
-      <span>這個通行碼只用來避免評估員誤入。正式收集資料前，請更改通行碼，並由指定同事保管。</span>
-    </div>
-    <div class="rs-field" style="max-width:420px">
-      <label for="inpPasscode">通行碼</label>
-      <input id="inpPasscode" type="password" class="rs-input rs-mono" data-testid="input-passcode" autocomplete="off">
-    </div>
-    <div class="rs-inline" style="margin-top:14px">
-      <button type="button" class="rs-btn" data-testid="button-unlock" id="btnUnlock">進入資料管理</button>
-      <span data-testid="text-gate-error" id="gateError" style="color:#A32217;font-weight:900"></span>
-    </div>
-    <details class="rs-details" style="margin-top:16px" data-testid="details-passcode-doc">
-      <summary>查看通行碼詳細說明</summary>
-      <div class="rs-details-body">
-        本原型只在程式內保存臨時通行碼的 SHA-256 雜湊值（Web Crypto 比對），不會在頁面顯示明文。正式研究開始前必須更換通行碼，並由研究員獨立保管。
-      </div>
-    </details>
-  </section>
-</main>
-
-<!-- ===== researcher workspace ===== -->
-<main class="rs-shell rs-hidden" id="workShell" data-testid="section-workspace">
-  <div class="rs-note rs-note-warn" data-testid="text-passcode-warning">
+<main class="rs-shell" id="workShell" data-testid="section-workspace">
+  <div class="rs-note rs-note-warn" data-testid="text-data-warning">
     <span class="rs-note-icon" aria-hidden="true">⚠</span>
-    <span>提醒：靜態 client-side passcode 為 operational blinding barrier，不是 production authentication，正式使用前必須更改。所有資料只存於本頁記憶體，關閉前必須匯出。</span>
+    <span>資料只暫存在目前頁面。完成後請立即下載，才關閉或重新整理。</span>
   </div>
 
   <section class="rs-card">
@@ -104,11 +78,11 @@
 
   <section class="rs-card">
     <h2>查看完成進度</h2>
-    <p class="rs-lead">T0／T1 完成情況、Session 1–5 完成情況、缺失資料、blinding breach 及 protocol deviation。</p>
+    <p class="rs-lead">查看 T0、Session 1–5、T1、缺失資料及特殊情況。</p>
     <div class="rs-table-wrap">
       <table class="rs-table" data-testid="table-progress">
         <thead><tr><th>Participant ID</th><th>組別</th><th>T0</th><th>T1</th><th>S1</th><th>S2</th><th>S3</th><th>S4</th><th>S5</th>
-          <th>缺失資料 Missing</th><th>Blinding breach</th><th>Deviations</th><th>TEST</th></tr></thead>
+          <th>缺失資料 Missing</th><th>特殊情況</th><th>TEST</th></tr></thead>
         <tbody id="progressBody"></tbody>
       </table>
     </div>
@@ -116,7 +90,7 @@
 
   <section class="rs-card">
     <h2>匯入及合併檔案</h2>
-    <p class="rs-lead">匯入評估員及治療師下載的 CSV／JSON。合併只以匿名 Participant ID 進行，系統不會接收任何可識別資料。</p>
+    <p class="rs-lead">匯入 T0、T1、Session 1–5 的 CSV／JSON，按匿名編號合併。</p>
     <fieldset class="rs-fieldset">
       <legend>匯入檔案 Import files</legend>
       <div class="rs-grid">
@@ -133,7 +107,7 @@
       <button type="button" class="rs-btn" data-testid="button-export-dataset" id="btnExportDataset">匯出合併匿名資料集 Export merged dataset</button>
       <button type="button" class="rs-btn" data-testid="button-export-change" id="btnExportChange">下載前後比較分析表</button>
       <button type="button" class="rs-btn" data-testid="button-export-feasibility" id="btnExportFeasibility">下載可行性及五節走勢</button>
-      <button type="button" class="rs-btn rs-btn-secondary" data-testid="button-export-deviations" id="btnExportDeviations">匯出 deviation／breach log</button>
+      <button type="button" class="rs-btn rs-btn-secondary" data-testid="button-export-deviations" id="btnExportDeviations">匯出特殊情況紀錄</button>
       <button type="button" class="rs-btn rs-btn-secondary" data-testid="button-load-test-data" id="btnLoadTestData">載入測試資料 TEST001–TEST003</button>
     </div>
     <p class="rs-hint">進展準則是本研究預先設定的本地準則，並非通用標準</p>
@@ -149,8 +123,8 @@
         <div class="rs-field"><label for="selDevType">類型 Type</label>
           <select id="selDevType" class="rs-select" data-testid="select-deviation-type">
             <option value="protocol_deviation">Protocol deviation</option>
-            <option value="blinding_breach">Blinding breach</option>
             <option value="missing_data">Missing data</option>
+            <option value="adverse_event">Adverse event</option>
           </select></div>
         <div class="rs-field"><label for="inpDevDetail">描述及處理 Description / action</label><input id="inpDevDetail" class="rs-input" data-testid="input-deviation-detail" maxlength="300"></div>
         <div class="rs-field"><label for="inpDevBy">記錄者代碼 Recorded by</label><input id="inpDevBy" class="rs-input rs-mono" data-testid="input-deviation-by" maxlength="12"></div>

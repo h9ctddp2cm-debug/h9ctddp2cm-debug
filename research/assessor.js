@@ -1,7 +1,6 @@
 /* ============================================================
-   Blinded assessor bundle — T0/T1 standardized assessment.
-   BLINDING RULE: this file must never load, reference, fetch or
-   store allocation / group / session-training information.
+   Single-researcher T0/T1 standardized outcome assessment.
+   This form remains separate from allocation and session records.
    Memory-only. No localStorage / sessionStorage / indexedDB / cookies.
    ============================================================ */
 (function () {
@@ -37,7 +36,6 @@
   function newState() {
     return {
       participantId: '', timepoint: 'T0', datetime: RC.nowLocalInput(), assessorCode: '', affectedSide: '',
-      blindGroup: false, blindRecords: false, possibleUnblinding: false, breachReason: '', breachAssessor: '',
       medicalStable: '', painPre: null, fatiguePre: null,
       painMethodPre: '', painVerbalPre: '', fatigueMethodPre: '', fatigueVerbalPre: '',
       readyToStart: '', pauseReason: '',
@@ -182,8 +180,6 @@
     ['#inpAssessDatetime', function (v) { S.datetime = v; }, function () { return S.datetime; }],
     ['#inpAssessorCode', function (v) { S.assessorCode = v.toUpperCase(); }, function () { return S.assessorCode; }],
     ['#selAffectedSide', function (v) { S.affectedSide = v; }, function () { return S.affectedSide; }],
-    ['#inpBreachReason', function (v) { S.breachReason = v; }, function () { return S.breachReason; }],
-    ['#inpBreachAssessor', function (v) { S.breachAssessor = v.toUpperCase(); }, function () { return S.breachAssessor; }],
     ['#inpPauseReason', function (v) { S.pauseReason = v; }, function () { return S.pauseReason; }],
     ['#selFthueLevel', function (v) { S.fthue.level = v; }, function () { return S.fthue.level; }],
     ['#selFthueCompleted', function (v) { S.fthue.completed = v; }, function () { return S.fthue.completed; }],
@@ -237,16 +233,6 @@
       });
     });
 
-    // checkboxes
-    [['#chkBlindGroup', 'blindGroup'], ['#chkBlindRecords', 'blindRecords'], ['#chkPossibleUnblinding', 'possibleUnblinding']]
-      .forEach(function (p) {
-        $(p[0]).addEventListener('change', function () {
-          if (S.locked) { syncFields(); return alertLocked(); }
-          S[p[1]] = this.checked;
-          $('#breachBlock').classList.toggle('rs-hidden', !S.possibleUnblinding);
-          markDirty();
-        });
-      });
     $('#chkGripUnable').addEventListener('change', function () {
       if (S.locked) { syncFields(); return alertLocked(); }
       S.grip.unable = this.checked; renderGrip(); markDirty();
@@ -284,10 +270,6 @@
       var v = b[2]();
       el.value = (v === null || v === undefined) ? '' : v;
     });
-    $('#chkBlindGroup').checked = S.blindGroup;
-    $('#chkBlindRecords').checked = S.blindRecords;
-    $('#chkPossibleUnblinding').checked = S.possibleUnblinding;
-    $('#breachBlock').classList.toggle('rs-hidden', !S.possibleUnblinding);
     $('#chkGripUnable').checked = S.grip.unable;
     $('#chkPinchUnable').checked = S.pinch.unable;
     $('#chkFeedbackOff').checked = S.setup.feedbackOff;
@@ -703,20 +685,17 @@
   function flatFields() {
     var f = [];
     function add(name, value, desc) { f.push({ name: name, value: (value === null || value === undefined) ? '' : value, desc: desc }); }
-    add('record_version', RC.VERSION, 'Assessor bundle version');
-    add('record_type', 'blinded_assessment', 'Record type (assessor bundle, no allocation data)');
+    add('record_version', RC.VERSION, 'Assessment record version');
+    add('record_type', 'outcome_assessment', 'T0/T1 outcome assessment record');
+    add('assessment_model', 'single_researcher_non_blinded', 'Research workflow used for outcome assessment');
+    add('outcome_assessor_blinded', 'no', 'Outcome assessor was not blinded to allocation');
     add('test_record', RC.isTestId(S.participantId) ? 'TEST' : '', 'TEST marker for non-research practice data');
     add('participant_id', S.participantId, 'Anonymous participant ID [A-Z0-9_-]');
     add('timepoint', S.timepoint, 'T0 or T1');
     add('assessment_datetime', S.datetime, 'Local date-time of assessment');
-    add('assessor_code', S.assessorCode, 'Assessor code');
+    add('assessor_code', S.assessorCode, 'Recorder code');
     add('affected_side', S.affectedSide, 'Affected upper limb');
     add('scenario', SCENARIO, 'Fixed assessment scenario');
-    add('blinding_confirm_unaware', S.blindGroup ? 'yes' : 'no', 'Assessor confirmed being unaware of study assignment');
-    add('blinding_confirm_no_records', S.blindRecords ? 'yes' : 'no', 'Assessor confirmed no training records were viewed');
-    add('possible_unblinding', S.possibleUnblinding ? 'yes' : 'no', 'Possible unblinding flagged');
-    add('unblinding_reason', S.breachReason, 'Reason for possible unblinding');
-    add('unblinding_logged_by', S.breachAssessor, 'Assessor code logging the breach');
     add('medical_stability', S.medicalStable, 'Medically stable (yes/no)');
     add('pain_pre_method', S.painMethodPre, 'Pain response method: verbal_4 / numeric_0_10 / unable');
     add('pain_pre_verbal', S.painVerbalPre, 'Pain verbal category');
@@ -830,11 +809,9 @@
 
     var idr = RC.validateId(S.participantId);
     if (!idr.ok) err('Participant ID：' + idr.msg);
-    if (!S.assessorCode) err('缺少評估員代碼 Missing assessor code。');
+    if (!S.assessorCode) err('缺少記錄者代碼 Missing recorder code。');
     if (!S.affectedSide) err('缺少患側 Missing affected side。');
     if (!S.datetime) err('缺少評估日期及時間 Missing assessment date-time。');
-    if (!S.blindGroup || !S.blindRecords) warn('盲法確認未全部勾選 Blinding confirmations incomplete。');
-    if (S.possibleUnblinding && (!S.breachReason || !S.breachAssessor)) err('已標示可能解除盲法，必須填寫原因及評估員代碼。');
     if (!ratingComplete('painPre')) err('缺少評估前疼痛回答。');
     if (!ratingComplete('fatiguePre')) err('缺少評估前疲勞回答。');
     if (!ratingComplete('painPost')) err('缺少評估後疼痛回答。');
@@ -947,7 +924,7 @@
     var reason = $('#inpCorrectionReason').value;
     var who = $('#inpCorrectionAssessor').value.toUpperCase();
     if (!field || val === '' || !reason || !who) {
-      showBlocker('更正紀錄必須填寫欄位、更正值、原因及評估員代碼。');
+      showBlocker('更正紀錄必須填寫欄位、更正值、原因及記錄者代碼。');
       return;
     }
     var current = flatFields().filter(function (f) { return f.name === field; })[0];
@@ -1084,12 +1061,8 @@
     if (ui.step === 1) {
       var r = RC.validateId(S.participantId);
       if (!r.ok) { showBlocker(r.msg); return false; }
-      if (!S.assessorCode) { showBlocker('請輸入評估員代碼 Assessor code。'); return false; }
+      if (!S.assessorCode) { showBlocker('請輸入記錄者代碼 Recorder code。'); return false; }
       if (!S.affectedSide) { showBlocker('請選擇患側 Affected side。'); return false; }
-      if (S.possibleUnblinding && (!S.breachReason || !S.breachAssessor)) {
-        showBlocker('已選「可能已解除盲法」，必須填寫原因及評估員代碼。評估資料會保留並記錄事件。');
-        return false;
-      }
       return true;
     }
     if (ui.step === 2) {
@@ -1122,7 +1095,6 @@
     S.participantId = code;
     S.assessorCode = 'TESTAS';
     S.affectedSide = 'right';
-    S.blindGroup = true; S.blindRecords = true;
     S.medicalStable = 'yes'; S.readyToStart = 'yes';
     S.painMethodPre = 'verbal_4'; S.painVerbalPre = 'mild'; S.painPre = null;
     S.fatigueMethodPre = 'verbal_4'; S.fatigueVerbalPre = 'mild'; S.fatiguePre = null;
@@ -1171,6 +1143,8 @@
 
   /* ---------------- init ---------------- */
   function init() {
+    var requestedTimepoint = new URLSearchParams(window.location.search).get('timepoint');
+    if (requestedTimepoint === 'T0' || requestedTimepoint === 'T1') S.timepoint = requestedTimepoint;
     $$('.rs-scale').forEach(buildScale);
     bindFields();
     initRest();
@@ -1250,7 +1224,7 @@
 
   document.addEventListener('DOMContentLoaded', init);
 
-  // expose for automated QA only (no allocation data present)
+  // Expose calculations for automated QA; allocation data is not loaded here.
   window.__assessorQA = {
     state: function () { return S; },
     fields: flatFields,

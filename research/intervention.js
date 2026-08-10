@@ -1,6 +1,6 @@
 /* ============================================================
    Intervention therapist bundle — Session 1-5 delivery record.
-   Memory-only. Never loaded by the blinded assessor bundle.
+   Memory-only. Kept separate from the outcome-assessment form.
    ============================================================ */
 (function () {
   'use strict';
