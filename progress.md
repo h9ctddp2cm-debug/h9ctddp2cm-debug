@@ -542,3 +542,15 @@
 - Level 4詳情加入簡短停止提示：如出現肩聳、軀幹傾斜、手指愈握愈緊或疼痛，先暫停；不把桌面承托描述為必然降低張力。
 - 修正麻雀放牌區遮擋、Level 4啤牌底部裁切及插花空白花架框。
 - 已完成inline JavaScript語法、`git diff --check`、標準browser-game client、1180×820六個遊戲畫面及820×1180關鍵畫面QA；Level 4=`dwell`、Level 5=`grasp`、Level 6–7=`pinch`，console error為0。
+
+## 2026-08-12：Level 4–6 獨立技術驗證
+
+- 建立可重現的 Level 4–6 Playwright 技術驗證套件，不再用舊有 Level 4–5／6–7 合併測試代替逐級證據。
+- Level 4 獨立驗證桌面中線停留拿取、向前搬運、正確／錯誤放置及 750ms 追蹤中斷容錯。
+- Level 5 獨立驗證張手準備、至少兩指屈曲拿取、hysteresis 防誤放、持續張手放下及異常 landmark 安全失敗。
+- Level 6 獨立驗證正規化拇食指 aperture 的 enter／hold／exit hysteresis、分指準備、完整捏取搬運放下及異常 landmark 安全失敗；此功能不量度 pinch force。
+- 修正大型 Level 4 物件令兩個目標碰撞區重疊時，程式固定選第一個目標的錯誤；現在從所有相交目標中選最近者。
+- 修正左上 HUD 與右上指示被合併成整幅大禁區的幾何錯誤；改為獨立安全區，並以標準化三槽位置防止 Level 5–6 點心重疊及減少隨機 path-length 變異。
+- 最終單輪結果為 47/47：Level 4 13/13、Level 5 17/17、Level 6 17/17；同一全套測試連續 30 輪全通過。
+- 原有 Level 3 Data Collector 10/10 及 Sandbox Engine 10/10 回歸測試保持全通過；標準 browser-game client 三輪、1180×820 橫向及 820×1180 直向視覺 QA 全通過，console error 0、水平／垂直 overflow 0。
+- 結論只屬 software technical verification，不代表臨床效度、病人安全性、治療成效或醫療儀器等效性；仍需真實 iPad Safari、相機距離、病房光線及目標患者作實機驗證。

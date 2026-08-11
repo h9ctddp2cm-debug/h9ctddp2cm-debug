@@ -1,0 +1,810 @@
+{
+  "generated_at": "2026-08-11T16:23:30.019Z",
+  "base_url": "http://127.0.0.1:4173",
+  "scope": "Independent technical verification for FTHUE Levels 4, 5, and 6",
+  "limitation": "Not clinical validation; Level 6 aperture detection does not measure pinch force.",
+  "summary": {
+    "total": 47,
+    "passed": 47,
+    "failed": 0,
+    "by_level": {
+      "4": {
+        "passed": 13,
+        "failed": 0
+      },
+      "5": {
+        "passed": 17,
+        "failed": 0
+      },
+      "6": {
+        "passed": 17,
+        "failed": 0
+      }
+    }
+  },
+  "tests": [
+    {
+      "level": "4",
+      "category": "launch matrix",
+      "name": "flowers launches with the correct engine",
+      "passed": true,
+      "details": {
+        "screen": "game",
+        "engine": "dwell",
+        "non_overlapping_items": true
+      }
+    },
+    {
+      "level": "4",
+      "category": "launch matrix",
+      "name": "dimsum launches with the correct engine",
+      "passed": true,
+      "details": {
+        "screen": "game",
+        "engine": "dwell",
+        "non_overlapping_items": true
+      }
+    },
+    {
+      "level": "4",
+      "category": "launch matrix",
+      "name": "laundry launches with the correct engine",
+      "passed": true,
+      "details": {
+        "screen": "game",
+        "engine": "dwell",
+        "non_overlapping_items": true
+      }
+    },
+    {
+      "level": "4",
+      "category": "launch matrix",
+      "name": "cards launches with the correct engine",
+      "passed": true,
+      "details": {
+        "screen": "game",
+        "engine": "dwell",
+        "non_overlapping_items": true
+      }
+    },
+    {
+      "level": "4",
+      "category": "launch matrix",
+      "name": "mahjong launches with the correct engine",
+      "passed": true,
+      "details": {
+        "screen": "game",
+        "engine": "dwell",
+        "non_overlapping_items": true
+      }
+    },
+    {
+      "level": "4",
+      "category": "launch matrix",
+      "name": "cooking launches with the correct engine",
+      "passed": true,
+      "details": {
+        "screen": "game",
+        "engine": "dwell",
+        "non_overlapping_items": true
+      }
+    },
+    {
+      "level": "5",
+      "category": "launch matrix",
+      "name": "flowers launches with the correct engine",
+      "passed": true,
+      "details": {
+        "screen": "game",
+        "engine": "grasp",
+        "non_overlapping_items": true
+      }
+    },
+    {
+      "level": "5",
+      "category": "launch matrix",
+      "name": "dimsum launches with the correct engine",
+      "passed": true,
+      "details": {
+        "screen": "game",
+        "engine": "grasp",
+        "non_overlapping_items": true
+      }
+    },
+    {
+      "level": "5",
+      "category": "launch matrix",
+      "name": "laundry launches with the correct engine",
+      "passed": true,
+      "details": {
+        "screen": "game",
+        "engine": "grasp",
+        "non_overlapping_items": true
+      }
+    },
+    {
+      "level": "5",
+      "category": "launch matrix",
+      "name": "cards launches with the correct engine",
+      "passed": true,
+      "details": {
+        "screen": "game",
+        "engine": "grasp",
+        "non_overlapping_items": true
+      }
+    },
+    {
+      "level": "5",
+      "category": "launch matrix",
+      "name": "mahjong launches with the correct engine",
+      "passed": true,
+      "details": {
+        "screen": "game",
+        "engine": "grasp",
+        "non_overlapping_items": true
+      }
+    },
+    {
+      "level": "5",
+      "category": "launch matrix",
+      "name": "cooking launches with the correct engine",
+      "passed": true,
+      "details": {
+        "screen": "game",
+        "engine": "grasp",
+        "non_overlapping_items": true
+      }
+    },
+    {
+      "level": "6",
+      "category": "launch matrix",
+      "name": "flowers launches with the correct engine",
+      "passed": true,
+      "details": {
+        "screen": "game",
+        "engine": "pinch",
+        "non_overlapping_items": true
+      }
+    },
+    {
+      "level": "6",
+      "category": "launch matrix",
+      "name": "dimsum launches with the correct engine",
+      "passed": true,
+      "details": {
+        "screen": "game",
+        "engine": "pinch",
+        "non_overlapping_items": true
+      }
+    },
+    {
+      "level": "6",
+      "category": "launch matrix",
+      "name": "laundry launches with the correct engine",
+      "passed": true,
+      "details": {
+        "screen": "game",
+        "engine": "pinch",
+        "non_overlapping_items": true
+      }
+    },
+    {
+      "level": "6",
+      "category": "launch matrix",
+      "name": "cards launches with the correct engine",
+      "passed": true,
+      "details": {
+        "screen": "game",
+        "engine": "pinch",
+        "non_overlapping_items": true
+      }
+    },
+    {
+      "level": "6",
+      "category": "launch matrix",
+      "name": "mahjong launches with the correct engine",
+      "passed": true,
+      "details": {
+        "screen": "game",
+        "engine": "pinch",
+        "non_overlapping_items": true
+      }
+    },
+    {
+      "level": "6",
+      "category": "launch matrix",
+      "name": "cooking launches with the correct engine",
+      "passed": true,
+      "details": {
+        "screen": "game",
+        "engine": "pinch",
+        "non_overlapping_items": true
+      }
+    },
+    {
+      "level": "5",
+      "category": "gesture",
+      "name": "one curled finger cannot trigger grasp",
+      "passed": true,
+      "details": {
+        "isGrasping": false,
+        "score": 0,
+        "valid": true
+      }
+    },
+    {
+      "level": "5",
+      "category": "gesture",
+      "name": "two curled fingers trigger configured grasp",
+      "passed": true,
+      "details": {
+        "isGrasping": true,
+        "score": 0.09999999999999998,
+        "valid": true
+      }
+    },
+    {
+      "level": "5",
+      "category": "gesture",
+      "name": "partial reopening does not release held item",
+      "passed": true,
+      "details": {
+        "isGrasping": true,
+        "score": 0.09000000000000008,
+        "valid": true
+      }
+    },
+    {
+      "level": "5",
+      "category": "gesture",
+      "name": "three open major fingers release held item",
+      "passed": true,
+      "details": {
+        "isGrasping": false,
+        "score": 0.04999999999999993,
+        "valid": true
+      }
+    },
+    {
+      "level": "6",
+      "category": "gesture",
+      "name": "pinch enters below normalized aperture threshold",
+      "passed": true,
+      "details": {
+        "isPinching": true,
+        "ratio": 0.3,
+        "isSeparated": false,
+        "score": 0.5161290322580645,
+        "valid": true
+      }
+    },
+    {
+      "level": "6",
+      "category": "gesture",
+      "name": "pinch hysteresis retains hold between enter and exit thresholds",
+      "passed": true,
+      "details": {
+        "isPinching": true,
+        "ratio": 0.45,
+        "isSeparated": false,
+        "score": 0.27419354838709675,
+        "valid": true
+      }
+    },
+    {
+      "level": "6",
+      "category": "gesture",
+      "name": "pinch exits above normalized release threshold",
+      "passed": true,
+      "details": {
+        "isPinching": false,
+        "ratio": 0.53,
+        "isSeparated": false,
+        "score": 0.14516129032258063,
+        "valid": true
+      }
+    },
+    {
+      "level": "6",
+      "category": "gesture",
+      "name": "clearly separated fingers arm a new pinch",
+      "passed": true,
+      "details": {
+        "isPinching": false,
+        "ratio": 0.65,
+        "isSeparated": true,
+        "score": 0,
+        "valid": true
+      }
+    },
+    {
+      "level": "5",
+      "category": "safety",
+      "name": "malformed grasp landmarks fail safely",
+      "passed": true,
+      "details": {
+        "isGrasping": false,
+        "score": 0,
+        "valid": false
+      }
+    },
+    {
+      "level": "6",
+      "category": "safety",
+      "name": "malformed pinch landmarks fail safely",
+      "passed": true,
+      "details": {
+        "isPinching": false,
+        "ratio": null,
+        "isSeparated": false,
+        "score": 0,
+        "valid": false
+      }
+    },
+    {
+      "level": "4",
+      "category": "layout",
+      "name": "targets remain forward of tabletop source items",
+      "passed": true,
+      "details": {
+        "targetY": 352.6,
+        "itemY": 656
+      }
+    },
+    {
+      "level": "4",
+      "category": "flow",
+      "name": "dwell pickup acquires an item",
+      "passed": true,
+      "details": {}
+    },
+    {
+      "level": "4",
+      "category": "flow",
+      "name": "correct placement increments the correct count",
+      "passed": true,
+      "details": {
+        "before": 0,
+        "after": 1
+      }
+    },
+    {
+      "level": "4",
+      "category": "flow",
+      "name": "dwell pickup acquires an item",
+      "passed": true,
+      "details": {}
+    },
+    {
+      "level": "4",
+      "category": "flow",
+      "name": "wrong placement increments only the wrong count",
+      "passed": true,
+      "details": {
+        "correct": 0,
+        "wrong": 1
+      }
+    },
+    {
+      "level": "4",
+      "category": "tracking",
+      "name": "brief tracking loss uses the 750 ms grace window",
+      "passed": true,
+      "details": {
+        "screen": "game",
+        "level": "4",
+        "theme": "dimsum",
+        "gameType": "dwell",
+        "score": 0,
+        "correctCount": 0,
+        "grabCount": 0,
+        "wrongCount": 0,
+        "timeLeft": 179,
+        "handDetected": true,
+        "detectionHeldGrace": true,
+        "held": null,
+        "items": [
+          {
+            "label": "糯米雞",
+            "type": "lotusrice",
+            "x": 472,
+            "y": 656,
+            "r": 104
+          },
+          {
+            "label": "叉燒包",
+            "type": "charsiu",
+            "x": 708,
+            "y": 656,
+            "r": 104
+          }
+        ],
+        "targets": [
+          {
+            "label": "叉燒包",
+            "type": "charsiu",
+            "x": 491.6,
+            "y": 352.6,
+            "w": 240,
+            "h": 177.6
+          },
+          {
+            "label": "糯米雞",
+            "type": "lotusrice",
+            "x": 688.4,
+            "y": 352.6,
+            "w": 240,
+            "h": 177.6
+          }
+        ]
+      }
+    },
+    {
+      "level": "4",
+      "category": "tracking",
+      "name": "sustained tracking loss clears detection safely",
+      "passed": true,
+      "details": {
+        "screen": "game",
+        "level": "4",
+        "theme": "dimsum",
+        "gameType": "dwell",
+        "score": 0,
+        "correctCount": 0,
+        "grabCount": 0,
+        "wrongCount": 0,
+        "timeLeft": 179,
+        "handDetected": false,
+        "detectionHeldGrace": false,
+        "held": null,
+        "items": [
+          {
+            "label": "糯米雞",
+            "type": "lotusrice",
+            "x": 472,
+            "y": 656,
+            "r": 104
+          },
+          {
+            "label": "叉燒包",
+            "type": "charsiu",
+            "x": 708,
+            "y": 656,
+            "r": 104
+          }
+        ],
+        "targets": [
+          {
+            "label": "叉燒包",
+            "type": "charsiu",
+            "x": 491.6,
+            "y": 352.6,
+            "w": 240,
+            "h": 177.6
+          },
+          {
+            "label": "糯米雞",
+            "type": "lotusrice",
+            "x": 688.4,
+            "y": 352.6,
+            "w": 240,
+            "h": 177.6
+          }
+        ]
+      }
+    },
+    {
+      "level": "5",
+      "category": "flow",
+      "name": "prepared gesture and hold acquire an item",
+      "passed": true,
+      "details": {}
+    },
+    {
+      "level": "5",
+      "category": "flow",
+      "name": "correct placement increments the correct count",
+      "passed": true,
+      "details": {
+        "before": 0,
+        "after": 1
+      }
+    },
+    {
+      "level": "5",
+      "category": "flow",
+      "name": "prepared gesture and hold acquire an item",
+      "passed": true,
+      "details": {}
+    },
+    {
+      "level": "5",
+      "category": "flow",
+      "name": "wrong placement increments only the wrong count",
+      "passed": true,
+      "details": {
+        "correct": 0,
+        "wrong": 1
+      }
+    },
+    {
+      "level": "5",
+      "category": "tracking",
+      "name": "brief tracking loss uses the 750 ms grace window",
+      "passed": true,
+      "details": {
+        "screen": "game",
+        "level": "5",
+        "theme": "dimsum",
+        "gameType": "grasp",
+        "score": 0,
+        "correctCount": 0,
+        "grabCount": 0,
+        "wrongCount": 0,
+        "timeLeft": 180,
+        "handDetected": true,
+        "detectionHeldGrace": true,
+        "held": null,
+        "items": [
+          {
+            "label": "叉燒包",
+            "type": "charsiu",
+            "x": 259.6,
+            "y": 442.8,
+            "r": 100
+          },
+          {
+            "label": "糯米雞",
+            "type": "lotusrice",
+            "x": 590,
+            "y": 442.8,
+            "r": 100
+          },
+          {
+            "label": "叉燒包",
+            "type": "charsiu",
+            "x": 920.4,
+            "y": 442.8,
+            "r": 100
+          }
+        ],
+        "targets": [
+          {
+            "label": "叉燒包",
+            "type": "charsiu",
+            "x": 778.8000000000001,
+            "y": 705.8,
+            "w": 260,
+            "h": 192.4
+          },
+          {
+            "label": "糯米雞",
+            "type": "lotusrice",
+            "x": 1026.6,
+            "y": 705.8,
+            "w": 260,
+            "h": 192.4
+          }
+        ]
+      }
+    },
+    {
+      "level": "5",
+      "category": "tracking",
+      "name": "sustained tracking loss clears detection safely",
+      "passed": true,
+      "details": {
+        "screen": "game",
+        "level": "5",
+        "theme": "dimsum",
+        "gameType": "grasp",
+        "score": 0,
+        "correctCount": 0,
+        "grabCount": 0,
+        "wrongCount": 0,
+        "timeLeft": 179,
+        "handDetected": false,
+        "detectionHeldGrace": false,
+        "held": null,
+        "items": [
+          {
+            "label": "叉燒包",
+            "type": "charsiu",
+            "x": 259.6,
+            "y": 442.8,
+            "r": 100
+          },
+          {
+            "label": "糯米雞",
+            "type": "lotusrice",
+            "x": 590,
+            "y": 442.8,
+            "r": 100
+          },
+          {
+            "label": "叉燒包",
+            "type": "charsiu",
+            "x": 920.4,
+            "y": 442.8,
+            "r": 100
+          }
+        ],
+        "targets": [
+          {
+            "label": "叉燒包",
+            "type": "charsiu",
+            "x": 778.8000000000001,
+            "y": 705.8,
+            "w": 260,
+            "h": 192.4
+          },
+          {
+            "label": "糯米雞",
+            "type": "lotusrice",
+            "x": 1026.6,
+            "y": 705.8,
+            "w": 260,
+            "h": 192.4
+          }
+        ]
+      }
+    },
+    {
+      "level": "6",
+      "category": "flow",
+      "name": "prepared gesture and hold acquire an item",
+      "passed": true,
+      "details": {}
+    },
+    {
+      "level": "6",
+      "category": "flow",
+      "name": "correct placement increments the correct count",
+      "passed": true,
+      "details": {
+        "before": 0,
+        "after": 1
+      }
+    },
+    {
+      "level": "6",
+      "category": "flow",
+      "name": "prepared gesture and hold acquire an item",
+      "passed": true,
+      "details": {}
+    },
+    {
+      "level": "6",
+      "category": "flow",
+      "name": "wrong placement increments only the wrong count",
+      "passed": true,
+      "details": {
+        "correct": 0,
+        "wrong": 1
+      }
+    },
+    {
+      "level": "6",
+      "category": "tracking",
+      "name": "brief tracking loss uses the 750 ms grace window",
+      "passed": true,
+      "details": {
+        "screen": "game",
+        "level": "67",
+        "theme": "dimsum",
+        "gameType": "pinch",
+        "score": 0,
+        "correctCount": 0,
+        "grabCount": 0,
+        "wrongCount": 0,
+        "timeLeft": 179,
+        "handDetected": true,
+        "detectionHeldGrace": true,
+        "held": null,
+        "items": [
+          {
+            "label": "蝦餃",
+            "type": "hargau",
+            "x": 259.6,
+            "y": 442.8,
+            "r": 145
+          },
+          {
+            "label": "蝦餃",
+            "type": "hargau",
+            "x": 590,
+            "y": 442.8,
+            "r": 145
+          },
+          {
+            "label": "蝦餃",
+            "type": "hargau",
+            "x": 920.4,
+            "y": 442.8,
+            "r": 145
+          }
+        ],
+        "targets": [
+          {
+            "label": "燒賣",
+            "type": "siumai",
+            "x": 778.8000000000001,
+            "y": 705.8,
+            "w": 260,
+            "h": 192.4
+          },
+          {
+            "label": "蝦餃",
+            "type": "hargau",
+            "x": 1026.6,
+            "y": 705.8,
+            "w": 260,
+            "h": 192.4
+          }
+        ]
+      }
+    },
+    {
+      "level": "6",
+      "category": "tracking",
+      "name": "sustained tracking loss clears detection safely",
+      "passed": true,
+      "details": {
+        "screen": "game",
+        "level": "67",
+        "theme": "dimsum",
+        "gameType": "pinch",
+        "score": 0,
+        "correctCount": 0,
+        "grabCount": 0,
+        "wrongCount": 0,
+        "timeLeft": 179,
+        "handDetected": false,
+        "detectionHeldGrace": false,
+        "held": null,
+        "items": [
+          {
+            "label": "蝦餃",
+            "type": "hargau",
+            "x": 259.6,
+            "y": 442.8,
+            "r": 145
+          },
+          {
+            "label": "蝦餃",
+            "type": "hargau",
+            "x": 590,
+            "y": 442.8,
+            "r": 145
+          },
+          {
+            "label": "蝦餃",
+            "type": "hargau",
+            "x": 920.4,
+            "y": 442.8,
+            "r": 145
+          }
+        ],
+        "targets": [
+          {
+            "label": "燒賣",
+            "type": "siumai",
+            "x": 778.8000000000001,
+            "y": 705.8,
+            "w": 260,
+            "h": 192.4
+          },
+          {
+            "label": "蝦餃",
+            "type": "hargau",
+            "x": 1026.6,
+            "y": 705.8,
+            "w": 260,
+            "h": 192.4
+          }
+        ]
+      }
+    }
+  ],
+  "runtime_errors": []
+}

@@ -3549,6 +3549,13 @@ async function ensureHandLandmarker(){
   }
 }
 
+function hasFiniteHandLandmarks(lm, indices){
+  return Array.isArray(lm) && indices.every(index => {
+    const point = lm[index];
+    return point && Number.isFinite(point.x) && Number.isFinite(point.y) && Number.isFinite(point.z);
+  });
+}
+
 // 偵測食指尖位置，回傳 {detected, nx, ny}（nx/ny 已經鏡像處理，範圍 0-1）
 function detectWrist(videoEl){
   if(!handLandmarker || videoEl.readyState < 2){
@@ -3562,6 +3569,10 @@ function detectWrist(videoEl){
   }
   if(results && results.landmarks && results.landmarks.length > 0){
     const lm = results.landmarks[0]; // 第一隻手
+    const required = state.gameType === 'pinch'
+      ? [0,4,8,9]
+      : [0,2,4,5,8,9,12,13,16,17,20];
+    if(!hasFiniteHandLandmarks(lm, required)) return { detected:false };
     // Cursor position
     const tip = lm[8]; // index finger tip = landmark 8 (reach mode)
     // palm center = average of landmarks 0,5,9,13,17
@@ -3589,6 +3600,9 @@ function computeGraspScore(lm, isGraspingPrev){
   // Returns { isGrasping: bool, score: 0-1 }
   // Uses palm-base distances to measure finger curl
   // lm = results.landmarks[0] (21 landmarks)
+  if(!hasFiniteHandLandmarks(lm, [0,2,4,5,8,9,12,13,16,17,20])){
+    return { isGrasping:false, score:0, valid:false };
+  }
   const wrist = lm[0];
 
   // For each finger, measure how close tip is to palm (MCP base)
@@ -3647,7 +3661,7 @@ function computeGraspScore(lm, isGraspingPrev){
       Number.isFinite(research.personalGraspEnter) && Number.isFinite(research.personalGraspExit)){
     isGrasping = score >= (isGraspingPrev ? research.personalGraspExit : research.personalGraspEnter);
   }
-  return { isGrasping, score };
+  return { isGrasping, score, valid:true };
 }
 
 /* Thumb-index pinch detection for research FTHUE 6/7.
@@ -3660,6 +3674,9 @@ const PINCH_ENTER = 0.34;   // normalised aperture below which a pinch is regist
 const PINCH_EXIT  = 0.52;   // normalised aperture above which the pinch is released
 const PINCH_OPEN  = 0.62;   // fingers clearly separated: valid preparation for a new pinch
 function computePinchState(lm, isPinchingPrev){
+  if(!hasFiniteHandLandmarks(lm, [0,4,8,9])){
+    return { isPinching:false, ratio:null, isSeparated:false, score:0, valid:false };
+  }
   const scale = Math.hypot(lm[9].x - lm[0].x, lm[9].y - lm[0].y, lm[9].z - lm[0].z);
   const gap = Math.hypot(lm[4].x - lm[8].x, lm[4].y - lm[8].y, lm[4].z - lm[8].z);
   const ratio = scale < 0.001 ? 1 : (gap / scale);
@@ -3669,6 +3686,7 @@ function computePinchState(lm, isPinchingPrev){
     isPinching, ratio,
     isSeparated: ratio > PINCH_OPEN,
     score: Math.max(0, Math.min(1, 1 - (ratio / PINCH_OPEN))),
+    valid:true,
   };
 }
 function isGraspStyleMode(){ return state.gameType === 'grasp' || state.gameType === 'pinch'; }
@@ -4536,16 +4554,19 @@ function getInstructionExclusionRect(cw, ch, padding){
     .filter(rect=>rect.width > 0 && rect.height > 0);
   if(!rects.length) return null;
   const pad = padding || 18;
-  return {
-    left:(Math.min(...rects.map(rect=>rect.left)) - canvasRect.left) * scaleX - pad,
-    top:(Math.min(...rects.map(rect=>rect.top)) - canvasRect.top) * scaleY - pad,
-    right:(Math.max(...rects.map(rect=>rect.right)) - canvasRect.left) * scaleX + pad,
-    bottom:(Math.max(...rects.map(rect=>rect.bottom)) - canvasRect.top) * scaleY + pad,
-  };
+  // Preserve separate exclusion islands. Combining the left HUD and right instructions into
+  // one bounding rectangle incorrectly blocked the entire central upper workspace.
+  return rects.map(rect=>({
+    left:(rect.left - canvasRect.left) * scaleX - pad,
+    top:(rect.top - canvasRect.top) * scaleY - pad,
+    right:(rect.right - canvasRect.left) * scaleX + pad,
+    bottom:(rect.bottom - canvasRect.top) * scaleY + pad,
+  }));
 }
 
 function circleOverlapsRect(x, y, radius, rect){
   if(!rect) return false;
+  if(Array.isArray(rect)) return rect.some(part=>circleOverlapsRect(x, y, radius, part));
   const nearestX = Math.max(rect.left, Math.min(x, rect.right));
   const nearestY = Math.max(rect.top, Math.min(y, rect.bottom));
   return Math.hypot(x - nearestX, y - nearestY) < radius;
@@ -4583,40 +4604,58 @@ function makeFoodAt(def, existingFoods){
   const r = baseR * (def.scale || 1.0) * (research.active ? pilotStratum().itemScale : 1);
 
   // 直向以兩欄多列分佈；橫向保留足夠肩部移動距離，同時容納進階版最多 6 個物件。
-  const minDist = portrait
-    ? Math.max(baseR * 1.65, cw * 0.20)
-    : Math.max(baseR * 2.1, cw * 0.18);
-
   // 限制 spawn 區域：左右都留更大邊距（避免右下角衝碰磟子造成 jitter）
   const marginX = r * (portrait ? 1.25 : 1.5);
   // 起始物件集中於身體中線附近，再向患側外下方運送，避免跨越中線。
-  const centerMin = Math.max(marginX, cw * (isLevel4Tabletop() ? 0.40 : (portrait ? 0.37 : 0.36)));
-  const centerMax = Math.min(cw - marginX, cw * (isLevel4Tabletop() ? 0.60 : (portrait ? 0.63 : 0.64)));
+  // Fine-motor mode needs enough central workspace for three non-overlapping visible objects.
+  // The previous 36%–64% band could become geometrically impossible with a large transparent PNG,
+  // causing the fallback to stack objects. Keep Level 4 narrow, but widen Level 5–7 symmetrically.
+  const centerMin = Math.max(marginX, cw * (isLevel4Tabletop() ? 0.40 : 0.20));
+  const centerMax = Math.min(cw - marginX, cw * (isLevel4Tabletop() ? 0.60 : 0.80));
   // Y 範圍顯著往上拉，避免 spawn 在磟子區區均（磟子在底部 65-90%）
   const spawnYmin = isLevel4Tabletop()
     ? ch * 0.70
     : Math.max(ch * (portrait ? 0.25 : 0.21), portrait ? 190 : 150);
-  const spawnYmax = ch * (isLevel4Tabletop() ? 0.90 : (portrait ? 0.58 : 0.55));
+  const spawnYmax = ch * (isLevel4Tabletop() ? 0.90 : 0.62);
   const instructionExclusion = getInstructionExclusionRect(cw, ch, Math.max(18, r * 0.16));
+
+  const createFood = (x, y) => ({
+    id: foodIdSeq++, type: def.type, label: def.label,
+    targetType: def.targetType, img: def.img || null, color: def.color || null,
+    drawItem: def.drawItem || null,
+    drawScale: def.drawScale || 0.92, labelGap: def.labelGap || 1.04,
+    x, y, r, baseX: x, baseY: y, held: false, removed: false,
+  });
+  const positionIsClear = (x, y) => {
+    if(circleOverlapsRect(x, y, r, instructionExclusion)) return false;
+    for(const f of existingFoods){
+      if(f.removed) continue;
+      const visibleGap = Math.max(16, Math.min(r, f.r || baseR) * 0.12);
+      if(Math.hypot(x - f.x, y - f.y) < r + (f.r || baseR) + visibleGap) return false;
+    }
+    return true;
+  };
+
+  // Standardised starting slots reduce random path-length variance and guarantee enough
+  // separation for the large Level 4 / transparent dim-sum images.
+  const slotRatios = isLevel4Tabletop()
+    ? [[0.40,0.80],[0.60,0.80]]
+    : (portrait
+      ? [[0.22,0.45],[0.50,0.45],[0.78,0.45]]
+      : [[0.22,0.54],[0.50,0.54],[0.78,0.54]]);
+  const activeCount = existingFoods.filter(food => !food.removed).length;
+  for(let offset=0; offset<slotRatios.length; offset++){
+    const slot = slotRatios[(activeCount + offset) % slotRatios.length];
+    const x = Math.max(centerMin, Math.min(centerMax, cw * slot[0]));
+    const y = Math.max(spawnYmin, Math.min(spawnYmax, ch * slot[1]));
+    if(positionIsClear(x, y)) return createFood(x, y);
+  }
 
   // 多嘗試一些次，升高間隔成功率
   for(let attempt=0; attempt<120; attempt++){
     const x = randRange(centerMin, centerMax);
     const y = randRange(spawnYmin, spawnYmax);
-    let overlaps = circleOverlapsRect(x, y, r, instructionExclusion);
-    for(const f of existingFoods){
-      if(f.removed) continue;
-      if(Math.hypot(x - f.x, y - f.y) < minDist){ overlaps = true; break; }
-    }
-    if(!overlaps){
-      return {
-        id: foodIdSeq++, type: def.type, label: def.label,
-        targetType: def.targetType, img: def.img || null, color: def.color || null,
-        drawItem: def.drawItem || null,
-        drawScale: def.drawScale || 0.92, labelGap: def.labelGap || 1.04,
-        x, y, r, baseX: x, baseY: y, held: false, removed: false,
-      };
-    }
+    if(positionIsClear(x, y)) return createFood(x, y);
   }
   // Fallback：強行放置（到這裡代表畫面真係太擠 — 但不才會發生）
   let x = randRange(centerMin, centerMax);
@@ -4625,13 +4664,7 @@ function makeFoodAt(def, existingFoods){
     x = Math.max(centerMin, Math.min(centerMax, cw * 0.50));
     y = Math.max(spawnYmin, Math.min(spawnYmax, ch * 0.43));
   }
-  return {
-    id: foodIdSeq++, type: def.type, label: def.label,
-    targetType: def.targetType, img: def.img || null, color: def.color || null,
-    drawItem: def.drawItem || null,
-    drawScale: def.drawScale || 0.92, labelGap: def.labelGap || 1.04,
-    x, y, r, baseX: x, baseY: y, held: false, removed: false,
-  };
+  return createFood(x, y);
 }
 
 function spawnDimSum(existingFoods){
@@ -4919,12 +4952,19 @@ function updateGameLogic(){
     // 夾住食物時：停在碟上 DWELL_MS 自動放下
     if(heldItem && gripActive){
       let onPlate = null;
+      let onPlateDistance = Infinity;
       for(const t of targets){
         // Score when any part of food overlaps the plate (food radius + plate boundary)
         const foodR = heldItem ? heldItem.r : 60;
         const withinX = cursorX >= (t.x - t.w/2 - foodR) && cursorX <= (t.x + t.w/2 + foodR);
         const withinY = cursorY >= (t.y - t.h/2 - foodR) && cursorY <= (t.y + t.h/2 + foodR);
-        if(withinX && withinY){ onPlate = t; break; }
+        if(withinX && withinY){
+          const targetDistance = dist(cursorX, cursorY, t.x, t.y);
+          if(targetDistance < onPlateDistance){
+            onPlate = t;
+            onPlateDistance = targetDistance;
+          }
+        }
       }
       if(onPlate && still){
         if(dwellTarget !== 'plate'){
@@ -5067,11 +5107,18 @@ function updateGraspLogic(){
 
     // Check if cursor is on any plate
     let onPlate = null;
+    let onPlateDistance = Infinity;
     for(const t of targets){
       const foodR = heldItem ? heldItem.r : 60;
       const withinX = cursorX >= (t.x - t.w/2 - foodR) && cursorX <= (t.x + t.w/2 + foodR);
       const withinY = cursorY >= (t.y - t.h/2 - foodR) && cursorY <= (t.y + t.h/2 + foodR);
-      if(withinX && withinY){ onPlate = t; break; }
+      if(withinX && withinY){
+        const targetDistance = dist(cursorX, cursorY, t.x, t.y);
+        if(targetDistance < onPlateDistance){
+          onPlate = t;
+          onPlateDistance = targetDistance;
+        }
+      }
     }
 
     // Release requirement: FTHUE 5 needs the hand to open, FTHUE 6/7 needs a maintained
@@ -8973,13 +9020,15 @@ window.__qa = {
     initGame();
     return window.render_game_to_text();
   },
-  setHand(nx, ny, grasping){
+  setHand(nx, ny, grasping, openPrep){
     qaHand = { nx, ny, isGrasping: !!grasping };
+    if(openPrep !== undefined) qaHand.isOpenPrep = !!openPrep;
     return true;
   },
   // 以 canvas 坐標直接定位（方便測試拿取物件 / 目標）
-  setHandAt(px, py, grasping){
+  setHandAt(px, py, grasping, openPrep){
     qaHand = { nx: px / gameCanvas.width, ny: py / gameCanvas.height, isGrasping: !!grasping };
+    if(openPrep !== undefined) qaHand.isOpenPrep = !!openPrep;
     return true;
   },
   clearHand(){ qaHand = null; return true; },
@@ -8997,9 +9046,41 @@ window.__qa = {
       mapped:points.map(p=>({ x:p.x, y:p.y })),
     };
   },
+  gestureProbe:{
+    pinch(ratio, previous=false){
+      const lm = Array.from({length:21}, ()=>({x:0,y:0,z:0}));
+      lm[0] = {x:0,y:0,z:0};
+      lm[9] = {x:1,y:0,z:0};
+      lm[4] = {x:0,y:0,z:0};
+      lm[8] = {x:Number(ratio),y:0,z:0};
+      return computePinchState(lm, !!previous);
+    },
+    grasp(curls, previous=false, graspType='any'){
+      const lm = Array.from({length:21}, ()=>({x:0,y:0,z:0}));
+      const pairs = [[2,4],[5,8],[9,12],[13,16],[17,20]];
+      const values = Array.isArray(curls) ? curls : [curls,curls,curls,curls,curls];
+      pairs.forEach(([mcp,tip], index)=>{
+        const angle = index * Math.PI * 0.32;
+        const ux = Math.cos(angle), uy = Math.sin(angle);
+        lm[mcp] = {x:ux,y:uy,z:0};
+        lm[tip] = {x:ux * Number(values[index]),y:uy * Number(values[index]),z:0};
+      });
+      const priorType = state.graspType;
+      state.graspType = graspType;
+      const output = computeGraspScore(lm, !!previous);
+      state.graspType = priorType;
+      return output;
+    },
+    invalid(kind='pinch'){
+      const lm = Array.from({length:21}, ()=>({x:0,y:0,z:0}));
+      lm[8].x = Number.NaN;
+      return kind === 'grasp' ? computeGraspScore(lm, false) : computePinchState(lm, false);
+    },
+  },
   state(){ return {
     screen: currentScreen, level: state.level, theme: state.theme, gameType: state.gameType,
-    score, correctCount, grabCount, timeLeft,
+    score, correctCount, grabCount, wrongCount:totalWrong, timeLeft,
+    handDetected, detectionHeldGrace,
     held: heldItem ? heldItem.label : null,
     items: foods.filter(f=>!f.removed).map(f=>({label:f.label, type:f.targetType, x:f.x, y:f.y, r:f.r})),
     targets: targets.map(t=>({label:t.label, type:t.type, x:t.x, y:t.y, w:t.w, h:t.h})),
