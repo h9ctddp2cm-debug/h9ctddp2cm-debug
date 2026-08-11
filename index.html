@@ -3356,25 +3356,33 @@ function computeGraspScore(lm, isGraspingPrev){
   const ringCurl = curl(16, 13);
   const pinkyCurl = curl(20, 17);
 
-  // Hysteresis: 兩個 threshold（上/下）防手抖導致 grasp state 飛快翻轉
-  // 進入握拳狀態：需手指更彎（threshold 低）；離開握拳：手指須伸得更直（threshold 高）
+  // Hysteresis: 拿取時要求清楚屈曲；已拿住後則必須見到大部分主要手指
+  // 清楚伸直才視為放手。這比單一 threshold 更能抵抗中風手部姿勢及追蹤抖動。
   const CURL_ENTER = 0.74;  // 必須有清楚屈曲才進入握拳，避免手指微彎便誤判拿取
-  const CURL_EXIT  = 0.90;  // 必須重新張開才視為放手，並保留適量遲滯避免顫抖
-  // 使用當前 state 決定用哪個 threshold
-  const CURL_THRESH = isGraspingPrev ? CURL_EXIT : CURL_ENTER;
+  const CURL_OPEN  = 0.94;  // 指尖須接近完全伸直才算一隻「已張開」手指
 
   let isGrasping = false;
-  if(state.graspType === 'full'){
+  if(isGraspingPrev){
+    if(state.graspType === 'tripod'){
+      // tripod 已拿住後，三隻相關手指中至少兩隻清楚張開才放手
+      const open = [thumbCurl, indexCurl, middleCurl].filter(c => c >= CURL_OPEN).length;
+      isGrasping = open < 2;
+    } else {
+      // full / any：忽略較易抖動的拇指；四隻主要手指中至少三隻清楚張開才放手
+      const open = [indexCurl, middleCurl, ringCurl, pinkyCurl].filter(c => c >= CURL_OPEN).length;
+      isGrasping = open < 3;
+    }
+  } else if(state.graspType === 'full'){
     // 四指中至少三指明顯屈曲
-    const curled = [indexCurl, middleCurl, ringCurl, pinkyCurl].filter(c => c < CURL_THRESH).length;
+    const curled = [indexCurl, middleCurl, ringCurl, pinkyCurl].filter(c => c < CURL_ENTER).length;
     isGrasping = curled >= 3;
   } else if(state.graspType === 'tripod'){
     // thumb + index + middle: 3中任 2
-    const curled = [thumbCurl, indexCurl, middleCurl].filter(c => c < CURL_THRESH).length;
+    const curled = [thumbCurl, indexCurl, middleCurl].filter(c => c < CURL_ENTER).length;
     isGrasping = curled >= 2;
   } else {
     // any 仍要求至少兩指明顯屈曲，避免單一手指動作被當成真正握取
-    const curled = [thumbCurl, indexCurl, middleCurl, ringCurl, pinkyCurl].filter(c => c < CURL_THRESH).length;
+    const curled = [thumbCurl, indexCurl, middleCurl, ringCurl, pinkyCurl].filter(c => c < CURL_ENTER).length;
     isGrasping = curled >= 2;
   }
 
@@ -4706,7 +4714,7 @@ function graspPrompt(key){
   return '張開手放下';
 }
 function updateGraspLogic(){
-  const PREP_OPEN_MS = 420, GRASP_HOLD_MS = 480, DROP_DWELL_MS = 620;
+  const PREP_OPEN_MS = 420, GRASP_HOLD_MS = 480, DROP_DWELL_MS = 1000;
   // Preparation requirement: FTHUE 5 needs a truly open hand, FTHUE 6/7 needs the
   // thumb and index finger clearly separated before a new pinch is accepted.
   const openPrep = isPinchMode() ? handOpenPrep : !isGrasping;
@@ -5699,7 +5707,7 @@ function rewardIsOpen(){ return advDom && advDom.reward.classList.contains('show
 const SEL_TOL = { grasp: 52, reach: 42 };
 const GRASP_ARM_MS = 420;
 const GRASP_HOLD_MS = 480;
-const RELEASE_HOLD_MS = 620;
+const RELEASE_HOLD_MS = 1000;
 /* Selection tolerance. Research strata tighten the tolerance for FTHUE 6/7 so that
    placement must be more precise; normal (non-study) play is unchanged. */
 function selTol(){
