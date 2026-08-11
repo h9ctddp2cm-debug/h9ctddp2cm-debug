@@ -4124,6 +4124,8 @@ function initGame(){
   updateHUD();
 
   resizeGameCanvas();
+  // 先顯示提示，讓第一局生成物件時已可量度右上角提示禁區
+  setActionPrompt('等待偵測手部', '請將手放在鏡頭前');
   if(isAdvTheme()){
     // 進階活動（麻雀 / 啤牌 / 煮飯 / 插花 / 收衫）有各自的玩法模組
     advInit();
@@ -4132,8 +4134,6 @@ function initGame(){
     setupTargets();
     spawnInitialFoods();
   }
-
-  setActionPrompt('等待偵測手部', '請將手放在鏡頭前');
 
   // 重置 dwell 計時器
   dwellTarget = null;
@@ -4172,7 +4172,11 @@ function initGame(){
   }
 
   // 遊戲開始：顯示 tier 0 規則 banner（進階活動有自己的引導面板）
-  if(!isAdvTheme()) showLevelUpBanner();
+  if(!isAdvTheme()){
+    showLevelUpBanner();
+    // Banner 顯示後再檢查一次，避免第一局因提示框剛載入而遮住點心
+    ensureFoodsClearOfInstructions();
+  }
 
   if(gameTimerId) clearInterval(gameTimerId);
   gameTimerId = setInterval(()=>{
@@ -4241,6 +4245,50 @@ function setupTargets(){
 
 function randRange(a,b){ return a + Math.random()*(b-a); }
 
+function getInstructionExclusionRect(cw, ch, padding){
+  const canvasRect = gameCanvas.getBoundingClientRect();
+  if(!canvasRect.width || !canvasRect.height) return null;
+  const scaleX = cw / canvasRect.width;
+  const scaleY = ch / canvasRect.height;
+  const ids = ['statusBar', 'persistentRules', 'levelIntroBanner'];
+  const rects = ids.map(id=>document.getElementById(id))
+    .filter(el=>el && !el.classList.contains('hidden') && getComputedStyle(el).display !== 'none')
+    .map(el=>el.getBoundingClientRect())
+    .filter(rect=>rect.width > 0 && rect.height > 0);
+  if(!rects.length) return null;
+  const pad = padding || 18;
+  return {
+    left:(Math.min(...rects.map(rect=>rect.left)) - canvasRect.left) * scaleX - pad,
+    top:(Math.min(...rects.map(rect=>rect.top)) - canvasRect.top) * scaleY - pad,
+    right:(Math.max(...rects.map(rect=>rect.right)) - canvasRect.left) * scaleX + pad,
+    bottom:(Math.max(...rects.map(rect=>rect.bottom)) - canvasRect.top) * scaleY + pad,
+  };
+}
+
+function circleOverlapsRect(x, y, radius, rect){
+  if(!rect) return false;
+  const nearestX = Math.max(rect.left, Math.min(x, rect.right));
+  const nearestY = Math.max(rect.top, Math.min(y, rect.bottom));
+  return Math.hypot(x - nearestX, y - nearestY) < radius;
+}
+
+function ensureFoodsClearOfInstructions(){
+  if(!foods.length) return;
+  const exclusion = getInstructionExclusionRect(
+    gameCanvas.width,
+    gameCanvas.height,
+    Math.max(18, (foods[0]?.r || 100) * 0.16)
+  );
+  if(!exclusion) return;
+  const defs = getDimSumDefs();
+  foods.forEach((food, index)=>{
+    if(food.isDistractor || !circleOverlapsRect(food.x, food.y, food.r, exclusion)) return;
+    const def = defs.find(item=>item.type === food.type) || defs[0];
+    const others = foods.filter((_, otherIndex)=>otherIndex !== index);
+    foods[index] = makeFoodAt(def, others);
+  });
+}
+
 // 取得目前活動的配對物件 defs
 function getDimSumDefs(){
   return getActivityDefs();
@@ -4265,12 +4313,13 @@ function makeFoodAt(def, existingFoods){
   // Y 範圍顯著往上拉，避免 spawn 在磟子區區均（磟子在底部 65-90%）
   const spawnYmin = Math.max(ch * (portrait ? 0.25 : 0.21), portrait ? 190 : 150);
   const spawnYmax = ch * (portrait ? 0.58 : 0.55);
+  const instructionExclusion = getInstructionExclusionRect(cw, ch, Math.max(18, r * 0.16));
 
   // 多嘗試一些次，升高間隔成功率
   for(let attempt=0; attempt<120; attempt++){
     const x = randRange(marginX, cw - marginX);
     const y = randRange(spawnYmin, spawnYmax);
-    let overlaps = false;
+    let overlaps = circleOverlapsRect(x, y, r, instructionExclusion);
     for(const f of existingFoods){
       if(f.removed) continue;
       if(Math.hypot(x - f.x, y - f.y) < minDist){ overlaps = true; break; }
@@ -4286,8 +4335,12 @@ function makeFoodAt(def, existingFoods){
     }
   }
   // Fallback：強行放置（到這裡代表畫面真係太擠 — 但不才會發生）
-  const x = randRange(marginX, cw - marginX);
-  const y = randRange(spawnYmin, spawnYmax);
+  let x = randRange(marginX, cw - marginX);
+  let y = randRange(spawnYmin, spawnYmax);
+  if(circleOverlapsRect(x, y, r, instructionExclusion)){
+    x = Math.max(marginX, Math.min(cw - marginX, cw * 0.46));
+    y = Math.max(spawnYmin, Math.min(spawnYmax, ch * 0.43));
+  }
   return {
     id: foodIdSeq++, type: def.type, label: def.label,
     targetType: def.targetType, img: def.img || null, color: def.color || null,
