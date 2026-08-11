@@ -291,9 +291,9 @@ function drawCanvas() {
     context.fillRect(0, 0, width, height);
   } else {
     context.fillStyle = "#d9e4e0";
-    context.font = "600 22px Satoshi, sans-serif";
-    context.textAlign = "center";
-    context.fillText("相機未啟動", width / 2, height / 2);
+    context.font = "600 18px Satoshi, sans-serif";
+    context.textAlign = "left";
+    context.fillText("相機未啟動", 16, 30);
   }
 
   const centerX = engine.calibrationVcpXMedian * width;
