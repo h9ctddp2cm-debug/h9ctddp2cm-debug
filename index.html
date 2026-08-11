@@ -4117,6 +4117,7 @@ let releaseDwellPlate = null; // which plate cursor was on when release started
 let score = 0, correctCount = 0, grabCount = 0;
 let totalWrong = 0;
 let basicOpenStart = 0, basicGraspStart = 0, basicGraspCandidate = '', basicGraspArmed = false;
+let basicContactCandidate = '', basicContactUntil = 0;
 let wrongStreak = 0;  // 連續錯誤次數，到 5 就自動暫停從新講規則
 let timeLeft = 60;
 let gameTimerId = null;
@@ -4225,6 +4226,7 @@ function initGame(){
   heldItem = null; foods = []; targets = [];
   releaseDwellStart = 0; releaseDwellPlate = null;
   basicOpenStart = 0; basicGraspStart = 0; basicGraspCandidate = ''; basicGraspArmed = false;
+  basicContactCandidate = ''; basicContactUntil = 0;
   gripActive = false;
   isGrasping = false;
   cursorX = -1; cursorY = -1;
@@ -4671,6 +4673,13 @@ function dist(x1,y1,x2,y2){
   return Math.hypot(x1-x2, y1-y2);
 }
 
+// 視覺上的手圈一碰到物件外圈便算接觸。Level 4–5 手圈半徑為 30px；
+// 額外保留 tremor margin，讓短暫手抖不會令接觸範圍忽然消失。
+function pickupContactRadius(itemRadius, tremorMargin=52){
+  const handCircleRadius = isGraspStyleMode() ? 30 : 22;
+  return (itemRadius || 60) + handCircleRadius + tremorMargin;
+}
+
 let lastDwellPct = 0;
 let dwellActive = false;
 
@@ -4819,7 +4828,8 @@ function graspPrompt(key){
   return '張開手放下';
 }
 function updateGraspLogic(){
-  const PREP_OPEN_MS = 420, GRASP_HOLD_MS = 480, DROP_DWELL_MS = 1000;
+  const PREP_OPEN_MS = 280, GRASP_HOLD_MS = 480, DROP_DWELL_MS = 1000;
+  const CONTACT_GRACE_MS = 450;
   // Preparation requirement: FTHUE 5 needs a truly open hand, FTHUE 6/7 needs the
   // thumb and index finger clearly separated before a new pinch is accepted.
   const openPrep = isPinchMode() ? handOpenPrep : !isGrasping;
@@ -4827,20 +4837,29 @@ function updateGraspLogic(){
   if(cursorX < 0 || !handDetected){
     setActionPrompt('等待偵測手部', '請將手放在鏡頭前');
     basicOpenStart = 0; basicGraspStart = 0; basicGraspCandidate = '';
+    basicContactCandidate = ''; basicContactUntil = 0;
     return;
   }
 
   if(!heldItem){
+    const now = nowMs();
     let nearest = null, nearestDist = Infinity;
     for(const f of foods){
       if(f.removed || f.held) continue;
       const d = dist(cursorX, cursorY, f.x, f.y);
       if(d < nearestDist){ nearest = f; nearestDist = d; }
     }
-    const overFood = nearest && nearestDist < nearest.r + 130;
-    const now = nowMs();
+    let overFood = nearest && nearestDist <= pickupContactRadius(nearest.r, 100);
+    if(overFood){
+      basicContactCandidate = nearest.id;
+      basicContactUntil = now + CONTACT_GRACE_MS;
+    } else if(basicContactCandidate && now <= basicContactUntil){
+      const locked = foods.find(f=>f.id === basicContactCandidate && !f.removed && !f.held);
+      if(locked){ nearest = locked; overFood = true; }
+    }
     if(!overFood){
       basicOpenStart = 0; basicGraspStart = 0; basicGraspCandidate = ''; basicGraspArmed = false;
+      basicContactCandidate = ''; basicContactUntil = 0;
       setActionPrompt(graspPrompt('prep'), '移到' + getTheme().itemWord + '上方');
     } else if(!isGrasping && openPrep){
       basicGraspStart = 0; basicGraspCandidate = nearest.id;
@@ -4865,6 +4884,7 @@ function updateGraspLogic(){
         researchLog('pickup', {item:nearest.label, method:isPinchMode() ? 'separate_then_pinch' : 'open_then_grasp'});
         updateHUD();
         basicOpenStart = 0; basicGraspStart = 0; basicGraspCandidate = ''; basicGraspArmed = false;
+        basicContactCandidate = ''; basicContactUntil = 0;
         setActionPrompt(graspPrompt('carry'), '移到同款目標');
       } else {
         setActionPrompt(graspPrompt('hold'), pct + '%');
@@ -5865,7 +5885,8 @@ function nearestItem(items){
   for(const it of items){
     if(it.gone) continue;
     const d = Math.hypot(cursorX - it.x, cursorY - it.y);
-    const tol = (it.r || 60) + selTol();
+    // 物件半徑 + 可見手圈半徑 + tremor tolerance：兩個圓圈邊緣相碰即可選取
+    const tol = pickupContactRadius(it.r || 60, selTol());
     if(d <= tol && d < bd){ bd = d; best = it; }
   }
   return best;
@@ -5875,10 +5896,11 @@ function nearestItem(items){
 const picker = {
   hoverId:null, start:0, pct:0, armed:false, lock:null, startId:null,
   openStart:0, graspStart:0, graspId:null, heldId:null, relStart:0,
+  contactId:null, contactUntil:0,
   reset(){
     this.hoverId=null; this.start=0; this.pct=0; this.armed=false; this.lock=null;
     this.startId=null; this.openStart=0; this.graspStart=0; this.graspId=null;
-    this.heldId=null; this.relStart=0;
+    this.heldId=null; this.relStart=0; this.contactId=null; this.contactUntil=0;
   },
   poll(items){
     this.pct = 0;
@@ -5903,10 +5925,17 @@ const picker = {
       }
       return null;
     }
-    const best = nearestItem(items);
+    let best = nearestItem(items);
+    if(best){
+      this.contactId = best.id;
+      this.contactUntil = now + 450;
+    } else if(isGraspStyleMode() && this.contactId && now <= this.contactUntil){
+      best = items.find(it=>it.id === this.contactId && !it.gone) || null;
+    }
     if(!best){
       this.hoverId = null; this.start = 0; this.lock = null;
       this.graspStart = 0; this.graspId = null;
+      this.contactId = null; this.contactUntil = 0;
       if(isGraspStyleMode() && handReleasedOrOpen()){
         if(!this.openStart) this.openStart = now;
         if(now - this.openStart >= GRASP_ARM_MS) this.armed = true;
