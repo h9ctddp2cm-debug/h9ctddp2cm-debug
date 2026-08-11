@@ -554,3 +554,12 @@
 - 最終單輪結果為 47/47：Level 4 13/13、Level 5 17/17、Level 6 17/17；同一全套測試連續 30 輪全通過。
 - 原有 Level 3 Data Collector 10/10 及 Sandbox Engine 10/10 回歸測試保持全通過；標準 browser-game client 三輪、1180×820 橫向及 820×1180 直向視覺 QA 全通過，console error 0、水平／垂直 overflow 0。
 - 結論只屬 software technical verification，不代表臨床效度、病人安全性、治療成效或醫療儀器等效性；仍需真實 iPad Safari、相機距離、病房光線及目標患者作實機驗證。
+
+## 2026-08-12：Level 3–6 單一網站入口、教學影片及手勢偵測改善
+
+- 主頁新增 FTHUE Level 3 卡片，直接連到保留原有驗證邊界的 `Level 3 Bilateral Sandbox`；Level 3–6 現由同一網站入口進入，但不把 Level 3 引擎硬併入 Level 4–6 手勢引擎。
+- Level 3、4、5、6 各加入一段 8 秒、960×540、H.264／yuv420p 的無聲教學動畫，分開交代環境設定及受訓動作；每張首頁卡片的 GIF／動作示意旁均有播放按鈕。
+- Level 5 修正個人化 grasp calibration 錯誤綁定舊 Level 4 stratum 的問題；Research Mode 及普通模式現均要求持續張手與握拳各 2 秒，再套用該次 session 的個人 enter／exit threshold。
+- Level 6 改用掌長及掌寬的較穩定 normalization、降低 MediaPipe presence／tracking confidence、加入 120ms gesture confirmation，以及個人化 pinch enter／exit／open threshold；校準及失敗提示要求手腕、拇指及食指同時入鏡。
+- Level 6 明確提示先以裸手校準；如筷子或夾子遮擋指尖，改用裸手螢幕捏取。系統只量度 normalized thumb-index aperture，不量度 pinch force。
+- 最終 QA：Level 3 回歸測試 20/20、Level 4–6 技術驗證 47/47、標準 browser-game client 通過；820×1180 iPad 直向版有 4 張 Level 卡及 4 個影片按鈕，影片 metadata／播放、Level 3 路由、水平及垂直 overflow、console error 全部通過。

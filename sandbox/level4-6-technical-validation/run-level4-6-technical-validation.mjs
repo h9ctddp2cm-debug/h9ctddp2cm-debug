@@ -120,8 +120,8 @@ try {
     graspRelease: window.__qa.gestureProbe.grasp([0.8, 1, 1, 1, 0.8], true, "any"),
     pinchEnter: window.__qa.gestureProbe.pinch(0.30, false),
     pinchHysteresisHold: window.__qa.gestureProbe.pinch(0.45, true),
-    pinchExit: window.__qa.gestureProbe.pinch(0.53, true),
-    pinchOpen: window.__qa.gestureProbe.pinch(0.65, false),
+    pinchExit: window.__qa.gestureProbe.pinch(0.58, true),
+    pinchOpen: window.__qa.gestureProbe.pinch(0.70, false),
     invalidGrasp: window.__qa.gestureProbe.invalid("grasp"),
     invalidPinch: window.__qa.gestureProbe.invalid("pinch"),
   }));

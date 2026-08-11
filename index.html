@@ -541,7 +541,7 @@ html,body{
   width:100%; max-width:1180px; margin:0 auto;
 }
 @media (min-width:980px){
-  .level-grid{ grid-template-columns:repeat(3,1fr); }
+  .level-grid{ grid-template-columns:repeat(2,1fr); }
   .level-select{ grid-template-columns:1fr; align-content:start; }
 }
 .level-card{
@@ -592,6 +592,33 @@ html,body{
 .level-card .lv-note{ font-size:13.5px; line-height:1.7; color:#4a5d5a; font-weight:600; margin:0 0 18px; }
 .level-card .lv-note b{ color:#1466B8; font-weight:800; }
 .level-card .lv-note .lv-line{ display:block; margin-top:6px; }
+.instruction-play{
+  display:flex; align-items:center; justify-content:center; gap:9px;
+  width:calc(100% - 36px); min-height:46px; margin:0 18px 13px;
+  border:2px solid var(--teal); border-radius:13px; background:#eef9f6;
+  color:var(--teal-dark); font:800 15px/1.2 inherit; cursor:pointer;
+}
+.instruction-play:hover,.instruction-play:focus-visible{ background:#dff3ed; outline:3px solid rgba(26,107,90,.18); }
+.instruction-play .play-icon{
+  display:grid; place-items:center; width:27px; height:27px; border-radius:50%;
+  background:var(--teal); color:#fff; font-size:13px; padding-left:2px;
+}
+.video-modal{
+  display:none; position:fixed; inset:0; z-index:12000; padding:22px;
+  align-items:center; justify-content:center; background:rgba(18,28,27,.88);
+}
+.video-modal.open{ display:flex; }
+.video-dialog{
+  width:min(920px,96vw); max-height:94vh; overflow:auto; border-radius:22px;
+  background:#fff; padding:18px; box-shadow:0 24px 70px rgba(0,0,0,.38);
+}
+.video-dialog-head{ display:flex; align-items:center; justify-content:space-between; gap:18px; margin-bottom:12px; }
+.video-dialog-head h2{ margin:0; color:var(--teal-dark); font-size:21px; }
+.video-close{
+  flex:0 0 auto; min-width:48px; min-height:48px; border:0; border-radius:50%;
+  background:#eee7dd; color:#40372f; font-size:28px; cursor:pointer;
+}
+.video-dialog video{ display:block; width:100%; border-radius:14px; background:#111; }
 @media (max-width:819px){
   .level-select{ grid-template-columns:minmax(0,1fr) 210px; }
 }
@@ -682,6 +709,33 @@ html,body{
     </div>
     <div class="level-grid">
       <article class="level-card">
+        <button class="level-select" id="btnLevel3" data-level="3">
+          <div class="level-copy">
+            <span class="lv-tag">FTHUE Level 3</span>
+            <h3>雙手水平掃掠</h3>
+            <p class="lv-action">前臂承托，雙手合攏向左／右滑動</p>
+          </div>
+          <div class="level-motion single">
+            <figure>
+              <div aria-hidden="true" style="font-size:52px;line-height:1;color:#0a7d75;font-weight:900;">↔</div>
+              <figcaption>中央 ↔ 左／右</figcaption>
+            </figure>
+          </div>
+        </button>
+        <button class="instruction-play" type="button" data-video-level="3"
+          data-video-src="videos/fthue-level-3-setup-movement.mp4" data-testid="button-video-level-3">
+          <span class="play-icon" aria-hidden="true">▶</span>播放環境及動作教學
+        </button>
+        <details class="level-details">
+          <summary>顯示詳情</summary>
+          <p class="lv-note">
+            <span class="lv-line">進入已獨立驗證的 Level 3 Bilateral Sandbox</span>
+            <span class="lv-line">量度 Movement Time 及水平路徑的垂直偏差</span>
+            <span class="lv-line"><b>Software technical verification completed</b>；不等同臨床效度驗證</span>
+          </p>
+        </details>
+      </article>
+      <article class="level-card">
         <button class="level-select" id="btnLevel4" data-level="4">
           <div class="level-copy">
             <span class="lv-tag">FTHUE Level 4</span>
@@ -694,6 +748,10 @@ html,body{
               <figcaption>沿中線慢慢向前滑</figcaption>
             </figure>
           </div>
+        </button>
+        <button class="instruction-play" type="button" data-video-level="4"
+          data-video-src="videos/fthue-level-4-setup-movement.mp4" data-testid="button-video-level-4">
+          <span class="play-icon" aria-hidden="true">▶</span>播放環境及動作教學
         </button>
         <details class="level-details">
           <summary>顯示詳情</summary>
@@ -717,6 +775,10 @@ html,body{
               <figcaption>張手 · 握拳</figcaption>
             </figure>
           </div>
+        </button>
+        <button class="instruction-play" type="button" data-video-level="5"
+          data-video-src="videos/fthue-level-5-setup-movement.mp4" data-testid="button-video-level-5">
+          <span class="play-icon" aria-hidden="true">▶</span>播放環境及動作教學
         </button>
         <details class="level-details">
           <summary>顯示詳情</summary>
@@ -744,10 +806,16 @@ html,body{
             </figure>
           </div>
         </button>
+        <button class="instruction-play" type="button" data-video-level="6"
+          data-video-src="videos/fthue-level-6-setup-movement.mp4" data-testid="button-video-level-6">
+          <span class="play-icon" aria-hidden="true">▶</span>播放環境及動作教學
+        </button>
         <details class="level-details">
           <summary>顯示詳情</summary>
           <p class="lv-note">
-            <span class="lv-line">Level 6–7：建議訓練時<b>拿夾子或筷子</b>練習手指捏取</span>
+            <span class="lv-line">先以<b>裸手完成校準</b>；訓練時必須保持拇指、食指及手腕可見</span>
+            <span class="lv-line">如使用夾子或筷子遮擋指尖，請改用裸手螢幕捏取模式</span>
+            <span class="lv-line">系統量度拇食指 aperture，不量度 pinch force</span>
           </p>
         </details>
       </article>
@@ -758,6 +826,19 @@ html,body{
     <footer style="margin-top:32px;padding:16px 12px 8px;text-align:center;font-size:11px;color:var(--muted);line-height:1.6;border-top:1px solid var(--border);opacity:0.75;max-width:760px;width:100%;">
       訓練由仁濟醫院職業治療師鄧姑娘設計，網頁由 AI 協助製作
     </footer>
+  </div>
+
+  <div class="video-modal" id="instructionVideoModal" role="dialog" aria-modal="true"
+    aria-labelledby="instructionVideoTitle">
+    <div class="video-dialog">
+      <div class="video-dialog-head">
+        <h2 id="instructionVideoTitle">環境及動作教學</h2>
+        <button class="video-close" id="instructionVideoClose" type="button"
+          aria-label="關閉教學影片" data-testid="button-close-instruction-video">×</button>
+      </div>
+      <video id="instructionVideo" controls playsinline preload="metadata"
+        data-testid="video-instruction"></video>
+    </div>
   </div>
 
   <div class="pilot-access-overlay" id="pilotAccessOverlay" role="dialog" aria-modal="true" aria-labelledby="pilotAccessTitle">
@@ -1048,7 +1129,7 @@ html,body{
     <div class="calib-info">
       手部偵測狀態：<span class="pixel-count" id="pixelCount">尚未偵測</span>
     </div>
-    <div class="calib-hint">
+    <div class="calib-hint" id="calibHint">
       請將手掌置於鏡頭前，確認畫面中出現綠色圓點標記於食指尖位置後，即可開始遊戲。
     </div>
     <div class="calib-checklist" id="calibChecklist">
@@ -1548,6 +1629,10 @@ const state = {
   graspType: 'any',      // fixed: open-hand detection
   affectedSide: '',      // normal play: therapist must choose left or right before calibration
   qaMode: false,         // QA-only: 經 hook 注入游標，不需相機
+  calibration:{ detectedStart:0, openStart:0, closedStart:0, detectedDone:false,
+    openDone:false, closedDone:false, ready:false, openScores:[], closedScores:[] },
+  personalGraspEnter:null, personalGraspExit:null,
+  personalPinchEnter:null, personalPinchExit:null, personalPinchOpen:null,
 };
 const RESEARCH_VERSION = 'pilot-5.0.0-neuroscience';
 const PILOT_TRAINING_SCENARIOS = {
@@ -1702,6 +1787,7 @@ const research = {
   calibration:{ detectedStart:0, openStart:0, closedStart:0, detectedDone:false,
     openDone:false, closedDone:false, ready:false, openScores:[], closedScores:[] },
   personalGraspEnter:null, personalGraspExit:null,
+  personalPinchEnter:null, personalPinchExit:null, personalPinchOpen:null,
   returnUrl:'',
 };
 function activeAffectedSide(){
@@ -1811,6 +1897,21 @@ function resetResearchCalibration(){
     openDone:false, closedDone:false, ready:false, openScores:[], closedScores:[] };
   research.personalGraspEnter = null;
   research.personalGraspExit = null;
+  research.personalPinchEnter = null;
+  research.personalPinchExit = null;
+  research.personalPinchOpen = null;
+  ['calibDetectCheck','calibOpenCheck','calibCloseCheck'].forEach(id=>{
+    const el = document.getElementById(id); if(el) el.classList.remove('done');
+  });
+}
+function resetNormalCalibration(){
+  state.calibration = { detectedStart:0, openStart:0, closedStart:0, detectedDone:false,
+    openDone:false, closedDone:false, ready:false, openScores:[], closedScores:[] };
+  state.personalGraspEnter = null;
+  state.personalGraspExit = null;
+  state.personalPinchEnter = null;
+  state.personalPinchExit = null;
+  state.personalPinchOpen = null;
   ['calibDetectCheck','calibOpenCheck','calibCloseCheck'].forEach(id=>{
     const el = document.getElementById(id); if(el) el.classList.remove('done');
   });
@@ -2644,6 +2745,33 @@ function selectLevel(levelId){
 document.getElementById('btnLevel4').addEventListener('click', ()=> selectLevel('4'));
 document.getElementById('btnLevel5').addEventListener('click', ()=> selectLevel('5'));
 document.getElementById('btnLevel67').addEventListener('click', ()=> selectLevel('67'));
+document.getElementById('btnLevel3').addEventListener('click', ()=>{
+  window.location.href = 'sandbox/level3-bilateral/index.html';
+});
+const instructionVideoModal = document.getElementById('instructionVideoModal');
+const instructionVideo = document.getElementById('instructionVideo');
+const instructionVideoTitle = document.getElementById('instructionVideoTitle');
+function closeInstructionVideo(){
+  instructionVideo.pause();
+  instructionVideo.removeAttribute('src');
+  instructionVideo.load();
+  instructionVideoModal.classList.remove('open');
+}
+document.querySelectorAll('[data-video-src]').forEach(button=>{
+  button.addEventListener('click', ()=>{
+    instructionVideoTitle.textContent = `FTHUE Level ${button.dataset.videoLevel} · 環境及動作教學`;
+    instructionVideo.src = button.dataset.videoSrc;
+    instructionVideoModal.classList.add('open');
+    instructionVideo.play().catch(()=>{});
+  });
+});
+document.getElementById('instructionVideoClose').addEventListener('click', closeInstructionVideo);
+instructionVideoModal.addEventListener('click', event=>{
+  if(event.target === instructionVideoModal) closeInstructionVideo();
+});
+document.addEventListener('keydown', event=>{
+  if(event.key === 'Escape' && instructionVideoModal.classList.contains('open')) closeInstructionVideo();
+});
 /* Research Mode now routes to the separate role hub (research/index.html) so that
    the blinded assessor bundle never shares a page with allocation or training data.
    The in-page therapist setup below remains reachable via ?role=intervention, which
@@ -2974,7 +3102,11 @@ document.getElementById('btnGoCalib').addEventListener('click', async ()=>{
     if(card) card.classList.remove('collapsed');
     return;
   }
-  document.getElementById('calibChecklist').classList.remove('active');
+  resetNormalCalibration();
+  const showHandChecks = isGraspStyleMode();
+  document.getElementById('calibChecklist').classList.toggle('active', showHandChecks);
+  document.getElementById('calibOpenCheck').style.display = showHandChecks ? 'block' : 'none';
+  document.getElementById('calibCloseCheck').style.display = showHandChecks ? 'block' : 'none';
   // Unlock AudioContext on first interaction (Safari)
   try{ const c = getAudioCtx(); if(c.state === 'suspended') await c.resume(); }catch(e){}
   showScreen('calib');
@@ -3534,9 +3666,9 @@ async function ensureHandLandmarker(){
       },
       runningMode: "VIDEO",
       numHands: 1,
-      minHandDetectionConfidence: 0.35,
-      minHandPresenceConfidence: 0.35,
-      minTrackingConfidence: 0.35
+      minHandDetectionConfidence: 0.30,
+      minHandPresenceConfidence: 0.25,
+      minTrackingConfidence: 0.25
     });
     return handLandmarker;
   })();
@@ -3570,7 +3702,7 @@ function detectWrist(videoEl){
   if(results && results.landmarks && results.landmarks.length > 0){
     const lm = results.landmarks[0]; // 第一隻手
     const required = state.gameType === 'pinch'
-      ? [0,4,8,9]
+      ? [0,4,5,8,9,17]
       : [0,2,4,5,8,9,12,13,16,17,20];
     if(!hasFiniteHandLandmarks(lm, required)) return { detected:false };
     // Cursor position
@@ -3583,14 +3715,17 @@ function detectWrist(videoEl){
       const pinch = computePinchState(lm, isGrasping);
       const midX = (lm[4].x + lm[8].x) / 2;
       const midY = (lm[4].y + lm[8].y) / 2;
-      return { detected:true, nx:1 - midX, ny:midY, isGrasping:pinch.isPinching,
+      return { detected:true, nx:1 - midX, ny:midY,
+        isGrasping:stabiliseDetectedGesture(pinch.isPinching, 'pinch'),
         graspScore:pinch.score, isOpenPrep:pinch.isSeparated, pinchRatio:pinch.ratio, lm };
     }
     const usePalmCursor = state.gameType === 'grasp' || isLevel4Tabletop();
     const nx = usePalmCursor ? (1 - palmX) : (1 - tip.x);
     const ny = usePalmCursor ? palmY : tip.y;
     const grasp = computeGraspScore(lm, isGrasping);  // 傳入目前 state 以計算 hysteresis threshold
-    return { detected:true, nx, ny, isGrasping: grasp.isGrasping, graspScore: grasp.score,
+    return { detected:true, nx, ny,
+      isGrasping:stabiliseDetectedGesture(grasp.isGrasping, 'grasp'),
+      graspScore: grasp.score,
       isOpenPrep: !grasp.isGrasping, lm };
   }
   return { detected:false };
@@ -3657,9 +3792,13 @@ function computeGraspScore(lm, isGraspingPrev){
   // score: average curl of relevant fingers (1 = fully open, 0 = fully closed)
   const avg = (indexCurl + middleCurl + ringCurl + pinkyCurl) / 4;
   const score = 1 - avg;
-  if(research.active && research.stratum === '4' &&
-      Number.isFinite(research.personalGraspEnter) && Number.isFinite(research.personalGraspExit)){
-    isGrasping = score >= (isGraspingPrev ? research.personalGraspExit : research.personalGraspEnter);
+  const graspThresholds = research.active ? research : state;
+  const usePersonalGrasp = (!research.active || research.stratum === '5') &&
+    Number.isFinite(graspThresholds.personalGraspEnter) &&
+    Number.isFinite(graspThresholds.personalGraspExit);
+  if(usePersonalGrasp){
+    isGrasping = score >= (isGraspingPrev
+      ? graspThresholds.personalGraspExit : graspThresholds.personalGraspEnter);
   }
   return { isGrasping, score, valid:true };
 }
@@ -3670,24 +3809,63 @@ function computeGraspScore(lm, isGraspingPrev){
    Hysteresis prevents flicker: a closed pinch must cross PINCH_ENTER, and it is only
    released once the fingers reopen past PINCH_EXIT. This detects the pinch aperture only;
    it is not a force measurement. */
-const PINCH_ENTER = 0.34;   // normalised aperture below which a pinch is registered
-const PINCH_EXIT  = 0.52;   // normalised aperture above which the pinch is released
-const PINCH_OPEN  = 0.62;   // fingers clearly separated: valid preparation for a new pinch
+const PINCH_ENTER = 0.38;   // normalised aperture below which a pinch is registered
+const PINCH_EXIT  = 0.56;   // normalised aperture above which the pinch is released
+const PINCH_OPEN  = 0.66;   // fingers clearly separated: valid preparation for a new pinch
 function computePinchState(lm, isPinchingPrev){
-  if(!hasFiniteHandLandmarks(lm, [0,4,8,9])){
+  if(!hasFiniteHandLandmarks(lm, [0,4,5,8,9,17])){
     return { isPinching:false, ratio:null, isSeparated:false, score:0, valid:false };
   }
-  const scale = Math.hypot(lm[9].x - lm[0].x, lm[9].y - lm[0].y, lm[9].z - lm[0].z);
-  const gap = Math.hypot(lm[4].x - lm[8].x, lm[4].y - lm[8].y, lm[4].z - lm[8].z);
+  const distance = (a,b)=>{
+    const dx = a.x-b.x, dy = a.y-b.y, dz = (a.z-b.z) * 0.35;
+    return Math.hypot(dx,dy,dz);
+  };
+  // Use both palm length and palm width. The maximum is less likely to collapse when
+  // the wrist is foreshortened by the iPad's oblique camera angle.
+  const palmLength = distance(lm[9], lm[0]);
+  const palmWidth = distance(lm[5], lm[17]) * 1.35;
+  const scale = Math.max(palmLength, palmWidth);
+  const gap = distance(lm[4], lm[8]);
   const ratio = scale < 0.001 ? 1 : (gap / scale);
-  const threshold = isPinchingPrev ? PINCH_EXIT : PINCH_ENTER;
+  const pinchThresholds = research.active ? research : state;
+  const personal = (!research.active || research.stratum === '6' || research.stratum === '7') &&
+    Number.isFinite(pinchThresholds.personalPinchEnter) &&
+    Number.isFinite(pinchThresholds.personalPinchExit) &&
+    Number.isFinite(pinchThresholds.personalPinchOpen);
+  const enter = personal ? pinchThresholds.personalPinchEnter : PINCH_ENTER;
+  const exit = personal ? pinchThresholds.personalPinchExit : PINCH_EXIT;
+  const open = personal ? pinchThresholds.personalPinchOpen : PINCH_OPEN;
+  const threshold = isPinchingPrev ? exit : enter;
   const isPinching = ratio < threshold;
   return {
     isPinching, ratio,
-    isSeparated: ratio > PINCH_OPEN,
-    score: Math.max(0, Math.min(1, 1 - (ratio / PINCH_OPEN))),
+    isSeparated: ratio > open,
+    score: Math.max(0, Math.min(1, 1 - (ratio / Math.max(open,0.001)))),
     valid:true,
   };
+}
+const GESTURE_CONFIRM_MS = 120;
+let detectedGestureState = { mode:'', stable:false, candidate:false, candidateAt:0 };
+function stabiliseDetectedGesture(rawValue, mode){
+  const now = performance.now();
+  if(detectedGestureState.mode !== mode){
+    detectedGestureState = {mode, stable:false, candidate:rawValue, candidateAt:now};
+    return false;
+  }
+  if(rawValue === detectedGestureState.stable){
+    detectedGestureState.candidate = rawValue;
+    detectedGestureState.candidateAt = now;
+    return detectedGestureState.stable;
+  }
+  if(rawValue !== detectedGestureState.candidate){
+    detectedGestureState.candidate = rawValue;
+    detectedGestureState.candidateAt = now;
+    return detectedGestureState.stable;
+  }
+  if(now - detectedGestureState.candidateAt >= GESTURE_CONFIRM_MS){
+    detectedGestureState.stable = rawValue;
+  }
+  return detectedGestureState.stable;
 }
 function isGraspStyleMode(){ return state.gameType === 'grasp' || state.gameType === 'pinch'; }
 function isPinchMode(){ return state.gameType === 'pinch'; }
@@ -3729,7 +3907,25 @@ const calibCanvas = document.getElementById('calibOverlay');
 let calibDotEmaX = -1, calibDotEmaY = -1;
 let calibDetectedOnce = false;
 
+function updateCalibrationCopy(){
+  const hint = document.getElementById('calibHint');
+  const openCheck = document.getElementById('calibOpenCheck');
+  const closeCheck = document.getElementById('calibCloseCheck');
+  if(isPinchMode()){
+    hint.textContent = '鏡頭保持約 35–45° 斜上方。請確保手腕、拇指及食指同時入鏡；先不用筷子或夾子完成校準。';
+    openCheck.textContent = '○ 持續分開拇指與食指 2 秒';
+    closeCheck.textContent = '○ 持續捏合拇指與食指 2 秒';
+  }else if(state.gameType === 'grasp'){
+    hint.textContent = '掌心面向鏡頭，手腕及五隻指尖保持入鏡。請先張手，再握拳；建議使用純色背景及均勻光線。';
+    openCheck.textContent = '○ 持續張開手掌 2 秒';
+    closeCheck.textContent = '○ 持續握拳 2 秒';
+  }else{
+    hint.textContent = '請將手掌或滑墊置於鏡頭前，確認畫面中出現綠色圓點後即可開始。';
+  }
+}
+
 function startCalibLoop(){
+  updateCalibrationCopy();
   const video = document.getElementById('calibVideo');
   function loop(){
     if(!screens.calib.classList.contains('active')){ return; }
@@ -3744,20 +3940,23 @@ function startCalibLoop(){
 
     if(res.detected){
       document.getElementById('pixelCount').textContent = '✅ 偵測到手部';
-      if(research.active){
+      if(research.active || isGraspStyleMode()){
         const now = nowMs();
-        const c = research.calibration;
+        const c = research.active ? research.calibration : state.calibration;
+        const thresholds = research.active ? research : state;
         if(!c.detectedStart) c.detectedStart = now;
         if(!c.detectedDone && now - c.detectedStart >= 2000) c.detectedDone = true;
         if(isGraspStyleMode()){
           if(res.isGrasping){
             c.openStart = 0;
-            if(Number.isFinite(res.graspScore)) c.closedScores.push(res.graspScore);
+            const closedValue = isPinchMode() ? res.pinchRatio : res.graspScore;
+            if(Number.isFinite(closedValue)) c.closedScores.push(closedValue);
             if(!c.closedStart) c.closedStart = now;
             if(!c.closedDone && now - c.closedStart >= 2000) c.closedDone = true;
           } else {
             c.closedStart = 0;
-            if(Number.isFinite(res.graspScore)) c.openScores.push(res.graspScore);
+            const openValue = isPinchMode() ? res.pinchRatio : res.graspScore;
+            if(Number.isFinite(openValue)) c.openScores.push(openValue);
             if(!c.openStart) c.openStart = now;
             if(!c.openDone && now - c.openStart >= 2000) c.openDone = true;
           }
@@ -3768,23 +3967,37 @@ function startCalibLoop(){
         document.getElementById('calibOpenCheck').classList.toggle('done', c.openDone);
         document.getElementById('calibCloseCheck').classList.toggle('done', c.closedDone);
         c.ready = c.detectedDone && c.openDone && c.closedDone;
-        if(c.ready && research.stratum === '4' && research.personalGraspEnter == null &&
+        if(c.ready && state.gameType === 'grasp' && thresholds.personalGraspEnter == null &&
             c.openScores.length && c.closedScores.length){
           const openMean = c.openScores.reduce((a,b)=>a+b,0) / c.openScores.length;
           const closedMean = c.closedScores.reduce((a,b)=>a+b,0) / c.closedScores.length;
           const gap = Math.max(0.08, closedMean - openMean);
-          research.personalGraspEnter = openMean + gap * 0.62;
-          research.personalGraspExit = openMean + gap * 0.38;
+          thresholds.personalGraspEnter = openMean + gap * 0.62;
+          thresholds.personalGraspExit = openMean + gap * 0.38;
+        }
+        if(c.ready && state.gameType === 'pinch' &&
+            thresholds.personalPinchEnter == null && c.openScores.length && c.closedScores.length){
+          const openMean = c.openScores.reduce((a,b)=>a+b,0) / c.openScores.length;
+          const closedMean = c.closedScores.reduce((a,b)=>a+b,0) / c.closedScores.length;
+          const gap = Math.max(0.12, openMean - closedMean);
+          thresholds.personalPinchEnter = closedMean + gap * 0.35;
+          thresholds.personalPinchExit = closedMean + gap * 0.65;
+          thresholds.personalPinchOpen = closedMean + gap * 0.82;
         }
         document.getElementById('btnStartGame').disabled = !c.ready;
         if(c.ready && !calibDetectedOnce){
           calibDetectedOnce = true;
-          researchLog('calibration_complete', {
-            detected_hold_ms:2000, open_hold_ms:isGraspStyleMode() ? 2000 : 0,
-            closed_hold_ms:isGraspStyleMode() ? 2000 : 0,
-            personal_grasp_enter:research.personalGraspEnter,
-            personal_grasp_exit:research.personalGraspExit,
-          });
+          if(research.active){
+            researchLog('calibration_complete', {
+              detected_hold_ms:2000, open_hold_ms:isGraspStyleMode() ? 2000 : 0,
+              closed_hold_ms:isGraspStyleMode() ? 2000 : 0,
+              personal_grasp_enter:thresholds.personalGraspEnter,
+              personal_grasp_exit:thresholds.personalGraspExit,
+              personal_pinch_enter:thresholds.personalPinchEnter,
+              personal_pinch_exit:thresholds.personalPinchExit,
+              personal_pinch_open:thresholds.personalPinchOpen,
+            });
+          }
         }
       } else if(!calibDetectedOnce){
         calibDetectedOnce = true;
@@ -3810,10 +4023,11 @@ function startCalibLoop(){
       ctx.stroke();
     } else {
       document.getElementById('pixelCount').textContent = '尚未偵測';
-      if(research.active){
-        research.calibration.detectedStart = 0;
-        research.calibration.openStart = 0;
-        research.calibration.closedStart = 0;
+      if(research.active || isGraspStyleMode()){
+        const c = research.active ? research.calibration : state.calibration;
+        c.detectedStart = 0;
+        c.openStart = 0;
+        c.closedStart = 0;
       }
       calibDotEmaX = -1; calibDotEmaY = -1;
     }
@@ -4868,6 +5082,7 @@ function updateTracking(){
     posHistory = [];
     trackingPointHistory = [];
     isGrasping = false;
+    detectedGestureState = {mode:'', stable:false, candidate:false, candidateAt:0};
     if(!heldItem) gripActive = false;
   }
 }
@@ -5045,7 +5260,12 @@ function updateGraspLogic(){
   const openPrep = isPinchMode() ? handOpenPrep : !isGrasping;
 
   if(cursorX < 0 || !handDetected){
-    setActionPrompt('等待偵測手部', '請將手放在鏡頭前');
+    setActionPrompt(
+      '等待偵測手部',
+      isPinchMode()
+        ? '手腕、拇指及食指同時入鏡；如工具遮擋指尖，先改用裸手'
+        : '掌心面向鏡頭，保持手腕及五隻指尖入鏡'
+    );
     basicOpenStart = 0; basicGraspStart = 0; basicGraspCandidate = '';
     basicContactCandidate = ''; basicContactUntil = 0;
     return;
