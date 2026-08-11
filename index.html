@@ -538,9 +538,12 @@ html,body{
 .home-head .lead{ margin:0; font-size:17px; color:var(--muted); }
 .level-grid{
   display:grid; grid-template-columns:1fr; gap:16px;
-  width:100%; max-width:980px; margin:0 auto;
+  width:100%; max-width:1180px; margin:0 auto;
 }
-@media (min-width:820px){ .level-grid{ grid-template-columns:1fr 1fr; } }
+@media (min-width:980px){
+  .level-grid{ grid-template-columns:repeat(3,1fr); }
+  .level-select{ grid-template-columns:1fr; align-content:start; }
+}
 .level-card{
   background:linear-gradient(145deg,#fff 0%,#fffdf8 100%);
   border:2px solid var(--border); border-radius:20px;
@@ -679,9 +682,32 @@ html,body{
     </div>
     <div class="level-grid">
       <article class="level-card">
-        <button class="level-select" id="btnLevel45" data-level="45">
+        <button class="level-select" id="btnLevel4" data-level="4">
           <div class="level-copy">
-            <span class="lv-tag">FTHUE Level 4–5</span>
+            <span class="lv-tag">FTHUE Level 4</span>
+            <h3>桌面中線訓練</h3>
+            <p class="lv-action">前臂承托，沿中線向前</p>
+          </div>
+          <div class="level-motion single">
+            <figure>
+              <div aria-hidden="true" style="font-size:58px;line-height:1;color:#0a7d75;font-weight:900;">↑</div>
+              <figcaption>沿中線慢慢向前滑</figcaption>
+            </figure>
+          </div>
+        </button>
+        <details class="level-details">
+          <summary>顯示詳情</summary>
+          <p class="lv-note">
+            <span class="lv-line">平板平放桌面，前臂放在毛巾或滑板上</span>
+            <span class="lv-line">手掌或滑墊先停在物件上，再沿中線向前</span>
+            <span class="lv-line">若肩聳、身體傾斜、手指愈握愈緊或疼痛，先暫停</span>
+          </p>
+        </details>
+      </article>
+      <article class="level-card">
+        <button class="level-select" id="btnLevel5" data-level="5">
+          <div class="level-copy">
+            <span class="lv-tag">FTHUE Level 5</span>
             <h3>握放訓練</h3>
             <p class="lv-action">握拳拿取，張手放下</p>
           </div>
@@ -695,8 +721,8 @@ html,body{
         <details class="level-details">
           <summary>顯示詳情</summary>
           <p class="lv-note">
-            <span class="lv-line">Level 4：建議螢幕距離病人<b>半個手臂</b>遠</span>
-            <span class="lv-line">Level 5：建議螢幕距離病人<b>一個手臂</b>遠</span>
+            <span class="lv-line">建議螢幕距離病人<b>一個手臂</b>遠</span>
+            <span class="lv-line">慢速控制伸手、握取及放手</span>
           </p>
         </details>
       </article>
@@ -705,12 +731,12 @@ html,body{
           <div class="level-copy">
             <span class="lv-tag">FTHUE Level 6–7</span>
             <h3>精細動作訓練</h3>
-            <p class="lv-action">瞄準物件，夾起後放下</p>
+            <p class="lv-action">拇指食指捏取，張開放下</p>
           </div>
           <div class="level-motion double">
             <figure>
               <img src="img/advanced/hand_chopsticks.gif" alt="手指控制筷子開合示範">
-              <figcaption>筷子夾取</figcaption>
+              <figcaption>拇食指捏取</figcaption>
             </figure>
             <figure>
               <img src="img/advanced/hand_clothes_peg.gif" alt="手指按壓衫夾示範">
@@ -919,7 +945,7 @@ html,body{
   <!-- ============ ACTIVITY LIBRARY SCREEN ============ -->
   <div id="screen-library" class="screen">
     <div class="page-head">
-      <h1 id="libraryLevelLabel">FTHUE Level 4–5 · 握放訓練</h1>
+      <h1 id="libraryLevelLabel">FTHUE Level 4 · 桌面中線訓練</h1>
       <p class="lead">請選擇一個遊戲情境</p>
     </div>
     <div class="activity-grid" id="activityGrid"></div>
@@ -933,7 +959,7 @@ html,body{
       <p class="subtitle">訓練設定</p>
     </div>
 
-    <div class="context-strip" id="settingsContext">FTHUE Level 4–5 · 握放</div>
+    <div class="context-strip" id="settingsContext">FTHUE Level 4 · 桌面中線</div>
 
     <div class="card collapsible" data-accordion="affected-side">
       <h2><span>患側方向</span><span class="selected-preview" id="preview-affected-side">請選擇</span></h2>
@@ -1509,7 +1535,7 @@ html,body{
 
 /* ==================== 全域狀態 ==================== */
 const state = {
-  level: '45',          // '45' (FTHUE 4-5, 握放) | '67' (FTHUE 6-7, 精細動作)
+  level: '4',           // '4' 桌面滑動 | '5' 握放 | '67' 拇食指捏取
   theme: 'dimsum',      // 活動 id
   mode: 'single',       // single | dual
   duration: 300,        // total seconds
@@ -1518,14 +1544,14 @@ const state = {
   stream: null,
   running: false,
   paused: false,
-  gameType: 'grasp',     // 'reach' (dwell/pinch) | 'grasp' — 由 level 決定
+  gameType: 'dwell',     // 'dwell' | 'grasp' | 'pinch' — 由 level 決定
   graspType: 'any',      // fixed: open-hand detection
   affectedSide: '',      // normal play: therapist must choose left or right before calibration
   qaMode: false,         // QA-only: 經 hook 注入游標，不需相機
 };
 const RESEARCH_VERSION = 'pilot-5.0.0-neuroscience';
 const PILOT_TRAINING_SCENARIOS = {
-  '45':['flowers','dimsum','laundry','cards','mahjong'],
+  '5':['flowers','dimsum','laundry','cards','mahjong'],
   '67':['flowers','dimsum','laundry','cards','mahjong'],
 };
 const PILOT_ASSESSMENT_SCENARIOS = ['dimsum'];
@@ -1598,7 +1624,7 @@ function pilotPlanDuration(plan){ return plan.reduce((sum,p)=>sum + p.seconds, 0
 // Task-specific FTHUE strata. These describe the movement demand of the task,
 // not randomised comparison groups.
 const PILOT_STRATA = {
-  '4':{ gameType:'grasp', itemScale:1.18, distractorBoost:0, tolerance:1.18, ruleSwitch:false,
+  '4':{ gameType:'dwell', itemScale:1.18, distractorBoost:0, tolerance:1.18, ruleSwitch:false,
     movement:'personalised_gross_grasp_release' },
   '5':{ gameType:'grasp', itemScale:1.00, distractorBoost:0, tolerance:1.00, ruleSwitch:false },
   '6':{ gameType:'pinch', itemScale:0.82, distractorBoost:0, tolerance:0.80, ruleSwitch:false },
@@ -1685,11 +1711,22 @@ function affectedSideSign(){
   // 患側名稱直接對應畫面方向：右患側放右邊，左患側放左邊。
   return activeAffectedSide() === 'right' ? 1 : -1;
 }
+function isLevel4Tabletop(){
+  return !research.active && state.level === '4';
+}
 function affectedDirectionLabel(){
+  if(isLevel4Tabletop()) return '沿桌面中線向前放置';
   return activeAffectedSide() === 'right' ? '向畫面右外下方放置' : '向畫面左外下方放置';
 }
 function affectedSelectionZone(){
   const cw = gameCanvas.width, ch = gameCanvas.height;
+  if(isLevel4Tabletop()){
+    return {
+      id:'midline-forward-zone',
+      x:cw * 0.50, y:ch * 0.37,
+      w:Math.min(270, cw * 0.46), h:Math.min(112, ch * 0.13),
+    };
+  }
   const w = Math.min(220, cw * 0.22);
   const h = Math.min(160, ch * 0.18);
   return {
@@ -1697,6 +1734,34 @@ function affectedSelectionZone(){
     x:affectedSideSign() > 0 ? cw * 0.86 : cw * 0.14,
     y:ch * 0.78, w, h,
   };
+}
+function drawLevel4MidlineGuide(ctx){
+  if(!isLevel4Tabletop()) return;
+  const cw = gameCanvas.width, ch = gameCanvas.height;
+  const top = ch * 0.34, bottom = ch * 0.95;
+  const width = Math.min(390, cw * 0.56);
+  ctx.save();
+  ctx.fillStyle = 'rgba(26,107,90,0.10)';
+  ctx.strokeStyle = 'rgba(26,107,90,0.72)';
+  ctx.lineWidth = 4;
+  ctx.setLineDash([14,10]);
+  rrPath(ctx, cw/2-width/2, top, width, bottom-top, 24);
+  ctx.fill(); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  ctx.moveTo(cw/2, bottom-20);
+  ctx.lineTo(cw/2, top+36);
+  ctx.strokeStyle = '#1A6B5A';
+  ctx.lineWidth = 7;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cw/2, top+16);
+  ctx.lineTo(cw/2-18, top+46);
+  ctx.lineTo(cw/2+18, top+46);
+  ctx.closePath();
+  ctx.fillStyle = '#1A6B5A';
+  ctx.fill();
+  ctx.restore();
 }
 function pointInsideZone(x, y, zone){
   return !!zone && x >= zone.x-zone.w/2 && x <= zone.x+zone.w/2 &&
@@ -2370,7 +2435,7 @@ function pilotVisitLabel(visit, lang){
   return (t.visitLabels && t.visitLabels[visit]) || visit || '';
 }
 function pilotLevelGroup(){
-  return parseInt(document.getElementById('researchLevel').value,10) <= 5 ? '45' : '67';
+  return parseInt(document.getElementById('researchLevel').value,10) === 5 ? '5' : '67';
 }
 /* Preview the executable phase plan for the selected visit. */
 function pilotRenderPlanPreview(){
@@ -2550,12 +2615,14 @@ function renderPilotLanguage(){
 
 /* ==================== 級別資料 ==================== */
 const LEVELS = {
-  '45': { id:'45', tag:'FTHUE Level 4–5', name:'握放訓練', gameType:'grasp',
-          actionLabel:'握放：握拳拿取、張開手放下' },
-  '67': { id:'67', tag:'FTHUE Level 6–7', name:'精細動作訓練', gameType:'reach',
-          actionLabel:'精細動作：食指瞄準、停留夾取' },
+  '4': { id:'4', tag:'FTHUE Level 4', name:'桌面中線訓練', gameType:'dwell',
+         actionLabel:'桌面承托：中線停住、向前滑動、目標停住' },
+  '5': { id:'5', tag:'FTHUE Level 5', name:'握放訓練', gameType:'grasp',
+         actionLabel:'握放：握拳拿取、張開手放下' },
+  '67': { id:'67', tag:'FTHUE Level 6–7', name:'精細動作訓練', gameType:'pinch',
+          actionLabel:'精細動作：拇指食指捏取、張開放下' },
 };
-function currentLevel(){ return LEVELS[state.level] || LEVELS['45']; }
+function currentLevel(){ return LEVELS[state.level] || LEVELS['4']; }
 document.getElementById('modeOptions').addEventListener('click', (e)=>{
   const btn = e.target.closest('.option-btn');
   if(!btn) return;
@@ -2574,7 +2641,8 @@ function selectLevel(levelId){
   renderActivityLibrary();
   showScreen('library');
 }
-document.getElementById('btnLevel45').addEventListener('click', ()=> selectLevel('45'));
+document.getElementById('btnLevel4').addEventListener('click', ()=> selectLevel('4'));
+document.getElementById('btnLevel5').addEventListener('click', ()=> selectLevel('5'));
 document.getElementById('btnLevel67').addEventListener('click', ()=> selectLevel('67'));
 /* Research Mode now routes to the separate role hub (research/index.html) so that
    the blinded assessor bundle never shares a page with allocation or training data.
@@ -2769,7 +2837,7 @@ document.getElementById('btnResearchBegin').addEventListener('click', async ()=>
   research.technicalFailures = 0; research.setupTimeSec = '';
   research.motorEnabled = true; research.cognitiveEnabled = false; research.interactionBlocked = false;
   research.cog = { active:false, prompt:null, shownAt:0, nextAt:0, index:0, lastResult:'' };
-  state.level = parseInt(research.stratum,10) <= 5 ? '45' : '67';
+  state.level = parseInt(research.stratum,10) === 5 ? '5' : '67';
   // Research FTHUE 6/7 uses true thumb-index pinch and release; FTHUE 5 keeps open-hand grasp.
   state.gameType = pilotStratum().gameType;
   state.theme = research.scenarioId; state.mode = 'single';
@@ -2983,9 +3051,11 @@ const ADV_RULES = {
 // 根據目前活動（theme）及級別更新規則文字及廣東話內容
 function updateRulesForActivity(){
   const th = getTheme();
-  const actionCue = state.level === '45'
-    ? '張開手 → 握緊拿取 → 張開手放下'
-    : '食指移動 → 停住選取 → 停住放下';
+  const actionCue = state.level === '4'
+    ? '前臂承托 → 中線停住 → 向前滑動 → 目標停住'
+    : (isPinchMode()
+      ? '拇食指張開 → 捏住拿取 → 張開放下'
+      : '張開手 → 握緊拿取 → 張開手放下');
   if(research.active){
     const advanced = research.dualTaskLevel === 'advanced_sort_motor';
     const rule = pilotLang === 'en'
@@ -3002,10 +3072,10 @@ function updateRulesForActivity(){
         actionCue + '</div>' +
         '<div style="font-size:17px;color:#5a5a5a;">' + rule + '</div>';
     }
-    window.__CURRENT_RULES_CANTONESE = state.level === '45'
-      ? '先張開手，握緊拿物件。移到相同目標，再張開手放下。' +
+    window.__CURRENT_RULES_CANTONESE = isPinchMode()
+      ? '先張開拇指和食指，捏住物件。移到相同目標，再張開兩指放下。' +
         '由中線向患側外下方移動。' + (advanced ? '只拿目標物件，不要拿動物。' : '')
-      : '用食指移到物件，停住選取。移到相同目標，再停住放下。' +
+      : '先張開手，握緊拿物件。移到相同目標，再張開手放下。' +
         '由中線向患側外下方移動。' + (advanced ? '只拿目標物件，不要拿動物。' : '');
     return;
   }
@@ -3019,7 +3089,11 @@ function updateRulesForActivity(){
         `<div style="font-size:17px;color:#5a5a5a;line-height:1.5;">${r.lines[0]}</div>`;
     }
     window.__CURRENT_RULES_CANTONESE =
-      (state.level === '45' ? '先張開手，握緊拿取。移到位置，再張開手放下。' : '用食指移動，停住選取，再停住放下。') +
+      (state.level === '4'
+        ? '前臂承托在桌面，手掌或滑墊停在物件上，向前滑動，再在目標停住。慢慢做，不計速度。'
+        : (isPinchMode()
+          ? '先張開拇指和食指，捏住拿取。移到位置，再張開兩指放下。'
+          : '先張開手，握緊拿取。移到位置，再張開手放下。')) +
       r.lines[0] + '慢慢來。';
     return;
   }
@@ -3031,9 +3105,11 @@ function updateRulesForActivity(){
       `<div style="font-size:17px;color:#5a5a5a;">由中線拿取 · ${affectedDirectionLabel()}</div>`;
   }
   window.__CURRENT_RULES_CANTONESE =
-    state.level === '45'
-      ? `先張開手。握緊拿${th.itemWord}。移到同款目標，再張開手放下。慢慢來。`
-      : `用食指移到${th.itemWord}，停住選取。移到同款目標，再停住放下。慢慢來。`;
+    state.level === '4'
+      ? `前臂承托在桌面。手掌或滑墊停在${th.itemWord}上，沿中線慢慢向前滑，再在同款目標停住。不用趕。`
+      : (isPinchMode()
+        ? `張開拇指和食指。捏住${th.itemWord}，移到同款目標，再張開兩指放下。慢慢來。`
+        : `先張開手。握緊拿${th.itemWord}。移到同款目標，再張開手放下。慢慢來。`);
 }
 
 let rulesStartTimer = 0;
@@ -3170,9 +3246,11 @@ function showLevelUpBanner(){
 
   if(tier === 0){
     msg = `<div style="font-size:20px;font-weight:900;">中線拿取 → ${affectedDirectionLabel()}</div>`;
-    cantoneseMsg = state.level === '45'
-      ? `遊戲開始。張開手，握緊拿${itemWord0}。移到同款目標，再張開手放下。`
-      : `遊戲開始。用食指停住拿${itemWord0}，移到同款目標再停住放下。`;
+    cantoneseMsg = state.level === '4'
+      ? `遊戲開始。前臂放在桌面。手掌或滑墊停在${itemWord0}上，沿中線慢慢向前，再在目標停住。`
+      : (isPinchMode()
+        ? `遊戲開始。張開拇指和食指，捏住${itemWord0}，移到同款目標再張開放下。`
+        : `遊戲開始。張開手，握緊拿${itemWord0}。移到同款目標，再張開手放下。`);
     persistText = okTag;
   } else if(tier === 1){
     msg = `<div style="font-size:20px;font-weight:900;">只拿${itemWord0} · 不拿動物</div>`;
@@ -3497,8 +3575,9 @@ function detectWrist(videoEl){
       return { detected:true, nx:1 - midX, ny:midY, isGrasping:pinch.isPinching,
         graspScore:pinch.score, isOpenPrep:pinch.isSeparated, pinchRatio:pinch.ratio, lm };
     }
-    const nx = state.gameType === 'grasp' ? (1 - palmX) : (1 - tip.x);
-    const ny = state.gameType === 'grasp' ? palmY : tip.y;
+    const usePalmCursor = state.gameType === 'grasp' || isLevel4Tabletop();
+    const nx = usePalmCursor ? (1 - palmX) : (1 - tip.x);
+    const ny = usePalmCursor ? palmY : tip.y;
     const grasp = computeGraspScore(lm, isGrasping);  // 傳入目前 state 以計算 hysteresis threshold
     return { detected:true, nx, ny, isGrasping: grasp.isGrasping, graspScore: grasp.score,
       isOpenPrep: !grasp.isGrasping, lm };
@@ -3652,7 +3731,7 @@ function startCalibLoop(){
         const c = research.calibration;
         if(!c.detectedStart) c.detectedStart = now;
         if(!c.detectedDone && now - c.detectedStart >= 2000) c.detectedDone = true;
-        if(state.level === '45'){
+        if(isGraspStyleMode()){
           if(res.isGrasping){
             c.openStart = 0;
             if(Number.isFinite(res.graspScore)) c.closedScores.push(res.graspScore);
@@ -3683,8 +3762,8 @@ function startCalibLoop(){
         if(c.ready && !calibDetectedOnce){
           calibDetectedOnce = true;
           researchLog('calibration_complete', {
-            detected_hold_ms:2000, open_hold_ms:state.level === '45' ? 2000 : 0,
-            closed_hold_ms:state.level === '45' ? 2000 : 0,
+            detected_hold_ms:2000, open_hold_ms:isGraspStyleMode() ? 2000 : 0,
+            closed_hold_ms:isGraspStyleMode() ? 2000 : 0,
             personal_grasp_enter:research.personalGraspEnter,
             personal_grasp_exit:research.personalGraspExit,
           });
@@ -3997,11 +4076,11 @@ function drawBasket(ctx, x, y, s){
 }
 
 /* ==================== 活動主題註冊表 ==================== */
-const LEVEL_VERB = { '45':'握拳拿', '67':'夾起' };
-const LEVEL_ACTION = { '45':'握放拿取', '67':'停留夾取' };
+const LEVEL_VERB = { '4':'沿中線向前滑', '5':'握拳拿', '67':'捏起' };
+const LEVEL_ACTION = { '4':'桌面中線滑動', '5':'握放拿取', '67':'拇食指捏取' };
 const BASE_THEME = {
-  verbFor(level){ return LEVEL_VERB[level] || LEVEL_VERB['45']; },
-  actionLabelFor(level){ return LEVEL_ACTION[level] || LEVEL_ACTION['45']; },
+  verbFor(level){ return LEVEL_VERB[level] || LEVEL_VERB['4']; },
+  actionLabelFor(level){ return LEVEL_ACTION[level] || LEVEL_ACTION['4']; },
 };
 function mkTheme(def){ return Object.assign(Object.create(BASE_THEME), def); }
 
@@ -4011,7 +4090,7 @@ const THEMES = {
     itemWord:'點心', difficulty:'容易', targetStyle:'steamer',
     thumbnail:'img/siumai.png', thumbnailAlt:'燒賣點心',
     categoriesFor(level){
-      return level === '45'
+      return level === '4' || level === '5'
         ? [ { type:'charsiu',   itemLabel:'叉燒包', targetLabel:'叉燒包', img:imgCharsiu, targetImg:imgSteamerCharsiu, scale:1.0,  color:'#1A6B5A' },
             { type:'lotusrice', itemLabel:'糯米雞', targetLabel:'糯米雞', img:imgLotusrice, targetImg:imgSteamerLotusrice, scale:1.0,  color:'#E07B39' } ]
         : [ { type:'siumai', itemLabel:'燒賣', targetLabel:'燒賣', img:imgSiumai, targetImg:imgSteamerSiumai, scale:1.0,  color:'#1A6B5A' },
@@ -4410,6 +4489,19 @@ function setupTargets(){
   const cw = gameCanvas.width, ch = gameCanvas.height;
   const portrait = isPortrait();
   const style = getTheme().targetStyle || 'panel';
+  const cats = getCategories();
+  if(isLevel4Tabletop()){
+    const tw = Math.min(cw * 0.31, 240);
+    const th = tw * (style === 'steamer' ? 0.74 : 0.62);
+    const gap = Math.min(tw * 0.82, cw * 0.24);
+    targets = cats.slice(0,2).map((c,i)=>({
+      type:c.type, label:c.targetLabel, img:c.targetImg || c.img || null,
+      drawIcon:c.drawIcon || null, style,
+      x:cw/2 + (i-0.5)*gap, y:ch*0.43, w:tw, h:th,
+      color:c.color || (i===0 ? '#1A6B5A' : '#E07B39'),
+    }));
+    return;
+  }
   const sideSign = affectedSideSign();
   // 患側名稱直接對應畫面方向：右患側向右下，左患側向左下。
   const tw = portrait ? Math.min(cw * 0.29, 230) : Math.min(cw * 0.24, 260);
@@ -4418,7 +4510,6 @@ function setupTargets(){
   const landscapeXs = sideSign > 0 ? [cw * 0.66, cw * 0.87] : [cw * 0.34, cw * 0.13];
   const portraitYs = [ch * 0.72, Math.min(ch - th/2 - 64, ch * 0.88)];
   const landscapeY = ch - th/2 - 18;
-  const cats = getCategories();
   targets = cats.slice(0,2).map((c, i)=>({
     type: c.type,
     label: c.targetLabel,
@@ -4487,7 +4578,7 @@ function makeFoodAt(def, existingFoods){
   const cw = gameCanvas.width, ch = gameCanvas.height;
   const portrait = isPortrait();
   const advancedPilot = research.active && research.dualTaskLevel === 'advanced_sort_motor';
-  const baseR = portrait ? (advancedPilot ? 62 : 72) : 100;
+  const baseR = isLevel4Tabletop() ? (portrait ? 78 : 104) : (portrait ? (advancedPilot ? 62 : 72) : 100);
   // Task-specific strata: FTHUE 6 and 7 use progressively smaller objects.
   const r = baseR * (def.scale || 1.0) * (research.active ? pilotStratum().itemScale : 1);
 
@@ -4499,11 +4590,13 @@ function makeFoodAt(def, existingFoods){
   // 限制 spawn 區域：左右都留更大邊距（避免右下角衝碰磟子造成 jitter）
   const marginX = r * (portrait ? 1.25 : 1.5);
   // 起始物件集中於身體中線附近，再向患側外下方運送，避免跨越中線。
-  const centerMin = Math.max(marginX, cw * (portrait ? 0.37 : 0.36));
-  const centerMax = Math.min(cw - marginX, cw * (portrait ? 0.63 : 0.64));
+  const centerMin = Math.max(marginX, cw * (isLevel4Tabletop() ? 0.40 : (portrait ? 0.37 : 0.36)));
+  const centerMax = Math.min(cw - marginX, cw * (isLevel4Tabletop() ? 0.60 : (portrait ? 0.63 : 0.64)));
   // Y 範圍顯著往上拉，避免 spawn 在磟子區區均（磟子在底部 65-90%）
-  const spawnYmin = Math.max(ch * (portrait ? 0.25 : 0.21), portrait ? 190 : 150);
-  const spawnYmax = ch * (portrait ? 0.58 : 0.55);
+  const spawnYmin = isLevel4Tabletop()
+    ? ch * 0.70
+    : Math.max(ch * (portrait ? 0.25 : 0.21), portrait ? 190 : 150);
+  const spawnYmax = ch * (isLevel4Tabletop() ? 0.90 : (portrait ? 0.58 : 0.55));
   const instructionExclusion = getInstructionExclusionRect(cw, ch, Math.max(18, r * 0.16));
 
   // 多嘗試一些次，升高間隔成功率
@@ -4552,6 +4645,7 @@ function spawnDistractor(existingFoods){
 
 // 目標：畫面上保持 3 個活動配對物件 + N 個 distractor 動物（N = getDistractorCount()）
 const DIM_SUM_TARGET = 3;
+function dimSumTargetCount(){ return isLevel4Tabletop() ? 2 : DIM_SUM_TARGET; }
 
 function countActive(pred){
   return foods.filter(f=>!f.removed && pred(f)).length;
@@ -4561,7 +4655,7 @@ function isDistractor(f){ return f.targetType === 'distractor'; }
 
 function spawnInitialFoods(){
   foods = [];
-  for(let i=0;i<DIM_SUM_TARGET;i++){
+  for(let i=0;i<dimSumTargetCount();i++){
     foods.push(spawnDimSum(foods));
   }
   const distN = getDistractorCount();
@@ -4576,7 +4670,7 @@ function ensureFoodCount(){
   const distTarget   = getDistractorCount();
 
   // 補齊 dim sum
-  while(countActive(isDimSum) < DIM_SUM_TARGET){
+  while(countActive(isDimSum) < dimSumTargetCount()){
     foods.push(spawnDimSum(foods));
   }
   // 補齊或移除 distractor 以匹配目前進度
@@ -5144,6 +5238,7 @@ function renderGame(){
   const ctx = gameCtx;
   const cw = gameCanvas.width, ch = gameCanvas.height;
   ctx.clearRect(0,0,cw,ch);
+  drawLevel4MidlineGuide(ctx);
 
   // 目標盤（真實單白圓隱磁盤：徑向漸變 + 隱隱影支支、圓形 rim）
   const LBL_SIZE = state.labelFont || 36;
@@ -5253,8 +5348,8 @@ function renderGame(){
   if(cursorX >= 0 && cursorY >= 0 && handDetected){
     ctx.save();
 
-    if(state.gameType === 'grasp'){
-      // 握放模式：張開手 = 大空心圓；握拳 = 實心橙色圓
+    if(isGraspStyleMode()){
+      // 握放／捏取模式：張開 = 大空心圓；拿住 = 實心橙色圓
       if(isGrasping){
         // 握拳：實心橙色圓
         ctx.beginPath();
@@ -5268,7 +5363,7 @@ function renderGame(){
         ctx.font = 'bold 22px -apple-system,"PingFang TC","Noto Sans TC",sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('✊', cursorX, cursorY);
+        ctx.fillText(isPinchMode() ? '捏' : '✊', cursorX, cursorY);
       } else {
         // 張開手：白色空心圓
         ctx.beginPath();
@@ -6254,12 +6349,14 @@ const COOK_STEPS = [
 
 /* 級別門檻：兩級都要求完整動作循環；Level 6–7 要求更清楚的控制幅度 */
 const COOK_TH = {
-  '45': { rollDeg:46, neutralDeg:15, chopPx:80, shakePx:46, circleR:54, elbowFlex:96, elbowExt:145,
+  '4': { rollDeg:42, neutralDeg:18, chopPx:90, shakePx:52, circleR:60, elbowFlex:100, elbowExt:138,
+         reachRatio:0.30, tiltHoldDeg:34, moveMin:48, repCooldown:850 },
+  '5': { rollDeg:46, neutralDeg:15, chopPx:80, shakePx:46, circleR:54, elbowFlex:96, elbowExt:145,
           reachRatio:0.34, tiltHoldDeg:38, moveMin:42, repCooldown:700 },
   '67': { rollDeg:52, neutralDeg:12, chopPx:68, shakePx:40, circleR:48, elbowFlex:92, elbowExt:150,
           reachRatio:0.37, tiltHoldDeg:44, moveMin:36, repCooldown:700 },
 };
-function cookTh(){ return COOK_TH[state.level] || COOK_TH['45']; }
+function cookTh(){ return COOK_TH[state.level] || COOK_TH['4']; }
 
 const cook = {
   idx:0, reps:0, holdStart:0, done:false, active:false,
@@ -6560,8 +6657,16 @@ function cookDetect(){
     }
     case 'pinchDrop': {
       const inPan = L && cursorX >= 0 && Math.hypot(cursorX - L.wok.x, cursorY - L.wok.y) < L.wok.r * 1.25;
-      if(state.gameType === 'grasp'){
-        m = '（Level 4–5）握緊蔥花 → 移到鍋上張開手';
+      if(isLevel4Tabletop()){
+        m = inPan ? '手掌停在鍋上' : '前臂承托，沿中線向前滑到鍋上';
+        if(inPan){
+          if(!cook.holdStart) cook.holdStart = now;
+          const el = now - cook.holdStart;
+          m += ' · 停住 ' + (el/1000).toFixed(1) + 's';
+          if(el >= 1000){ cook.holdStart = 0; bumpRep(); }
+        } else cook.holdStart = 0;
+      } else if(!isPinchMode()){
+        m = '握緊蔥花 → 移到鍋上張開手';
         if(isGrasping) cook.pinchPrev = true;
         else if(cook.pinchPrev && inPan){ cook.pinchPrev = false; bumpRep(); }
       } else {
@@ -6705,10 +6810,13 @@ function cookAnnounce(){
 function cookRenderPanel(){
   const st = cook.step();
   const total = COOK_STEPS.length;
+  const stepGoal = isLevel4Tabletop() && st.kind === 'pinchDrop'
+    ? '沿中線向前滑，在鍋上停住'
+    : st.goal;
   advSetPanel({
     stepNo:'步驟 ' + (cook.idx + 1) + ' / ' + total + (cook.done ? ' · 已完成' : ''),
     text: st.text,
-    goal:'目標動作：' + st.goal + '　（' + cook.reps + ' / ' + st.need + '）',
+    goal:'目標動作：' + stepGoal + '　（' + cook.reps + ' / ' + st.need + '）',
     metric: cook.metric + (cook.poseOn ? '' : '<br>姿勢追蹤（肩／肘）未啟用：以手部動作估算，追蹤有限。'),
     pct: (cook.idx + Math.min(1, cook.reps / st.need)) / total,
     buttons:[
@@ -6725,6 +6833,14 @@ function cookLayout(){
   const cw = gameCanvas.width, ch = gameCanvas.height;
   const base = Math.min(cw, ch);
   const y = ch * 0.72;
+  if(isLevel4Tabletop()){
+    return {
+      wok:   { x:cw*0.50, y:ch*0.72, r:base*0.16 },
+      plate: { x:cw*0.50, y:ch*0.43, r:base*0.13 },
+      knob:  { x:cw*0.50, y:ch*0.88, r:base*0.075 },
+      prop:  { x:cw*0.50, y:ch*0.57, s:base*0.25 },
+    };
+  }
   return {
     wok:   { x: cw * 0.34, y, r: base * 0.16 },
     plate: { x: cw * 0.70, y, r: base * 0.13 },
@@ -6796,6 +6912,7 @@ function cookRender(ctx){
   ctx.fillStyle = g;
   ctx.fillRect(0, ch*0.6, cw, ch*0.4);
   ctx.restore();
+  drawLevel4MidlineGuide(ctx);
 
   // 爐頭旋鈕（大目標）
   ctx.save();
@@ -7101,9 +7218,11 @@ function mjPanel(){
   advSetPanel({
     stepNo:'第 ' + mj.roundNo + ' 局 · 累積 ' + mj.fanTotal + ' 番',
     text:'揀一組牌，仲需要 ' + mjNeed() + ' 隻',
-    goal: mj.msg || (state.gameType === 'grasp'
-      ? '從中間拿牌，移到患側外方放牌區，再張開手。'
-      : '從中間選牌，移到患側外方放牌區停住。'),
+    goal: mj.msg || (isLevel4Tabletop()
+      ? '在牌上停住，沿中線向前滑，再在放牌區停住。'
+      : (isPinchMode()
+        ? '從中間捏住牌，移到患側外方放牌區，再張開拇食指。'
+        : '從中間握住牌，移到患側外方放牌區，再張開手。')),
     metric: nextTierFan ? '下一個目標：累積 ' + nextTierFan + ' 番' : '已達上限級別',
     pct: 1 - mjNeed() / Math.max(1, (14 - mj.def.base.length)),
     buttons:[
@@ -7275,7 +7394,7 @@ function mjLayout(){
   const tileW = Math.max(narrow ? 56 : 64,
     Math.min(narrow ? 68 : 82, (cw - 32) / perRow - 4));
   const th = tileW * MJ_ATLAS.ch / MJ_ATLAS.cw;
-  const handTop = ch * (narrow ? 0.42 : 0.40);
+  const handTop = ch * (isLevel4Tabletop() ? 0.48 : (narrow ? 0.42 : 0.40));
   const groups = mj.groups.map((g, i)=>{
     const n = mj.groups.length;
     const cols = narrow ? Math.min(2, n) : Math.min(3, n);
@@ -7284,10 +7403,10 @@ function mjLayout(){
     const rowCount = Math.min(cols, n - row*cols);
     const gw = narrow ? Math.min(184, (cw - 30) / cols - 8)
                       : Math.min(220, cw * 0.19);
-    const groupCentreX = cw/2 - affectedSideSign() * cw*0.08;
+    const groupCentreX = isLevel4Tabletop() ? cw/2 : cw/2 - affectedSideSign() * cw*0.08;
     const gx = groupCentreX +
       (col - (rowCount-1)/2) * Math.min(gw + 16, cw * 0.195);
-    const baseY = narrow ? ch*0.68 : ch*0.77;
+    const baseY = isLevel4Tabletop() ? ch*0.77 : (narrow ? ch*0.68 : ch*0.77);
     const gh = narrow ? Math.min(ch*0.12, th*1.35) : Math.min(150, ch*0.18);
     const gy = baseY + row * (gh + 16);
     return { id:g.id, x:gx, y:gy, w:gw, h:gh,
@@ -7305,6 +7424,7 @@ function mjRender(ctx){
   ctx.fillStyle = 'rgba(47,122,79,0.86)';
   rrPath(ctx, 8, ch*0.30, cw-16, ch*0.66, 20); ctx.fill();
   ctx.restore();
+  drawLevel4MidlineGuide(ctx);
 
   // 手牌
   ctx.save();
@@ -7404,7 +7524,7 @@ function mjUpdate(){
     .map(g=>({ id:g.id, x:g.x, y:g.y, r:Math.max(g.w, g.h)*0.5, gone:false }));
   const hit = picker.poll(items, affectedSelectionZone());
   if(hit === '__invalid__'){
-    mj.msg = '請將牌移到患側外方的放牌區再放手。';
+    mj.msg = '請將牌移到' + affectedDirectionLabel() + '的放牌區再放手。';
     mjPanel();
   } else if(hit){
     mjPick(hit);
@@ -7431,9 +7551,13 @@ const cards = {
     this.combo = 0; this.bestCombo = 0; this.msg = ''; this.bonusEndsAt = 0; this.idSeq = 1;
     this.pendingBoardAt = 0;
   },
-  cfg(){ return CARD_TIERS[Math.min(this.tierIdx, CARD_TIERS.length - 1)]; },
+  cfg(){
+    if(isLevel4Tabletop()) return { tier:1, need:2, count:4, label:'桌面中線 · 4張牌', bonus:false };
+    return CARD_TIERS[Math.min(this.tierIdx, CARD_TIERS.length - 1)];
+  },
 };
 function cardsTierFor(rounds){
+  if(isLevel4Tabletop()) return 0;
   if(rounds >= 6) return 3;
   if(rounds >= 4) return 2;
   if(rounds >= 2) return 1;
@@ -7450,9 +7574,11 @@ function cardsNewBoard(newSuit){
   }
   const cw = gameCanvas.width, ch = gameCanvas.height;
   const narrow = cw < 700;
-  const cols = narrow ? 2 : 3;
+  const cols = isLevel4Tabletop() ? 4 : (narrow ? 2 : 3);
   const rows = Math.ceil(cfg.count / cols);
-  const cardW = narrow
+  const cardW = isLevel4Tabletop()
+    ? Math.max(84, Math.min(142, (cw - 72) / 4))
+    : narrow
     ? Math.max(108, Math.min(142, (cw - 54) / cols))
     : Math.max(112, Math.min(158, (cw - 96) / cols));
   const cardH = cardW * CARD_ATLAS.ch / CARD_ATLAS.cw;
@@ -7464,14 +7590,15 @@ function cardsNewBoard(newSuit){
   for(let i=suits.length-1;i>0;i--){
     const j = (Math.random()*(i+1))|0; [suits[i], suits[j]] = [suits[j], suits[i]];
   }
-  const top = ch * (narrow ? 0.44 : 0.39);
-  const bottom = ch * 0.92;
+  const top = ch * (isLevel4Tabletop() ? 0.68 : (narrow ? 0.44 : 0.39));
+  const bottom = ch * (isLevel4Tabletop() ? 0.91 : 0.92);
   const rowH = (bottom - top) / rows;
   const place = (suit, index)=>{
     const rank = CARD_RANKS[(Math.random()*CARD_RANKS.length)|0];
     const row = Math.floor(index / cols), col = index % cols;
     const rowCount = Math.min(cols, cfg.count - row*cols);
-    const x = cw/2 + (col - (rowCount-1)/2) * Math.min(cardW*1.12, cw*0.18);
+    const x = cw/2 + (col - (rowCount-1)/2) *
+      Math.min(cardW*1.12, cw*(isLevel4Tabletop() ? 0.22 : 0.18));
     const y = top + rowH*(row+0.5);
     field.push({ id:'c' + (cards.idSeq++), suit, rank,
       x, y, r:cardW*0.54, rot:0, gone:false, w:cardW, h:cardH });
@@ -7491,9 +7618,11 @@ function cardsPanel(){
       ' · 連續正確 ' + cards.combo + ' 次',
     text:'收集 ' + CARD_SUIT_NAME[cards.suit] + ' ' + CARD_SUIT_SYM[cards.suit] +
       '：' + cards.got + ' / ' + cards.need,
-    goal: cards.msg || (state.gameType === 'grasp'
-      ? '從中間拿牌，移到患側外方放牌區，再張開手。'
-      : '從中間選牌，移到患側外方放牌區停住。'),
+    goal: cards.msg || (isLevel4Tabletop()
+      ? '在牌上停住，沿中線向前滑，再在放牌區停住。'
+      : (isPinchMode()
+        ? '從中間捏住牌，移到患側外方放牌區，再張開拇食指。'
+        : '從中間拿牌，移到患側外方放牌區，再張開手。')),
     metric:'下一階段：完成 ' + Math.max(0, (cardsTierFor(cards.rounds) === 3 ? 0 :
       [2,4,6][cardsTierFor(cards.rounds)] - cards.rounds)) + ' 輪後升級',
     pct: cards.got / cards.need,
@@ -7513,7 +7642,7 @@ function cardsUpdate(){
   const items = cards.field.filter(c=>!c.gone);
   const hit = picker.poll(items, affectedSelectionZone());
   if(hit === '__invalid__'){
-    cards.msg = '請將牌移到患側外方的放牌區再放手。';
+    cards.msg = '請將牌移到' + affectedDirectionLabel() + '的放牌區再放手。';
     cardsPanel();
     return;
   }
@@ -7593,6 +7722,7 @@ function cardsRender(ctx){
   ctx.fillStyle = 'rgba(24,66,48,0.80)';
   rrPath(ctx, 8, ch*0.30, cw-16, ch*0.66, 20); ctx.fill();
   ctx.restore();
+  drawLevel4MidlineGuide(ctx);
 
   // 目標花色大標示
   ctx.save();
@@ -7655,12 +7785,16 @@ const laundry = {
   },
 };
 function laundryTier(correct){
+  if(isLevel4Tabletop()) return 1;
   if(correct >= 12) return 4;
   if(correct >= 8)  return 3;
   if(correct >= 4)  return 2;
   return 1;
 }
 function laundryConfig(tier){
+  if(isLevel4Tabletop()){
+    return { colors:['red','blue'], items:3, types:3, cue:1 };
+  }
   return [
     null,
     { colors:['red','blue'],                     items:3, types:3, cue:1 },
@@ -7679,14 +7813,16 @@ function laundrySetup(){
   const sideRight = affectedSideSign() > 0;
   const cols = Math.min(2, n);
   const rows = Math.ceil(n / cols);
-  const sideHalf = cw * 0.48;
+  const sideHalf = isLevel4Tabletop() ? cw * 0.66 : cw * 0.48;
   const bw = Math.min(narrow ? 176 : 230, sideHalf / cols - 10);
   const bh = Math.min(narrow ? ch*0.12 : ch*0.18, bw*0.72);
   laundry.baskets = laundry.colors.map((c, i)=>({
     id:'b' + c, color:c,
-    x: (sideRight ? cw*0.76 : cw*0.24) +
+    x: (isLevel4Tabletop() ? cw*0.50 : (sideRight ? cw*0.76 : cw*0.24)) +
       ((i%cols) - (Math.min(cols,n-Math.floor(i/cols)*cols)-1)/2) * Math.min(bw*1.06, cw*0.22),
-    y: rows > 1
+    y: isLevel4Tabletop()
+      ? ch*(0.42 + Math.floor(i/cols)*0.15)
+      : rows > 1
       ? ch*(0.74 + Math.floor(i/cols)*0.15)
       : ch*0.84,
     w: bw, h: bh,
@@ -7711,8 +7847,8 @@ function laundryRefill(){
     const rowCount = Math.min(cols, cfg.items-row*cols);
     // 衣物由中線附近開始；運送方向只向患側外下方。
     const x = cw/2 + (col-(rowCount-1)/2) * Math.min(size*1.05, cw*0.16);
-    const top = ch*(narrow ? 0.42 : 0.40);
-    const bottom = ch*(narrow ? 0.65 : 0.68);
+    const top = ch*(isLevel4Tabletop() ? 0.69 : (narrow ? 0.42 : 0.40));
+    const bottom = ch*(isLevel4Tabletop() ? 0.92 : (narrow ? 0.65 : 0.68));
     const y = top + (bottom-top)*(row+0.5)/rows;
     return { x, y };
   };
@@ -7739,7 +7875,11 @@ function laundryPanel(){
   advSetPanel({
     stepNo:'Tier ' + laundry.tier + ' · ' + laundry.colors.length + ' 種顏色',
     text:'把衣物放入同色衫籃 · 已完成 ' + laundry.correct + ' 件',
-    goal: laundry.msg || (state.gameType === 'grasp' ? '拿到後移去衫籃，再張開手放下。' : '每件衣物都有顏色名稱。'),
+    goal: laundry.msg || (isLevel4Tabletop()
+      ? '在衣物上停住，沿中線向前滑，再在同色衫籃停住。'
+      : (isPinchMode()
+        ? '用拇指及食指捏住衣物，移到同色衫籃，再張開手指。'
+        : '拿到後移去衫籃，再張開手放下。')),
     metric:'已完成 ' + laundry.correct + ' 件' +
       (nextAt ? '　下一階段：再 ' + Math.max(1, nextAt - laundry.correct) + ' 件（加多一種顏色／款式）'
               : '　已到最高階段'),
@@ -7829,6 +7969,7 @@ function laundryRender(ctx){
   ctx.fillStyle = g0;
   rrPath(ctx, 8, ch*0.30, cw-16, ch*0.68, 20); ctx.fill();
   ctx.restore();
+  drawLevel4MidlineGuide(ctx);
 
   // 衫籃
   for(const b of laundry.baskets){
@@ -7923,16 +8064,18 @@ function flowersSetup(){
     return {
       id:'pal' + (flowers.palettePage*4+i), kind:k.key, name:k.name,
       x: cw/2 + (col - 0.5) * Math.min(size*0.94, cw*0.18),
-      y: ch*(phone ? 0.43 : (portrait ? 0.39 : 0.36)) + row * (size*0.92),
+      y: ch*(isLevel4Tabletop() ? 0.70 : (phone ? 0.43 : (portrait ? 0.39 : 0.36))) +
+        row * (size*(isLevel4Tabletop() ? 0.78 : 0.92)),
       r: size*0.46, size,
     };
   });
-  const vaseH = Math.min(ch*(phone ? 0.32 : (portrait ? 0.38 : 0.42)), phone ? 250 : 320);
+  const vaseH = Math.min(ch*(isLevel4Tabletop() ? 0.28 : (phone ? 0.32 : (portrait ? 0.38 : 0.42))),
+    isLevel4Tabletop() ? 230 : (phone ? 250 : 320));
   flowers.layout = {
-    vase:{ x: cw * (sideRight
+    vase:{ x: isLevel4Tabletop() ? cw*0.50 : cw * (sideRight
              ? (phone ? 0.74 : (portrait ? 0.75 : 0.78))
              : (phone ? 0.26 : (portrait ? 0.25 : 0.22))),
-           y: ch - vaseH*0.5 - 10,
+           y: isLevel4Tabletop() ? ch*0.43 : ch - vaseH*0.5 - 10,
            w: Math.min(cw*(phone ? 0.42 : 0.38), vaseH*0.88), h: vaseH },
     size,
   };
@@ -7943,7 +8086,9 @@ function flowersPanel(){
   advSetPanel({
     stepNo:'自由創作 · 已插入 ' + flowers.placed.length + ' 枝',
     text:'把花材放到花瓶口',
-    goal: flowers.msg || '已插花材可以再拿起調整位置。',
+    goal: flowers.msg || (isLevel4Tabletop()
+      ? '在花材上停住，沿中線向前滑，再在花瓶口停住。'
+      : '已插花材可以再拿起調整位置。'),
     metric:'完成後可以寫上名字、簽名，下載作品 PNG 留念。',
     pct: Math.min(1, flowers.placed.length / 8),
     buttons:[
@@ -8105,14 +8250,17 @@ function flowersRender(ctx){
   ctx.fillStyle = g0;
   rrPath(ctx, 8, ch*0.28, cw-16, ch*0.70, 20); ctx.fill();
   ctx.restore();
+  drawLevel4MidlineGuide(ctx);
 
-  // 花材架
-  ctx.save();
-  ctx.fillStyle = 'rgba(255,255,255,0.72)';
-  const pw = (flowers.palette[1] ? Math.abs(flowers.palette[1].x - flowers.palette[0].x) : 0);
-  const palTop = ch*(advNarrow() ? 0.44 : 0.30);
-  rrPath(ctx, 8, palTop, (pw ? pw + L.size*1.1 : L.size*1.2), ch*0.98 - palTop, 16);
-  ctx.fill(); ctx.restore();
+  // 一般模式用花材架；Level 4沿中央走廊排列，不加側邊空白框。
+  if(!isLevel4Tabletop()){
+    ctx.save();
+    ctx.fillStyle = 'rgba(255,255,255,0.72)';
+    const pw = (flowers.palette[1] ? Math.abs(flowers.palette[1].x - flowers.palette[0].x) : 0);
+    const palTop = ch*(advNarrow() ? 0.44 : 0.30);
+    rrPath(ctx, 8, palTop, (pw ? pw + L.size*1.1 : L.size*1.2), ch*0.98 - palTop, 16);
+    ctx.fill(); ctx.restore();
+  }
 
   const hover = carrier.hoverId;
   for(const p of flowers.palette){
@@ -8313,7 +8461,7 @@ function ksDownload(){
 function advDrawCursor(ctx, pct){
   if(cursorX < 0 || cursorY < 0 || !handDetected) return;
   ctx.save();
-  if(state.gameType === 'grasp'){
+  if(isGraspStyleMode()){
     ctx.beginPath(); ctx.arc(cursorX, cursorY, isGrasping ? 28 : 30, 0, Math.PI*2);
     ctx.fillStyle = isGrasping ? 'rgba(224,123,57,0.85)' : 'rgba(255,255,255,0.30)';
     ctx.fill();
@@ -8322,7 +8470,7 @@ function advDrawCursor(ctx, pct){
       ctx.fillStyle = '#fff';
       ctx.font = 'bold 22px -apple-system,"PingFang TC",sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText('✊', cursorX, cursorY);
+      ctx.fillText(isPinchMode() ? '捏' : '✊', cursorX, cursorY);
     }
     if(pct > 0){
       ctx.beginPath();
@@ -8629,7 +8777,9 @@ function cookSimulateStep(){
       break;
     case 'pinchDrop':
       qaMoveTo(L.wok.x, L.wok.y, 240);
-      if(state.gameType === 'grasp'){
+      if(isLevel4Tabletop()){
+        window.advanceTime(1200);
+      } else if(!isPinchMode()){
         qaHand.isGrasping = true;  window.advanceTime(200);
         qaHand.isGrasping = false; window.advanceTime(200);
       } else {
@@ -8744,7 +8894,7 @@ window.__qa = {
     research.scenarioSelection = 'patient_choice_after_therapist_fthue_filter';
     research.dataUse = opts.dataUse || 'formal'; research.recordStatus = opts.recordStatus || 'completed';
     research.archiveId = '';
-    research.stratum = String(opts.preFthue || (opts.level === '67' ? '6' : '4'));
+    research.stratum = String(opts.preFthue || (opts.level === '67' ? '6' : '5'));
     research.preFthue = research.stratum;
     research.postFthue = '';
     resetResearchFeedback();
@@ -8759,7 +8909,7 @@ window.__qa = {
     research.pauseCount = 0; research.completed = false; research.trackingPresent = false;
     research.motorEnabled = true; research.cognitiveEnabled = false; research.interactionBlocked = false;
     research.cog = { active:false, prompt:null, shownAt:0, nextAt:0, index:0, lastResult:'' };
-    state.qaMode = true; state.level = parseInt(research.stratum,10) <= 5 ? '45' : '67';
+    state.qaMode = true; state.level = parseInt(research.stratum,10) === 5 ? '5' : '67';
     state.gameType = pilotStratum().gameType;
     state.theme = research.scenarioId; state.mode = 'single';
     state.duration = pilotPlanDuration(research.phasePlan);
@@ -8868,7 +9018,7 @@ window.__qa = {
       qaHand = { nx:px / gameCanvas.width, ny:py / gameCanvas.height, isGrasping:false };
       dotEmaX = -1; dotEmaY = -1; posHistory = []; trackingPointHistory = [];
       window.advanceTime(650);
-      if(state.gameType === 'grasp'){
+      if(isGraspStyleMode()){
         qaHand.isGrasping = true;  window.advanceTime(620);
         qaHand.isGrasping = false; window.advanceTime(780);
       } else {
@@ -8881,12 +9031,12 @@ window.__qa = {
       qaHand = { nx:fx / gameCanvas.width, ny:fy / gameCanvas.height, isGrasping:false };
       dotEmaX = -1; dotEmaY = -1; posHistory = []; trackingPointHistory = [];
       window.advanceTime(650);
-      if(state.gameType === 'grasp'){ qaHand.isGrasping = true; window.advanceTime(620); }
+      if(isGraspStyleMode()){ qaHand.isGrasping = true; window.advanceTime(620); }
       else { window.advanceTime(DWELL_MS + 250); }
       qaHand.nx = tx / gameCanvas.width; qaHand.ny = ty / gameCanvas.height;
       dotEmaX = -1; dotEmaY = -1; posHistory = []; trackingPointHistory = [];
       window.advanceTime(320);
-      if(state.gameType === 'grasp'){ qaHand.isGrasping = false; window.advanceTime(780); }
+      if(isGraspStyleMode()){ qaHand.isGrasping = false; window.advanceTime(780); }
       else { window.advanceTime(DWELL_MS + 250); }
       return true;
     },
