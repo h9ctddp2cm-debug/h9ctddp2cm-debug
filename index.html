@@ -146,19 +146,19 @@ html,body{
 .hud-item .hud-value{ font-size:30px; line-height:1.1; font-weight:800; }
 
 .status-bar{
-  position:absolute; bottom:200px; left:50%; z-index:15; transform:translateX(-50%);
-  width:min(620px,76vw); text-align:center;
-  padding:11px 18px calc(11px + env(safe-area-inset-bottom));
+  position:absolute; top:82px; right:12px; bottom:auto; left:auto; z-index:20; transform:none;
+  width:min(270px,30vw); text-align:right;
+  padding:8px 10px;
   background:rgba(0,0,0,0.84); border:2px solid rgba(255,255,255,.72);
-  border-radius:18px; box-shadow:0 5px 18px rgba(0,0,0,.35);
-  color:#fff; pointer-events:none; font-size:24px; font-weight:900;
+  border-radius:12px; box-shadow:0 4px 14px rgba(0,0,0,.30);
+  color:#fff; pointer-events:none; font-size:18px; font-weight:900;
 }
 .action-main{
-  display:block; font-size:clamp(30px,3.2vw,42px); line-height:1.12;
-  font-weight:900; letter-spacing:.03em;
+  display:block; font-size:clamp(19px,1.8vw,24px); line-height:1.15;
+  font-weight:900; letter-spacing:.01em;
 }
 .action-detail{
-  display:block; margin-top:3px; font-size:14px; line-height:1.25;
+  display:block; margin-top:2px; font-size:12px; line-height:1.2;
   font-weight:700; color:#f2d99b;
 }
 
@@ -186,11 +186,11 @@ html,body{
 .game-control-btn:active{ transform:scale(.96); }
 .game-control-btn.pause-active{ background:#f5c451; border-color:#8b6500; color:#342600; }
 .secondary-rule{
-  position:absolute; top:82px; right:12px; z-index:18;
-  max-width:min(300px,36vw); padding:7px 10px;
+  position:absolute; top:156px; right:12px; z-index:18;
+  max-width:min(270px,30vw); padding:6px 9px;
   background:rgba(255,255,255,.92); border:1px solid rgba(0,0,0,.14);
   border-radius:10px; color:#333; box-shadow:0 2px 8px rgba(0,0,0,.18);
-  font-size:14px; line-height:1.25; font-weight:750; text-align:right;
+  font-size:12px; line-height:1.2; font-weight:750; text-align:right;
   pointer-events:none;
 }
 
@@ -449,11 +449,11 @@ html,body{
   .hud-item .hud-value{ font-size:26px; }
   .game-controls{ top:8px; left:8px; right:8px; justify-content:space-between; }
   .game-control-btn{ min-width:110px; min-height:56px; font-size:19px; }
-  #levelIntroBanner{ top:160px !important; right:8px !important; width:56vw !important; padding:8px 9px !important; }
-  #persistentRules{ top:160px !important; right:8px !important; left:auto !important; max-width:46% !important; padding:6px 8px !important; font-size:13px !important; }
-  .status-bar{ bottom:205px; width:92vw; padding:9px 12px calc(9px + env(safe-area-inset-bottom)); }
-  .action-main{ font-size:30px; }
-  .action-detail{ font-size:13px; }
+  #levelIntroBanner{ top:236px !important; right:8px !important; width:min(240px,54vw) !important; padding:7px 8px !important; }
+  #persistentRules{ top:226px !important; right:8px !important; left:auto !important; max-width:min(240px,54vw) !important; padding:5px 7px !important; font-size:11px !important; }
+  .status-bar{ top:158px; right:8px; bottom:auto; left:auto; width:min(240px,54vw); padding:7px 8px; transform:none; }
+  .action-main{ font-size:19px; }
+  .action-detail{ font-size:11px; }
 }
 
 /* landscape adjustments */
@@ -984,7 +984,7 @@ html,body{
   <div id="screen-game" class="screen">
     <div class="game-stage">
       <div id="feedbackOverlay" style="display:none;position:absolute;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;pointer-events:none;font-size:180px;opacity:0;transition:opacity 0.15s;"></div>
-      <div id="levelIntroBanner" style="display:none;position:absolute;top:96px;right:12px;width:min(380px,44vw);z-index:30;background:rgba(0,0,0,0.82);color:#fff;text-align:left;padding:10px 12px;font-size:14px;line-height:1.4;border-radius:12px;pointer-events:none;"></div>
+      <div id="levelIntroBanner" style="display:none;position:absolute;top:164px;right:12px;width:min(270px,30vw);z-index:30;background:rgba(0,0,0,0.82);color:#fff;text-align:right;padding:8px 10px;font-size:13px;line-height:1.3;border-radius:12px;pointer-events:none;"></div>
       <video id="gameVideo" playsinline autoplay muted></video>
       <canvas id="gameCanvas"></canvas>
       <div class="hud">
@@ -3280,7 +3280,10 @@ async function ensureHandLandmarker(){
         delegate: "GPU"
       },
       runningMode: "VIDEO",
-      numHands: 1
+      numHands: 1,
+      minHandDetectionConfidence: 0.35,
+      minHandPresenceConfidence: 0.35,
+      minTrackingConfidence: 0.35
     });
     return handLandmarker;
   })();
@@ -3410,6 +3413,35 @@ function isGraspStyleMode(){ return state.gameType === 'grasp' || state.gameType
 function isPinchMode(){ return state.gameType === 'pinch'; }
 
 const DOT_EMA = 0.15;  // lower = smoother (less jitter, slight lag) - 陰低給90歲tremor病人減少邊緣重新偵測造成的拖抳
+
+// MediaPipe becomes less reliable when the hand reaches the physical edge of the camera.
+// Expand the central camera area to the full game canvas so the participant can reach every
+// target without moving the hand into the unstable outer border of the video frame.
+const CAMERA_SAFE_X = 0.12;
+const CAMERA_SAFE_TOP = 0.08;
+const CAMERA_SAFE_BOTTOM = 0.14;
+const TRACKING_MEDIAN_FRAMES = 5;
+const TRACKING_DEAD_ZONE_PX = 3;
+let trackingPointHistory = [];
+
+function clamp01(value){ return Math.max(0, Math.min(1, value)); }
+function cameraPointToCanvas(nx, ny, width, height){
+  const mappedX = clamp01((nx - CAMERA_SAFE_X) / (1 - CAMERA_SAFE_X * 2));
+  const mappedY = clamp01((ny - CAMERA_SAFE_TOP) / (1 - CAMERA_SAFE_TOP - CAMERA_SAFE_BOTTOM));
+  return { x:mappedX * width, y:mappedY * height };
+}
+function medianValue(values){
+  const sorted = values.slice().sort((a,b)=>a-b);
+  return sorted[Math.floor(sorted.length / 2)];
+}
+function stabiliseTrackingPoint(x, y){
+  trackingPointHistory.push({x,y});
+  if(trackingPointHistory.length > TRACKING_MEDIAN_FRAMES) trackingPointHistory.shift();
+  return {
+    x:medianValue(trackingPointHistory.map(point=>point.x)),
+    y:medianValue(trackingPointHistory.map(point=>point.y))
+  };
+}
 
 /* ==================== 校準畫面邏輯 ==================== */
 let calibRAF = null;
@@ -4086,6 +4118,7 @@ function initGame(){
   dotEmaX = -1; dotEmaY = -1;
   handDetected = false;
   posHistory = [];
+  trackingPointHistory = [];
 
   timeLeft = state.duration; // 由用家選擇
   updateHUD();
@@ -4365,7 +4398,7 @@ function gameLoop(){
 
 // 偵測鑑定期：手接近畫面邊緣時 MediaPipe 會偷 miss frame，我們保留最後已知位置一段短時間，
 // 避免 cursor 跟食物 icon 在畫面邊邊疾抑。
-const DETECTION_LOST_GRACE_MS = 500;  // 偵測失敗保存最後位置多久才真正 reset
+const DETECTION_LOST_GRACE_MS = 750;  // edge miss: briefly retain the last stable cursor and gesture
 let lastDetectedAt = 0;
 let detectionHeldGrace = false; // 現正在 grace window 內（偵測 miss 但沒 reset）
 
@@ -4404,12 +4437,22 @@ function updateTracking(){
     lastDetectedAt = now;
     if(res.lm) lastHandLm = res.lm;
 
-    const px = res.nx * cw;
-    const py = res.ny * ch;
+    const mapped = (res.lm && !state.qaMode)
+      ? cameraPointToCanvas(res.nx, res.ny, cw, ch)
+      : {x:clamp01(res.nx) * cw, y:clamp01(res.ny) * ch};
+    const stablePoint = stabiliseTrackingPoint(mapped.x, mapped.y);
+    const px = stablePoint.x;
+    const py = stablePoint.y;
     if(dotEmaX < 0){ dotEmaX = px; dotEmaY = py; }
     else{
-      dotEmaX += DOT_EMA * (px - dotEmaX);
-      dotEmaY += DOT_EMA * (py - dotEmaY);
+      const dx = px - dotEmaX, dy = py - dotEmaY;
+      const movement = Math.hypot(dx, dy);
+      if(movement > TRACKING_DEAD_ZONE_PX){
+        // Faster response for intentional reaching, stronger smoothing near a target.
+        const alpha = movement > 70 ? 0.28 : movement > 24 ? 0.20 : 0.11;
+        dotEmaX += alpha * dx;
+        dotEmaY += alpha * dy;
+      }
     }
     cursorX = dotEmaX;
     cursorY = dotEmaY;
@@ -4452,6 +4495,7 @@ function updateTracking(){
     cursorX = -1; cursorY = -1;
     dotEmaX = -1; dotEmaY = -1;
     posHistory = [];
+    trackingPointHistory = [];
     isGrasping = false;
     if(!heldItem) gripActive = false;
   }
@@ -8190,7 +8234,7 @@ function qaMoveTo(px, py, ms){
   qaHand = qaHand || { nx:0.5, ny:0.5, isGrasping:false };
   qaHand.nx = px / gameCanvas.width;
   qaHand.ny = py / gameCanvas.height;
-  dotEmaX = -1; dotEmaY = -1; posHistory = [];
+  dotEmaX = -1; dotEmaY = -1; posHistory = []; trackingPointHistory = [];
   window.advanceTime(ms || 200);
 }
 /* 依目前步驟合成相應動作；成功推進步驟則回傳 true */
@@ -8463,7 +8507,20 @@ window.__qa = {
     return true;
   },
   clearHand(){ qaHand = null; return true; },
-  snapCursor(){ dotEmaX = -1; dotEmaY = -1; posHistory = []; return true; },
+  snapCursor(){ dotEmaX = -1; dotEmaY = -1; posHistory = []; trackingPointHistory = []; return true; },
+  trackingProbe(nx, ny, samples){
+    trackingPointHistory = [];
+    const points = (samples && samples.length ? samples : [[nx, ny]]).map(([x, y]) =>
+      {
+        const mapped = cameraPointToCanvas(x, y, gameCanvas.width, gameCanvas.height);
+        return stabiliseTrackingPoint(mapped.x, mapped.y);
+      }
+    );
+    return {
+      canvas:{ width:gameCanvas.width, height:gameCanvas.height },
+      mapped:points.map(p=>({ x:p.x, y:p.y })),
+    };
+  },
   state(){ return {
     screen: currentScreen, level: state.level, theme: state.theme, gameType: state.gameType,
     score, correctCount, grabCount, timeLeft,
@@ -8483,7 +8540,7 @@ window.__qa = {
     // 在畫布座標處完成一次「選取」（依級別用握拳或停留）
     pickAt(px, py){
       qaHand = { nx:px / gameCanvas.width, ny:py / gameCanvas.height, isGrasping:false };
-      dotEmaX = -1; dotEmaY = -1; posHistory = [];
+      dotEmaX = -1; dotEmaY = -1; posHistory = []; trackingPointHistory = [];
       window.advanceTime(650);
       if(state.gameType === 'grasp'){
         qaHand.isGrasping = true;  window.advanceTime(620);
@@ -8496,12 +8553,12 @@ window.__qa = {
     // 由 (fx,fy) 拿起，搬到 (tx,ty) 放下
     carryTo(fx, fy, tx, ty){
       qaHand = { nx:fx / gameCanvas.width, ny:fy / gameCanvas.height, isGrasping:false };
-      dotEmaX = -1; dotEmaY = -1; posHistory = [];
+      dotEmaX = -1; dotEmaY = -1; posHistory = []; trackingPointHistory = [];
       window.advanceTime(650);
       if(state.gameType === 'grasp'){ qaHand.isGrasping = true; window.advanceTime(620); }
       else { window.advanceTime(DWELL_MS + 250); }
       qaHand.nx = tx / gameCanvas.width; qaHand.ny = ty / gameCanvas.height;
-      dotEmaX = -1; dotEmaY = -1; posHistory = [];
+      dotEmaX = -1; dotEmaY = -1; posHistory = []; trackingPointHistory = [];
       window.advanceTime(320);
       if(state.gameType === 'grasp'){ qaHand.isGrasping = false; window.advanceTime(780); }
       else { window.advanceTime(DWELL_MS + 250); }
