@@ -936,6 +936,17 @@ html,body{
 
     <div class="context-strip" id="settingsContext">FTHUE Level 4–5 · 握放</div>
 
+    <div class="card collapsible" data-accordion="affected-side">
+      <h2><span>患側方向</span><span class="selected-preview" id="preview-affected-side">請選擇</span></h2>
+      <div class="card-body">
+        <div class="option-row" id="affectedSideOptions">
+          <button class="option-btn" data-side="left" data-testid="button-affected-left">左患側</button>
+          <button class="option-btn" data-side="right" data-testid="button-affected-right">右患側</button>
+        </div>
+        <p id="affectedSideError" style="min-height:20px;margin:8px 0 0;color:#a1261b;font-weight:800;text-align:center;"></p>
+      </div>
+    </div>
+
     <div class="card collapsible collapsed" data-accordion="mode">
       <h2><span>訓練模式</span><span class="selected-preview" id="preview-mode">單一任務</span></h2>
       <div class="card-body">
@@ -1510,6 +1521,7 @@ const state = {
   paused: false,
   gameType: 'grasp',     // 'reach' (dwell/pinch) | 'grasp' — 由 level 決定
   graspType: 'any',      // fixed: open-hand detection
+  affectedSide: '',      // normal play: therapist must choose left or right before calibration
   qaMode: false,         // QA-only: 經 hook 注入游標，不需相機
 };
 const RESEARCH_VERSION = 'pilot-5.0.0-neuroscience';
@@ -1667,6 +1679,15 @@ const research = {
   personalGraspEnter:null, personalGraspExit:null,
   returnUrl:'',
 };
+function activeAffectedSide(){
+  return research.active ? (research.affectedSide || 'left') : (state.affectedSide || 'right');
+}
+function affectedSideSign(){
+  return activeAffectedSide() === 'right' ? 1 : -1;
+}
+function affectedDirectionLabel(){
+  return activeAffectedSide() === 'right' ? '向右外下方放置' : '向左外下方放置';
+}
 
 /* ==================== 虛擬時鐘（用於 deterministic QA hook） ==================== */
 let timeOffsetMs = 0;
@@ -2692,6 +2713,7 @@ document.getElementById('btnResearchBegin').addEventListener('click', async ()=>
     reps:document.getElementById('tradRep' + i).value.trim(),
   })).filter(a=>a.name || a.minutes || a.reps);
   research.affectedSide = document.getElementById('researchSide').value;
+  state.affectedSide = research.affectedSide;
   research.assistance = document.getElementById('researchAssistance').value;
   research.toolUsed = document.getElementById('researchTool').value;
   research.safetyClearance = safetyClearance;
@@ -2799,6 +2821,16 @@ document.getElementById('fontOptions').addEventListener('click', e=>{
   btn.classList.add('selected');
   state.labelFont = parseInt(btn.dataset.font);
 });
+document.getElementById('affectedSideOptions').addEventListener('click', e=>{
+  const btn = e.target.closest('.option-btn');
+  if(!btn) return;
+  document.querySelectorAll('#affectedSideOptions .option-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  state.affectedSide = btn.dataset.side;
+  document.getElementById('preview-affected-side').textContent =
+    state.affectedSide === 'right' ? '右患側' : '左患側';
+  document.getElementById('affectedSideError').textContent = '';
+});
 
 // Accordion: click h2 to expand/collapse (only one open at a time)
 document.querySelectorAll('.card.collapsible h2').forEach(h2=>{
@@ -2838,6 +2870,12 @@ document.getElementById('fontOptions').addEventListener('click', e=>{
 
 document.getElementById('btnGoCalib').addEventListener('click', async ()=>{
   research.active = false;
+  if(!state.affectedSide){
+    document.getElementById('affectedSideError').textContent = '請先選擇患側';
+    const card = document.querySelector('[data-accordion="affected-side"]');
+    if(card) card.classList.remove('collapsed');
+    return;
+  }
   document.getElementById('calibChecklist').classList.remove('active');
   // Unlock AudioContext on first interaction (Safari)
   try{ const c = getAudioCtx(); if(c.state === 'suspended') await c.resume(); }catch(e){}
@@ -2922,7 +2960,9 @@ function updateRulesForActivity(){
     const advanced = research.dualTaskLevel === 'advanced_sort_motor';
     const rule = pilotLang === 'en'
       ? (advanced ? 'Sort to the matching target · Do not pick up animals' : 'Sort to the matching target')
-      : (advanced ? th.itemWord + ' → 相同目標 · 不要拿動物' : th.itemWord + ' → 相同目標');
+      : (advanced
+          ? th.itemWord + '由中線 → ' + affectedDirectionLabel() + ' · 不要拿動物'
+          : th.itemWord + '由中線 → ' + affectedDirectionLabel());
     const rulesResearch = document.getElementById('rulesContent');
     if(rulesResearch){
       rulesResearch.innerHTML =
@@ -2934,9 +2974,9 @@ function updateRulesForActivity(){
     }
     window.__CURRENT_RULES_CANTONESE = state.level === '45'
       ? '先張開手，握緊拿物件。移到相同目標，再張開手放下。' +
-        (advanced ? '只拿目標物件，不要拿動物。' : '')
+        '由中線向患側外下方移動。' + (advanced ? '只拿目標物件，不要拿動物。' : '')
       : '用食指移到物件，停住選取。移到相同目標，再停住放下。' +
-        (advanced ? '只拿目標物件，不要拿動物。' : '');
+        '由中線向患側外下方移動。' + (advanced ? '只拿目標物件，不要拿動物。' : '');
     return;
   }
   if(isAdvTheme()){
@@ -2958,7 +2998,7 @@ function updateRulesForActivity(){
     rulesEl.innerHTML =
       `<div style="font-size:22px;font-weight:800;color:#0a7d75;margin-bottom:12px;">${th.title}</div>` +
       `<div style="font-size:clamp(28px,4vw,38px);font-weight:900;line-height:1.35;margin-bottom:16px;">${actionCue}</div>` +
-      `<div style="font-size:17px;color:#5a5a5a;">${th.itemWord} → 同款目標</div>`;
+      `<div style="font-size:17px;color:#5a5a5a;">由中線拿取 · ${affectedDirectionLabel()}</div>`;
   }
   window.__CURRENT_RULES_CANTONESE =
     state.level === '45'
@@ -3095,11 +3135,11 @@ function showLevelUpBanner(){
 
   const th0 = getTheme();
   const itemWord0 = th0.itemWord;
-  const okTag = `<span style="color:#0a7d75;">${itemWord0} → 同款目標</span>`;
+  const okTag = `<span style="color:#0a7d75;">中線拿取 → ${affectedDirectionLabel()}</span>`;
   const noTag = '<span style="color:#c8391a;">不要拿動物</span>';
 
   if(tier === 0){
-    msg = `<div style="font-size:20px;font-weight:900;">開始：${itemWord0} → 同款目標</div>`;
+    msg = `<div style="font-size:20px;font-weight:900;">中線拿取 → ${affectedDirectionLabel()}</div>`;
     cantoneseMsg = state.level === '45'
       ? `遊戲開始。張開手，握緊拿${itemWord0}。移到同款目標，再張開手放下。`
       : `遊戲開始。用食指停住拿${itemWord0}，移到同款目標再停住放下。`;
@@ -4340,11 +4380,14 @@ function setupTargets(){
   const cw = gameCanvas.width, ch = gameCanvas.height;
   const portrait = isPortrait();
   const style = getTheme().targetStyle || 'panel';
-  const tw = Math.min(cw * 0.48, 300);  // 目標寬：最大化，長者易放
+  const sideSign = affectedSideSign();
+  // 目標全部放在患側外下方；右患側向右下，左患側鏡像向左下。
+  const tw = portrait ? Math.min(cw * 0.29, 230) : Math.min(cw * 0.24, 260);
   const th = tw * (style === 'steamer' ? 0.74 : 0.62);
-  // 直向畫面預留標籤安全區，避免碟名被手機底邊截走。
-  const ty = portrait ? (ch - th/2 - 64) : (ch - th/2 - 12);
-  // 每局永遠兩個目標類別（左 / 右）
+  const outsideX = sideSign > 0 ? cw * 0.78 : cw * 0.22;
+  const landscapeXs = sideSign > 0 ? [cw * 0.66, cw * 0.87] : [cw * 0.34, cw * 0.13];
+  const portraitYs = [ch * 0.72, Math.min(ch - th/2 - 64, ch * 0.88)];
+  const landscapeY = ch - th/2 - 18;
   const cats = getCategories();
   targets = cats.slice(0,2).map((c, i)=>({
     type: c.type,
@@ -4352,8 +4395,8 @@ function setupTargets(){
     img: c.targetImg || c.img || null,
     drawIcon: c.drawIcon || null,
     style,
-    x: i === 0 ? cw*0.25 : cw*0.75,
-    y: ty, w: tw, h: th,
+    x: portrait ? outsideX : landscapeXs[i],
+    y: portrait ? portraitYs[i] : landscapeY, w: tw, h: th,
     color: c.color || (i === 0 ? '#1A6B5A' : '#E07B39'),
   }));
 }
@@ -4420,11 +4463,14 @@ function makeFoodAt(def, existingFoods){
 
   // 直向以兩欄多列分佈；橫向保留足夠肩部移動距離，同時容納進階版最多 6 個物件。
   const minDist = portrait
-    ? Math.max(baseR * 1.9, cw * 0.30)
+    ? Math.max(baseR * 1.65, cw * 0.20)
     : Math.max(baseR * 2.1, cw * 0.18);
 
   // 限制 spawn 區域：左右都留更大邊距（避免右下角衝碰磟子造成 jitter）
   const marginX = r * (portrait ? 1.25 : 1.5);
+  // 起始物件集中於身體中線附近，再向患側外下方運送，避免跨越中線。
+  const centerMin = Math.max(marginX, cw * (portrait ? 0.37 : 0.36));
+  const centerMax = Math.min(cw - marginX, cw * (portrait ? 0.63 : 0.64));
   // Y 範圍顯著往上拉，避免 spawn 在磟子區區均（磟子在底部 65-90%）
   const spawnYmin = Math.max(ch * (portrait ? 0.25 : 0.21), portrait ? 190 : 150);
   const spawnYmax = ch * (portrait ? 0.58 : 0.55);
@@ -4432,7 +4478,7 @@ function makeFoodAt(def, existingFoods){
 
   // 多嘗試一些次，升高間隔成功率
   for(let attempt=0; attempt<120; attempt++){
-    const x = randRange(marginX, cw - marginX);
+    const x = randRange(centerMin, centerMax);
     const y = randRange(spawnYmin, spawnYmax);
     let overlaps = circleOverlapsRect(x, y, r, instructionExclusion);
     for(const f of existingFoods){
@@ -4450,10 +4496,10 @@ function makeFoodAt(def, existingFoods){
     }
   }
   // Fallback：強行放置（到這裡代表畫面真係太擠 — 但不才會發生）
-  let x = randRange(marginX, cw - marginX);
+  let x = randRange(centerMin, centerMax);
   let y = randRange(spawnYmin, spawnYmax);
   if(circleOverlapsRect(x, y, r, instructionExclusion)){
-    x = Math.max(marginX, Math.min(cw - marginX, cw * 0.46));
+    x = Math.max(centerMin, Math.min(centerMax, cw * 0.50));
     y = Math.max(spawnYmin, Math.min(spawnYmax, ch * 0.43));
   }
   return {
@@ -4727,7 +4773,7 @@ function updateGameLogic(){
           researchLog('pickup', {item:nearest.label, method:'dwell'});
           dwellTarget = null;
           updateHUD();
-          setActionPrompt('已拿起', '移到同款目標');
+          setActionPrompt('已拿起', affectedDirectionLabel());
         } else {
           dwellActive = true;
           lastDwellPct = elapsed / DWELL_MS;
@@ -4885,7 +4931,7 @@ function updateGraspLogic(){
         updateHUD();
         basicOpenStart = 0; basicGraspStart = 0; basicGraspCandidate = ''; basicGraspArmed = false;
         basicContactCandidate = ''; basicContactUntil = 0;
-        setActionPrompt(graspPrompt('carry'), '移到同款目標');
+        setActionPrompt(graspPrompt('carry'), affectedDirectionLabel());
       } else {
         setActionPrompt(graspPrompt('hold'), pct + '%');
       }
@@ -4976,7 +5022,7 @@ function updateGraspLogic(){
       releaseDwellStart = 0;
       releaseDwellPlate = null;
       setActionPrompt(onPlate ? graspPrompt('release') : graspPrompt('carry'),
-        onPlate ? (isPinchMode() ? PILOT_TEXT[pilotLang].pinchReleasePrompt : '完全張開手指') : '移到同款目標');
+        onPlate ? (isPinchMode() ? PILOT_TEXT[pilotLang].pinchReleasePrompt : '完全張開手指') : affectedDirectionLabel());
     }
   }
 }
@@ -7553,18 +7599,19 @@ function laundrySetup(){
   const cw = gameCanvas.width, ch = gameCanvas.height;
   const n = laundry.colors.length;
   const narrow = cw < 700;
-  const cols = narrow ? Math.min(2, n) : n;
+  const sideRight = affectedSideSign() > 0;
+  const cols = Math.min(2, n);
   const rows = Math.ceil(n / cols);
-  const bw = narrow ? Math.min(176, (cw - 30) / cols - 8)
-                    : Math.min((cw - 24) / n - 10, 250);
-  const bh = Math.min(narrow ? ch*0.125 : ch*0.22, bw*0.72);
+  const sideHalf = cw * 0.48;
+  const bw = Math.min(narrow ? 176 : 230, sideHalf / cols - 10);
+  const bh = Math.min(narrow ? ch*0.12 : ch*0.18, bw*0.72);
   laundry.baskets = laundry.colors.map((c, i)=>({
     id:'b' + c, color:c,
-    x: narrow
-      ? cw/2 + ((i%cols) - (Math.min(cols,n-Math.floor(i/cols)*cols)-1)/2) * ((cw-16)/cols)
-      : cw * ((i + 0.5) / n),
-    y: narrow ? ch*(rows > 1 ? 0.75 + Math.floor(i/cols)*0.15 : 0.84)
-              : ch - bh*0.62 - 8,
+    x: (sideRight ? cw*0.76 : cw*0.24) +
+      ((i%cols) - (Math.min(cols,n-Math.floor(i/cols)*cols)-1)/2) * Math.min(bw*1.06, cw*0.22),
+    y: rows > 1
+      ? ch*(0.74 + Math.floor(i/cols)*0.15)
+      : ch*0.84,
     w: bw, h: bh,
   }));
   laundry.garments = [];
@@ -7585,7 +7632,8 @@ function laundryRefill(){
   const slot = (index)=>{
     const row = Math.floor(index / cols), col = index % cols;
     const rowCount = Math.min(cols, cfg.items-row*cols);
-    const x = cw/2 + (col-(rowCount-1)/2) * Math.min(size*1.25, cw/cols);
+    // 衣物由中線附近開始；運送方向只向患側外下方。
+    const x = cw/2 + (col-(rowCount-1)/2) * Math.min(size*1.05, cw*0.16);
     const top = ch*(narrow ? 0.42 : 0.40);
     const bottom = ch*(narrow ? 0.65 : 0.68);
     const y = top + (bottom-top)*(row+0.5)/rows;
@@ -7788,6 +7836,7 @@ const flowers = {
 function flowersSetup(){
   const cw = gameCanvas.width, ch = gameCanvas.height;
   const narrow = cw < 700, phone = cw < 520, portrait = ch > cw;
+  const sideRight = affectedSideSign() > 0;
   const cols = 2;
   const size = Math.max(phone ? 82 : (narrow ? 96 : 108),
     Math.min(phone ? 104 : (narrow ? 126 : 144), Math.min(cw, ch) * 0.18));
@@ -7796,14 +7845,17 @@ function flowersSetup(){
     const col = i % cols, row = Math.floor(i / cols);
     return {
       id:'pal' + (flowers.palettePage*4+i), kind:k.key, name:k.name,
-      x: 14 + size*0.52 + col * (size*0.94),
+      x: cw/2 + (col - 0.5) * Math.min(size*0.94, cw*0.18),
       y: ch*(phone ? 0.43 : (portrait ? 0.39 : 0.36)) + row * (size*0.92),
       r: size*0.46, size,
     };
   });
   const vaseH = Math.min(ch*(phone ? 0.32 : (portrait ? 0.38 : 0.42)), phone ? 250 : 320);
   flowers.layout = {
-    vase:{ x: cw * (phone ? 0.70 : (portrait ? 0.68 : 0.66)), y: ch - vaseH*0.5 - 10,
+    vase:{ x: cw * (sideRight
+             ? (phone ? 0.74 : (portrait ? 0.75 : 0.78))
+             : (phone ? 0.26 : (portrait ? 0.25 : 0.22))),
+           y: ch - vaseH*0.5 - 10,
            w: Math.min(cw*(phone ? 0.42 : 0.38), vaseH*0.88), h: vaseH },
     size,
   };
@@ -8608,6 +8660,7 @@ window.__qa = {
     research.studyDate = opts.studyDate || '2026-08-10';
     research.studyArm = opts.studyArm || 'game_intervention';
     research.affectedSide = opts.affectedSide || 'left';
+    state.affectedSide = research.affectedSide;
     research.assistance = opts.assistance || 'none'; research.startedAt = new Date().toISOString();
     research.dualTaskLevel = opts.dualTaskLevel || 'simple_sort_motor';
     research.scenarioId = opts.scenarioId || 'dimsum';
@@ -8686,6 +8739,7 @@ window.__qa = {
     if(opts.mode) state.mode = opts.mode;
     if(opts.duration) state.duration = opts.duration;
     if(opts.dwellMs) state.dwellMs = opts.dwellMs;
+    if(opts.affectedSide) state.affectedSide = opts.affectedSide;
     qaHand = null;
     showScreen('game');
     resizeGameCanvas();
