@@ -81,6 +81,7 @@ export class Level3BilateralSandbox {
     this.calibrationStartedAt = null;
     this.calibrationSamples = {
       vcpX: [],
+      vcpY: [],
       wristSeparation: [],
       shoulderWidth: [],
       shoulderCenterX: [],
@@ -89,6 +90,8 @@ export class Level3BilateralSandbox {
     };
 
     this.calibrationVcpXMedian = 0.5;
+    this.calibrationVcpYMedian = 0.7;
+    this.calibrationVcpMad = null;
     this.dynamicVcpTolerance = 0.05;
     this.baselineShoulderWidth = 0.25;
     this.baselineWristSeparation = 0.05;
@@ -136,6 +139,13 @@ export class Level3BilateralSandbox {
 
   resetTimer() {
     this.timerStartedAt = null;
+  }
+
+  abortCurrentRepetition() {
+    this.currentState = LEVEL3_STATES.MIDLINE_READY;
+    this.returnTriggeredByRelease = false;
+    this.isObjectVisible = true;
+    this.resetTimer();
   }
 
   startDebounce(nowMs) {
@@ -223,6 +233,7 @@ export class Level3BilateralSandbox {
     }
 
     const vcpX = (leftWrist.x + rightWrist.x) / 2;
+    const vcpY = (leftWrist.y + rightWrist.y) / 2;
     const worldLeftWrist = poseWorldLandmarks[15];
     const worldRightWrist = poseWorldLandmarks[16];
     if (![worldLeftWrist, worldRightWrist].every(worldPointIsSafe)) {
@@ -233,6 +244,7 @@ export class Level3BilateralSandbox {
     const shoulderCenterX = (leftShoulder.x + rightShoulder.x) / 2;
     const metrics = {
       vcpX,
+      vcpY,
       wristSeparation,
       wristSeparationUnit: "m",
       shoulderWidth,
@@ -266,6 +278,7 @@ export class Level3BilateralSandbox {
       }
 
       this.calibrationSamples.vcpX.push(vcpX);
+      this.calibrationSamples.vcpY.push(vcpY);
       this.calibrationSamples.wristSeparation.push(wristSeparation);
       this.calibrationSamples.shoulderWidth.push(shoulderWidth);
       this.calibrationSamples.shoulderCenterX.push(shoulderCenterX);
@@ -288,6 +301,8 @@ export class Level3BilateralSandbox {
         // Continue sampling until the five-second ceiling if the person is still repositioning.
         if (vcpMad <= 0.035 && shoulderCenterMad <= 0.03) {
           this.calibrationVcpXMedian = vcpMedian;
+          this.calibrationVcpYMedian = median(this.calibrationSamples.vcpY);
+          this.calibrationVcpMad = vcpMad;
           this.baselineWristSeparation = median(this.calibrationSamples.wristSeparation);
           this.baselineShoulderWidth = median(this.calibrationSamples.shoulderWidth);
           this.calibrationShoulderCenter = shoulderCenterMedian;

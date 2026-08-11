@@ -38,6 +38,45 @@
           <h2 id="controls-title">治療師設定</h2>
         </div>
 
+        <div class="form-grid">
+          <label class="field full">
+            <span>匿名患者識別碼</span>
+            <input id="patientId" value="SUBACUTE_PT_001" maxlength="40" autocomplete="off" data-testid="input-patient-id">
+            <small>不可輸入姓名、身份證號碼或其他可識別資料。</small>
+          </label>
+          <label class="field">
+            <span>FTHUE 等級</span>
+            <select id="fthueLevel" data-testid="select-fthue-level">
+              <option value="3" selected>Level 3</option>
+              <option value="4">Level 4</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>實驗條件</span>
+            <select id="experimentalCondition" data-testid="select-condition">
+              <option value="SINGLE_TASK_BASELINE" selected>Single-task baseline</option>
+              <option value="DUAL_TASK_INTERFERENCE">Dual-task interference</option>
+            </select>
+          </label>
+          <label class="field full">
+            <span>認知負荷階層</span>
+            <select id="cognitiveTier" data-testid="select-cognitive-tier">
+              <option value="NONE_CONTROL" selected>無控制組</option>
+              <option value="LOW_MATCHING">低：目標比對</option>
+              <option value="MODERATE_COUNTING">中：指定項目計數</option>
+              <option value="HIGH_RUNNING_TOTAL">高：連續加總</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Trial / Block</span>
+            <input id="trialBlockNumber" type="number" value="1" min="1" max="99" data-testid="input-block-number">
+          </label>
+          <label class="field full">
+            <span>治療師備註</span>
+            <textarea id="therapistNotes" rows="3" maxlength="500" placeholder="只記錄代償、疲勞或測試觀察，不含個人資料" data-testid="textarea-therapist-notes"></textarea>
+          </label>
+        </div>
+
         <fieldset>
           <legend>患側與首次方向</legend>
           <div class="segmented">
@@ -82,6 +121,14 @@
           </select>
           <small>應按實際鏡頭輸入管線設定，而非只看預覽是否鏡像。</small>
         </label>
+
+        <div class="session-controls" aria-label="Session controls">
+          <button id="startSession" class="button primary" type="button" data-testid="button-start-session">開始 Session</button>
+          <button id="pauseSession" class="button warning" type="button" disabled data-testid="button-pause-session">暫停 Session</button>
+          <button id="invalidateRep" class="button danger" type="button" disabled data-testid="button-invalidate-rep">作廢目前 Rep</button>
+          <button id="endSession" class="button secondary" type="button" disabled data-testid="button-end-session">結束 Session</button>
+        </div>
+        <p id="sessionControlStatus" class="inline-status" data-testid="status-session" aria-live="polite">請先確認設定並開始 Session。</p>
 
         <button id="startCamera" class="button primary" type="button" data-testid="button-start-camera">啟動相機與 MediaPipe</button>
         <button id="beginCalibration" class="button warning" type="button" data-testid="button-begin-calibration">開始／重新校準</button>
@@ -170,6 +217,40 @@
       <p id="guidance" class="guidance" data-testid="text-guidance" aria-live="polite">請將雙手合攏並承托於桌面中央</p>
     </section>
 
+    <section class="log-section" aria-labelledby="cognitive-title">
+      <div class="section-heading">
+        <div>
+          <p class="section-kicker">Raw response annotation</p>
+          <h2 id="cognitive-title">認知反應與診斷 Console</h2>
+        </div>
+      </div>
+      <div class="annotation-grid">
+        <label class="field">
+          <span>Stimulus ID</span>
+          <input id="stimulusId" value="none_control" data-testid="input-stimulus-id">
+        </label>
+        <label class="field">
+          <span>反應狀態</span>
+          <select id="responseStatus" data-testid="select-response-status">
+            <option value="NOT_APPLICABLE">Not applicable</option>
+            <option value="PENDING">Pending</option>
+            <option value="SUBMITTED">Submitted</option>
+            <option value="NO_RESPONSE">No response</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>準確度</span>
+          <select id="responseAccuracy" data-testid="select-response-accuracy">
+            <option value="">Null / not scored</option>
+            <option value="true">Correct</option>
+            <option value="false">Incorrect</option>
+          </select>
+        </label>
+        <button id="applyCognitiveResponse" class="button secondary" type="button" data-testid="button-apply-cognitive">套用到目前 Rep</button>
+      </div>
+      <pre id="diagnosticConsole" class="diagnostic-console" data-testid="text-diagnostic-console">[Console initialized] Waiting for session.</pre>
+    </section>
+
     <section class="log-section" aria-labelledby="log-title">
       <div class="section-heading">
         <div>
@@ -180,6 +261,7 @@
           <button id="logSnapshot" class="button secondary" type="button" data-testid="button-log-snapshot">記錄目前一幀</button>
           <button id="exportJson" class="button secondary" type="button" disabled data-testid="button-export-json">匯出 JSON</button>
           <button id="exportCsv" class="button secondary" type="button" disabled data-testid="button-export-csv">匯出 CSV</button>
+          <button id="exportDataset" class="button primary" type="button" disabled data-testid="button-export-dataset">匯出研究 Dataset</button>
           <button id="clearLog" class="button ghost" type="button" disabled data-testid="button-clear-log">清除</button>
         </div>
       </div>

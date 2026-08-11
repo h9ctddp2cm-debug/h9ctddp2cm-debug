@@ -1,4 +1,6 @@
 import { Level3BilateralSandbox } from "./Level3BilateralSandbox.js";
+import { Level3BilateralDataCollector } from "./Level3BilateralDataCollector.js";
+import { TherapistDashboard } from "./TherapistDashboard.js";
 
 const elements = {
   affectedSides: [...document.querySelectorAll('input[name="affectedSide"]')],
@@ -34,10 +36,16 @@ const elements = {
   exportJson: document.querySelector("#exportJson"),
   exportCsv: document.querySelector("#exportCsv"),
   clearLog: document.querySelector("#clearLog"),
+  exportDataset: document.querySelector("#exportDataset"),
   logCount: document.querySelector("#logCount"),
   sessionId: document.querySelector("#sessionId"),
   logRows: document.querySelector("#logRows"),
   themeToggle: document.querySelector("#themeToggle"),
+  diagnosticConsole: document.querySelector("#diagnosticConsole"),
+  stimulusId: document.querySelector("#stimulusId"),
+  responseStatus: document.querySelector("#responseStatus"),
+  responseAccuracy: document.querySelector("#responseAccuracy"),
+  applyCognitiveResponse: document.querySelector("#applyCognitiveResponse"),
 };
 
 const AUTO_LOG_ACTIONS = new Set([
@@ -78,6 +86,9 @@ let sessionEvents = [];
 let sessionId = makeSessionId();
 let lastLoggedSignature = "";
 let lastLoggedAt = -Infinity;
+const dataCollector = new Level3BilateralDataCollector();
+let dashboard = null;
+let latestDatasetPayload = null;
 
 elements.sessionId.textContent = sessionId;
 
@@ -93,6 +104,12 @@ elements.themeToggle.addEventListener("click", () => {
 
 function format(value, digits = 3) {
   return Number.isFinite(value) ? value.toFixed(digits) : "--";
+}
+
+function logToConsole(message) {
+  const timestamp = new Date().toISOString().slice(11, 23);
+  elements.diagnosticConsole.textContent += `\n[${timestamp}] ${message}`;
+  elements.diagnosticConsole.scrollTop = elements.diagnosticConsole.scrollHeight;
 }
 
 function diagnosticValues(output = lastOutput) {
@@ -228,7 +245,11 @@ function maybeLog(output, forceReason = null) {
 
 function handleOutput(output) {
   updateMetrics(output);
+  dataCollector.observe(output, engine, output.timestampMs);
   maybeLog(output);
+  if (AUTO_LOG_ACTIONS.has(output.action) || output.action === "CENTER_READY") {
+    logToConsole(`${output.action} | ${output.state} | VCP ${format(output.metrics?.vcpX)}/${format(output.metrics?.vcpY)}`);
+  }
 }
 
 function downloadFile(filename, content, mimeType) {
@@ -245,6 +266,69 @@ function csvCell(value) {
   const text = value === null || value === undefined ? "" : String(value);
   return `"${text.replaceAll('"', '""')}"`;
 }
+
+dashboard = new TherapistDashboard({
+  onStartSession: (inputs) => {
+    engine = new Level3BilateralSandbox(currentConfig());
+    resetSessionLog();
+    latestDatasetPayload = null;
+    elements.exportDataset.disabled = true;
+    dataCollector.startSession(inputs, performance.now());
+    elements.sessionId.textContent = inputs.patientId;
+    elements.stimulusId.value = inputs.experimentalCondition === "SINGLE_TASK_BASELINE"
+      ? "none_control"
+      : "";
+    elements.responseStatus.value = inputs.experimentalCondition === "SINGLE_TASK_BASELINE"
+      ? "NOT_APPLICABLE"
+      : "PENDING";
+    elements.responseAccuracy.value = "";
+    logToConsole(`SESSION_STARTED | ${inputs.experimentalCondition} | planned ${inputs.experimentalCondition === "SINGLE_TASK_BASELINE" ? 5 : 8} min`);
+    handleOutput(engine.output({
+      message: "Session 已建立，請開始中央桌面校準",
+      action: "SESSION_STARTED",
+      nowMs: performance.now(),
+    }));
+  },
+  onPause: () => {
+    dataCollector.pause(performance.now());
+    logToConsole("SESSION_PAUSED | timing excluded");
+  },
+  onResume: () => {
+    dataCollector.resume(performance.now());
+    engine.resetTimer();
+    logToConsole("SESSION_RESUMED | fresh debounce required");
+  },
+  onInvalidate: () => {
+    const invalidated = dataCollector.invalidateCurrentRepetition("THERAPIST_INVALIDATED", performance.now());
+    engine.abortCurrentRepetition();
+    logToConsole(invalidated ? "REPETITION_INVALIDATED" : "INVALIDATE_IGNORED | no active repetition");
+    handleOutput(engine.output({
+      message: "目前 repetition 已作廢，請重新在中央起點準備",
+      action: "THERAPIST_INVALIDATED",
+      nowMs: performance.now(),
+    }));
+  },
+  onEndSession: () => {
+    latestDatasetPayload = dataCollector.endSession(engine, performance.now());
+    elements.exportDataset.disabled = false;
+    logToConsole(`SESSION_ENDED | ${latestDatasetPayload.raw_experimental_repetition_logs.length} repetition(s)`);
+    return latestDatasetPayload;
+  },
+});
+
+elements.applyCognitiveResponse.addEventListener("click", () => {
+  const condition = document.getElementById("experimentalCondition").value;
+  dataCollector.setCognitiveResponse({
+    stimulusId: condition === "SINGLE_TASK_BASELINE" ? "none_control" : elements.stimulusId.value.trim(),
+    responseStatus: condition === "SINGLE_TASK_BASELINE" ? "NOT_APPLICABLE" : elements.responseStatus.value,
+    isAccurate: condition === "SINGLE_TASK_BASELINE"
+      ? null
+      : elements.responseAccuracy.value === ""
+        ? null
+        : elements.responseAccuracy.value === "true",
+  });
+  logToConsole("COGNITIVE_RESPONSE_ANNOTATED");
+});
 
 elements.logSnapshot.addEventListener("click", () => {
   maybeLog(lastOutput, "MANUAL_SNAPSHOT");
@@ -270,6 +354,16 @@ elements.exportCsv.addEventListener("click", () => {
     ...sessionEvents.map((event) => columns.map((column) => csvCell(event[column])).join(",")),
   ];
   downloadFile(`${sessionId}.csv`, `\uFEFF${rows.join("\n")}`, "text/csv;charset=utf-8");
+});
+
+elements.exportDataset.addEventListener("click", () => {
+  const payload = latestDatasetPayload || dataCollector.exportPayload(engine);
+  const participant = payload.sandbox_metadata.patient_anonymous_id || "LEVEL3_SESSION";
+  downloadFile(
+    `${participant}_block_${payload.sandbox_metadata.trial_block_number || 0}.json`,
+    JSON.stringify(payload, null, 2),
+    "application/json",
+  );
 });
 
 elements.clearLog.addEventListener("click", () => {
@@ -317,10 +411,11 @@ function drawCanvas() {
   context.setLineDash([]);
 
   const vcpX = lastOutput.metrics?.vcpX;
-  if (Number.isFinite(vcpX)) {
+  const vcpY = lastOutput.metrics?.vcpY;
+  if (Number.isFinite(vcpX) && Number.isFinite(vcpY)) {
     context.fillStyle = "#ffffff";
     context.beginPath();
-    context.arc(vcpX * width, height * 0.74, 12, 0, Math.PI * 2);
+    context.arc(vcpX * width, vcpY * height, 12, 0, Math.PI * 2);
     context.fill();
   }
 
@@ -387,6 +482,10 @@ function cameraLoop(now) {
   updateFps(now);
   lastInferenceAt = now;
   try {
+    if (dashboard?.isPaused) {
+      animationFrameId = requestAnimationFrame(cameraLoop);
+      return;
+    }
     const result = poseLandmarker.detectForVideo(elements.video, now);
     lastPose = result?.landmarks?.[0] || null;
     const worldPose = result?.worldLandmarks?.[0] || null;
@@ -424,7 +523,6 @@ elements.startCamera.addEventListener("click", async () => {
 
 elements.beginCalibration.addEventListener("click", () => {
   engine = new Level3BilateralSandbox(currentConfig());
-  resetSessionLog();
   lastPose = null;
   handleOutput(engine.output({
     message: "已重置，請將雙手合攏並承托於桌面中央",
@@ -461,8 +559,12 @@ function feedSynthetic(options, clock, durationMs, stepMs = 50) {
 
 function runSyntheticCycle() {
   engine = new Level3BilateralSandbox(currentConfig());
-  resetSessionLog();
-  const clock = { value: 0 };
+  const clock = { value: performance.now() };
+  if (!dataCollector.sessionActive) {
+    const inputs = dashboard.getFormInputs();
+    dataCollector.startSession(inputs, clock.value);
+    logToConsole("SYNTHETIC_SESSION_STARTED");
+  }
   feedSynthetic({}, clock, 2100, 50);
   feedSynthetic({}, clock, 850, 50);
   const targetX = engine.calibrationVcpXMedian
@@ -487,6 +589,8 @@ window.render_game_to_text = () => JSON.stringify({
   score: lastOutput.score,
   metrics: lastOutput.metrics,
   logCount: sessionEvents.length,
+  collectedRepetitionCount: dataCollector.repetitions.length,
+  sessionActive: dataCollector.sessionActive,
   targetElevationMetadataDeg: Number(elements.targetElevation.value),
   cameraActive: Boolean(cameraStream),
 });
@@ -508,6 +612,8 @@ window.injectDiagnosticFrame = (poseLandmarks, poseWorldLandmarks = poseLandmark
 window.__level3Diagnostic = {
   get engine() { return engine; },
   get events() { return sessionEvents.slice(); },
+  get dataset() { return dataCollector.exportPayload(engine); },
+  get dashboard() { return dashboard; },
   runSyntheticCycle,
 };
 

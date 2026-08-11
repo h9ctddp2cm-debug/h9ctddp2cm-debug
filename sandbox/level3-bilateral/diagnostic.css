@@ -65,10 +65,26 @@ body {
 
 button,
 input,
-select {
+select,
+textarea {
   min-height: 44px;
   color: inherit;
   font: inherit;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface);
+}
+
+textarea {
+  min-height: 76px;
+  resize: vertical;
 }
 
 button {
@@ -315,6 +331,47 @@ legend,
   font-size: 13px;
 }
 
+.form-grid,
+.annotation-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.form-grid .full {
+  grid-column: 1 / -1;
+}
+
+.session-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.button.danger {
+  border-color: var(--danger);
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.annotation-grid {
+  grid-template-columns: 1.2fr 1fr 1fr auto;
+  align-items: end;
+}
+
+.diagnostic-console {
+  overflow: auto;
+  max-height: 190px;
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid #34463f;
+  border-radius: 8px;
+  color: #8fe2bd;
+  background: #101714;
+  font: 12px/1.55 ui-monospace, monospace;
+  white-space: pre-wrap;
+}
+
 .camera-panel {
   min-width: 0;
   padding: 22px;
@@ -551,6 +608,10 @@ footer {
   .metric-grid {
     grid-template-columns: 1fr 1fr;
   }
+
+  .annotation-grid {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 @media (max-width: 720px) {
@@ -587,8 +648,14 @@ footer {
   }
 
   .metric-grid,
-  .monitor-grid {
+  .monitor-grid,
+  .form-grid,
+  .annotation-grid {
     grid-template-columns: 1fr;
+  }
+
+  .form-grid .full {
+    grid-column: auto;
   }
 
   .canvas-wrap {

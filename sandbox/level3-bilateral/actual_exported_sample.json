@@ -1,0 +1,75 @@
+{
+  "sandbox_metadata": {
+    "protocol_version": "LEVEL3_BILATERAL_SANDBOX_V3.2",
+    "software_version": "BUILD_LEVEL3_V3_2",
+    "patient_anonymous_id": "SUBACUTE_PT_SAMPLE",
+    "clinical_fthue_level": 3,
+    "exploratory_motor_strata": "GROSS_MOTOR_3_4",
+    "affected_side_physical": "RIGHT",
+    "experimental_condition_block": "DUAL_TASK_INTERFERENCE",
+    "assigned_cognitive_load_tier": "HIGH_RUNNING_TOTAL",
+    "trial_block_number": 2,
+    "therapist_selected_target_elevation_deg": 45,
+    "therapist_selected_range_profile": "STANDARD",
+    "therapist_selected_tolerance_mode": "STANDARD",
+    "camera_preprocess_direction_mapping": 1,
+    "therapist_notes": "Synthetic validation payload. No patient data.",
+    "planned_adjunct_duration_minutes": 15,
+    "planned_setup_calibration_minutes": 2,
+    "planned_condition_block_duration_minutes": 8,
+    "session_started_at_iso": "2026-08-11T00:00:00.000Z"
+  },
+  "calibration_constants": {
+    "calibration_vcp_x_median_normalized": 0.5142,
+    "calibration_vcp_y_median_normalized": 0.6841,
+    "calculated_mad_normalized": 0.0145,
+    "dynamic_vcp_tolerance_clamped_normalized": 0.0508,
+    "baseline_shoulder_width_normalized": 0.2641,
+    "baseline_wrist_separation_m": 0.0412
+  },
+  "raw_experimental_repetition_logs": [
+    {
+      "repetition_index": 1,
+      "experimental_condition": "DUAL_TASK_INTERFERENCE",
+      "target_direction_physical": "LEFT",
+      "movement_time_duration_ms": 2680,
+      "return_time_duration_ms": 1940,
+      "max_vertical_y_deviation_normalized": 0.0641,
+      "was_cycle_completed_successfully": true,
+      "was_manually_invalidated": false,
+      "failure_reason": null,
+      "compensation_warnings_count": 1,
+      "cognitive_metrics": {
+        "stimulus_id": "tally_update_04",
+        "patient_response_status": "SUBMITTED",
+        "is_response_accurate": false
+      },
+      "frame_telemetry_stream": [
+        {
+          "timestamp_ms": 25100,
+          "session_elapsed_ms": 25100,
+          "vcp_x_normalized": 0.5142,
+          "vcp_y_normalized": 0.6841,
+          "wrist_separation_m": 0.0412,
+          "shoulder_midpoint_x_normalized": 0.501
+        },
+        {
+          "timestamp_ms": 25160,
+          "session_elapsed_ms": 25160,
+          "vcp_x_normalized": 0.4105,
+          "vcp_y_normalized": 0.7482,
+          "wrist_separation_m": 0.042,
+          "shoulder_midpoint_x_normalized": 0.503
+        },
+        {
+          "timestamp_ms": 25220,
+          "session_elapsed_ms": 25220,
+          "vcp_x_normalized": 0.2941,
+          "vcp_y_normalized": 0.6985,
+          "wrist_separation_m": 0.0418,
+          "shoulder_midpoint_x_normalized": 0.504
+        }
+      ]
+    }
+  ]
+}

@@ -73,6 +73,8 @@ test("robust calibration derives a clamped MAD tolerance and shoulder-scaled tar
 
   assert.equal(engine.currentState, LEVEL3_STATES.MIDLINE_READY);
   assert.ok(Math.abs(engine.calibrationVcpXMedian - 0.5) < 0.005);
+  assert.ok(Math.abs(engine.calibrationVcpYMedian - 0.7) < 0.005);
+  assert.ok(Number.isFinite(engine.calibrationVcpMad));
   assert.ok(engine.dynamicVcpTolerance >= 0.025 && engine.dynamicVcpTolerance <= 0.08);
   assert.ok(Math.abs(engine.scaledTargetRangeX - 0.24) < 0.01);
 });
