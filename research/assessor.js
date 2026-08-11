@@ -821,6 +821,10 @@
     [['painPre', S.painPre], ['fatiguePre', S.fatiguePre], ['painPost', S.post.painPost], ['fatiguePost', S.post.fatiguePost]]
       .forEach(function (p) { if (p[1] !== null && (p[1] < 0 || p[1] > 10)) err(p[0] + ' 超出 0–10 範圍 out of range。'); });
     if (!S.fthue.level) warn('缺少 FTHUE-HK level。');
+    if (!RC.isTestMode && S.timepoint === 'T0' && S.fthue.level &&
+        ['5', '6', '7'].indexOf(String(S.fthue.level)) < 0) {
+      err('不符合正式納入標準：訓練前 FTHUE 必須為 Level 5–7。');
+    }
     if (S.fthue.completed === 'no' && !S.fthue.unableReason) err('FTHUE-HK 未完成但沒有填寫原因（unable without reason）。');
     if (S.grip.unable && !S.grip.unableReason) err('握力標示 unable 但沒有原因（unable without reason）。');
     if (!S.grip.unable && gripMean() === null) warn('握力平均值未能計算：需三次有效測試。');

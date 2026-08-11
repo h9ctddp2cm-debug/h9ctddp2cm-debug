@@ -116,6 +116,9 @@
       if (!F.group || !F.fthue || !F.affectedSide) {
         showBlocker('請填完這頁'); return false;
       }
+      if (!RC.isTestMode && ['5', '6', '7'].indexOf(String(F.fthue)) < 0) {
+        showBlocker('正式 Pilot Study 只納入 FTHUE Level 5–7。'); return false;
+      }
       if (!F.safetyConfirmed) { showBlocker('請先確認病人可以安全開始'); return false; }
     }
     if (step === 2) {

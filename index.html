@@ -150,8 +150,8 @@ html,body{
 .hud-item .hud-value{ font-size:30px; line-height:1.1; font-weight:800; }
 
 .status-bar{
-  position:absolute; top:82px; right:12px; bottom:auto; left:auto; z-index:20; transform:none;
-  width:min(270px,30vw); text-align:right;
+  position:absolute; top:92px; left:12px; right:auto; bottom:auto; z-index:20; transform:none;
+  width:min(210px,24vw); text-align:left;
   padding:8px 10px;
   background:rgba(0,0,0,0.84); border:2px solid rgba(255,255,255,.72);
   border-radius:12px; box-shadow:0 4px 14px rgba(0,0,0,.30);
@@ -493,7 +493,7 @@ html,body{
   .game-control-btn{ min-width:110px; min-height:56px; font-size:19px; }
   #levelIntroBanner{ top:236px !important; right:8px !important; width:min(240px,54vw) !important; padding:7px 8px !important; }
   #persistentRules{ top:226px !important; right:8px !important; left:auto !important; max-width:min(240px,54vw) !important; padding:5px 7px !important; font-size:11px !important; }
-  .status-bar{ top:158px; right:8px; bottom:auto; left:auto; width:min(240px,54vw); padding:7px 8px; transform:none; }
+  .status-bar{ top:158px; left:8px; right:auto; bottom:auto; width:min(210px,42vw); padding:7px 8px; transform:none; }
   .action-main{ font-size:19px; }
   .action-detail{ font-size:11px; }
 }
@@ -792,7 +792,6 @@ html,body{
         <div class="research-field">
           <label for="researchLevel" id="pilotLevelLabel">本節遊戲前 FTHUE 分層</label>
           <select id="researchLevel">
-            <option value="4">FTHUE Level 4（個人化握放）</option>
             <option value="5">FTHUE Level 5（握放）</option>
             <option value="6">FTHUE Level 6（拇食指捏放）</option>
             <option value="7">FTHUE Level 7（精細操作）</option>
@@ -1683,11 +1682,11 @@ function activeAffectedSide(){
   return research.active ? (research.affectedSide || 'left') : (state.affectedSide || 'right');
 }
 function affectedSideSign(){
-  // 相機及游標均以鏡像顯示：左患側的外方在畫面右邊，右患側則在畫面左邊。
-  return activeAffectedSide() === 'left' ? 1 : -1;
+  // 患側名稱直接對應畫面方向：右患側放右邊，左患側放左邊。
+  return activeAffectedSide() === 'right' ? 1 : -1;
 }
 function affectedDirectionLabel(){
-  return activeAffectedSide() === 'left' ? '向畫面右外下方放置' : '向畫面左外下方放置';
+  return activeAffectedSide() === 'right' ? '向畫面右外下方放置' : '向畫面左外下方放置';
 }
 function affectedSelectionZone(){
   const cw = gameCanvas.width, ch = gameCanvas.height;
@@ -2245,9 +2244,9 @@ const PILOT_TEXT = {
     pinchCarryPrompt:'維持捏住，搬到目標位置。',
     pinchReleasePrompt:'張開拇食指並維持，放下物件。',
     ruleSwitchOn:'規則轉換：下一件請放到另一個目標。',
-    strataNote:'FTHUE 4：按患者主動張手及握手幅度作個人化握放；FTHUE 5：握放；FTHUE 6：真正拇食指捏住、維持及放下；FTHUE 7：較小物件、干擾及規則轉換。分層代表任務要求，不是研究組別。',
+    strataNote:'正式 Pilot Study 納入 FTHUE Level 5–7。FTHUE 5：握放；FTHUE 6：真正拇食指捏住、維持及放下；FTHUE 7：較小物件、干擾及規則轉換。分層代表任務要求，不是研究組別。',
     level:'本節遊戲前 FTHUE 分層',
-    levels:['FTHUE Level 4（個人化握放）','FTHUE Level 5（握放）','FTHUE Level 6（拇食指捏放）','FTHUE Level 7（精細操作）'],
+    levels:['FTHUE Level 5（握放）','FTHUE Level 6（拇食指捏放）','FTHUE Level 7（精細操作）'],
     side:'患側', left:'左', right:'右', assistance:'本節協助程度',
     none:'無協助', verbal:'口頭提示', physical:'身體協助',
     tool:'本節使用工具', tools:['不使用工具','衣夾／食物夾','筷子','其他指定工具'],
@@ -2264,7 +2263,7 @@ const PILOT_TEXT = {
     advanced:'進階版',
     advancedDesc:'完成相同分類任務，同時抑制動物干擾物。每節使用預先選定的固定難度，不會在節內自動升級。',
     note:'治療師按當日 FTHUE、理解、疲勞、視覺搜尋及安全選擇起始難度。連續兩個區組的動作及認知正確率均達 80% 才可只提升一項難度；60–79% 維持；低於 60% 只降低一項。評估模式不會自動調整。',
-    protocol:'<b>研究定位：</b>FTHUE 4–7 分層、患者自選情境的上肢 motor-cognitive dual-task 遊戲，作為職業治療的附加訓練。訓練節可自選插花、茶樓飲茶、晾衫／衣物分類、啤牌或麻雀；煮飯不納入研究。主要評估安全性、可行性、可接受性及技術穩定性；功能及機制結果只作探索。' +
+    protocol:'<b>研究定位：</b>正式納入 FTHUE Level 5–7，按分層及患者自選情境提供上肢 motor-cognitive dual-task 遊戲，作為職業治療的附加訓練。訓練節可自選插花、茶樓飲茶、晾衫／衣物分類、啤牌或麻雀；煮飯不納入研究。主要評估安全性、可行性、可接受性及技術穩定性；功能及機制結果只作探索。' +
       '<br><br><b>五節訓練：</b>每節計劃 15 分鐘 active training：2 分鐘校準及引導練習、5 分鐘計分雙重任務、按參加者需要的休息（沒有固定時間，另行記錄）、5 分鐘同難度計分雙重任務、2 分鐘即時回顧。不可寫成 15 分鐘主動遊戲。' +
       '<br><b>T0／T1 評估：</b>固定使用茶樓飲茶；單一動作、單一認知及雙重任務各 2 分鐘，區組之間按參加者需要休息（participant-responsive，沒有固定 1 分鐘）。同一參加者 T0、T1 使用相同工具、患手、坐姿、物件及目標大小、位置、時間、認知難度及區組次序。T0 於首次訓練前 24 小時內，T1 於第五節後 24–48 小時。評估時關閉獎勵及難度自動調整。' +
       '<br><b>主要結果：</b>招募、留住及五節完成率；實際時間；技術故障及追蹤中斷；不良事件；疼痛、疲勞、接受程度及設定時間。' +
@@ -2317,9 +2316,9 @@ const PILOT_TEXT = {
     pinchCarryPrompt:'Keep pinching and carry the object to the target.',
     pinchReleasePrompt:'Open thumb and index finger and hold to release.',
     ruleSwitchOn:'Rule switch: place the next item at the other target.',
-    strataNote:'FTHUE 4: grasp and release calibrated to the participant’s active opening and closing range. FTHUE 5: grasp and release. FTHUE 6: true thumb–index pinch, hold and release. FTHUE 7: smaller objects, distractors and rule switching. Strata represent task demands, not study groups.',
+    strataNote:'Formal Pilot Study inclusion is FTHUE Levels 5–7. FTHUE 5: grasp and release. FTHUE 6: true thumb–index pinch, hold and release. FTHUE 7: smaller objects, distractors and rule switching. Strata represent task demands, not study groups.',
     level:'Pre-session FTHUE stratum',
-    levels:['FTHUE Level 4 (personalised grasp and release)','FTHUE Level 5 (grasp and release)','FTHUE Level 6 (thumb–index pinch and release)','FTHUE Level 7 (fine manipulation)'],
+    levels:['FTHUE Level 5 (grasp and release)','FTHUE Level 6 (thumb–index pinch and release)','FTHUE Level 7 (fine manipulation)'],
     side:'Affected side', left:'Left', right:'Right', assistance:'Assistance during this session',
     none:'None', verbal:'Verbal cueing', physical:'Physical assistance',
     tool:'Tool used in this session', tools:['No tool','Clothes peg / food tong','Chopsticks','Other specified tool'],
@@ -2336,7 +2335,7 @@ const PILOT_TEXT = {
     advanced:'Advanced',
     advancedDesc:'Complete the same sorting task while inhibiting animal distractors. The preselected difficulty remains fixed within each session.',
     note:'The therapist selects the starting level using current FTHUE, comprehension, fatigue, visual search and safety. Increase only one difficulty variable after motor and cognitive accuracy are both at least 80% in two consecutive blocks; maintain at 60–79%; reduce one variable below 60%. Assessment mode never auto-adjusts.',
-    protocol:'<b>Study positioning:</b> An FTHUE 4–7 stratified, patient-selected upper-limb motor-cognitive dual-task game used as an adjunct to occupational therapy. Training choices are Flower arranging, Tea house, Laundry sorting, Playing cards, and Mahjong; Cooking is excluded. Primary aims are safety, feasibility, acceptability and technical stability; functional and mechanistic outcomes are exploratory.' +
+    protocol:'<b>Study positioning:</b> Formal inclusion is restricted to FTHUE Levels 5–7. The patient-selected, stratified upper-limb motor-cognitive dual-task game is used as an adjunct to occupational therapy. Training choices are Flower arranging, Tea house, Laundry sorting, Playing cards, and Mahjong; Cooking is excluded. Primary aims are safety, feasibility, acceptability and technical stability; functional and mechanistic outcomes are exploratory.' +
       '<br><br><b>Five training sessions:</b> Each session plans 15 minutes of active training: 2 minutes of calibration and guided practice, 5 minutes of scored dual-task training, a participant-responsive rest (no fixed duration, logged separately), another 5-minute scored dual-task block at the same difficulty, and a 2-minute immediate review. Do not describe this as 15 minutes of active gameplay.' +
       '<br><b>T0/T1 assessment:</b> Tea house is the fixed standardised task. Single motor, single cognitive and dual-task blocks last 2 minutes each, separated by participant-responsive rests (no fixed one-minute rest). Within each participant, T0 and T1 use the same tool, affected hand, seating, object and target size and location, duration, cognitive difficulty and block order. Complete T0 within 24 hours before Session 1 and T1 24–48 hours after Session 5. Rewards and automatic progression are disabled during assessment.' +
       '<br><b>Primary outcomes:</b> recruitment, retention and five-session completion; actual session time; technical and tracking failures; adverse events; pain, fatigue, acceptability and setup time.' +
@@ -4412,7 +4411,7 @@ function setupTargets(){
   const portrait = isPortrait();
   const style = getTheme().targetStyle || 'panel';
   const sideSign = affectedSideSign();
-  // 鏡像畫面：左患側的外方顯示於畫面右下，右患側顯示於畫面左下。
+  // 患側名稱直接對應畫面方向：右患側向右下，左患側向左下。
   const tw = portrait ? Math.min(cw * 0.29, 230) : Math.min(cw * 0.24, 260);
   const th = tw * (style === 'steamer' ? 0.74 : 0.62);
   const outsideX = sideSign > 0 ? cw * 0.78 : cw * 0.22;
@@ -7279,16 +7278,18 @@ function mjLayout(){
   const handTop = ch * (narrow ? 0.42 : 0.40);
   const groups = mj.groups.map((g, i)=>{
     const n = mj.groups.length;
-    const cols = Math.min(2, n);
+    const cols = narrow ? Math.min(2, n) : Math.min(3, n);
     const rows = Math.ceil(n / cols);
     const row = Math.floor(i / cols), col = i % cols;
     const rowCount = Math.min(cols, n - row*cols);
     const gw = narrow ? Math.min(184, (cw - 30) / cols - 8)
-                      : Math.min(cw * 0.25, tileW * 3.4 + 34);
-    const gx = cw/2 + (col - (rowCount-1)/2) * Math.min(gw * 1.08, cw * 0.27);
-    const baseY = narrow ? ch*0.735 : ch*0.72;
-    const gy = baseY + row * Math.min(ch*0.125, th*1.42);
-    const gh = narrow ? Math.min(ch*0.12, th*1.35) : th*1.62;
+                      : Math.min(220, cw * 0.19);
+    const groupCentreX = cw/2 - affectedSideSign() * cw*0.08;
+    const gx = groupCentreX +
+      (col - (rowCount-1)/2) * Math.min(gw + 16, cw * 0.195);
+    const baseY = narrow ? ch*0.68 : ch*0.77;
+    const gh = narrow ? Math.min(ch*0.12, th*1.35) : Math.min(150, ch*0.18);
+    const gy = baseY + row * (gh + 16);
     return { id:g.id, x:gx, y:gy, w:gw, h:gh,
              r: Math.max(gw, gh) * 0.5, ref:g, row, rows };
   });
