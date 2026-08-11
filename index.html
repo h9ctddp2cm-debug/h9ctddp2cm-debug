@@ -12,6 +12,10 @@
   --orange:#E07B39; --green:#2E7D52; --red:#C0392B; --gold:#D4A017;
 }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+.sr-only{
+  position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+  overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
+}
 html,body{
   margin:0; padding:0; width:100%; height:100%; overflow:hidden;
   font-family:-apple-system,'PingFang TC','Noto Sans TC',sans-serif;
@@ -217,6 +221,44 @@ html,body{
   color:var(--teal-dark); font:800 18px/1.35 inherit; cursor:pointer;
 }
 .research-entry small{ display:block; margin-top:5px; color:#4a5d5a; font-size:13px; font-weight:650; }
+.pilot-access-overlay{
+  position:fixed; inset:0; z-index:1000; display:none;
+  align-items:center; justify-content:center; padding:20px;
+  background:rgba(20,35,33,.56); backdrop-filter:blur(5px);
+}
+.pilot-access-overlay.show{ display:flex; }
+.pilot-access-card{
+  width:min(520px,100%); padding:30px 24px 24px;
+  border:2px solid var(--border); border-radius:22px;
+  background:#fff; box-shadow:0 18px 50px rgba(0,0,0,.24);
+  text-align:center;
+}
+.pilot-access-card h2{
+  margin:0 0 8px; color:var(--teal-dark); font-size:clamp(25px,5vw,34px);
+}
+.pilot-access-card p{ margin:0 0 22px; color:#586865; font-size:17px; }
+.pilot-access-card input{
+  width:100%; min-height:62px; padding:12px 16px;
+  border:2px solid #b9c8c5; border-radius:14px;
+  background:#fff; color:#111; font:700 24px/1 inherit;
+  text-align:center; letter-spacing:.12em;
+}
+.pilot-access-card input:focus{ outline:4px solid rgba(26,107,90,.18); border-color:var(--teal); }
+.pilot-access-error{
+  min-height:24px; margin:10px 0 2px; color:#a1261b;
+  font-size:16px; font-weight:800;
+}
+.pilot-access-actions{ display:grid; grid-template-columns:1fr 1.5fr; gap:12px; margin-top:10px; }
+.pilot-access-actions button{
+  min-height:58px; border-radius:14px; font:800 19px/1 inherit; cursor:pointer;
+}
+.pilot-access-cancel{ border:2px solid #80918e; background:#fff; color:#30433f; }
+.pilot-access-submit{ border:2px solid var(--teal); background:var(--teal); color:#fff; }
+@media (max-width:520px){
+  .pilot-access-card{ padding:26px 18px 20px; }
+  .pilot-access-actions{ grid-template-columns:1fr; }
+  .pilot-access-submit{ grid-row:1; }
+}
 #screen-research{ align-items:center; justify-content:flex-start; padding:22px 16px 40px; }
 .research-card{
   width:100%; max-width:760px; padding:22px; border:1.5px solid var(--border);
@@ -690,6 +732,23 @@ html,body{
     <footer style="margin-top:32px;padding:16px 12px 8px;text-align:center;font-size:11px;color:var(--muted);line-height:1.6;border-top:1px solid var(--border);opacity:0.75;max-width:760px;width:100%;">
       訓練由仁濟醫院職業治療師鄧姑娘設計，網頁由 AI 協助製作
     </footer>
+  </div>
+
+  <div class="pilot-access-overlay" id="pilotAccessOverlay" role="dialog" aria-modal="true" aria-labelledby="pilotAccessTitle">
+    <form class="pilot-access-card" id="pilotAccessForm">
+      <h2 id="pilotAccessTitle">Pilot Study</h2>
+      <p>請輸入密碼</p>
+      <label class="sr-only" for="pilotAccessCode">Pilot Study 密碼</label>
+      <input id="pilotAccessCode" type="password" inputmode="text" autocomplete="off"
+        maxlength="20" placeholder="輸入密碼" data-testid="input-pilot-password">
+      <div class="pilot-access-error" id="pilotAccessError" role="alert" aria-live="polite"></div>
+      <div class="pilot-access-actions">
+        <button class="pilot-access-cancel" id="btnPilotAccessCancel" type="button"
+          data-testid="button-cancel-pilot-login">取消</button>
+        <button class="pilot-access-submit" type="submit"
+          data-testid="button-submit-pilot-login">進入</button>
+      </div>
+    </form>
   </div>
 
   <!-- ============ PILOT RESEARCH SETUP ============ -->
@@ -2510,8 +2569,54 @@ function applyInterventionDeepLink(){
     window.setTimeout(()=>document.getElementById('btnResearchBegin').click(), 50);
   }
 }
-document.getElementById('btnResearchMode').addEventListener('click', ()=>{
-  window.location.href = 'research/index.html';
+const pilotAccessOverlay = document.getElementById('pilotAccessOverlay');
+const pilotAccessCode = document.getElementById('pilotAccessCode');
+const pilotAccessError = document.getElementById('pilotAccessError');
+function openPilotAccess(){
+  pilotAccessError.textContent = '';
+  pilotAccessCode.value = '';
+  pilotAccessOverlay.classList.add('show');
+  window.setTimeout(()=>pilotAccessCode.focus(), 50);
+}
+function closePilotAccess(){
+  pilotAccessOverlay.classList.remove('show');
+  pilotAccessCode.value = '';
+  pilotAccessError.textContent = '';
+  document.getElementById('btnResearchMode').focus();
+}
+async function sha256Hex(value){
+  const bytes = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(digest), b=>b.toString(16).padStart(2,'0')).join('');
+}
+document.getElementById('btnResearchMode').addEventListener('click', openPilotAccess);
+document.getElementById('btnPilotAccessCancel').addEventListener('click', closePilotAccess);
+pilotAccessOverlay.addEventListener('click', e=>{
+  if(e.target === pilotAccessOverlay) closePilotAccess();
+});
+document.addEventListener('keydown', e=>{
+  if(e.key === 'Escape' && pilotAccessOverlay.classList.contains('show')) closePilotAccess();
+});
+document.getElementById('pilotAccessForm').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const entered = pilotAccessCode.value.trim();
+  if(!entered){
+    pilotAccessError.textContent = '請輸入密碼';
+    pilotAccessCode.focus();
+    return;
+  }
+  try{
+    const hash = await sha256Hex(entered);
+    if(hash === '35619761ce97f0a1e08220882954ce869ad9c3d411b2bbba529f7f4a7f0c12e6'){
+      pilotAccessError.textContent = '';
+      window.location.href = 'research/index.html';
+      return;
+    }
+    pilotAccessError.textContent = '密碼不正確';
+    pilotAccessCode.select();
+  }catch(err){
+    pilotAccessError.textContent = '暫時無法驗證，請重新載入頁面';
+  }
 });
 window.addEventListener('load', ()=>{
   try{
