@@ -19,31 +19,56 @@
 </header>
 
 <main class="rs-shell">
-  <nav class="rs-hub-grid" aria-label="資料收集入口">
-    <a class="rs-hub-entry" href="research/assessor.html?timepoint=T0" data-testid="link-step-t0">
+  <section id="modeChoice" data-testid="section-mode-choice">
+    <h2 class="rs-section-title">請選擇模式</h2>
+    <nav class="rs-hub-grid" aria-label="模式選擇">
+      <a class="rs-hub-entry" href="research/index.html?mode=test" data-testid="link-mode-test">
+        <span class="rs-hub-num" aria-hidden="true">試</span>
+        <strong>測試模式</strong>
+        <span class="rs-hub-desc">沒有病人，只用來試按版面</span>
+      </a>
+      <a class="rs-hub-entry rs-hub-entry-primary" href="research/index.html?mode=normal" data-testid="link-mode-normal">
+        <span class="rs-hub-num" aria-hidden="true">正</span>
+        <strong>正常模式</strong>
+        <span class="rs-hub-desc">正式收集病人數據</span>
+      </a>
+    </nav>
+  </section>
+
+  <section id="workflowChoice" class="rs-hidden" data-testid="section-workflow-choice">
+    <div class="rs-mode-heading">
+      <div>
+        <h2 id="modeTitle">資料收集</h2>
+        <p id="modeDescription" class="rs-lead"></p>
+      </div>
+      <a class="rs-btn rs-btn-secondary rs-btn-small" href="research/index.html" data-testid="link-change-mode">重新選擇模式</a>
+    </div>
+    <nav class="rs-hub-grid" aria-label="資料收集入口">
+    <a class="rs-hub-entry" href="research/assessor.html?timepoint=T0" data-mode-link data-testid="link-step-t0">
       <span class="rs-hub-num" aria-hidden="true">1</span>
       <strong>訓練前 T0</strong>
       <span class="rs-hub-desc">記錄訓練前數據</span>
     </a>
 
-    <a class="rs-hub-entry" href="research/intervention.html" data-testid="link-step-session">
+    <a class="rs-hub-entry" href="research/intervention.html" data-mode-link data-testid="link-step-session">
       <span class="rs-hub-num" aria-hidden="true">2</span>
       <strong>Session 1–5</strong>
       <span class="rs-hub-desc">每次訓練後記錄</span>
     </a>
 
-    <a class="rs-hub-entry" href="research/assessor.html?timepoint=T1" data-testid="link-step-t1">
+    <a class="rs-hub-entry" href="research/assessor.html?timepoint=T1" data-mode-link data-testid="link-step-t1">
       <span class="rs-hub-num" aria-hidden="true">3</span>
       <strong>訓練後 T1</strong>
       <span class="rs-hub-desc">記錄訓練後數據</span>
     </a>
 
-    <a class="rs-hub-entry" href="research/researcher.html" data-testid="link-step-analysis">
+    <a class="rs-hub-entry" href="research/researcher.html" data-mode-link data-testid="link-step-analysis">
       <span class="rs-hub-num" aria-hidden="true">4</span>
       <strong>整理及比較</strong>
       <span class="rs-hub-desc">按匿名編號整理前後差異</span>
     </a>
-  </nav>
+    </nav>
+  </section>
 
   <details class="rs-details" data-testid="details-hub-governance">
     <summary>重要規則</summary>
@@ -54,5 +79,7 @@
     </div>
   </details>
 </main>
+<script src="research/research-common.js"></script>
+<script src="research/mode.js"></script>
 </body>
 </html>

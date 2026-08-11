@@ -14,7 +14,7 @@
   <h1>Pilot Study 資料記錄</h1>
   <div class="rs-topbar-actions">
     <span class="rs-status-pill rs-status-pending" data-testid="status-download" id="statusDownload">⬤ 尚未下載</span>
-    <a class="rs-btn rs-btn-secondary rs-btn-small" href="index.html" data-testid="link-back-hub">返回</a>
+    <a class="rs-btn rs-btn-secondary rs-btn-small" href="index.html" data-mode-link data-testid="link-back-hub">返回</a>
   </div>
 </header>
 
@@ -197,10 +197,6 @@
           <button type="button" class="rs-btn rs-btn-secondary rs-btn-small" data-testid="button-add-session">加入清單</button>
           <button type="button" class="rs-btn rs-btn-secondary rs-btn-small" data-testid="button-download-sessions">下載紀錄</button>
           <button type="button" class="rs-btn rs-btn-secondary rs-btn-small" data-testid="button-download-rest-log">下載休息／事故</button>
-          <select class="rs-select" data-testid="select-test-preset" id="selTestPreset">
-            <option value="">測試：關</option><option value="TEST001">TEST001</option>
-            <option value="TEST002">TEST002</option><option value="TEST003">TEST003</option>
-          </select>
         </div>
         <div class="rs-table-wrap"><table class="rs-table" data-testid="table-sessions">
           <thead><tr><th>#</th><th>ID</th><th>Session</th><th>組別</th><th>Active</th><th>Rest</th><th>Fidelity</th><th>Deviation</th><th>TEST</th></tr></thead>
@@ -217,6 +213,7 @@
 </nav>
 
 <script src="research-common.js"></script>
+<script src="mode.js"></script>
 <script src="intervention.js"></script>
 </body>
 </html>

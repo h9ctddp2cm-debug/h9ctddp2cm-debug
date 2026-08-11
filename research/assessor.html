@@ -18,7 +18,7 @@
   <div class="rs-topbar-actions">
     <span class="rs-status-pill rs-status-pending" data-testid="status-download" id="statusDownload">⬤ 尚未下載</span>
     <button type="button" class="rs-btn rs-btn-secondary rs-btn-small" data-testid="button-toggle-voice" id="btnToggleVoice">🔊 語音：開</button>
-    <a class="rs-btn rs-btn-secondary rs-btn-small" href="index.html" data-testid="link-back-hub">返回資料收集</a>
+    <a class="rs-btn rs-btn-secondary rs-btn-small" href="index.html" data-mode-link data-testid="link-back-hub">返回資料收集</a>
   </div>
 </header>
 
@@ -530,17 +530,12 @@
   </div>
   <div class="rs-nav-group">
     <button type="button" class="rs-btn rs-btn-secondary" data-testid="button-save-draft" id="btnSaveDraft">儲存草稿</button>
-    <select class="rs-select" style="max-width:260px" data-testid="select-test-preset" id="selTestPreset" aria-label="測試模式 Test mode preset">
-      <option value="">測試模式：關 Test mode: off</option>
-      <option value="TEST001">TEST001 完整 T0＋T1</option>
-      <option value="TEST002">TEST002 休息／暫停</option>
-      <option value="TEST003">TEST003 捏力 unable＋缺失資料</option>
-    </select>
     <button type="button" class="rs-btn" data-testid="button-next-step" id="btnNext">下一步 ▶</button>
   </div>
 </nav>
 
 <script src="research-common.js"></script>
+<script src="mode.js"></script>
 <script src="assessor.js"></script>
 </body>
 </html>

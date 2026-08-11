@@ -82,7 +82,6 @@
     $('[data-testid="button-download-sessions"]').addEventListener('click', downloadSessions);
     $('[data-testid="button-download-rest-log"]').addEventListener('click', downloadRestLog);
     $('#btnMarkNormal').addEventListener('click', markNormalSession);
-    $('#selTestPreset').addEventListener('change', function () { applyPreset(this.value); });
     $('#btnInterventionPrev').addEventListener('click', function () { gotoStep(uiStep - 1); });
     $('#btnInterventionNext').addEventListener('click', function () {
       if (validateStep(uiStep)) gotoStep(uiStep + 1);
@@ -99,6 +98,8 @@
     if (step === 1) {
       var id = RC.validateId(F.participantId);
       if (!id.ok) { showBlocker(id.msg); return false; }
+      if (RC.isTestMode && !RC.isTestId(F.participantId)) { showBlocker('測試模式請使用 TEST 開頭的編號，例如 TEST001。'); return false; }
+      if (!RC.isTestMode && RC.isTestId(F.participantId)) { showBlocker('正常模式不可使用 TEST 編號。請輸入正式匿名編號，例如 P001。'); return false; }
       if (!F.group || !F.fthue || !F.affectedSide || !F.therapistCode || !F.datetime) {
         showBlocker('請填完這頁'); return false;
       }
@@ -250,6 +251,7 @@
     var o = {
       record_version: RC.VERSION,
       record_type: 'intervention_session',
+      collection_mode: RC.isTestMode ? 'test' : 'normal',
       test_record: RC.isTestId(F.participantId) ? 'TEST' : '',
       participant_id: F.participantId,
       group: F.group,
@@ -377,6 +379,7 @@
   }
 
   function init() {
+    if (RC.isTestMode) F.participantId = 'TEST001';
     renderFidelity();
     bind();
     initRest();

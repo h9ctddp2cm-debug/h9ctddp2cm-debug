@@ -687,6 +687,7 @@
     function add(name, value, desc) { f.push({ name: name, value: (value === null || value === undefined) ? '' : value, desc: desc }); }
     add('record_version', RC.VERSION, 'Assessment record version');
     add('record_type', 'outcome_assessment', 'T0/T1 outcome assessment record');
+    add('collection_mode', RC.isTestMode ? 'test' : 'normal', 'Test practice or formal data collection');
     add('assessment_model', 'single_researcher_non_blinded', 'Research workflow used for outcome assessment');
     add('outcome_assessor_blinded', 'no', 'Outcome assessor was not blinded to allocation');
     add('test_record', RC.isTestId(S.participantId) ? 'TEST' : '', 'TEST marker for non-research practice data');
@@ -1061,6 +1062,8 @@
     if (ui.step === 1) {
       var r = RC.validateId(S.participantId);
       if (!r.ok) { showBlocker(r.msg); return false; }
+      if (RC.isTestMode && !RC.isTestId(S.participantId)) { showBlocker('測試模式請使用 TEST 開頭的編號，例如 TEST001。'); return false; }
+      if (!RC.isTestMode && RC.isTestId(S.participantId)) { showBlocker('正常模式不可使用 TEST 編號。請輸入正式匿名編號，例如 P001。'); return false; }
       if (!S.assessorCode) { showBlocker('請輸入記錄者代碼 Recorder code。'); return false; }
       if (!S.affectedSide) { showBlocker('請選擇患側 Affected side。'); return false; }
       return true;
@@ -1143,8 +1146,13 @@
 
   /* ---------------- init ---------------- */
   function init() {
-    var requestedTimepoint = new URLSearchParams(window.location.search).get('timepoint');
+    var params = new URLSearchParams(window.location.search);
+    var requestedTimepoint = params.get('timepoint');
     if (requestedTimepoint === 'T0' || requestedTimepoint === 'T1') S.timepoint = requestedTimepoint;
+    if (RC.isTestMode) {
+      S.testMode = 'manual';
+      S.participantId = 'TEST001';
+    }
     $$('.rs-scale').forEach(buildScale);
     bindFields();
     initRest();
@@ -1202,8 +1210,6 @@
       this.textContent = RC.voiceEnabled ? '🔊 語音：開' : '🔇 語音：關';
       if (!RC.voiceEnabled) RC.stopSpeak();
     });
-    $('#selTestPreset').addEventListener('change', function () { applyPreset(this.value); });
-
     RC.installUnloadGuard(isDirty);
   }
   function showDraftToast() {

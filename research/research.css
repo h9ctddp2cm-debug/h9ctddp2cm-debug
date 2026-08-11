@@ -50,6 +50,9 @@ a{ color:var(--teal-dark); }
   min-height:150px; text-decoration:none;
 }
 .rs-hub-entry:hover{ background:#EEF7F3; }
+.rs-hub-entry-primary{ background:#F0FAF6; border-width:3px; }
+.rs-section-title{ margin:0 0 14px; font-size:24px; }
+.rs-mode-heading{ display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:16px; }
 .rs-hub-entry:focus-visible,button:focus-visible,a:focus-visible,input:focus-visible,
 select:focus-visible,textarea:focus-visible{ outline:4px solid var(--focus); outline-offset:2px; }
 .rs-hub-entry .rs-hub-num{
@@ -224,6 +227,7 @@ body.rs-test .rs-test-banner{ display:block; }
 .rs-mono{ font-family:ui-monospace,SFMono-Regular,Menlo,monospace; }
 
 @media (max-width:760px){
+  .rs-mode-heading{ align-items:flex-start; flex-direction:column; }
   .rs-scale{ grid-template-columns:repeat(6,minmax(48px,1fr)); }
   .rs-simple-rating{ grid-template-columns:repeat(2,minmax(120px,1fr)); }
   .rs-topbar h1{ font-size:18px; }

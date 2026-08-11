@@ -16,7 +16,7 @@
     <span class="rs-sub">按匿名編號整理訓練前後資料</span>
   </div>
   <div class="rs-topbar-actions">
-    <a class="rs-btn rs-btn-secondary rs-btn-small" href="index.html" data-testid="link-back-hub">返回資料收集</a>
+    <a class="rs-btn rs-btn-secondary rs-btn-small" href="index.html" data-mode-link data-testid="link-back-hub">返回資料收集</a>
   </div>
 </header>
 
@@ -108,7 +108,7 @@
       <button type="button" class="rs-btn" data-testid="button-export-change" id="btnExportChange">下載前後比較分析表</button>
       <button type="button" class="rs-btn" data-testid="button-export-feasibility" id="btnExportFeasibility">下載可行性及五節走勢</button>
       <button type="button" class="rs-btn rs-btn-secondary" data-testid="button-export-deviations" id="btnExportDeviations">匯出特殊情況紀錄</button>
-      <button type="button" class="rs-btn rs-btn-secondary" data-testid="button-load-test-data" id="btnLoadTestData">載入測試資料 TEST001–TEST003</button>
+      <button type="button" class="rs-btn rs-btn-secondary" data-test-only data-testid="button-load-test-data" id="btnLoadTestData">載入示範測試資料</button>
     </div>
     <p class="rs-hint">進展準則是本研究預先設定的本地準則，並非通用標準</p>
     <div id="exportFeedback" data-testid="text-export-feedback" style="margin-top:12px"></div>
@@ -141,6 +141,7 @@
 </main>
 
 <script src="research-common.js"></script>
+<script src="mode.js"></script>
 <script src="researcher.js"></script>
 </body>
 </html>
