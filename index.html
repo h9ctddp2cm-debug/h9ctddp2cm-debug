@@ -1683,10 +1683,41 @@ function activeAffectedSide(){
   return research.active ? (research.affectedSide || 'left') : (state.affectedSide || 'right');
 }
 function affectedSideSign(){
-  return activeAffectedSide() === 'right' ? 1 : -1;
+  // 相機及游標均以鏡像顯示：左患側的外方在畫面右邊，右患側則在畫面左邊。
+  return activeAffectedSide() === 'left' ? 1 : -1;
 }
 function affectedDirectionLabel(){
-  return activeAffectedSide() === 'right' ? '向右外下方放置' : '向左外下方放置';
+  return activeAffectedSide() === 'left' ? '向畫面右外下方放置' : '向畫面左外下方放置';
+}
+function affectedSelectionZone(){
+  const cw = gameCanvas.width, ch = gameCanvas.height;
+  const w = Math.min(220, cw * 0.22);
+  const h = Math.min(160, ch * 0.18);
+  return {
+    id:'affected-selection-zone',
+    x:affectedSideSign() > 0 ? cw * 0.86 : cw * 0.14,
+    y:ch * 0.78, w, h,
+  };
+}
+function pointInsideZone(x, y, zone){
+  return !!zone && x >= zone.x-zone.w/2 && x <= zone.x+zone.w/2 &&
+    y >= zone.y-zone.h/2 && y <= zone.y+zone.h/2;
+}
+function drawAffectedSelectionZone(ctx, label){
+  const z = affectedSelectionZone();
+  ctx.save();
+  ctx.fillStyle = 'rgba(255,255,255,0.94)';
+  ctx.strokeStyle = '#FFD166';
+  ctx.lineWidth = 6;
+  ctx.setLineDash([14,10]);
+  rrPath(ctx, z.x-z.w/2, z.y-z.h/2, z.w, z.h, 20);
+  ctx.fill(); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#12564a';
+  ctx.font = 'bold 22px "PingFang TC","Noto Sans TC",sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(label || '放牌區', z.x, z.y);
+  ctx.restore();
 }
 
 /* ==================== 虛擬時鐘（用於 deterministic QA hook） ==================== */
@@ -4381,7 +4412,7 @@ function setupTargets(){
   const portrait = isPortrait();
   const style = getTheme().targetStyle || 'panel';
   const sideSign = affectedSideSign();
-  // 目標全部放在患側外下方；右患側向右下，左患側鏡像向左下。
+  // 鏡像畫面：左患側的外方顯示於畫面右下，右患側顯示於畫面左下。
   const tw = portrait ? Math.min(cw * 0.29, 230) : Math.min(cw * 0.24, 260);
   const th = tw * (style === 'steamer' ? 0.74 : 0.62);
   const outsideX = sideSign > 0 ? cw * 0.78 : cw * 0.22;
@@ -5906,14 +5937,16 @@ function updateHeldReleasePrompt(){
   const text = isPinchMode()
     ? '捏住咗。請張開拇指同食指放低。'
     : ((advCurrent === 'mahjong' || advCurrent === 'cards')
-      ? '攞住咗。請張開手放低，先至計分。'
+      ? '攞住咗。移到患側外方放牌區，再張開手。'
       : '攞住咗。移到目標後，請張開手放低。');
   speakCantonese(text);
 }
 
 function advDrawHeldReleasePrompt(ctx, held){
   if(!isGraspStyleMode() || !held || cursorX < 0) return;
-  const text = isPinchMode() ? '已捏住 · 請張開拇食指放下' : '已拿住 · 請張手放下';
+  const text = (advCurrent === 'mahjong' || advCurrent === 'cards')
+    ? '已拿住 · 移到放牌區'
+    : (isPinchMode() ? '已捏住 · 請張開拇食指放下' : '已拿住 · 請張手放下');
   ctx.save();
   ctx.font = 'bold 18px "PingFang TC","Noto Sans TC",sans-serif';
   const w = Math.min(250, ctx.measureText(text).width + 30);
@@ -5948,14 +5981,14 @@ const picker = {
     this.startId=null; this.openStart=0; this.graspStart=0; this.graspId=null;
     this.heldId=null; this.relStart=0; this.contactId=null; this.contactUntil=0;
   },
-  poll(items){
+  poll(items, releaseZone){
     this.pct = 0;
     if(cursorX < 0 || !handDetected){
       this.hoverId = null; this.openStart = 0; this.graspStart = 0; this.graspId = null;
       return null;
     }
     const now = nowMs();
-    if(isGraspStyleMode() && this.heldId){
+    if(this.heldId && isGraspStyleMode()){
       this.hoverId = this.heldId;
       if(handReleasedOrOpen()){
         if(!this.relStart) this.relStart = now;
@@ -5964,10 +5997,26 @@ const picker = {
           const id = this.heldId;
           this.heldId = null; this.relStart = 0; this.armed = false;
           this.openStart = now; this.graspStart = 0; this.graspId = null; this.pct = 0;
-          return id;
+          return !releaseZone || pointInsideZone(cursorX, cursorY, releaseZone) ? id : '__invalid__';
         }
       } else {
         this.relStart = 0;
+      }
+      return null;
+    }
+    if(this.heldId){
+      this.hoverId = this.heldId;
+      if(releaseZone && pointInsideZone(cursorX, cursorY, releaseZone)){
+        if(this.startId !== 'release-zone'){ this.startId = 'release-zone'; this.start = now; }
+        if(!isStill(now)){ this.start = now; return null; }
+        this.pct = Math.min(1, (now - this.start) / DWELL_MS);
+        if(now - this.start >= DWELL_MS){
+          const id = this.heldId;
+          this.heldId = null; this.startId = null; this.pct = 0;
+          return id;
+        }
+      } else {
+        this.startId = null;
       }
       return null;
     }
@@ -6011,7 +6060,13 @@ const picker = {
     if(!isStill(now)){ this.start = now; return null; }
     const el = now - this.start;
     this.pct = Math.min(1, el / DWELL_MS);
-    if(el >= DWELL_MS){ this.lock = best.id; this.start = now; return best.id; }
+    if(el >= DWELL_MS){
+      if(releaseZone){
+        this.heldId = best.id; this.lock = null; this.startId = null; this.pct = 0;
+        return null;
+      }
+      this.lock = best.id; this.start = now; return best.id;
+    }
     return null;
   },
 };
@@ -7047,7 +7102,9 @@ function mjPanel(){
   advSetPanel({
     stepNo:'第 ' + mj.roundNo + ' 局 · 累積 ' + mj.fanTotal + ' 番',
     text:'揀一組牌，仲需要 ' + mjNeed() + ' 隻',
-    goal: mj.msg || (state.gameType === 'grasp' ? '握住後張開手放下，才會選取。' : mj.hint),
+    goal: mj.msg || (state.gameType === 'grasp'
+      ? '從中間拿牌，移到患側外方放牌區，再張開手。'
+      : '從中間選牌，移到患側外方放牌區停住。'),
     metric: nextTierFan ? '下一個目標：累積 ' + nextTierFan + ' 番' : '已達上限級別',
     pct: 1 - mjNeed() / Math.max(1, (14 - mj.def.base.length)),
     buttons:[
@@ -7222,14 +7279,14 @@ function mjLayout(){
   const handTop = ch * (narrow ? 0.42 : 0.40);
   const groups = mj.groups.map((g, i)=>{
     const n = mj.groups.length;
-    const cols = narrow ? Math.min(2, n) : n;
+    const cols = Math.min(2, n);
     const rows = Math.ceil(n / cols);
     const row = Math.floor(i / cols), col = i % cols;
     const rowCount = Math.min(cols, n - row*cols);
     const gw = narrow ? Math.min(184, (cw - 30) / cols - 8)
-                      : Math.min(cw / n - 16, tileW * 3.4 + 34);
-    const gx = cw/2 + (col - (rowCount-1)/2) * ((cw - 18) / cols);
-    const baseY = narrow ? ch*0.735 : ch*0.82;
+                      : Math.min(cw * 0.25, tileW * 3.4 + 34);
+    const gx = cw/2 + (col - (rowCount-1)/2) * Math.min(gw * 1.08, cw * 0.27);
+    const baseY = narrow ? ch*0.735 : ch*0.72;
     const gy = baseY + row * Math.min(ch*0.125, th*1.42);
     const gh = narrow ? Math.min(ch*0.12, th*1.35) : th*1.62;
     return { id:g.id, x:gx, y:gy, w:gw, h:gh,
@@ -7287,10 +7344,12 @@ function mjRender(ctx){
 
   const hover = picker.hoverId;
   const heldGroup = picker.heldId;
+  drawAffectedSelectionZone(ctx, '放牌區');
   L.groups.forEach((g, gi)=>{
     const gone = g.ref.gone;
     const held = heldGroup === g.id && !gone;
-    const gy = g.y - (held ? 10 : 0);
+    const gx = held && cursorX >= 0 ? cursorX : g.x;
+    const gy = held && cursorY >= 0 ? cursorY : g.y;
     ctx.save();
     ctx.globalAlpha = gone ? 0.28 : 1;
     if(held){
@@ -7298,25 +7357,25 @@ function mjRender(ctx){
       ctx.shadowBlur = 18;
     }
     ctx.fillStyle = 'rgba(255,255,255,0.94)';
-    rrPath(ctx, g.x - g.w/2, gy - g.h/2, g.w, g.h, 16); ctx.fill();
+    rrPath(ctx, gx - g.w/2, gy - g.h/2, g.w, g.h, 16); ctx.fill();
     ctx.shadowBlur = 0;
     ctx.lineWidth = held ? 10 : (hover === g.id && !gone ? 8 : 4);
     ctx.strokeStyle = held ? '#FFD166' : (hover === g.id && !gone ? '#E07B39' : '#1A6B5A');
-    rrPath(ctx, g.x - g.w/2, gy - g.h/2, g.w, g.h, 16); ctx.stroke();
+    rrPath(ctx, gx - g.w/2, gy - g.h/2, g.w, g.h, 16); ctx.stroke();
     const n = g.ref.tiles.length;
     const tw = Math.min(L.tileW, (g.w - 22) / n - 3);
     const tot = n * (tw + 3);
-    let tx = g.x - tot/2 + tw/2;
+    let tx = gx - tot/2 + tw/2;
     g.ref.tiles.forEach(t=>{ drawTile(ctx, t, tx, gy - 6, tw); tx += tw + 3; });
     ctx.fillStyle = '#1a1a1a';
     ctx.font = 'bold 17px "PingFang TC","Noto Sans TC",sans-serif';
     ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-    ctx.fillText(g.ref.tiles.map(mjLabel).join('·'), g.x, gy + g.h/2 - 22);
+    ctx.fillText(g.ref.tiles.map(mjLabel).join('·'), gx, gy + g.h/2 - 22);
     if(gone){
       ctx.fillStyle = 'rgba(0,0,0,0.55)';
       ctx.font = 'bold 16px "PingFang TC",sans-serif';
       ctx.textBaseline = 'middle';
-      ctx.fillText('已用', g.x, gy);
+      ctx.fillText('已用', gx, gy);
     }
     ctx.restore();
   });
@@ -7342,8 +7401,13 @@ function mjUpdate(){
   const L = mj.layout || mjLayout();
   const items = L.groups.filter(g=>!g.ref.gone)
     .map(g=>({ id:g.id, x:g.x, y:g.y, r:Math.max(g.w, g.h)*0.5, gone:false }));
-  const hit = picker.poll(items);
-  if(hit) mjPick(hit);
+  const hit = picker.poll(items, affectedSelectionZone());
+  if(hit === '__invalid__'){
+    mj.msg = '請將牌移到患側外方的放牌區再放手。';
+    mjPanel();
+  } else if(hit){
+    mjPick(hit);
+  }
 }
 
 /* ==================================================================
@@ -7378,6 +7442,7 @@ function cardsNewBoard(newSuit){
   const cfg = cards.cfg();
   cards.need = cfg.need;
   cards.got = 0;
+  cards.msg = '';
   if(newSuit){
     const others = CARD_SUITS.filter(s=>s !== cards.suit);
     cards.suit = others[(Math.random()*others.length)|0];
@@ -7405,7 +7470,7 @@ function cardsNewBoard(newSuit){
     const rank = CARD_RANKS[(Math.random()*CARD_RANKS.length)|0];
     const row = Math.floor(index / cols), col = index % cols;
     const rowCount = Math.min(cols, cfg.count - row*cols);
-    const x = cw/2 + (col - (rowCount-1)/2) * Math.min(cardW*1.18, cw/cols);
+    const x = cw/2 + (col - (rowCount-1)/2) * Math.min(cardW*1.12, cw*0.18);
     const y = top + rowH*(row+0.5);
     field.push({ id:'c' + (cards.idSeq++), suit, rank,
       x, y, r:cardW*0.54, rot:0, gone:false, w:cardW, h:cardH });
@@ -7425,7 +7490,9 @@ function cardsPanel(){
       ' · 連續正確 ' + cards.combo + ' 次',
     text:'收集 ' + CARD_SUIT_NAME[cards.suit] + ' ' + CARD_SUIT_SYM[cards.suit] +
       '：' + cards.got + ' / ' + cards.need,
-    goal: state.gameType === 'grasp' ? '握住牌後張開手放下，才會計分。' : '停留在正確花色的牌上。',
+    goal: cards.msg || (state.gameType === 'grasp'
+      ? '從中間拿牌，移到患側外方放牌區，再張開手。'
+      : '從中間選牌，移到患側外方放牌區停住。'),
     metric:'下一階段：完成 ' + Math.max(0, (cardsTierFor(cards.rounds) === 3 ? 0 :
       [2,4,6][cardsTierFor(cards.rounds)] - cards.rounds)) + ' 輪後升級',
     pct: cards.got / cards.need,
@@ -7443,8 +7510,14 @@ function cardsUpdate(){
     cards.bonusEndsAt = nowMs() + 30000;   // 下一段獎勵時間
   }
   const items = cards.field.filter(c=>!c.gone);
-  const hit = picker.poll(items);
+  const hit = picker.poll(items, affectedSelectionZone());
+  if(hit === '__invalid__'){
+    cards.msg = '請將牌移到患側外方的放牌區再放手。';
+    cardsPanel();
+    return;
+  }
   if(!hit) return;
+  cards.msg = '';
   const c = cards.field.find(x=>x.id === hit);
   if(!c || c.gone) return;
   const cfg2 = cards.cfg();
@@ -7534,15 +7607,18 @@ function cardsRender(ctx){
 
   const hover = picker.hoverId;
   const held = picker.heldId;
+  drawAffectedSelectionZone(ctx, '收牌區');
   for(const c of cards.field){
     if(c.gone) continue;
+    const drawX = held === c.id && cursorX >= 0 ? cursorX : c.x;
+    const drawY = held === c.id && cursorY >= 0 ? cursorY : c.y;
     if(hover === c.id || held === c.id){
       ctx.save();
       ctx.fillStyle = held === c.id ? 'rgba(255,209,102,0.55)' : 'rgba(224,123,57,0.35)';
-      ctx.beginPath(); ctx.arc(c.x, c.y, c.r*1.35, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(drawX, drawY, c.r*1.35, 0, Math.PI*2); ctx.fill();
       ctx.restore();
     }
-    drawCard2(ctx, c.suit, c.rank, c.x, c.y - (held === c.id ? 14 : 0),
+    drawCard2(ctx, c.suit, c.rank, drawX, drawY,
       c.w * (held === c.id ? 1.06 : 1), { rot:c.rot });
   }
   advDrawCursor(ctx, picker.pct);
