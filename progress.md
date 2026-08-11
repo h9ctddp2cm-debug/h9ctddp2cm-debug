@@ -454,3 +454,11 @@
 - 研究員頁不再顯示或記錄臨時通行碼明文；網站檔案只保留 SHA-256 雜湊值，通行碼只於交付訊息提供。
 - 再次完成 research JavaScript 語法、主頁 inline JavaScript、實際瀏覽器儲存 API、assessor 禁止披露字詞、assessor script imports 及通行碼明文掃描，全部通過。
 - 以標準 browser-game Playwright client 再測 FTHUE Level 4–5 遊戲庫；六個情境、圖片、難度標籤及返回主頁按鈕正常，`render_game_to_text` 回報的 level、mode、duration 及 activities 與畫面一致。
+
+## 2026-08-11 Session 自動回填流程
+
+- 介入資料頁改為最短操作：匿名編號、組別、Session、當日 FTHUE、患側及安全確認後，遊戲組只需選擇情境、工具及難度，再按「開始遊戲」。
+- 遊戲完成後新增「返回資料記錄並自動填寫」，自動帶回實際遊戲時間、得分、正確、錯誤、跌落、拿取、暫停、追蹤中斷及技術故障資料。
+- 自動回填後只需按「保存並下載 CSV」；檔名包含匿名編號及 Session。
+- 協助程度及軀幹代償不會由相機推斷，預設為「未觀察」；病人反應及治療師觀察收進「選填：如有時間再填」。
+- 傳統治療組沒有遊戲自動數據，因此保留簡短計時及選填活動名稱。

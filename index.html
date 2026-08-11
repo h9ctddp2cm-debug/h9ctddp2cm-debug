@@ -1425,6 +1425,7 @@ html,body{
         </details>
       </div>
       <button class="btn-primary hidden" id="btnDownloadResearch">下載研究 CSV</button>
+      <button class="btn-primary hidden" id="btnReturnSessionRecord">返回資料記錄並自動填寫</button>
       <button class="btn-primary" id="btnRetry">再玩一次</button>
       <button class="btn-secondary" id="btnHome">返回主頁</button>
     </div>
@@ -1605,6 +1606,7 @@ const research = {
   calibration:{ detectedStart:0, openStart:0, closedStart:0, detectedDone:false,
     openDone:false, closedDone:false, ready:false, openScores:[], closedScores:[] },
   personalGraspEnter:null, personalGraspExit:null,
+  returnUrl:'',
 };
 
 /* ==================== 虛擬時鐘（用於 deterministic QA hook） ==================== */
@@ -2479,14 +2481,41 @@ function openInterventionSetup(){
   renderPilotLanguage();
   showScreen('research');
 }
+function applyInterventionDeepLink(){
+  const params = new URLSearchParams(window.location.search);
+  if(params.get('role') !== 'intervention') return;
+  openInterventionSetup();
+  research.returnUrl = params.get('return') || '';
+  const setValue = (id,value)=>{
+    const el = document.getElementById(id);
+    if(el && value != null && value !== '') el.value = value;
+  };
+  setValue('researchParticipant', params.get('participant'));
+  setValue('researchVisit', params.get('visit') || 's1');
+  setValue('researchArm', params.get('arm') || 'game_intervention');
+  setValue('researchLevel', params.get('level') || '5');
+  setValue('researchSide', params.get('side') || 'left');
+  setValue('researchTool', params.get('tool') || 'none');
+  setValue('researchSafetyClearance', params.get('safety') || 'confirmed');
+  setValue('researchDataUse', params.get('mode') === 'test' ? 'therapist_test' : 'formal');
+  renderPilotScenarioOptions();
+  const scenario = params.get('scenario') || 'dimsum';
+  const scenarioInput = document.querySelector('input[name="researchScenario"][value="' + CSS.escape(scenario) + '"]');
+  if(scenarioInput) scenarioInput.checked = true;
+  const track = params.get('track') || 'simple_sort_motor';
+  const trackInput = document.querySelector('input[name="researchTaskTrack"][value="' + CSS.escape(track) + '"]');
+  if(trackInput) trackInput.checked = true;
+  pilotRenderPlanPreview();
+  if(params.get('autostart') === '1'){
+    window.setTimeout(()=>document.getElementById('btnResearchBegin').click(), 50);
+  }
+}
 document.getElementById('btnResearchMode').addEventListener('click', ()=>{
   window.location.href = 'research/index.html';
 });
 window.addEventListener('load', ()=>{
   try{
-    if(new URLSearchParams(window.location.search).get('role') === 'intervention'){
-      openInterventionSetup();
-    }
+    applyInterventionDeepLink();
   }catch(e){ console.warn('intervention deep link unavailable', e); }
 });
 const btnPilotRestResume = document.getElementById('btnPilotRestResume');
@@ -3154,6 +3183,34 @@ document.getElementById('btnPause').addEventListener('click', ()=>{
   pauseBtn.setAttribute('aria-label', state.paused ? '繼續遊戲' : '暫停遊戲');
 });
 document.getElementById('btnDownloadResearch').addEventListener('click', downloadResearchCSV);
+document.getElementById('btnReturnSessionRecord').addEventListener('click', ()=>{
+  if(!research.returnUrl) return;
+  const summaryRows = research.phaseSummaries.filter(row=>row.condition !== 'rest');
+  const drops = summaryRows.reduce((sum,row)=>sum + (Number(row.drops) || 0),0);
+  const technicalFailures = summaryRows.reduce((sum,row)=>sum + (Number(row.technical_failures) || 0),0);
+  const destination = new URL(research.returnUrl, window.location.href);
+  const params = destination.searchParams;
+  params.set('source','game-result');
+  params.set('mode',research.dataUse === 'formal' ? 'normal' : 'test');
+  params.set('participant',research.participantId);
+  params.set('session',String(research.sessionNo));
+  params.set('group',research.studyArm === 'game_intervention' ? 'game_intervention' : 'conventional_control');
+  params.set('fthue',research.stratum);
+  params.set('side',research.affectedSide);
+  params.set('scenario',research.scenarioId);
+  params.set('tool',research.toolUsed);
+  params.set('difficulty',research.dualTaskLevel);
+  params.set('active_sec',String(research.actualSessionSec || ''));
+  params.set('score',String(score));
+  params.set('correct',String(correctCount));
+  params.set('wrong',String(totalWrong));
+  params.set('drops',String(drops));
+  params.set('grabs',String(grabCount));
+  params.set('pause_count',String(research.pauseCount || 0));
+  params.set('tracking_loss_sec',String(Math.round(research.totalTrackingLossMs / 1000)));
+  params.set('technical_failures',String(technicalFailures));
+  window.location.href = destination.toString();
+});
 document.getElementById('researchPostFthue').addEventListener('change', ()=>{
   research.postFthue = document.getElementById('researchPostFthue').value || '';
   archiveCurrentResearch();
@@ -5019,6 +5076,7 @@ function endGame(){
 
   const rr = document.getElementById('researchResult');
   const downloadBtn = document.getElementById('btnDownloadResearch');
+  const returnBtn = document.getElementById('btnReturnSessionRecord');
   const safetyPanel = document.getElementById('researchSafetyPanel');
   const postPanel = document.getElementById('researchPostPanel');
   const feedbackPanel = document.getElementById('researchFeedbackPanel');
@@ -5087,6 +5145,8 @@ function endGame(){
     renderResearchFeedbackLanguage();
     downloadBtn.classList.remove('hidden');
     downloadBtn.textContent = pilotLang === 'en' ? 'Download research CSV' : '下載研究 CSV';
+    returnBtn.classList.toggle('hidden', !research.returnUrl);
+    returnBtn.textContent = pilotLang === 'en' ? 'Return and auto-fill record' : '返回資料記錄並自動填寫';
     document.getElementById('researchRecordStatus').value = research.recordStatus;
   } else {
     rr.classList.remove('active');
@@ -5097,6 +5157,7 @@ function endGame(){
     session5Feedback.classList.remove('active');
     outcomePanel.classList.remove('active');
     downloadBtn.classList.add('hidden');
+    returnBtn.classList.add('hidden');
   }
 
   showScreen('result');

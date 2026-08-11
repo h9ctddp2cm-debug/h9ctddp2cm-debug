@@ -214,6 +214,19 @@ table.rs-table tbody tr:nth-child(even){ background:#FFFDF8; }
 .rs-admin-details{ margin-top:18px !important; }
 #interventionBlocker:empty{ display:none; }
 #interventionBlocker{ margin-bottom:14px; }
+.rs-safety-check{ margin-top:16px; border-color:var(--teal); background:#EEF7F3; }
+.rs-launch-panel{
+  display:grid; gap:12px; margin-top:18px; padding:18px;
+  border:3px solid var(--teal); border-radius:14px; background:#EEF7F3;
+}
+.rs-launch-panel p{ margin:0; text-align:center; font-size:16px; font-weight:900; color:var(--teal-dark); }
+.rs-auto-summary{
+  display:grid; gap:8px; margin:0 0 16px; padding:18px;
+  border:3px solid var(--green); border-radius:14px; background:#E9F6EF; color:#12482E;
+}
+.rs-auto-summary strong{ font-size:22px; }
+.rs-auto-summary div{ font-size:18px; font-weight:900; font-variant-numeric:tabular-nums; }
+.rs-input[readonly]{ background:#F1F0EC; color:#31302C; cursor:not-allowed; }
 
 /* ---------- test mode banner ---------- */
 .rs-test-banner{

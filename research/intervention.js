@@ -21,10 +21,11 @@
     participantId: '', group: '', session: '1', datetime: RC.nowLocalInput(), therapistCode: '',
     fthue: '', affectedSide: '', deliveryType: '', scenario: '', tool: '', difficulty: '',
     conventional: '', plannedMin: 15, activeSec: '', correct: '', wrong: '', drops: '',
-    assistance: '', trunk: '', painPre: '', painPost: '', fatiguePre: '', fatiguePost: '',
+    assistance: 'unobserved', trunk: 'unobserved', painPre: '', painPost: '', fatiguePre: '', fatiguePost: '',
     patientDifficulty: '', patientMotivation: '', acceptability: '', movementQuality: '', setupMin: '', therapistComment: '',
     techFailure: '', interrupted: '', techDetail: '', adverseEvent: '', aeSerious: '', aeRelated: '', aeDetail: '', deviation: '', deviationDetail: '',
-    completion: '', fidelity: {}
+    completion: '', fidelity: {}, safetyConfirmed: false, autoSource: '',
+    score: '', grabs: '', pauseCount: '', trackingLossSec: '', technicalFailures: ''
   };
   var rest = new RC.RestLogger();
   var sessions = [];
@@ -59,11 +60,12 @@
   }
   function sync() {
     MAP.forEach(function (m) { var e = $(m[0]); if (e) e.value = F[m[1]] === null ? '' : F[m[1]]; });
+    $('#chkSafety').checked = !!F.safetyConfirmed;
     FIDELITY.forEach(function (f) {
       var c = $('[data-testid="checkbox-fidelity-' + f[0] + '"]');
       if (c) c.checked = !!F.fidelity[f[0]];
     });
-    renderFidelityScore(); renderAuto(); renderRest();
+    renderFidelityScore(); renderAuto(); renderRest(); renderGroupFlow(); renderAutoSummary();
   }
   function bind() {
     MAP.forEach(function (m) {
@@ -71,10 +73,15 @@
       var handler = function () {
         F[m[1]] = m[1] === 'participantId' ? el.value.toUpperCase() : el.value;
         if (m[1] === 'participantId') { el.value = F.participantId; validateId(); }
+        if (m[1] === 'group') renderGroupFlow();
         markDirty();
       };
       el.addEventListener('input', handler);
       el.addEventListener('change', handler);
+    });
+    $('#chkSafety').addEventListener('change', function () {
+      F.safetyConfirmed = $('#chkSafety').checked;
+      markDirty();
     });
     $('[data-testid="button-timer-start"]').addEventListener('click', startTimer);
     $('[data-testid="button-timer-stop"]').addEventListener('click', stopTimer);
@@ -82,6 +89,12 @@
     $('[data-testid="button-download-sessions"]').addEventListener('click', downloadSessions);
     $('[data-testid="button-download-rest-log"]').addEventListener('click', downloadRestLog);
     $('#btnMarkNormal').addEventListener('click', markNormalSession);
+    $('#btnLaunchGame').addEventListener('click', launchGame);
+    $('#btnConventionalDone').addEventListener('click', function () {
+      stopTimer();
+      F.completion = F.completion || 'yes';
+      gotoStep(3);
+    });
     $('#btnInterventionPrev').addEventListener('click', function () { gotoStep(uiStep - 1); });
     $('#btnInterventionNext').addEventListener('click', function () {
       if (validateStep(uiStep)) gotoStep(uiStep + 1);
@@ -100,9 +113,10 @@
       if (!id.ok) { showBlocker(id.msg); return false; }
       if (RC.isTestMode && !RC.isTestId(F.participantId)) { showBlocker('測試模式請使用 TEST 開頭的編號，例如 TEST001。'); return false; }
       if (!RC.isTestMode && RC.isTestId(F.participantId)) { showBlocker('正常模式不可使用 TEST 編號。請輸入正式匿名編號，例如 P001。'); return false; }
-      if (!F.group || !F.fthue || !F.affectedSide || !F.therapistCode || !F.datetime) {
+      if (!F.group || !F.fthue || !F.affectedSide) {
         showBlocker('請填完這頁'); return false;
       }
+      if (!F.safetyConfirmed) { showBlocker('請先確認病人可以安全開始'); return false; }
     }
     if (step === 2) {
       if (!F.deliveryType) { showBlocker('請選擇訓練'); return false; }
@@ -120,9 +134,44 @@
     $('#interventionProgressLabel').textContent = uiStep + ' / 3　' + STEP_NAMES[uiStep - 1];
     $('#interventionProgressBar').style.width = (uiStep * 100 / 3) + '%';
     $('#btnInterventionPrev').disabled = uiStep === 1;
-    $('#btnInterventionNext').classList.toggle('rs-hidden', uiStep === 3);
+    $('#btnInterventionNext').classList.toggle('rs-hidden', uiStep !== 1);
+    if (uiStep === 3) $('.rs-rest-dock').classList.add('rs-hidden');
+    else renderGroupFlow();
     showBlocker('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  function renderGroupFlow() {
+    var isGame = F.group !== 'conventional_control';
+    if (F.group) F.deliveryType = isGame ? 'game' : 'conventional';
+    $('#step2Title').textContent = isGame ? '選擇遊戲' : '傳統治療記錄';
+    $('#gameChoiceFields').classList.toggle('rs-hidden', !isGame);
+    $('#gameLaunchPanel').classList.toggle('rs-hidden', !isGame);
+    $('#conventionalRecordPanel').classList.toggle('rs-hidden', isGame);
+    $('.rs-rest-dock').classList.toggle('rs-hidden', isGame && F.autoSource !== 'game-result');
+  }
+  function launchGame() {
+    if (!validateStep(1) || !validateStep(2)) return;
+    var scenarioMap = {
+      tea_house: 'dimsum', mahjong: 'mahjong', cards: 'cards',
+      laundry: 'laundry', flower: 'flowers'
+    };
+    var params = new URLSearchParams({
+      role: 'intervention',
+      source: 'session-recorder',
+      autostart: '1',
+      mode: RC.isTestMode ? 'test' : 'normal',
+      participant: F.participantId,
+      visit: 's' + F.session,
+      arm: 'game_intervention',
+      level: F.fthue,
+      side: F.affectedSide,
+      scenario: scenarioMap[F.scenario] || 'dimsum',
+      tool: F.tool,
+      track: F.difficulty,
+      safety: 'confirmed',
+      return: 'research/intervention.html'
+    });
+    window.location.href = '../index.html?' + params.toString();
   }
   function markNormalSession() {
     F.techFailure = 'no';
@@ -235,6 +284,18 @@
       ' · 休息 ' + rest.totalSec() + ' 秒' +
       ' · 正確／分鐘 ' + (cpm === null ? '—' : cpm);
   }
+  function renderAutoSummary() {
+    var panel = $('#autoGameSummary');
+    var isAuto = F.autoSource === 'game-result';
+    panel.classList.toggle('rs-hidden', !isAuto);
+    if (!isAuto) return;
+    $('#autoGameMetrics').textContent =
+      '時間 ' + (F.activeSec || 0) + ' 秒　·　正確 ' + (F.correct || 0) +
+      '　·　錯誤 ' + (F.wrong || 0) + '　·　跌落 ' + (F.drops || 0);
+    ['#inpActiveSec', '#inpCorrect', '#inpWrong', '#inpDrops'].forEach(function (selector) {
+      $(selector).readOnly = true;
+    });
+  }
   function symptomText(v) {
     return ({ none: '無', mild: '少少', moderate: '幾', severe: '好', unable: '未能可靠回答' })[v] || '—';
   }
@@ -271,9 +332,14 @@
       training_delivered_pct: RC.isNum(F.plannedMin) && Number(F.plannedMin) > 0 && RC.isNum(F.activeSec)
         ? Math.round(Number(F.activeSec) / (Number(F.plannedMin) * 60) * 1000) / 10 : '',
       session_interrupted: F.interrupted,
-      rest_count: rest.count(),
+      rest_count: F.autoSource === 'game-result' ? F.pauseCount : rest.count(),
       rest_total_sec: rest.totalSec(),
       correct: F.correct, wrong: F.wrong, drops: F.drops,
+      game_score: F.score, game_pickups: F.grabs,
+      game_pause_count: F.pauseCount,
+      game_tracking_loss_sec: F.trackingLossSec,
+      game_technical_failures: F.technicalFailures,
+      objective_data_source: F.autoSource || 'manual',
       correct_per_min: RC.perMinute(F.correct, F.activeSec),
       assistance: F.assistance, trunk_compensation: F.trunk,
       symptom_rating_method: 'verbal_4_or_unable',
@@ -324,10 +390,10 @@
       (kind === 'danger' ? '✖' : '✔') + '</span><span>' + html + '</span></div>';
   }
   function downloadSessions() {
-    var list = sessions.length ? sessions : [rowObject()];
+    var list = [rowObject()];
     var head = Object.keys(list[0]);
     var rows = [head].concat(list.map(function (o) { return head.map(function (k) { return o[k]; }); }));
-    var name = (F.participantId || 'UNKNOWN') + '_intervention_sessions.csv';
+    var name = (F.participantId || 'UNKNOWN') + '_S' + F.session + '_session.csv';
     RC.downloadCSV(name, rows);
     dirty = false; renderStatus();
     feedback('已下載 <b>' + RC.esc(name) + '</b>（' + head.length + ' 欄，UTF-8 BOM）。');
@@ -378,15 +444,51 @@
     sync(); renderStatus();
   }
 
+  function applyGameReturn() {
+    var p = new URLSearchParams(window.location.search);
+    if (p.get('source') !== 'game-result') return false;
+    var scenarioMap = {
+      dimsum: 'tea_house', mahjong: 'mahjong', cards: 'cards',
+      laundry: 'laundry', flowers: 'flower'
+    };
+    F.participantId = (p.get('participant') || '').toUpperCase();
+    F.group = p.get('group') || 'game_intervention';
+    F.session = p.get('session') || '1';
+    F.fthue = p.get('fthue') || '';
+    F.affectedSide = p.get('side') || '';
+    F.deliveryType = 'game';
+    F.scenario = scenarioMap[p.get('scenario')] || 'tea_house';
+    F.tool = p.get('tool') || 'none';
+    F.difficulty = p.get('difficulty') || 'simple_sort_motor';
+    F.activeSec = p.get('active_sec') || '';
+    F.correct = p.get('correct') || '0';
+    F.wrong = p.get('wrong') || '0';
+    F.drops = p.get('drops') || '0';
+    F.score = p.get('score') || '';
+    F.grabs = p.get('grabs') || '';
+    F.pauseCount = p.get('pause_count') || '0';
+    F.trackingLossSec = p.get('tracking_loss_sec') || '0';
+    F.technicalFailures = p.get('technical_failures') || '0';
+    F.techFailure = Number(F.technicalFailures) > 0 ? 'yes' : 'no';
+    F.completion = 'yes';
+    F.assistance = 'unobserved';
+    F.trunk = 'unobserved';
+    F.safetyConfirmed = true;
+    F.autoSource = 'game-result';
+    return true;
+  }
+
   function init() {
-    if (RC.isTestMode) F.participantId = 'TEST001';
+    var returnedFromGame = applyGameReturn();
+    if (RC.isTestMode && !F.participantId) F.participantId = 'TEST001';
+    dirty = returnedFromGame;
     renderFidelity();
     bind();
     initRest();
     sync();
     renderSessions();
     renderStatus();
-    gotoStep(1);
+    gotoStep(returnedFromGame ? 3 : 1);
     RC.installUnloadGuard(function () { return dirty; });
   }
   document.addEventListener('DOMContentLoaded', init);
