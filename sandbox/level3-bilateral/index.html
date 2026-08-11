@@ -52,12 +52,32 @@
             </select>
           </label>
           <label class="field">
+            <span>隨機序列</span>
+            <select id="participantSequence" data-testid="select-participant-sequence">
+              <option value="AB" selected>AB：ST → DT</option>
+              <option value="BA">BA：DT → ST</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>區塊位置</span>
+            <select id="blockOrderPosition" data-testid="select-block-position">
+              <option value="1" selected>Block 1</option>
+              <option value="2">Block 2</option>
+            </select>
+          </label>
+          <label class="field">
             <span>實驗條件</span>
-            <select id="experimentalCondition" data-testid="select-condition">
+            <select id="experimentalCondition" disabled data-testid="select-condition">
               <option value="SINGLE_TASK_BASELINE" selected>Single-task baseline</option>
               <option value="DUAL_TASK_INTERFERENCE">Dual-task interference</option>
             </select>
+            <small>由隨機序列與區塊位置自動鎖定。</small>
           </label>
+          <div class="field">
+            <span>計劃主動時間</span>
+            <output id="plannedDuration" class="readonly-value" data-testid="text-planned-duration">5 分鐘</output>
+            <small>用於計算每計劃分鐘警告密度。</small>
+          </div>
           <label class="field full">
             <span>認知負荷階層</span>
             <select id="cognitiveTier" data-testid="select-cognitive-tier">
@@ -67,15 +87,50 @@
               <option value="HIGH_RUNNING_TOTAL">高：連續加總</option>
             </select>
           </label>
-          <label class="field">
-            <span>Trial / Block</span>
-            <input id="trialBlockNumber" type="number" value="1" min="1" max="99" data-testid="input-block-number">
-          </label>
           <label class="field full">
             <span>治療師備註</span>
             <textarea id="therapistNotes" rows="3" maxlength="500" placeholder="只記錄代償、疲勞或測試觀察，不含個人資料" data-testid="textarea-therapist-notes"></textarea>
           </label>
         </div>
+
+        <details class="fatigue-panel" open>
+          <summary>疲勞量尺 T0 / T1 / T2</summary>
+          <p>VAS-F：0–100 mm；Borg RPE：6–20。未到量度時間可留空，JSON 會保留為 null。</p>
+          <div class="fatigue-grid">
+            <label class="field">
+              <span>T0 VAS-F (mm)</span>
+              <input id="vasFT0Mm" type="number" min="0" max="100" step="1" inputmode="numeric" data-testid="input-vas-t0">
+            </label>
+            <label class="field">
+              <span>T0 RPE (6–20)</span>
+              <input id="rpeT0Borg620" type="number" min="6" max="20" step="1" inputmode="numeric" data-testid="input-rpe-t0">
+            </label>
+            <label class="field">
+              <span>T1 pre-rest VAS-F</span>
+              <input id="vasFT1PreRestMm" type="number" min="0" max="100" step="1" inputmode="numeric" data-testid="input-vas-t1-pre">
+            </label>
+            <label class="field">
+              <span>T1 pre-rest RPE</span>
+              <input id="rpeT1PreRestBorg620" type="number" min="6" max="20" step="1" inputmode="numeric" data-testid="input-rpe-t1-pre">
+            </label>
+            <label class="field">
+              <span>T1 post-rest VAS-F</span>
+              <input id="vasFT1PostRestMm" type="number" min="0" max="100" step="1" inputmode="numeric" data-testid="input-vas-t1-post">
+            </label>
+            <label class="field">
+              <span>T1 post-rest RPE</span>
+              <input id="rpeT1PostRestBorg620" type="number" min="6" max="20" step="1" inputmode="numeric" data-testid="input-rpe-t1-post">
+            </label>
+            <label class="field">
+              <span>T2 post-session VAS-F</span>
+              <input id="vasFT2PostSessionMm" type="number" min="0" max="100" step="1" inputmode="numeric" data-testid="input-vas-t2">
+            </label>
+            <label class="field">
+              <span>T2 post-session RPE</span>
+              <input id="rpeT2PostSessionBorg620" type="number" min="6" max="20" step="1" inputmode="numeric" data-testid="input-rpe-t2">
+            </label>
+          </div>
+        </details>
 
         <fieldset>
           <legend>患側與首次方向</legend>

@@ -249,6 +249,128 @@ legend,
   font-size: 12px;
 }
 
+.readonly-value {
+  display: grid;
+  min-height: 44px;
+  place-items: center start;
+  padding: 9px 11px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--primary);
+  background: var(--surface-2);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.fatigue-panel {
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface-2);
+}
+
+.fatigue-panel summary {
+  min-height: 44px;
+  padding: 11px 13px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.fatigue-panel > p {
+  padding: 0 13px 11px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.fatigue-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 0 13px 13px;
+}
+
+.vams-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgb(9 14 25 / 88%);
+}
+
+.vams-dialog {
+  width: min(560px, 100%);
+  max-height: calc(100dvh - 48px);
+  overflow: auto;
+  padding: clamp(24px, 5vw, 40px);
+  border-radius: 20px;
+  color: var(--text);
+  background: var(--surface);
+  text-align: center;
+  box-shadow: 0 24px 80px rgb(0 0 0 / 35%);
+}
+
+.vams-dialog h2 {
+  margin: 6px 0 10px;
+}
+
+.vams-feedback {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  margin: 24px 0;
+  font-size: 1.1rem;
+}
+
+.vams-emoji {
+  font-size: clamp(3.8rem, 12vw, 5rem);
+  line-height: 1;
+}
+
+.vams-slider-label {
+  display: block;
+  margin-bottom: 12px;
+  font-weight: 700;
+}
+
+.vams-slider {
+  width: 100%;
+  min-height: 44px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.vams-scale {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.vams-scale span:first-child {
+  text-align: left;
+}
+
+.vams-scale span:last-child {
+  text-align: right;
+}
+
+.vams-submit {
+  width: 100%;
+  min-height: 52px;
+  margin-top: 28px;
+}
+
+.vams-note {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
 .field select {
   width: 100%;
   padding-inline: 12px;
@@ -650,6 +772,7 @@ footer {
   .metric-grid,
   .monitor-grid,
   .form-grid,
+  .fatigue-grid,
   .annotation-grid {
     grid-template-columns: 1fr;
   }

@@ -2,19 +2,30 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { Level3BilateralDataCollector } from "./Level3BilateralDataCollector.js";
 
-function metadata(condition = "SINGLE_TASK_BASELINE") {
+function metadata(condition = "SINGLE_TASK_BASELINE", sequence = "AB", blockPosition = 1) {
   return {
     patientId: "SUBACUTE_PT_001",
     fthueLevel: "3",
     affectedSide: "RIGHT",
     experimentalCondition: condition,
     cognitiveTier: condition === "SINGLE_TASK_BASELINE" ? "NONE_CONTROL" : "HIGH_RUNNING_TOTAL",
-    trialBlockNumber: "1",
+    participantSequence: sequence,
+    blockOrderPosition: String(blockPosition),
+    trialBlockNumber: String(blockPosition),
     therapistNotes: "No identifiers.",
     targetElevationDeg: "45",
     reachRangeProfile: "STANDARD",
     toleranceMode: "STANDARD",
     patientLeftXSign: "1",
+    vasFT0Mm: "20",
+    rpeT0Borg620: "8",
+    vasFT1PreRestMm: "",
+    rpeT1PreRestBorg620: "",
+    vasFT1PostRestMm: "",
+    rpeT1PostRestBorg620: "",
+    vasFT2PostSessionMm: "",
+    rpeT2PostSessionBorg620: "",
+    subjectiveEnjoymentVamsScore: "",
   };
 }
 
@@ -58,7 +69,9 @@ test("successful repetition keeps movement and return time separate with dense V
   assert.equal(rep.movement_time_duration_ms, 1000);
   assert.equal(rep.return_time_duration_ms, 1000);
   assert.equal(rep.was_cycle_completed_successfully, true);
-  assert.ok(Math.abs(rep.max_vertical_y_deviation_normalized - 0.05) < 1e-9);
+  assert.equal(rep.repetition_index_block_relative, 1);
+  assert.ok(Math.abs(rep.l3_max_vertical_y_deviation_normalized - 0.05) < 1e-9);
+  assert.equal("max_vertical_y_deviation_normalized" in rep, false);
   assert.equal(rep.frame_telemetry_stream.length, 5);
   assert.equal(rep.cognitive_metrics.is_response_accurate, null);
 });
@@ -83,7 +96,7 @@ test("therapist pause and tracking interruption are excluded from phase duration
 test("wrist release closes an unsuccessful repetition without fabricating movement time", () => {
   const collector = new Level3BilateralDataCollector();
   const core = engine();
-  collector.startSession(metadata("DUAL_TASK_INTERFERENCE"), 0);
+  collector.startSession(metadata("DUAL_TASK_INTERFERENCE", "AB", 2), 0);
   collector.setCognitiveResponse({
     stimulusId: "tally_update_04",
     responseStatus: "SUBMITTED",
@@ -127,6 +140,10 @@ test("manual invalidation is retained and export contains raw constants without 
   assert.equal(payload.calibration_constants.baseline_wrist_separation_m, 0.04);
   assert.equal("derived_calculations" in payload, false);
   assert.equal(payload.sandbox_metadata.planned_adjunct_duration_minutes, 15);
+  assert.equal(payload.sandbox_metadata.participant_sequence, "AB");
+  assert.equal(payload.sandbox_metadata.block_order_position, 1);
+  assert.equal(payload.sandbox_metadata.planned_block_duration_minutes, 5);
+  assert.equal(payload.sandbox_metadata.fatigue_measurements.vas_f_t0_mm, 20);
 });
 
 test("overlapping therapist pause and tracking loss are excluded only once", () => {
@@ -141,4 +158,52 @@ test("overlapping therapist pause and tracking loss are excluded only once", () 
   collector.observe(output("TARGET_REACHED", 2000), core, 2000);
   collector.observe(output("SUCCESS_SCORE", 3000), core, 3000);
   assert.equal(collector.repetitions[0].movement_time_duration_ms, 500);
+});
+
+test("sequence and block position reject a mismatched condition", () => {
+  const collector = new Level3BilateralDataCollector();
+  assert.throws(
+    () => collector.startSession(metadata("DUAL_TASK_INTERFERENCE", "AB", 1), 0),
+    /Condition mismatch/,
+  );
+});
+
+test("fatigue metadata can be completed at session end without frontend aggregation", () => {
+  const collector = new Level3BilateralDataCollector();
+  const core = engine();
+  collector.startSession(metadata(), 0);
+  collector.updateBlockMetadata({
+    therapistNotes: "First block completed.",
+    vasFT0Mm: "20",
+    rpeT0Borg620: "8",
+    vasFT1PreRestMm: "38",
+    rpeT1PreRestBorg620: "11",
+    vasFT1PostRestMm: "",
+    rpeT1PostRestBorg620: "",
+    vasFT2PostSessionMm: "",
+    rpeT2PostSessionBorg620: "",
+    subjectiveEnjoymentVamsScore: 8,
+  });
+  const payload = collector.endSession(core, 5000);
+  assert.equal(payload.sandbox_metadata.fatigue_measurements.vas_f_t1_pre_rest_mm, 38);
+  assert.equal(payload.sandbox_metadata.fatigue_measurements.rpe_t1_pre_rest_borg_6_20, 11);
+  assert.equal(payload.sandbox_metadata.fatigue_measurements.vas_f_t1_post_rest_mm, null);
+  assert.equal(payload.sandbox_metadata.subjective_enjoyment_vams_score, 8);
+  assert.equal("metrics_summary" in payload, false);
+});
+
+test("fatigue values outside the instrument range fail safely", () => {
+  const collector = new Level3BilateralDataCollector();
+  assert.throws(
+    () => collector.startSession({ ...metadata(), vasFT0Mm: "101" }, 0),
+    /VAS-F T0/,
+  );
+});
+
+test("subjective enjoyment score must be an integer-like value within 1 to 10", () => {
+  const collector = new Level3BilateralDataCollector();
+  assert.throws(
+    () => collector.startSession({ ...metadata(), subjectiveEnjoymentVamsScore: 11 }, 0),
+    /Subjective enjoyment score/,
+  );
 });

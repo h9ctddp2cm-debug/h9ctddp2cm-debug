@@ -1,6 +1,7 @@
 import { Level3BilateralSandbox } from "./Level3BilateralSandbox.js";
 import { Level3BilateralDataCollector } from "./Level3BilateralDataCollector.js";
 import { TherapistDashboard } from "./TherapistDashboard.js";
+import { VamsInterfaceOverlay } from "./VamsInterfaceOverlay.js";
 
 const elements = {
   affectedSides: [...document.querySelectorAll('input[name="affectedSide"]')],
@@ -308,12 +309,22 @@ dashboard = new TherapistDashboard({
       nowMs: performance.now(),
     }));
   },
-  onEndSession: () => {
-    latestDatasetPayload = dataCollector.endSession(engine, performance.now());
-    elements.exportDataset.disabled = false;
-    logToConsole(`SESSION_ENDED | ${latestDatasetPayload.raw_experimental_repetition_logs.length} repetition(s)`);
-    return latestDatasetPayload;
-  },
+  onEndSession: (inputs) => new Promise((resolve) => {
+    new VamsInterfaceOverlay({
+      onScoreSubmitted: (score) => {
+        dataCollector.updateBlockMetadata({
+          ...inputs,
+          subjectiveEnjoymentVamsScore: score,
+        });
+        latestDatasetPayload = dataCollector.endSession(engine, performance.now());
+        elements.exportDataset.disabled = false;
+        logToConsole(
+          `SESSION_ENDED | VAMS ${score}/10 | ${latestDatasetPayload.raw_experimental_repetition_logs.length} repetition(s)`,
+        );
+        resolve(latestDatasetPayload);
+      },
+    }).show();
+  }),
 });
 
 elements.applyCognitiveResponse.addEventListener("click", () => {
@@ -359,8 +370,12 @@ elements.exportCsv.addEventListener("click", () => {
 elements.exportDataset.addEventListener("click", () => {
   const payload = latestDatasetPayload || dataCollector.exportPayload(engine);
   const participant = payload.sandbox_metadata.patient_anonymous_id || "LEVEL3_SESSION";
+  const blockPosition = payload.sandbox_metadata.block_order_position || 0;
+  const conditionCode = payload.sandbox_metadata.experimental_condition_block === "SINGLE_TASK_BASELINE"
+    ? "ST"
+    : "DT";
   downloadFile(
-    `${participant}_block_${payload.sandbox_metadata.trial_block_number || 0}.json`,
+    `${participant}_B${blockPosition}_${conditionCode}.json`,
     JSON.stringify(payload, null, 2),
     "application/json",
   );

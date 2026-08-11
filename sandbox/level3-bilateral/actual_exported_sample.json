@@ -1,14 +1,28 @@
 {
   "sandbox_metadata": {
     "protocol_version": "LEVEL3_BILATERAL_SANDBOX_V3.2",
-    "software_version": "BUILD_LEVEL3_V3_2",
-    "patient_anonymous_id": "SUBACUTE_PT_SAMPLE",
+    "software_version": "BUILD_2026_8F028F3",
+    "patient_anonymous_id": "PT_01",
     "clinical_fthue_level": 3,
     "exploratory_motor_strata": "GROSS_MOTOR_3_4",
     "affected_side_physical": "RIGHT",
-    "experimental_condition_block": "DUAL_TASK_INTERFERENCE",
-    "assigned_cognitive_load_tier": "HIGH_RUNNING_TOTAL",
-    "trial_block_number": 2,
+    "participant_sequence": "AB",
+    "block_order_position": 1,
+    "experimental_condition_block": "SINGLE_TASK_BASELINE",
+    "planned_block_duration_minutes": 5,
+    "assigned_cognitive_load_tier": "NONE_CONTROL",
+    "trial_block_number": 1,
+    "fatigue_measurements": {
+      "vas_f_t0_mm": 20,
+      "rpe_t0_borg_6_20": 8,
+      "vas_f_t1_pre_rest_mm": 38,
+      "rpe_t1_pre_rest_borg_6_20": 11,
+      "vas_f_t1_post_rest_mm": null,
+      "rpe_t1_post_rest_borg_6_20": null,
+      "vas_f_t2_post_session_mm": null,
+      "rpe_t2_post_session_borg_6_20": null
+    },
+    "subjective_enjoyment_vams_score": null,
     "therapist_selected_target_elevation_deg": 45,
     "therapist_selected_range_profile": "STANDARD",
     "therapist_selected_tolerance_mode": "STANDARD",
@@ -16,7 +30,6 @@
     "therapist_notes": "Synthetic validation payload. No patient data.",
     "planned_adjunct_duration_minutes": 15,
     "planned_setup_calibration_minutes": 2,
-    "planned_condition_block_duration_minutes": 8,
     "session_started_at_iso": "2026-08-11T00:00:00.000Z"
   },
   "calibration_constants": {
@@ -29,45 +42,34 @@
   },
   "raw_experimental_repetition_logs": [
     {
-      "repetition_index": 1,
-      "experimental_condition": "DUAL_TASK_INTERFERENCE",
+      "repetition_index_block_relative": 1,
       "target_direction_physical": "LEFT",
-      "movement_time_duration_ms": 2680,
-      "return_time_duration_ms": 1940,
-      "max_vertical_y_deviation_normalized": 0.0641,
+      "movement_time_duration_ms": 1420,
+      "return_time_duration_ms": 1150,
+      "l3_max_vertical_y_deviation_normalized": 0.0215,
       "was_cycle_completed_successfully": true,
       "was_manually_invalidated": false,
       "failure_reason": null,
-      "compensation_warnings_count": 1,
+      "compensation_warnings_count": 0,
       "cognitive_metrics": {
-        "stimulus_id": "tally_update_04",
-        "patient_response_status": "SUBMITTED",
-        "is_response_accurate": false
+        "stimulus_id": "none_control_rep1",
+        "patient_response_status": "NOT_APPLICABLE",
+        "is_response_accurate": null
       },
       "frame_telemetry_stream": [
         {
-          "timestamp_ms": 25100,
-          "session_elapsed_ms": 25100,
-          "vcp_x_normalized": 0.5142,
-          "vcp_y_normalized": 0.6841,
+          "timestamp_ms": 60,
+          "vcp_x_normalized": 0.514,
+          "vcp_y_normalized": 0.684,
           "wrist_separation_m": 0.0412,
           "shoulder_midpoint_x_normalized": 0.501
         },
         {
-          "timestamp_ms": 25160,
-          "session_elapsed_ms": 25160,
-          "vcp_x_normalized": 0.4105,
-          "vcp_y_normalized": 0.7482,
-          "wrist_separation_m": 0.042,
-          "shoulder_midpoint_x_normalized": 0.503
-        },
-        {
-          "timestamp_ms": 25220,
-          "session_elapsed_ms": 25220,
-          "vcp_x_normalized": 0.2941,
-          "vcp_y_normalized": 0.6985,
-          "wrist_separation_m": 0.0418,
-          "shoulder_midpoint_x_normalized": 0.504
+          "timestamp_ms": 120,
+          "vcp_x_normalized": 0.451,
+          "vcp_y_normalized": 0.691,
+          "wrist_separation_m": 0.0415,
+          "shoulder_midpoint_x_normalized": 0.502
         }
       ]
     }

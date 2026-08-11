@@ -1,5 +1,5 @@
 export const LEVEL3_PROTOCOL_VERSION = "LEVEL3_BILATERAL_SANDBOX_V3.2";
-export const LEVEL3_SOFTWARE_VERSION = "BUILD_LEVEL3_V3_2";
+export const LEVEL3_SOFTWARE_VERSION = "BUILD_2026_8F028F3";
 
 const INTERRUPTION_ACTIONS = new Set(["TRACKING_LOST", "UNKNOWN", "STABILIZING"]);
 const WARNING_ACTIONS = new Set([
@@ -13,6 +13,49 @@ function finiteOrNull(value) {
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
+}
+
+function optionalNumber(value, min, max, fieldName) {
+  if (value === "" || value === null || value === undefined) return null;
+  const number = Number(value);
+  if (!Number.isFinite(number) || number < min || number > max) {
+    throw new RangeError(`${fieldName} must be between ${min} and ${max}, or blank`);
+  }
+  return number;
+}
+
+function optionalInteger(value, min, max, fieldName) {
+  const number = optionalNumber(value, min, max, fieldName);
+  if (number !== null && !Number.isInteger(number)) {
+    throw new RangeError(`${fieldName} must be a whole number between ${min} and ${max}, or blank`);
+  }
+  return number;
+}
+
+function expectedCondition(sequence, blockPosition) {
+  const schedule = {
+    AB: ["SINGLE_TASK_BASELINE", "DUAL_TASK_INTERFERENCE"],
+    BA: ["DUAL_TASK_INTERFERENCE", "SINGLE_TASK_BASELINE"],
+  };
+  return schedule[sequence]?.[blockPosition - 1] || null;
+}
+
+function normalizeFatigueMeasurements(values = {}) {
+  return {
+    vas_f_t0_mm: optionalNumber(values.vasFT0Mm, 0, 100, "VAS-F T0"),
+    rpe_t0_borg_6_20: optionalNumber(values.rpeT0Borg620, 6, 20, "RPE T0"),
+    vas_f_t1_pre_rest_mm: optionalNumber(values.vasFT1PreRestMm, 0, 100, "VAS-F T1 pre-rest"),
+    rpe_t1_pre_rest_borg_6_20: optionalNumber(values.rpeT1PreRestBorg620, 6, 20, "RPE T1 pre-rest"),
+    vas_f_t1_post_rest_mm: optionalNumber(values.vasFT1PostRestMm, 0, 100, "VAS-F T1 post-rest"),
+    rpe_t1_post_rest_borg_6_20: optionalNumber(values.rpeT1PostRestBorg620, 6, 20, "RPE T1 post-rest"),
+    vas_f_t2_post_session_mm: optionalNumber(values.vasFT2PostSessionMm, 0, 100, "VAS-F T2 post-session"),
+    rpe_t2_post_session_borg_6_20: optionalNumber(
+      values.rpeT2PostSessionBorg620,
+      6,
+      20,
+      "RPE T2 post-session",
+    ),
+  };
 }
 
 function defaultCognitiveMetrics(condition) {
@@ -51,6 +94,23 @@ export class Level3BilateralDataCollector {
 
   startSession(metadata, nowMs = performance.now()) {
     if (!Number.isFinite(nowMs)) throw new TypeError("nowMs must be finite");
+    const participantSequence = String(metadata.participantSequence || "").toUpperCase();
+    const blockOrderPosition = Number(metadata.blockOrderPosition);
+    const condition = expectedCondition(participantSequence, blockOrderPosition);
+    if (!condition) {
+      throw new RangeError("participantSequence must be AB or BA and blockOrderPosition must be 1 or 2");
+    }
+    if (metadata.experimentalCondition !== condition) {
+      throw new Error(
+        `Condition mismatch: ${participantSequence} block ${blockOrderPosition} must be ${condition}`,
+      );
+    }
+    const cognitiveTier = condition === "SINGLE_TASK_BASELINE"
+      ? "NONE_CONTROL"
+      : metadata.cognitiveTier;
+    if (condition === "DUAL_TASK_INTERFERENCE" && cognitiveTier === "NONE_CONTROL") {
+      throw new Error("Dual-task block requires an active cognitive load tier");
+    }
     this.reset();
     this.sessionActive = true;
     this.sessionStartedAtMs = nowMs;
@@ -61,9 +121,19 @@ export class Level3BilateralDataCollector {
       clinical_fthue_level: Number(metadata.fthueLevel),
       exploratory_motor_strata: "GROSS_MOTOR_3_4",
       affected_side_physical: metadata.affectedSide,
-      experimental_condition_block: metadata.experimentalCondition,
-      assigned_cognitive_load_tier: metadata.cognitiveTier,
-      trial_block_number: Number(metadata.trialBlockNumber),
+      participant_sequence: participantSequence,
+      block_order_position: blockOrderPosition,
+      experimental_condition_block: condition,
+      planned_block_duration_minutes: condition === "SINGLE_TASK_BASELINE" ? 5 : 8,
+      assigned_cognitive_load_tier: cognitiveTier,
+      trial_block_number: blockOrderPosition,
+      fatigue_measurements: normalizeFatigueMeasurements(metadata),
+      subjective_enjoyment_vams_score: optionalInteger(
+        metadata.subjectiveEnjoymentVamsScore,
+        1,
+        10,
+        "Subjective enjoyment score",
+      ),
       therapist_selected_target_elevation_deg: Number(metadata.targetElevationDeg),
       therapist_selected_range_profile: metadata.reachRangeProfile,
       therapist_selected_tolerance_mode: metadata.toleranceMode,
@@ -71,11 +141,24 @@ export class Level3BilateralDataCollector {
       therapist_notes: metadata.therapistNotes || "",
       planned_adjunct_duration_minutes: 15,
       planned_setup_calibration_minutes: 2,
-      planned_condition_block_duration_minutes:
-        metadata.experimentalCondition === "SINGLE_TASK_BASELINE" ? 5 : 8,
       session_started_at_iso: new Date().toISOString(),
     };
-    this.latestCognitiveMetrics = defaultCognitiveMetrics(metadata.experimentalCondition);
+    this.latestCognitiveMetrics = defaultCognitiveMetrics(condition);
+  }
+
+  updateBlockMetadata(metadata = {}) {
+    if (!this.metadata) throw new Error("No session metadata is available");
+    this.metadata.fatigue_measurements = normalizeFatigueMeasurements(metadata);
+    this.metadata.subjective_enjoyment_vams_score = optionalInteger(
+      metadata.subjectiveEnjoymentVamsScore,
+      1,
+      10,
+      "Subjective enjoyment score",
+    );
+    if (typeof metadata.therapistNotes === "string") {
+      this.metadata.therapist_notes = metadata.therapistNotes.trim();
+    }
+    return clone(this.metadata);
   }
 
   setCognitiveResponse({ stimulusId, responseStatus, isAccurate }) {
@@ -125,12 +208,11 @@ export class Level3BilateralDataCollector {
   startRepetition(output, nowMs) {
     if (this.activeRepetition) this.invalidateCurrentRepetition("NEW_REPETITION_STARTED", nowMs);
     this.activeRepetition = {
-      repetition_index: this.repetitions.length + 1,
-      experimental_condition: this.metadata.experimental_condition_block,
+      repetition_index_block_relative: this.repetitions.length + 1,
       target_direction_physical: output.targetDirection,
       movement_time_duration_ms: null,
       return_time_duration_ms: null,
-      max_vertical_y_deviation_normalized: 0,
+      l3_max_vertical_y_deviation_normalized: 0,
       was_cycle_completed_successfully: false,
       was_manually_invalidated: false,
       failure_reason: null,
@@ -151,13 +233,12 @@ export class Level3BilateralDataCollector {
     if (!metrics || !Number.isFinite(metrics.vcpX) || !Number.isFinite(metrics.vcpY)) return;
     const baselineY = engine.calibrationVcpYMedian;
     const verticalDeviation = Number.isFinite(baselineY) ? Math.abs(metrics.vcpY - baselineY) : 0;
-    this.activeRepetition.max_vertical_y_deviation_normalized = Math.max(
-      this.activeRepetition.max_vertical_y_deviation_normalized,
+    this.activeRepetition.l3_max_vertical_y_deviation_normalized = Math.max(
+      this.activeRepetition.l3_max_vertical_y_deviation_normalized,
       verticalDeviation,
     );
     this.activeRepetition.frame_telemetry_stream.push({
-      timestamp_ms: nowMs,
-      session_elapsed_ms: Math.max(0, nowMs - this.sessionStartedAtMs),
+      timestamp_ms: Math.max(0, nowMs - this.sessionStartedAtMs),
       vcp_x_normalized: metrics.vcpX,
       vcp_y_normalized: metrics.vcpY,
       wrist_separation_m: finiteOrNull(metrics.wristSeparation),
