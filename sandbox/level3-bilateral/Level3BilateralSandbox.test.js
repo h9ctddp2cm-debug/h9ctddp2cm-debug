@@ -26,11 +26,16 @@ function makePose({
   return pose;
 }
 
+function updateWithPose(engine, pose, trackingLost, nowMs, worldPose = pose) {
+  return engine.update(pose, worldPose, trackingLost, nowMs);
+}
+
 function advance(engine, options, clock, durationMs, stepMs = 50) {
   const end = clock.value + durationMs;
   let output = null;
   while (clock.value <= end) {
-    output = engine.update(makePose(options), false, clock.value);
+    const pose = makePose(options);
+    output = updateWithPose(engine, pose, false, clock.value);
     clock.value += stepMs;
   }
   return output;
@@ -44,7 +49,8 @@ function calibratedEngine(config = {}) {
   });
   const clock = { value: 0 };
   while (engine.currentState === LEVEL3_STATES.CALIBRATION && clock.value <= 5000) {
-    engine.update(makePose(), false, clock.value);
+    const pose = makePose();
+    updateWithPose(engine, pose, false, clock.value);
     clock.value += 50;
   }
   assert.equal(engine.currentState, LEVEL3_STATES.MIDLINE_READY);
@@ -60,7 +66,8 @@ test("robust calibration derives a clamped MAD tolerance and shoulder-scaled tar
   const clock = { value: 0 };
   for (let index = 0; index < 45; index += 1) {
     const vcpX = index === 8 ? 0.92 : 0.5 + ((index % 3) - 1) * 0.002;
-    engine.update(makePose({ vcpX, shoulderWidth: 0.3 }), false, clock.value);
+    const pose = makePose({ vcpX, shoulderWidth: 0.3 });
+    updateWithPose(engine, pose, false, clock.value);
     clock.value += 50;
   }
 
@@ -96,7 +103,8 @@ test("a completed lateral cycle alternates direction and increments score", () =
 
 test("wrist separation or unequal paired displacement pauses progression", () => {
   const { engine, clock } = calibratedEngine();
-  const output = engine.update(makePose({ wristSeparation: 0.14 }), false, clock.value);
+  const pose = makePose({ wristSeparation: 0.14 });
+  const output = updateWithPose(engine, pose, false, clock.value);
   assert.equal(output.action, "BILATERAL_ASYMMETRY_WARNING");
   assert.equal(output.state, LEVEL3_STATES.MIDLINE_READY);
   assert.equal(engine.timerStartedAt, null);
@@ -104,7 +112,8 @@ test("wrist separation or unequal paired displacement pauses progression", () =>
 
 test("shoulder translation is reported as a warning rather than a diagnosis", () => {
   const { engine, clock } = calibratedEngine();
-  const output = engine.update(makePose({ shoulderCenterX: 0.62 }), false, clock.value);
+  const pose = makePose({ shoulderCenterX: 0.62 });
+  const output = updateWithPose(engine, pose, false, clock.value);
   assert.equal(output.action, "TRUNK_TRANSLATION_WARNING");
   assert.equal(output.state, LEVEL3_STATES.MIDLINE_READY);
 });
@@ -112,21 +121,26 @@ test("shoulder translation is reported as a warning rather than a diagnosis", ()
 test("tracking interruption clears debounce and requires 2.5 seconds plus fresh evidence", () => {
   const { engine, clock } = calibratedEngine();
   advance(engine, {}, clock, 600, 100);
-  const lost = engine.update(null, true, clock.value);
+  const lost = engine.update(null, null, true, clock.value);
   assert.equal(lost.action, "TRACKING_LOST");
   assert.equal(engine.timerStartedAt, null);
 
   clock.value += 100;
-  assert.equal(engine.update(makePose(), false, clock.value).action, "STABILIZING");
+  let pose = makePose();
+  assert.equal(updateWithPose(engine, pose, false, clock.value).action, "STABILIZING");
   clock.value += 2400;
-  assert.equal(engine.update(makePose(), false, clock.value).action, "STABILIZING");
+  pose = makePose();
+  assert.equal(updateWithPose(engine, pose, false, clock.value).action, "STABILIZING");
   clock.value += 200;
-  assert.equal(engine.update(makePose(), false, clock.value).state, LEVEL3_STATES.MIDLINE_READY);
+  pose = makePose();
+  assert.equal(updateWithPose(engine, pose, false, clock.value).state, LEVEL3_STATES.MIDLINE_READY);
 
   clock.value += 700;
-  assert.equal(engine.update(makePose(), false, clock.value).state, LEVEL3_STATES.MIDLINE_READY);
+  pose = makePose();
+  assert.equal(updateWithPose(engine, pose, false, clock.value).state, LEVEL3_STATES.MIDLINE_READY);
   clock.value += 150;
-  assert.equal(engine.update(makePose(), false, clock.value).state, LEVEL3_STATES.WIPING_LATERAL);
+  pose = makePose();
+  assert.equal(updateWithPose(engine, pose, false, clock.value).state, LEVEL3_STATES.WIPING_LATERAL);
 });
 
 test("NaN, Infinity, extreme coordinates, and low visibility fail safely", () => {
@@ -138,7 +152,7 @@ test("NaN, Infinity, extreme coordinates, and low visibility fail safely", () =>
   ];
   for (const pose of cases) {
     const engine = new Level3BilateralSandbox({ affectedSide: "LEFT" });
-    const output = engine.update(pose, false, 0);
+    const output = updateWithPose(engine, pose, false, 0);
     assert.equal(output.action, "UNKNOWN");
     assert.equal(output.state, LEVEL3_STATES.CALIBRATION);
   }
@@ -163,13 +177,27 @@ test("heavy center tremor cannot falsely trigger the lateral target", () => {
 
   for (let frame = 0; frame < 120; frame += 1) {
     const oscillation = frame % 2 === 0 ? 0.045 : -0.045;
-    const output = engine.update(
-      makePose({ vcpX: engine.calibrationVcpXMedian + oscillation }),
-      false,
-      clock.value,
-    );
+    const pose = makePose({ vcpX: engine.calibrationVcpXMedian + oscillation });
+    const output = updateWithPose(engine, pose, false, clock.value);
     clock.value += 40;
     assert.notEqual(output.action, "TARGET_REACHED");
   }
   assert.equal(engine.currentState, LEVEL3_STATES.WIPING_LATERAL);
+});
+
+test("Pose-world wrist release hides the object and returns without awarding score", () => {
+  const { engine, clock } = calibratedEngine();
+  advance(engine, {}, clock, 900, 100);
+  assert.equal(engine.currentState, LEVEL3_STATES.WIPING_LATERAL);
+
+  const imagePose = makePose();
+  const releasedWorldPose = makePose({ wristSeparation: 0.12 });
+  const released = updateWithPose(engine, imagePose, false, clock.value, releasedWorldPose);
+  assert.equal(released.action, "OBJECT_FADE_OUT");
+  assert.equal(released.state, LEVEL3_STATES.RETURN_CENTER);
+  assert.equal(released.objectVisible, false);
+
+  advance(engine, {}, clock, 900, 100);
+  assert.equal(engine.currentState, LEVEL3_STATES.MIDLINE_READY);
+  assert.equal(engine.score, 0);
 });

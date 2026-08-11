@@ -42,6 +42,14 @@ function planarDistance(first, second) {
   return Math.hypot(first.x - second.x, first.y - second.y);
 }
 
+function spatialDistance(first, second) {
+  return Math.hypot(first.x - second.x, first.y - second.y, first.z - second.z);
+}
+
+function worldPointIsSafe(point) {
+  return Boolean(point) && [point.x, point.y, point.z].every(Number.isFinite);
+}
+
 export class Level3BilateralSandbox {
   constructor(therapistConfig = {}) {
     const side = String(therapistConfig.affectedSide || "LEFT").toUpperCase();
@@ -95,6 +103,7 @@ export class Level3BilateralSandbox {
     this.isTrackingStable = true;
 
     this.isObjectVisible = false;
+    this.returnTriggeredByRelease = false;
     this.score = 0;
     this.lastMetrics = null;
     this.lastMessage = "請將雙手合攏並承托於桌面中央";
@@ -184,8 +193,24 @@ export class Level3BilateralSandbox {
     return clamp(anatomicalRange, 0.06, Math.max(0.06, Math.min(0.32, availableRange)));
   }
 
-  update(poseLandmarks, trackingLost = false, nowMs = globalThis.performance?.now?.() ?? Date.now()) {
-    if (trackingLost || !Array.isArray(poseLandmarks)) {
+  getDiagnosticThresholds() {
+    return {
+      trunkTranslationLimit: clamp(this.baselineShoulderWidth * 0.32, 0.045, 0.09),
+      shoulderWidthChangeLimit: Math.max(0.04, this.baselineShoulderWidth * 0.25),
+      wristClosedThreshold: this.baselineWristSeparation * 1.4,
+      wristOpenThreshold: this.baselineWristSeparation * 2,
+      wristSeparationLimit: this.baselineWristSeparation * 2,
+      pairedWristAsymmetryLimit: Math.max(0.03, this.baselineShoulderWidth * 0.18),
+    };
+  }
+
+  update(
+    poseLandmarks,
+    poseWorldLandmarks,
+    trackingLost = false,
+    nowMs = globalThis.performance?.now?.() ?? Date.now(),
+  ) {
+    if (trackingLost || !Array.isArray(poseLandmarks) || !Array.isArray(poseWorldLandmarks)) {
       return this.failTracking("請將雙手移回鏡頭範圍", "TRACKING_LOST", nowMs);
     }
 
@@ -198,12 +223,18 @@ export class Level3BilateralSandbox {
     }
 
     const vcpX = (leftWrist.x + rightWrist.x) / 2;
-    const wristSeparation = planarDistance(leftWrist, rightWrist);
+    const worldLeftWrist = poseWorldLandmarks[15];
+    const worldRightWrist = poseWorldLandmarks[16];
+    if (![worldLeftWrist, worldRightWrist].every(worldPointIsSafe)) {
+      return this.failTracking("手腕世界座標不完整，請調整雙手位置", "UNKNOWN", nowMs);
+    }
+    const wristSeparation = spatialDistance(worldLeftWrist, worldRightWrist);
     const shoulderWidth = planarDistance(leftShoulder, rightShoulder);
     const shoulderCenterX = (leftShoulder.x + rightShoulder.x) / 2;
     const metrics = {
       vcpX,
       wristSeparation,
+      wristSeparationUnit: "m",
       shoulderWidth,
       shoulderCenterX,
       leftWristX: leftWrist.x,
@@ -301,10 +332,13 @@ export class Level3BilateralSandbox {
     }
 
     // These are movement-quality indicators only. They pause progression but do not diagnose compensation.
-    const trunkTranslationLimit = clamp(this.baselineShoulderWidth * 0.32, 0.045, 0.09);
-    const shoulderWidthChangeLimit = Math.max(0.04, this.baselineShoulderWidth * 0.25);
-    const wristSeparationLimit = Math.max(0.035, this.baselineShoulderWidth * 0.2);
-    const pairedWristAsymmetryLimit = Math.max(0.03, this.baselineShoulderWidth * 0.18);
+    const {
+      trunkTranslationLimit,
+      shoulderWidthChangeLimit,
+      wristClosedThreshold,
+      wristOpenThreshold,
+      pairedWristAsymmetryLimit,
+    } = this.getDiagnosticThresholds();
 
     if (Math.abs(shoulderCenterX - this.calibrationShoulderCenter) > trunkTranslationLimit
       || Math.abs(shoulderWidth - this.baselineShoulderWidth) > shoulderWidthChangeLimit) {
@@ -319,16 +353,22 @@ export class Level3BilateralSandbox {
 
     const leftWristDisplacement = leftWrist.x - this.baselineLeftWristX;
     const rightWristDisplacement = rightWrist.x - this.baselineRightWristX;
-    if (Math.abs(wristSeparation - this.baselineWristSeparation) > wristSeparationLimit
-      || Math.abs(leftWristDisplacement - rightWristDisplacement) > pairedWristAsymmetryLimit) {
+    if (Math.abs(leftWristDisplacement - rightWristDisplacement) > pairedWristAsymmetryLimit) {
       this.resetTimer();
       return this.output({
-        message: "雙手距離或同步性改變，請重新合攏並由治療師確認",
+        message: "雙手同步位移改變，請重新合攏並由治療師確認",
         action: "BILATERAL_ASYMMETRY_WARNING",
         nowMs,
         metrics,
       });
     }
+
+    const handAction = wristSeparation <= wristClosedThreshold
+      ? "CLOSED"
+      : wristSeparation >= wristOpenThreshold
+        ? "OPEN"
+        : "TRANSITION";
+    metrics.handAction = handAction;
 
     const isAtCenter = Math.abs(vcpX - this.calibrationVcpXMedian) <= this.dynamicVcpTolerance;
     const directedDisplacement = (vcpX - this.calibrationVcpXMedian) * this.directionSign();
@@ -337,7 +377,7 @@ export class Level3BilateralSandbox {
     switch (this.currentState) {
       case LEVEL3_STATES.MIDLINE_READY: {
         this.isObjectVisible = true;
-        if (isAtCenter) {
+        if (isAtCenter && handAction === "CLOSED") {
           if (this.startDebounce(nowMs)) {
             this.currentState = LEVEL3_STATES.WIPING_LATERAL;
             this.resetTimer();
@@ -352,7 +392,9 @@ export class Level3BilateralSandbox {
           this.resetTimer();
         }
         return this.output({
-          message: "請將雙手合攏並維持在中央起點",
+          message: handAction === "CLOSED"
+            ? "請將雙手合攏並維持在中央起點"
+            : "請先將雙手重新互扣合攏",
           action: "WAITING_AT_CENTER",
           nowMs,
           metrics,
@@ -360,8 +402,30 @@ export class Level3BilateralSandbox {
       }
 
       case LEVEL3_STATES.WIPING_LATERAL: {
+        if (handAction === "OPEN") {
+          this.isObjectVisible = false;
+          this.returnTriggeredByRelease = true;
+          this.currentState = LEVEL3_STATES.RETURN_CENTER;
+          this.resetTimer();
+          return this.output({
+            message: "雙手已鬆開，請慢慢移回中央原點",
+            action: "OBJECT_FADE_OUT",
+            nowMs,
+            metrics,
+          });
+        }
+        if (handAction === "TRANSITION") {
+          this.resetTimer();
+          return this.output({
+            message: "雙手接近鬆開界線，請重新合攏後繼續",
+            action: "HAND_TRANSITION",
+            nowMs,
+            metrics,
+          });
+        }
         if (targetReached) {
           if (this.startDebounce(nowMs)) {
+            this.returnTriggeredByRelease = false;
             this.currentState = LEVEL3_STATES.RETURN_CENTER;
             this.resetTimer();
             return this.output({
@@ -385,6 +449,18 @@ export class Level3BilateralSandbox {
       case LEVEL3_STATES.RETURN_CENTER: {
         if (isAtCenter) {
           if (this.startDebounce(nowMs)) {
+            if (this.returnTriggeredByRelease) {
+              this.returnTriggeredByRelease = false;
+              this.isObjectVisible = true;
+              this.currentState = LEVEL3_STATES.MIDLINE_READY;
+              this.resetTimer();
+              return this.output({
+                message: "已安全回到中央，請重新互扣雙手再開始",
+                action: "RETURN_AFTER_RELEASE",
+                nowMs,
+                metrics,
+              });
+            }
             this.score += 1;
             this.targetDirection = this.targetDirection === "LEFT" ? "RIGHT" : "LEFT";
             this.scaledTargetRangeX = this.calculateScaledTargetRange();

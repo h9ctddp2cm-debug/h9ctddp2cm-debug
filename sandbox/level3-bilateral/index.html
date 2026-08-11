@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Level 3 雙側桌面滑動 · 診斷 Sandbox</title>
+  <link rel="preconnect" href="https://api.fontshare.com">
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&f[]=cabinet-grotesk@600,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./diagnostic.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到主要內容</a>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">Developer-only clinical diagnostics</p>
+      <h1>Level 3 雙側桌面滑動 Sandbox</h1>
+    </div>
+    <div class="header-actions">
+      <span class="isolation-badge" data-testid="status-isolation">與正式 Pilot Study 隔離</span>
+      <button class="icon-button" type="button" id="themeToggle" data-testid="button-theme" aria-label="切換深色模式">◐</button>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="safety-note" aria-labelledby="safety-title">
+      <div>
+        <p class="section-kicker">Prototype boundary</p>
+        <h2 id="safety-title">只供治療師與工程人員作影子測試</h2>
+      </div>
+      <p>肩部及手腕訊號只用作動作質素提示，不能診斷軀幹代償或雙側不同步。此頁不屬正式 FTHUE Level 5–7 Pilot Study，亦未獲准供病人自行使用。</p>
+    </section>
+
+    <div class="diagnostic-grid">
+      <aside class="panel controls-panel" aria-labelledby="controls-title">
+        <div class="panel-heading">
+          <p class="section-kicker">Therapist parameters</p>
+          <h2 id="controls-title">治療師設定</h2>
+        </div>
+
+        <fieldset>
+          <legend>患側與首次方向</legend>
+          <div class="segmented">
+            <label><input type="radio" name="affectedSide" value="LEFT" checked data-testid="radio-side-left"><span>左側</span></label>
+            <label><input type="radio" name="affectedSide" value="RIGHT" data-testid="radio-side-right"><span>右側</span></label>
+          </div>
+        </fieldset>
+
+        <label class="field">
+          <span>目標抬高角度</span>
+          <select id="targetElevation" data-testid="select-target-elevation">
+            <option value="30">30°</option>
+            <option value="45" selected>45°</option>
+            <option value="60">60°</option>
+          </select>
+          <small>只作影子測試標記；不參與本橫向滑動引擎判定。</small>
+        </label>
+
+        <label class="field">
+          <span>橫向距離</span>
+          <select id="reachProfile" data-testid="select-reach-profile">
+            <option value="SHORT">短</option>
+            <option value="STANDARD" selected>標準</option>
+            <option value="LONG">長</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>中央容差</span>
+          <select id="toleranceMode" data-testid="select-tolerance">
+            <option value="NARROW">較窄</option>
+            <option value="STANDARD" selected>標準</option>
+            <option value="WIDE">較寬</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>患者左側的追蹤方向</span>
+          <select id="directionMapping" data-testid="select-direction-mapping">
+            <option value="1" selected>X 增加</option>
+            <option value="-1">X 減少</option>
+          </select>
+          <small>應按實際鏡頭輸入管線設定，而非只看預覽是否鏡像。</small>
+        </label>
+
+        <button id="startCamera" class="button primary" type="button" data-testid="button-start-camera">啟動相機與 MediaPipe</button>
+        <button id="beginCalibration" class="button warning" type="button" data-testid="button-begin-calibration">開始／重新校準</button>
+        <button id="runSynthetic" class="button secondary" type="button" data-testid="button-run-synthetic">執行合成完整循環</button>
+        <p id="cameraStatus" class="inline-status" data-testid="status-camera" aria-live="polite">相機尚未啟動；可先執行合成循環測試。</p>
+      </aside>
+
+      <section class="panel camera-panel" aria-labelledby="camera-title">
+        <div class="camera-heading">
+          <div>
+            <p class="section-kicker">Raw tracking coordinates</p>
+            <h2 id="camera-title">視訊、VCP 與校準邊界</h2>
+          </div>
+          <span class="fps" id="fpsValue" data-testid="text-fps">FPS --</span>
+        </div>
+        <div class="canvas-wrap">
+          <canvas id="diagnosticCanvas" width="480" height="360" aria-label="即時視訊、VCP 及校準邊界診斷圖"></canvas>
+          <video id="cameraVideo" playsinline muted></video>
+        </div>
+        <div class="canvas-legend" aria-label="圖例">
+          <span><i class="legend-center"></i>中央基準</span>
+          <span><i class="legend-window"></i>中央容差</span>
+          <span><i class="legend-target"></i>當前目標</span>
+          <span><i class="legend-skeleton"></i>VCP 中點</span>
+        </div>
+      </section>
+    </div>
+
+    <section class="metrics-section" aria-labelledby="metrics-title">
+      <div class="section-heading">
+        <div>
+          <p class="section-kicker">Pose Lite · alternate-frame telemetry</p>
+          <h2 id="metrics-title">即時工程指標</h2>
+        </div>
+        <span id="trackingBadge" class="tracking-badge" data-testid="status-tracking">等待訊號</span>
+      </div>
+
+      <div class="metric-grid">
+        <article class="metric-card state-card">
+          <span>Current state</span>
+          <strong id="stateValue" data-testid="text-state">STATE_CALIBRATION</strong>
+          <small id="actionValue" data-testid="text-action">RESET</small>
+        </article>
+        <article class="metric-card">
+          <span>VCP X／中央／容差</span>
+          <strong id="vcpValue" data-testid="text-vcp">-- / 0.500 / ±0.050</strong>
+          <small id="targetValue" data-testid="text-target">目標距離 0.160</small>
+        </article>
+        <article class="metric-card">
+          <span>肩寬／肩部中點 X</span>
+          <strong id="shoulderValue" data-testid="text-shoulder">-- / --</strong>
+          <small id="directionValue" data-testid="text-direction">首次向左</small>
+        </article>
+        <article class="metric-card">
+          <span>完成次數</span>
+          <strong id="scoreValue" data-testid="text-score">0</strong>
+          <small>左右交替完成循環</small>
+        </article>
+      </div>
+
+      <div class="monitor-grid">
+        <article class="monitor-card" id="symmetryCard">
+          <div class="monitor-heading">
+            <div>
+              <span>雙手距離變化</span>
+              <strong id="symmetryValue" data-testid="text-symmetry">--</strong>
+            </div>
+            <small id="symmetryLimit" data-testid="text-symmetry-limit">界線 --</small>
+          </div>
+          <div class="meter"><span id="symmetryMeter"></span></div>
+          <p>接近界線時顯示黃色預警；超出時暫停狀態進程。</p>
+        </article>
+        <article class="monitor-card" id="trunkCard">
+          <div class="monitor-heading">
+            <div>
+              <span>肩部中點位移</span>
+              <strong id="trunkValue" data-testid="text-trunk">--</strong>
+            </div>
+            <small id="trunkLimit" data-testid="text-trunk-limit">界線 --</small>
+          </div>
+          <div class="meter"><span id="trunkMeter"></span></div>
+          <p>這是軀幹位置改變指標，不是側傾的臨床診斷。</p>
+        </article>
+      </div>
+
+      <p id="guidance" class="guidance" data-testid="text-guidance" aria-live="polite">請將雙手合攏並承托於桌面中央</p>
+    </section>
+
+    <section class="log-section" aria-labelledby="log-title">
+      <div class="section-heading">
+        <div>
+          <p class="section-kicker">Shadow-test evidence</p>
+          <h2 id="log-title">Session 事件記錄</h2>
+        </div>
+        <div class="log-actions">
+          <button id="logSnapshot" class="button secondary" type="button" data-testid="button-log-snapshot">記錄目前一幀</button>
+          <button id="exportJson" class="button secondary" type="button" disabled data-testid="button-export-json">匯出 JSON</button>
+          <button id="exportCsv" class="button secondary" type="button" disabled data-testid="button-export-csv">匯出 CSV</button>
+          <button id="clearLog" class="button ghost" type="button" disabled data-testid="button-clear-log">清除</button>
+        </div>
+      </div>
+      <p class="section-intro">系統只自動記錄校準成功、到達目標、完成循環及動作質素警示。資料只存在目前瀏覽器記憶體，重新整理後清除。</p>
+      <div class="log-summary">
+        <span>事件數 <strong id="logCount" data-testid="text-log-count">0</strong></span>
+        <span>Session <strong id="sessionId" data-testid="text-session-id">--</strong></span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>時間</th><th>事件</th><th>狀態</th><th>VCP X</th><th>肩寬</th><th>肩中點 X</th></tr>
+          </thead>
+          <tbody id="logRows" data-testid="table-log-rows"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Developer sandbox only. Target elevation is metadata; the active engine evaluates bilateral lateral tabletop trajectories.</p>
+  </footer>
+  <script type="module" src="./diagnosticApp.js"></script>
+</body>
+</html>
