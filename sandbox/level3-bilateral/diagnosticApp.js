@@ -653,7 +653,7 @@ elements.beginCalibration.addEventListener("click", () => {
   engine = new Level3BilateralSandbox(currentConfig());
   lastPose = null;
   handleOutput(engine.output({
-    message: "已重置：患手輕輕放在毛巾上由健手承托，一起放回桌面中央",
+    message: "已重置：雙手放回同一張毛巾中央；毛巾跟手側滑，軀幹保持正中",
     action: "CALIBRATION_STARTED",
     nowMs: performance.now(),
   }));

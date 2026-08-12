@@ -245,6 +245,15 @@ test("Level 3 page shows a prominent red stop warning before use", () => {
   assert.ok(pageSource.includes("影子測試"), "supervised shadow-testing warning must be kept");
 });
 
+test("Level 3 instructions require the towel to move with the hands and prohibit trunk compensation", () => {
+  assert.match(pageSource, /毛巾必須跟手一同側滑/);
+  assert.match(pageSource, /軀幹保持正中/);
+  assert.match(pageSource, /不可側彎、旋轉或向前傾/);
+  const engine = new Level3BilateralSandbox();
+  assert.match(engine.lastMessage, /毛巾跟手側滑/);
+  assert.match(engine.lastMessage, /軀幹保持正中/);
+});
+
 test("Level 3 page gates camera and session behind an explicit acknowledgement", () => {
   assert.match(pageSource, /data-testid="panel-level3-safety-gate"/);
   assert.match(pageSource, /data-testid="checkbox-l3-safety-ack"/);

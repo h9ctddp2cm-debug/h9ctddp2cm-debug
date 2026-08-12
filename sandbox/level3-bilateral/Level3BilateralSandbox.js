@@ -109,7 +109,7 @@ export class Level3BilateralSandbox {
     this.returnTriggeredByRelease = false;
     this.score = 0;
     this.lastMetrics = null;
-    this.lastMessage = "患手輕輕放在毛巾上，由健手承托，一起放在桌面中央（手指不需互扣）";
+    this.lastMessage = "患手由健手輕輕承托，雙手放在同一張毛巾上；毛巾跟手側滑，軀幹保持正中，手指不需互扣";
     this.lastAction = "RESET";
   }
 

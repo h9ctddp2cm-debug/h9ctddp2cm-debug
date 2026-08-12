@@ -209,20 +209,23 @@ try {
   }
 
   const notes = safetyConstants.levelNotes;
-  check("3", "safety copy", "Level 3 note specifies supported lateral shoulder abduction and rejects forward reach",
-    notes["3"].includes("承托") && notes["3"].includes("不需互扣")
-    && notes["3"].includes("肩外展") && notes["3"].includes("不要向前伸")
+  check("3", "safety copy", "Level 3 note requires towel movement and prohibits trunk compensation",
+    notes["3"].includes("毛巾必須跟手") && notes["3"].includes("軀幹保持正中")
+    && notes["3"].includes("不可側彎") && notes["3"].includes("肩外展")
     && !notes["3"].includes("互扣合攏"), { note: notes["3"] });
-  check("4", "safety copy", "Level 4 note mandates three calibration attempts without compensation",
-    notes["4"].includes("三次練習") && notes["4"].includes("無肩膊抬高")
-    && notes["4"].includes("慢慢向前滑"), { note: notes["4"] });
-  check("5", "safety copy", "Level 5 note specifies simulated empty-air grasp and individualized release calibration",
-    notes["5"].includes("空手模擬") && notes["5"].includes("輕輕合手")
-    && !notes["5"].includes("握拳") && !notes["5"].includes("握緊")
+  check("4", "safety copy", "Level 4 note requires a clear environment and safe board distance",
+    notes["4"].includes("清空桌面") && notes["4"].includes("10–15 cm")
+    && notes["4"].includes("不可貼近腹部") && notes["4"].includes("慢慢向前滑"),
+    { note: notes["4"] });
+  check("5", "safety copy", "Level 5 note specifies off-table functional reach and loose simulated grasp",
+    notes["5"].includes("手臂全程離開桌面") && notes["5"].includes("可見空隙")
+    && notes["5"].includes("空手模擬") && !notes["5"].includes("握拳")
+    && !notes["5"].includes("握緊")
     && notes["5"].includes("按患者當日張手幅度校準"), { note: notes["5"] });
-  check("6", "safety copy", "Level 6 note specifies empty-hand pinch without an object or tool",
-    notes["67"].includes("只用空手") && notes["67"].includes("不要拿實物")
-    && notes["67"].includes("不要用盡力"), { note: notes["67"] });
+  check("6", "safety copy", "Level 6 note specifies off-table functional reach and empty-hand pinch",
+    notes["67"].includes("手臂全程離開桌面") && notes["67"].includes("只用空手")
+    && notes["67"].includes("不拿實物") && notes["67"].includes("不要用盡力"),
+    { note: notes["67"] });
 
   const bodyText = await page.evaluate(() => document.body.innerText);
   check("5", "safety copy", "no patient-facing 握拳/握緊 wording remains in the interface",

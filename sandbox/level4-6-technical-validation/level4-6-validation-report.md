@@ -1,6 +1,6 @@
 # Level 4–6 Technical Validation Report
 
-Generated: 2026-08-12T11:49:13.814Z
+Generated: 2026-08-12T14:01:05.434Z
 
 Result: **PASS** (120/120 checks passed)
 
@@ -101,10 +101,10 @@ This is reproducible software technical verification only. It does not establish
 - PASS | Level 6 | safety gate | acknowledgement enables the continue action
 - PASS | Level 6 | safety gate | explicit acknowledgement is required and then proceeds
 - PASS | Level 6 | safety gate | level-specific safety note is visible on the screen
-- PASS | Level 3 | safety copy | Level 3 note specifies supported lateral shoulder abduction and rejects forward reach
-- PASS | Level 4 | safety copy | Level 4 note mandates three calibration attempts without compensation
-- PASS | Level 5 | safety copy | Level 5 note specifies simulated empty-air grasp and individualized release calibration
-- PASS | Level 6 | safety copy | Level 6 note specifies empty-hand pinch without an object or tool
+- PASS | Level 3 | safety copy | Level 3 note requires towel movement and prohibits trunk compensation
+- PASS | Level 4 | safety copy | Level 4 note requires a clear environment and safe board distance
+- PASS | Level 5 | safety copy | Level 5 note specifies off-table functional reach and loose simulated grasp
+- PASS | Level 6 | safety copy | Level 6 note specifies off-table functional reach and empty-hand pinch
 - PASS | Level 5 | safety copy | no patient-facing 握拳/握緊 wording remains in the interface
 - PASS | Level 4 | rest/stop | large 休息 and 停止 controls are always visible during play
 - PASS | Level 4 | rest/stop | rest pauses active game timing

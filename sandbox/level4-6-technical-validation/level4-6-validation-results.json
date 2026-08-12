@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-12T11:49:13.814Z",
+  "generated_at": "2026-08-12T14:01:05.434Z",
   "base_url": "http://127.0.0.1:4173",
   "scope": "Independent technical verification for FTHUE Levels 4, 5, and 6",
   "limitation": "Not clinical validation; Level 6 aperture detection does not measure pinch force.",
@@ -423,15 +423,15 @@
         },
         "items": [
           {
-            "label": "糯米雞",
-            "type": "lotusrice",
+            "label": "叉燒包",
+            "type": "charsiu",
             "x": 472,
             "y": 656,
             "r": 104
           },
           {
-            "label": "糯米雞",
-            "type": "lotusrice",
+            "label": "叉燒包",
+            "type": "charsiu",
             "x": 708,
             "y": 656,
             "r": 104
@@ -495,15 +495,15 @@
         },
         "items": [
           {
-            "label": "糯米雞",
-            "type": "lotusrice",
+            "label": "叉燒包",
+            "type": "charsiu",
             "x": 472,
             "y": 656,
             "r": 104
           },
           {
-            "label": "糯米雞",
-            "type": "lotusrice",
+            "label": "叉燒包",
+            "type": "charsiu",
             "x": 708,
             "y": 656,
             "r": 104
@@ -615,8 +615,8 @@
             "r": 118
           },
           {
-            "label": "叉燒包",
-            "type": "charsiu",
+            "label": "糯米雞",
+            "type": "lotusrice",
             "x": 920.4,
             "y": 442.8,
             "r": 118
@@ -694,8 +694,8 @@
             "r": 118
           },
           {
-            "label": "叉燒包",
-            "type": "charsiu",
+            "label": "糯米雞",
+            "type": "lotusrice",
             "x": 920.4,
             "y": 442.8,
             "r": 118
@@ -793,11 +793,11 @@
         },
         "items": [
           {
-            "label": "蝦餃",
-            "type": "hargau",
+            "label": "燒賣",
+            "type": "siumai",
             "x": 259.6,
             "y": 442.8,
-            "r": 145
+            "r": 100
           },
           {
             "label": "燒賣",
@@ -872,11 +872,11 @@
         },
         "items": [
           {
-            "label": "蝦餃",
-            "type": "hargau",
+            "label": "燒賣",
+            "type": "siumai",
             "x": 259.6,
             "y": 442.8,
-            "r": 145
+            "r": 100
           },
           {
             "label": "燒賣",
@@ -922,10 +922,10 @@
         "maxHoldMs": 5000,
         "releaseDifficultyLimit": 3,
         "levelNotes": {
-          "3": "Level 3：患手放在毛巾或滑板上，由健手輕輕承托，從身體中線向左或右側滑作肩外展；不要向前伸。患手手指不需互扣或用力握住。",
-          "4": "Level 4：先由治療師帶患者做三次練習，選出「無肩膊抬高、無軀幹傾斜、無疼痛、手指亦無愈來愈繃緊」的最遠距離，之後全節只用這個距離。動作要慢慢向前滑，不需要快。",
-          "5": "Level 5：在鏡頭前空手模擬握取。輕輕合手，不用力屈曲手指；保持合手最多約 5 秒，之後張開手及放鬆。放手門檻按患者當日張手幅度校準。",
-          "67": "Level 6：只用空手在鏡頭前模擬捏取，由系統偵測拇指與食指的張開幅度。不要拿實物或使用工具；只需輕輕捏合，不要用盡力。"
+          "3": "Level 3：雙前臂及雙手放在同一張毛巾上，由身體中線向左或右側滑作肩外展，毛巾必須跟手一同移動。軀幹保持正中，不可側彎、旋轉或向前傾；肩膊抬高或身體代償便立即暫停。患手不需互扣或用力握住。",
+          "4": "Level 4：先清空桌面及鏡頭背景。滑板起點須離身體約 10–15 cm，不可貼近腹部；治療師帶患者做三次練習，選出無肩膊抬高、無軀幹傾斜、無疼痛的安全距離。前臂承托在滑板上慢慢向前滑，不需要快。",
+          "5": "Level 5：手臂全程離開桌面，在空中完成伸手、鬆握、移動及張手。只需輕輕彎曲手指並保持可見空隙，不可把手指緊壓掌心；空手模擬，不拿實物。放手門檻按患者當日張手幅度校準。",
+          "67": "Level 6：手臂全程離開桌面，在空中完成伸手、輕捏、移動及張開。只用空手模擬，不拿實物或工具；拇指與食指只需輕輕靠近，不要用盡力。"
         }
       }
     },
@@ -956,7 +956,7 @@
         "screen": "safety",
         "ackChecked": false,
         "continueDisabled": true,
-        "levelNote": "Level 3：患手放在毛巾或滑板上，由健手輕輕承托，從身體中線向左或右側滑作肩外展；不要向前伸。患手手指不需互扣或用力握住。",
+        "levelNote": "Level 3：雙前臂及雙手放在同一張毛巾上，由身體中線向左或右側滑作肩外展，毛巾必須跟手一同移動。軀幹保持正中，不可側彎、旋轉或向前傾；肩膊抬高或身體代償便立即暫停。患手不需互扣或用力握住。",
         "continued": false
       }
     },
@@ -969,7 +969,7 @@
         "screen": "safety",
         "ackChecked": false,
         "continueDisabled": true,
-        "levelNote": "Level 3：患手放在毛巾或滑板上，由健手輕輕承托，從身體中線向左或右側滑作肩外展；不要向前伸。患手手指不需互扣或用力握住。",
+        "levelNote": "Level 3：雙前臂及雙手放在同一張毛巾上，由身體中線向左或右側滑作肩外展，毛巾必須跟手一同移動。軀幹保持正中，不可側彎、旋轉或向前傾；肩膊抬高或身體代償便立即暫停。患手不需互扣或用力握住。",
         "continued": false
       }
     },
@@ -982,7 +982,7 @@
         "screen": "safety",
         "ackChecked": true,
         "continueDisabled": false,
-        "levelNote": "Level 3：患手放在毛巾或滑板上，由健手輕輕承托，從身體中線向左或右側滑作肩外展；不要向前伸。患手手指不需互扣或用力握住。",
+        "levelNote": "Level 3：雙前臂及雙手放在同一張毛巾上，由身體中線向左或右側滑作肩外展，毛巾必須跟手一同移動。軀幹保持正中，不可側彎、旋轉或向前傾；肩膊抬高或身體代償便立即暫停。患手不需互扣或用力握住。",
         "continued": false
       }
     },
@@ -995,7 +995,7 @@
         "screen": "safety",
         "ackChecked": true,
         "continueDisabled": false,
-        "levelNote": "Level 3：患手放在毛巾或滑板上，由健手輕輕承托，從身體中線向左或右側滑作肩外展；不要向前伸。患手手指不需互扣或用力握住。",
+        "levelNote": "Level 3：雙前臂及雙手放在同一張毛巾上，由身體中線向左或右側滑作肩外展，毛巾必須跟手一同移動。軀幹保持正中，不可側彎、旋轉或向前傾；肩膊抬高或身體代償便立即暫停。患手不需互扣或用力握住。",
         "continued": true
       }
     },
@@ -1005,7 +1005,7 @@
       "name": "level-specific safety note is visible on the screen",
       "passed": true,
       "details": {
-        "length": 63
+        "length": 96
       }
     },
     {
@@ -1026,7 +1026,7 @@
         "screen": "safety",
         "ackChecked": false,
         "continueDisabled": true,
-        "levelNote": "Level 4：先由治療師帶患者做三次練習，選出「無肩膊抬高、無軀幹傾斜、無疼痛、手指亦無愈來愈繃緊」的最遠距離，之後全節只用這個距離。動作要慢慢向前滑，不需要快。",
+        "levelNote": "Level 4：先清空桌面及鏡頭背景。滑板起點須離身體約 10–15 cm，不可貼近腹部；治療師帶患者做三次練習，選出無肩膊抬高、無軀幹傾斜、無疼痛的安全距離。前臂承托在滑板上慢慢向前滑，不需要快。",
         "continued": false
       }
     },
@@ -1039,7 +1039,7 @@
         "screen": "safety",
         "ackChecked": false,
         "continueDisabled": true,
-        "levelNote": "Level 4：先由治療師帶患者做三次練習，選出「無肩膊抬高、無軀幹傾斜、無疼痛、手指亦無愈來愈繃緊」的最遠距離，之後全節只用這個距離。動作要慢慢向前滑，不需要快。",
+        "levelNote": "Level 4：先清空桌面及鏡頭背景。滑板起點須離身體約 10–15 cm，不可貼近腹部；治療師帶患者做三次練習，選出無肩膊抬高、無軀幹傾斜、無疼痛的安全距離。前臂承托在滑板上慢慢向前滑，不需要快。",
         "continued": false
       }
     },
@@ -1052,7 +1052,7 @@
         "screen": "safety",
         "ackChecked": true,
         "continueDisabled": false,
-        "levelNote": "Level 4：先由治療師帶患者做三次練習，選出「無肩膊抬高、無軀幹傾斜、無疼痛、手指亦無愈來愈繃緊」的最遠距離，之後全節只用這個距離。動作要慢慢向前滑，不需要快。",
+        "levelNote": "Level 4：先清空桌面及鏡頭背景。滑板起點須離身體約 10–15 cm，不可貼近腹部；治療師帶患者做三次練習，選出無肩膊抬高、無軀幹傾斜、無疼痛的安全距離。前臂承托在滑板上慢慢向前滑，不需要快。",
         "continued": false
       }
     },
@@ -1065,7 +1065,7 @@
         "screen": "safety",
         "ackChecked": true,
         "continueDisabled": false,
-        "levelNote": "Level 4：先由治療師帶患者做三次練習，選出「無肩膊抬高、無軀幹傾斜、無疼痛、手指亦無愈來愈繃緊」的最遠距離，之後全節只用這個距離。動作要慢慢向前滑，不需要快。",
+        "levelNote": "Level 4：先清空桌面及鏡頭背景。滑板起點須離身體約 10–15 cm，不可貼近腹部；治療師帶患者做三次練習，選出無肩膊抬高、無軀幹傾斜、無疼痛的安全距離。前臂承托在滑板上慢慢向前滑，不需要快。",
         "continued": true
       }
     },
@@ -1075,7 +1075,7 @@
       "name": "level-specific safety note is visible on the screen",
       "passed": true,
       "details": {
-        "length": 82
+        "length": 99
       }
     },
     {
@@ -1096,7 +1096,7 @@
         "screen": "safety",
         "ackChecked": false,
         "continueDisabled": true,
-        "levelNote": "Level 5：在鏡頭前空手模擬握取。輕輕合手，不用力屈曲手指；保持合手最多約 5 秒，之後張開手及放鬆。放手門檻按患者當日張手幅度校準。",
+        "levelNote": "Level 5：手臂全程離開桌面，在空中完成伸手、鬆握、移動及張手。只需輕輕彎曲手指並保持可見空隙，不可把手指緊壓掌心；空手模擬，不拿實物。放手門檻按患者當日張手幅度校準。",
         "continued": false
       }
     },
@@ -1109,7 +1109,7 @@
         "screen": "safety",
         "ackChecked": false,
         "continueDisabled": true,
-        "levelNote": "Level 5：在鏡頭前空手模擬握取。輕輕合手，不用力屈曲手指；保持合手最多約 5 秒，之後張開手及放鬆。放手門檻按患者當日張手幅度校準。",
+        "levelNote": "Level 5：手臂全程離開桌面，在空中完成伸手、鬆握、移動及張手。只需輕輕彎曲手指並保持可見空隙，不可把手指緊壓掌心；空手模擬，不拿實物。放手門檻按患者當日張手幅度校準。",
         "continued": false
       }
     },
@@ -1122,7 +1122,7 @@
         "screen": "safety",
         "ackChecked": true,
         "continueDisabled": false,
-        "levelNote": "Level 5：在鏡頭前空手模擬握取。輕輕合手，不用力屈曲手指；保持合手最多約 5 秒，之後張開手及放鬆。放手門檻按患者當日張手幅度校準。",
+        "levelNote": "Level 5：手臂全程離開桌面，在空中完成伸手、鬆握、移動及張手。只需輕輕彎曲手指並保持可見空隙，不可把手指緊壓掌心；空手模擬，不拿實物。放手門檻按患者當日張手幅度校準。",
         "continued": false
       }
     },
@@ -1135,7 +1135,7 @@
         "screen": "safety",
         "ackChecked": true,
         "continueDisabled": false,
-        "levelNote": "Level 5：在鏡頭前空手模擬握取。輕輕合手，不用力屈曲手指；保持合手最多約 5 秒，之後張開手及放鬆。放手門檻按患者當日張手幅度校準。",
+        "levelNote": "Level 5：手臂全程離開桌面，在空中完成伸手、鬆握、移動及張手。只需輕輕彎曲手指並保持可見空隙，不可把手指緊壓掌心；空手模擬，不拿實物。放手門檻按患者當日張手幅度校準。",
         "continued": true
       }
     },
@@ -1145,7 +1145,7 @@
       "name": "level-specific safety note is visible on the screen",
       "passed": true,
       "details": {
-        "length": 69
+        "length": 86
       }
     },
     {
@@ -1166,7 +1166,7 @@
         "screen": "safety",
         "ackChecked": false,
         "continueDisabled": true,
-        "levelNote": "Level 6：只用空手在鏡頭前模擬捏取，由系統偵測拇指與食指的張開幅度。不要拿實物或使用工具；只需輕輕捏合，不要用盡力。",
+        "levelNote": "Level 6：手臂全程離開桌面，在空中完成伸手、輕捏、移動及張開。只用空手模擬，不拿實物或工具；拇指與食指只需輕輕靠近，不要用盡力。",
         "continued": false
       }
     },
@@ -1179,7 +1179,7 @@
         "screen": "safety",
         "ackChecked": false,
         "continueDisabled": true,
-        "levelNote": "Level 6：只用空手在鏡頭前模擬捏取，由系統偵測拇指與食指的張開幅度。不要拿實物或使用工具；只需輕輕捏合，不要用盡力。",
+        "levelNote": "Level 6：手臂全程離開桌面，在空中完成伸手、輕捏、移動及張開。只用空手模擬，不拿實物或工具；拇指與食指只需輕輕靠近，不要用盡力。",
         "continued": false
       }
     },
@@ -1192,7 +1192,7 @@
         "screen": "safety",
         "ackChecked": true,
         "continueDisabled": false,
-        "levelNote": "Level 6：只用空手在鏡頭前模擬捏取，由系統偵測拇指與食指的張開幅度。不要拿實物或使用工具；只需輕輕捏合，不要用盡力。",
+        "levelNote": "Level 6：手臂全程離開桌面，在空中完成伸手、輕捏、移動及張開。只用空手模擬，不拿實物或工具；拇指與食指只需輕輕靠近，不要用盡力。",
         "continued": false
       }
     },
@@ -1205,7 +1205,7 @@
         "screen": "safety",
         "ackChecked": true,
         "continueDisabled": false,
-        "levelNote": "Level 6：只用空手在鏡頭前模擬捏取，由系統偵測拇指與食指的張開幅度。不要拿實物或使用工具；只需輕輕捏合，不要用盡力。",
+        "levelNote": "Level 6：手臂全程離開桌面，在空中完成伸手、輕捏、移動及張開。只用空手模擬，不拿實物或工具；拇指與食指只需輕輕靠近，不要用盡力。",
         "continued": true
       }
     },
@@ -1215,43 +1215,43 @@
       "name": "level-specific safety note is visible on the screen",
       "passed": true,
       "details": {
-        "length": 61
+        "length": 67
       }
     },
     {
       "level": "3",
       "category": "safety copy",
-      "name": "Level 3 note specifies supported lateral shoulder abduction and rejects forward reach",
+      "name": "Level 3 note requires towel movement and prohibits trunk compensation",
       "passed": true,
       "details": {
-        "note": "Level 3：患手放在毛巾或滑板上，由健手輕輕承托，從身體中線向左或右側滑作肩外展；不要向前伸。患手手指不需互扣或用力握住。"
+        "note": "Level 3：雙前臂及雙手放在同一張毛巾上，由身體中線向左或右側滑作肩外展，毛巾必須跟手一同移動。軀幹保持正中，不可側彎、旋轉或向前傾；肩膊抬高或身體代償便立即暫停。患手不需互扣或用力握住。"
       }
     },
     {
       "level": "4",
       "category": "safety copy",
-      "name": "Level 4 note mandates three calibration attempts without compensation",
+      "name": "Level 4 note requires a clear environment and safe board distance",
       "passed": true,
       "details": {
-        "note": "Level 4：先由治療師帶患者做三次練習，選出「無肩膊抬高、無軀幹傾斜、無疼痛、手指亦無愈來愈繃緊」的最遠距離，之後全節只用這個距離。動作要慢慢向前滑，不需要快。"
+        "note": "Level 4：先清空桌面及鏡頭背景。滑板起點須離身體約 10–15 cm，不可貼近腹部；治療師帶患者做三次練習，選出無肩膊抬高、無軀幹傾斜、無疼痛的安全距離。前臂承托在滑板上慢慢向前滑，不需要快。"
       }
     },
     {
       "level": "5",
       "category": "safety copy",
-      "name": "Level 5 note specifies simulated empty-air grasp and individualized release calibration",
+      "name": "Level 5 note specifies off-table functional reach and loose simulated grasp",
       "passed": true,
       "details": {
-        "note": "Level 5：在鏡頭前空手模擬握取。輕輕合手，不用力屈曲手指；保持合手最多約 5 秒，之後張開手及放鬆。放手門檻按患者當日張手幅度校準。"
+        "note": "Level 5：手臂全程離開桌面，在空中完成伸手、鬆握、移動及張手。只需輕輕彎曲手指並保持可見空隙，不可把手指緊壓掌心；空手模擬，不拿實物。放手門檻按患者當日張手幅度校準。"
       }
     },
     {
       "level": "6",
       "category": "safety copy",
-      "name": "Level 6 note specifies empty-hand pinch without an object or tool",
+      "name": "Level 6 note specifies off-table functional reach and empty-hand pinch",
       "passed": true,
       "details": {
-        "note": "Level 6：只用空手在鏡頭前模擬捏取，由系統偵測拇指與食指的張開幅度。不要拿實物或使用工具；只需輕輕捏合，不要用盡力。"
+        "note": "Level 6：手臂全程離開桌面，在空中完成伸手、輕捏、移動及張開。只用空手模擬，不拿實物或工具；拇指與食指只需輕輕靠近，不要用盡力。"
       }
     },
     {
