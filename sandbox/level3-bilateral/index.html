@@ -26,26 +26,25 @@
     aria-labelledby="safety-gate-title" data-testid="panel-level3-safety-gate">
     <div class="safety-gate-card">
       <h2 id="safety-gate-title">開始前安全確認</h2>
-      <p class="gate-red">
-        必須由職業治療師全程在場監督。如出現肩膊拉扯、手部愈來愈繃緊、軀幹向側傾斜或疼痛，請立即停止。
-      </p>
+      <p class="gate-red">治療師全程監督。痛、手緊或軀幹代償：立即停止。</p>
       <ul class="gate-list">
-        <li data-testid="text-l3-safety-stable">患者醫學狀況穩定，可以安全坐穩</li>
-        <li data-testid="text-l3-safety-support">雙前臂及雙手放在同一張毛巾上；毛巾必須跟手一同側滑，手指不需互扣或用力握住</li>
-        <li data-testid="text-l3-safety-trunk">軀幹保持正中，不可側彎、旋轉或向前傾；出現代償便立即暫停</li>
-        <li data-testid="text-l3-safety-baseline">已檢查基線：疼痛、疲勞及手部繃緊程度</li>
-        <li data-testid="text-l3-safety-practice">先做三次練習，確認動作安全、無疼痛才正式開始</li>
-        <li data-testid="text-l3-safety-rest">患者隨時可以休息或停止</li>
-        <li data-testid="text-l3-safety-quality">重視動作質素，不要追分數、不要趕速度</li>
-        <li data-testid="text-l3-safety-range">由治療師選定無疼痛、無代償的滑行範圍（預設短距離）</li>
+        <li data-testid="text-l3-safety-stable">坐姿穩定</li>
+        <li data-testid="text-l3-safety-support">毛巾必須跟手一同側滑；不互扣、不用力</li>
+        <li data-testid="text-l3-camera-angle">iPad 向下傾；肩、肘、手、路徑全入鏡</li>
+        <li data-testid="text-l3-safety-trunk">軀幹保持正中；不可側彎、旋轉或向前傾</li>
+        <li data-testid="text-l3-safety-baseline">先檢查痛、攰、手緊</li>
+        <li data-testid="text-l3-safety-practice">先試 3 次，無痛才開始</li>
+        <li data-testid="text-l3-safety-rest">隨時休息／停止</li>
+        <li data-testid="text-l3-safety-quality">慢、穩、不追分</li>
+        <li data-testid="text-l3-safety-range">短距離；無痛、無代償</li>
       </ul>
       <label class="gate-ack" for="safetyGateAck">
         <input type="checkbox" id="safetyGateAck" data-testid="checkbox-l3-safety-ack">
-        <span>治療師確認：已逐項核對以上安全項目，並會全程在場監督。</span>
+        <span>治療師已核對並全程監督</span>
       </label>
       <div class="gate-actions">
         <button type="button" class="button primary" id="safetyGateContinue"
-          data-testid="button-l3-safety-continue" disabled>確認，繼續</button>
+          data-testid="button-l3-safety-continue" disabled>繼續</button>
         <button type="button" class="button ghost" id="safetyGateBack"
           data-testid="button-l3-safety-back">返回主頁</button>
       </div>
@@ -59,22 +58,17 @@
         <h2 id="safety-red-title">出現以下情況請立即停止</h2>
       </div>
       <ul class="red-warning-list">
-        <li>肩膊被拉扯、肩關節不適或疼痛</li>
-        <li>患手愈來愈繃緊、手指愈抓愈緊</li>
-        <li>軀幹向側傾斜、坐姿不穩</li>
-        <li>任何疼痛、頭暈或不適</li>
+        <li>肩膊被拉扯／疼痛</li>
+        <li>患手愈來愈繃緊</li>
+        <li>軀幹向側傾斜／旋轉</li>
       </ul>
-      <p><b>雙前臂及雙手放在同一張毛巾上，毛巾跟手由中線向側滑；軀幹保持正中，手指不需互扣或用力握住。</b>
-        全程必須由職業治療師在場監督；患者隨時可以休息或停止。</p>
+      <p><b>毛巾跟手側滑；軀幹正中；不需互扣。</b> 治療師監督，可隨時停止。</p>
     </section>
 
-    <section class="safety-note" aria-labelledby="safety-title">
-      <div>
-        <p class="section-kicker">Prototype boundary</p>
-        <h2 id="safety-title">只供治療師與工程人員作影子測試</h2>
-      </div>
-      <p>肩部及手腕訊號只用作動作質素提示，不能診斷軀幹代償或雙側不同步，亦不會自動偵測肌張力或痙攣。此頁不屬正式 FTHUE Level 5–7 Pilot Study，亦未獲准供病人自行使用。</p>
-    </section>
+    <details class="safety-note" aria-labelledby="safety-title">
+      <summary id="safety-title"><b>影子測試限制</b></summary>
+      <p>只供監督測試；不診斷代償、肌張力或痙攣。</p>
+    </details>
 
     <div class="diagnostic-grid">
       <aside class="panel controls-panel" aria-labelledby="controls-title">
@@ -87,7 +81,7 @@
           <label class="field full">
             <span>匿名患者識別碼</span>
             <input id="patientId" value="SUBACUTE_PT_001" maxlength="40" autocomplete="off" data-testid="input-patient-id">
-            <small>不可輸入姓名、身份證號碼或其他可識別資料。</small>
+            <small>只可輸入匿名編號。</small>
           </label>
           <label class="field">
             <span>FTHUE 等級</span>
@@ -116,12 +110,12 @@
               <option value="SINGLE_TASK_BASELINE" selected>Single-task baseline</option>
               <option value="DUAL_TASK_INTERFERENCE">Dual-task interference</option>
             </select>
-            <small>由隨機序列與區塊位置自動鎖定。</small>
+            <small>自動鎖定。</small>
           </label>
           <div class="field">
             <span>計劃主動時間</span>
             <output id="plannedDuration" class="readonly-value" data-testid="text-planned-duration">5 分鐘</output>
-            <small>用於計算每計劃分鐘警告密度。</small>
+            <small>警告密度分母。</small>
           </div>
           <label class="field full">
             <span>認知負荷階層</span>
@@ -138,9 +132,9 @@
           </label>
         </div>
 
-        <details class="fatigue-panel" open>
+        <details class="fatigue-panel">
           <summary>疲勞量尺 T0 / T1 / T2</summary>
-          <p>VAS-F：0–100 mm；Borg RPE：6–20。未到量度時間可留空，JSON 會保留為 null。</p>
+          <p>VAS-F 0–100；RPE 6–20。未量度留空。</p>
           <div class="fatigue-grid">
             <label class="field">
               <span>T0 VAS-F (mm)</span>
@@ -192,8 +186,7 @@
             <option value="B" selected>B</option>
             <option value="C">C</option>
           </select>
-          <small>中性的節次標籤（取代舊「目標抬高角度」）。實際任務是桌面橫向滑行，並無抬高動作；
-            舊欄位仍以向後相容 metadata 保留。</small>
+          <small>桌面橫向滑行，沒有抬高。</small>
         </label>
 
         <label class="field">
@@ -203,8 +196,7 @@
             <option value="STANDARD">標準</option>
             <option value="LONG">長</option>
           </select>
-          <small>預設短距離。請由治療師先做 3 次練習，選出無疼痛、無肩膊抬高、
-            無軀幹傾斜及手指不會愈來愈繃緊的範圍。</small>
+          <small>先試 3 次；無痛、無代償。</small>
         </label>
 
         <label class="field">
@@ -222,7 +214,7 @@
             <option value="1" selected>X 增加</option>
             <option value="-1">X 減少</option>
           </select>
-          <small>應按實際鏡頭輸入管線設定，而非只看預覽是否鏡像。</small>
+          <small>按實際追蹤方向設定。</small>
         </label>
 
         <div class="session-controls" aria-label="Session controls">

@@ -516,7 +516,7 @@ function cameraLoop(now) {
     const result = poseLandmarker.detectForVideo(elements.video, now);
     lastPose = result?.landmarks?.[0] || null;
     const worldPose = result?.worldLandmarks?.[0] || null;
-    handleOutput(engine.update(lastPose, worldPose, !lastPose || !worldPose, now));
+    handleOutput(engine.update(lastPose, worldPose, !lastPose, now));
   } catch {
     lastPose = null;
     handleOutput(engine.update(null, null, true, now));
@@ -613,15 +613,15 @@ async function startCameraFlow() {
     cameraStream = await navigator.mediaDevices.getUserMedia({
       video: {
         facingMode: "user",
-        width: { ideal: 480, max: 480 },
-        height: { ideal: 360, max: 360 },
-        frameRate: { ideal: 15, max: 15 },
+        width: { ideal: 960, max: 1280 },
+        height: { ideal: 720, max: 720 },
+        frameRate: { ideal: 24, max: 30 },
       },
       audio: false,
     });
     elements.video.srcObject = cameraStream;
     await elements.video.play();
-    elements.cameraStatus.textContent = "Pose Lite 已啟動（480×360、每兩幀推論一次、無 Hands 模型、無骨架繪製）。";
+    elements.cameraStatus.textContent = "Pose Lite 已啟動（最高 1280×720、每兩幀推論一次）。請把 iPad 稍為向下傾，畫面須見到肩、手肘、雙手及整段側滑路徑。";
     if (animationFrameId) cancelAnimationFrame(animationFrameId);
     animationFrameId = requestAnimationFrame(cameraLoop);
     return true;

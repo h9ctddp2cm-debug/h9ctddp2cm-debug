@@ -35,19 +35,15 @@ function pointIsSafe(point) {
   if (![point.x, point.y, point.z].every(Number.isFinite)) return false;
   if (point.x < 0 || point.x > 1 || point.y < 0 || point.y > 1) return false;
   if (Math.abs(point.z) > 5) return false;
-  return Number.isFinite(point.visibility) && point.visibility >= 0.6;
+  const confidence = Math.max(
+    Number.isFinite(point.visibility) ? point.visibility : 0,
+    Number.isFinite(point.presence) ? point.presence : 0,
+  );
+  return confidence >= 0.5;
 }
 
 function planarDistance(first, second) {
   return Math.hypot(first.x - second.x, first.y - second.y);
-}
-
-function spatialDistance(first, second) {
-  return Math.hypot(first.x - second.x, first.y - second.y, first.z - second.z);
-}
-
-function worldPointIsSafe(point) {
-  return Boolean(point) && [point.x, point.y, point.z].every(Number.isFinite);
 }
 
 export class Level3BilateralSandbox {
@@ -220,7 +216,7 @@ export class Level3BilateralSandbox {
     trackingLost = false,
     nowMs = globalThis.performance?.now?.() ?? Date.now(),
   ) {
-    if (trackingLost || !Array.isArray(poseLandmarks) || !Array.isArray(poseWorldLandmarks)) {
+    if (trackingLost || !Array.isArray(poseLandmarks)) {
       return this.failTracking("請將雙手移回鏡頭範圍", "TRACKING_LOST", nowMs);
     }
 
@@ -234,19 +230,18 @@ export class Level3BilateralSandbox {
 
     const vcpX = (leftWrist.x + rightWrist.x) / 2;
     const vcpY = (leftWrist.y + rightWrist.y) / 2;
-    const worldLeftWrist = poseWorldLandmarks[15];
-    const worldRightWrist = poseWorldLandmarks[16];
-    if (![worldLeftWrist, worldRightWrist].every(worldPointIsSafe)) {
-      return this.failTracking("手腕世界座標不完整，請調整雙手位置", "UNKNOWN", nowMs);
-    }
-    const wristSeparation = spatialDistance(worldLeftWrist, worldRightWrist);
     const shoulderWidth = planarDistance(leftShoulder, rightShoulder);
+    // Use one stable within-session unit. Pose World Landmarks are commonly dropped
+    // when wrists sit low on a tabletop; switching between metres and screen units
+    // mid-session would corrupt the calibrated open/closed thresholds.
+    const wristSeparation = planarDistance(leftWrist, rightWrist)
+      / Math.max(shoulderWidth, 0.001);
     const shoulderCenterX = (leftShoulder.x + rightShoulder.x) / 2;
     const metrics = {
       vcpX,
       vcpY,
       wristSeparation,
-      wristSeparationUnit: "m",
+      wristSeparationUnit: "shoulder_width_ratio",
       shoulderWidth,
       shoulderCenterX,
       leftWristX: leftWrist.x,
@@ -366,9 +361,19 @@ export class Level3BilateralSandbox {
       });
     }
 
+    const handAction = wristSeparation <= wristClosedThreshold
+      ? "CLOSED"
+      : wristSeparation >= wristOpenThreshold
+        ? "OPEN"
+        : "TRANSITION";
+    metrics.handAction = handAction;
+
     const leftWristDisplacement = leftWrist.x - this.baselineLeftWristX;
     const rightWristDisplacement = rightWrist.x - this.baselineRightWristX;
-    if (Math.abs(leftWristDisplacement - rightWristDisplacement) > pairedWristAsymmetryLimit) {
+    if (
+      !(this.currentState === LEVEL3_STATES.WIPING_LATERAL && handAction === "OPEN")
+      && Math.abs(leftWristDisplacement - rightWristDisplacement) > pairedWristAsymmetryLimit
+    ) {
       this.resetTimer();
       return this.output({
         message: "雙手同步位移改變，請重新放好雙手並由治療師確認",
@@ -377,13 +382,6 @@ export class Level3BilateralSandbox {
         metrics,
       });
     }
-
-    const handAction = wristSeparation <= wristClosedThreshold
-      ? "CLOSED"
-      : wristSeparation >= wristOpenThreshold
-        ? "OPEN"
-        : "TRANSITION";
-    metrics.handAction = handAction;
 
     const isAtCenter = Math.abs(vcpX - this.calibrationVcpXMedian) <= this.dynamicVcpTolerance;
     const directedDisplacement = (vcpX - this.calibrationVcpXMedian) * this.directionSign();

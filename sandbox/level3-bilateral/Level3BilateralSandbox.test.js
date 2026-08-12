@@ -82,6 +82,16 @@ test("robust calibration derives a clamped MAD tolerance and shoulder-scaled tar
   assert.ok(Math.abs(engine.scaledTargetRangeX - 0.24) < 0.01);
 });
 
+test("screen-space wrists remain usable when Pose World Landmarks are unavailable", () => {
+  const engine = new Level3BilateralSandbox({ affectedSide: "LEFT" });
+  const pose = makePose();
+  const output = engine.update(pose, null, false, 0);
+  assert.equal(output.action, "CALIBRATING");
+  assert.equal(output.trackingStable, true);
+  assert.equal(output.metrics.wristSeparationUnit, "shoulder_width_ratio");
+  assert.ok(Number.isFinite(output.metrics.wristSeparation));
+});
+
 test("midline requires a fresh continuous 0.8-second hold", () => {
   const { engine, clock } = calibratedEngine();
   advance(engine, {}, clock, 700, 100);
@@ -190,14 +200,13 @@ test("heavy center tremor cannot falsely trigger the lateral target", () => {
   assert.equal(engine.currentState, LEVEL3_STATES.WIPING_LATERAL);
 });
 
-test("Pose-world wrist release hides the object and returns without awarding score", () => {
+test("screen-space wrist release hides the object and returns without awarding score", () => {
   const { engine, clock } = calibratedEngine();
   advance(engine, {}, clock, 900, 100);
   assert.equal(engine.currentState, LEVEL3_STATES.WIPING_LATERAL);
 
-  const imagePose = makePose();
-  const releasedWorldPose = makePose({ wristSeparation: 0.12 });
-  const released = updateWithPose(engine, imagePose, false, clock.value, releasedWorldPose);
+  const releasedPose = makePose({ wristSeparation: 0.12 });
+  const released = updateWithPose(engine, releasedPose, false, clock.value, null);
   assert.equal(released.action, "OBJECT_FADE_OUT");
   assert.equal(released.state, LEVEL3_STATES.RETURN_CENTER);
   assert.equal(released.objectVisible, false);
