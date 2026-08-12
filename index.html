@@ -149,9 +149,25 @@ html,body{
 .hud-item .hud-label{ font-size:15px; color:var(--muted); font-weight:600; display:block; margin-bottom:2px; }
 .hud-item .hud-value{ font-size:30px; line-height:1.1; font-weight:800; }
 
+/* ---------- SINGLE PROMPT SAFE STRIP ----------
+   All in-game instruction / cognitive prompts live inside #promptZone, a single
+   flex strip pinned under the HUD and above the target (basket/plate) band.
+   Children are laid out in normal flow inside the strip, so prompts can never
+   overlap each other and never cover the hand-target area at the bottom of the
+   stage. Target-exclusion (getInstructionExclusionRect) still measures each
+   visible prompt element separately, so spawn logic is unchanged. */
+.prompt-zone{
+  position:absolute; left:0; right:0; top:96px; z-index:20;
+  display:flex; flex-direction:column; align-items:stretch; gap:8px;
+  padding:0 12px; pointer-events:none;
+}
+.prompt-row{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+/* Single slot: at most one of #levelIntroBanner / #persistentRules is visible. */
+.prompt-slot{ display:flex; justify-content:flex-end; margin-left:auto; max-width:min(300px,46%); min-width:0; }
+.prompt-slot > *{ max-width:100%; }
 .status-bar{
-  position:absolute; top:92px; left:12px; right:auto; bottom:auto; z-index:20; transform:none;
-  width:min(210px,24vw); text-align:left;
+  position:static; z-index:20; transform:none;
+  flex:0 1 auto; width:min(210px,34%); text-align:left;
   padding:8px 10px;
   background:rgba(0,0,0,0.84); border:2px solid rgba(255,255,255,.72);
   border-radius:12px; box-shadow:0 4px 14px rgba(0,0,0,.30);
@@ -251,8 +267,8 @@ html,body{
 .comp-panel .comp-alert{ margin:6px 0 0; padding:9px 10px; border-radius:10px; background:#fff2ef;
   color:#7d1a12; font-size:14px; font-weight:800; line-height:1.5; }
 .secondary-rule{
-  position:absolute; top:156px; right:12px; z-index:18;
-  max-width:min(270px,30vw); padding:6px 9px;
+  position:static; z-index:18;
+  max-width:100%; padding:6px 9px;
   background:rgba(255,255,255,.92); border:1px solid rgba(0,0,0,.14);
   border-radius:10px; color:#333; box-shadow:0 2px 8px rgba(0,0,0,.18);
   font-size:12px; line-height:1.2; font-weight:750; text-align:right;
@@ -411,7 +427,7 @@ html,body{
 .research-trad-row input{ min-width:0; min-height:44px; padding:9px 10px; border:1.5px solid var(--border); border-radius:10px; background:#fff; font:700 14px/1.2 inherit; }
 .research-phase-plan{ grid-column:1 / -1; padding:12px 14px; border:1px solid var(--border); border-radius:12px; background:#f7f4ee; color:#4a5d5a; font-size:13.5px; line-height:1.6; text-align:left; }
 .research-phase-plan b{ color:var(--teal-dark); }
-.pilot-phase-hud{ position:absolute; top:8px; left:50%; transform:translateX(-50%); z-index:36; display:none; align-items:center; gap:10px; padding:7px 14px; border-radius:999px; background:rgba(18,86,74,.94); color:#fff; font:800 15px/1.2 "PingFang TC","Noto Sans TC",sans-serif; white-space:nowrap; pointer-events:none; }
+.pilot-phase-hud{ position:static; align-self:center; z-index:36; display:none; align-items:center; gap:10px; padding:7px 14px; border-radius:999px; background:rgba(18,86,74,.94); color:#fff; font:800 15px/1.2 "PingFang TC","Noto Sans TC",sans-serif; white-space:nowrap; pointer-events:none; }
 .pilot-phase-hud.show{ display:flex; }
 .pilot-phase-hud .pilot-phase-time{ font-variant-numeric:tabular-nums; }
 .pilot-rest{ position:absolute; inset:0; z-index:60; display:none; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:24px; background:rgba(12,38,34,.92); color:#fff; text-align:center; }
@@ -419,9 +435,9 @@ html,body{
 .pilot-rest strong{ font-size:clamp(26px,5vw,42px); font-weight:900; }
 .pilot-rest span{ font-size:clamp(16px,2.6vw,20px); font-weight:700; opacity:.92; }
 .pilot-rest .pilot-rest-count{ font-size:clamp(34px,7vw,58px); font-weight:900; font-variant-numeric:tabular-nums; }
-.pilot-cog{ position:absolute; z-index:44; left:50%; transform:translateX(-50%); top:56px; width:min(440px,92vw); display:none; flex-direction:column; gap:8px; padding:12px 14px; border-radius:14px; background:rgba(255,255,255,.96); border:2px solid var(--teal); box-shadow:0 6px 20px rgba(0,0,0,.18); text-align:center; }
+.pilot-cog{ position:static; align-self:center; z-index:44; width:min(440px,100%); display:none; flex-direction:column; gap:8px; padding:12px 14px; border-radius:14px; background:rgba(255,255,255,.96); border:2px solid var(--teal); box-shadow:0 6px 20px rgba(0,0,0,.18); text-align:center; pointer-events:auto; }
 .pilot-cog.show{ display:flex; }
-.pilot-cog.compact{ top:auto; bottom:96px; padding:9px 12px; gap:6px; }
+.pilot-cog.compact{ padding:9px 12px; gap:6px; }
 .pilot-cog-prompt{ color:#1a2b28; font:800 clamp(17px,2.6vw,22px)/1.35 "PingFang TC","Noto Sans TC",sans-serif; }
 .pilot-cog.compact .pilot-cog-prompt{ font-size:clamp(15px,2.2vw,18px); }
 .pilot-cog-actions{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
@@ -431,7 +447,7 @@ html,body{
 .pilot-cog-meta{ color:var(--muted); font:700 12.5px/1.35 inherit; }
 @media (max-width:520px){
   .research-trad-row{ grid-template-columns:1fr; }
-  .pilot-cog{ width:94vw; }
+  .pilot-cog{ width:100%; }
 }
 .calib-checklist{
   display:none; width:100%; max-width:520px; margin:10px 0 0; padding:10px 14px;
@@ -552,11 +568,24 @@ html,body{
   .hud-item .hud-value{ font-size:26px; }
   .game-controls{ top:8px; left:8px; right:8px; justify-content:space-between; }
   .game-control-btn{ min-width:110px; min-height:56px; font-size:19px; }
-  #levelIntroBanner{ top:236px !important; right:8px !important; width:min(240px,54vw) !important; padding:7px 8px !important; }
-  #persistentRules{ top:226px !important; right:8px !important; left:auto !important; max-width:min(240px,54vw) !important; padding:5px 7px !important; font-size:11px !important; }
-  .status-bar{ top:158px; left:8px; right:auto; bottom:auto; width:min(210px,42vw); padding:7px 8px; transform:none; }
+  /* Prompt strip sits below the stacked mobile HUD; still above the target band. */
+  .prompt-zone{ top:150px; padding:0 8px; gap:6px; }
+  #levelIntroBanner{ width:100% !important; padding:7px 8px !important; }
+  #persistentRules{ max-width:100% !important; padding:5px 7px !important; font-size:11px !important; }
+  .prompt-slot{ max-width:min(240px,52%); }
+  .status-bar{ width:min(210px,46%); padding:7px 8px; }
   .action-main{ font-size:19px; }
   .action-detail{ font-size:11px; }
+}
+/* Narrow phones in portrait: keep every game control (incl. 休息 / 停止) on one
+   reachable row instead of letting the row overflow off-screen. */
+@media (max-width:430px){
+  .game-controls{ gap:5px; }
+  .game-control-btn{ min-width:60px !important; padding:6px 6px; font-size:15px !important; }
+  .game-control-btn.rest-btn,
+  .game-control-btn.stop-btn{ min-width:60px !important; font-size:16px !important; }
+  .game-control-btn.therapist-btn{ font-size:13px !important; }
+  .prompt-zone{ top:142px; }
 }
 
 /* landscape adjustments */
@@ -664,22 +693,62 @@ html,body{
   display:grid; place-items:center; width:27px; height:27px; border-radius:50%;
   background:var(--teal); color:#fff; font-size:13px; padding-left:2px;
 }
+/* Instruction-video modal.
+   Layout contract (regression-tested in tests/ui-layout.test.mjs):
+   - the <video> lives inside a fixed 16:9 .video-frame, so no overlay text is ever
+     assumed to be baked into the clip and the clip is never letterboxed by the dialog;
+   - exactly ONE short level caption is rendered OUTSIDE and BELOW the frame;
+   - the header (title + close) is sticky, so the close button stays reachable even
+     when a small portrait viewport forces the dialog to scroll. */
 .video-modal{
-  display:none; position:fixed; inset:0; z-index:12000; padding:22px;
-  align-items:center; justify-content:center; background:rgba(18,28,27,.88);
+  display:none; position:fixed; inset:0; z-index:12000; padding:16px;
+  align-items:center; justify-content:center; background:rgba(18,28,27,.86);
+  overflow-y:auto; overscroll-behavior:contain;
 }
 .video-modal.open{ display:flex; }
 .video-dialog{
-  width:min(920px,96vw); max-height:94vh; overflow:auto; border-radius:22px;
-  background:#fff; padding:18px; box-shadow:0 24px 70px rgba(0,0,0,.38);
+  width:min(920px,96vw); max-height:min(94vh,94dvh); overflow-y:auto; border-radius:20px;
+  background:#fff; padding:14px; box-shadow:0 24px 70px rgba(0,0,0,.38);
 }
-.video-dialog-head{ display:flex; align-items:center; justify-content:space-between; gap:18px; margin-bottom:12px; }
-.video-dialog-head h2{ margin:0; color:var(--teal-dark); font-size:21px; }
+.video-dialog-head{
+  position:sticky; top:0; z-index:2; background:#fff;
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding-bottom:8px; margin-bottom:8px;
+}
+.video-dialog-head h2{ margin:0; color:var(--teal-dark); font:800 17px/1.25 inherit; }
 .video-close{
   flex:0 0 auto; min-width:48px; min-height:48px; border:0; border-radius:50%;
   background:#eee7dd; color:#40372f; font-size:28px; cursor:pointer;
 }
-.video-dialog video{ display:block; width:100%; border-radius:14px; background:#111; }
+.video-frame{
+  position:relative; width:100%; aspect-ratio:16/9;
+  border-radius:14px; overflow:hidden; background:#111;
+}
+.video-frame video{
+  position:absolute; inset:0; display:block; width:100%; height:100%;
+  object-fit:contain; background:#111;
+}
+.video-caption{
+  margin:10px 0 0; padding:9px 11px; border-radius:11px;
+  background:#f2f8f6; border:1px solid #cfe6df; color:#1a3c36;
+  font:800 15px/1.45 inherit; text-align:left;
+}
+/* Portrait phones/tablets: top-align and shrink chrome so the dialog hugs the 16:9
+   frame instead of becoming a mostly-black fullscreen takeover. */
+@media (orientation:portrait){
+  .video-modal{ padding:10px; align-items:flex-start; }
+  .video-dialog{
+    width:100%; padding:10px; border-radius:16px;
+    margin-top:max(10px, env(safe-area-inset-top));
+    max-height:calc(100dvh - 24px);
+  }
+  .video-dialog-head h2{ font-size:15px; }
+  .video-caption{ font-size:14px; padding:8px 10px; }
+}
+@media (max-width:520px){
+  .video-dialog-head h2{ font-size:14.5px; }
+  .video-close{ min-width:46px; min-height:46px; font-size:26px; }
+}
 @media (max-width:819px){
   .level-select{ grid-template-columns:minmax(0,1fr) 210px; }
 }
@@ -785,7 +854,7 @@ html,body{
         </button>
         <button class="instruction-play" type="button" data-video-level="3"
           data-video-src="videos/fthue-level-3-setup-movement.mp4" data-testid="button-video-level-3">
-          <span class="play-icon" aria-hidden="true">▶</span>播放環境及動作教學
+          <span class="play-icon" aria-hidden="true">▶</span>教學短片
         </button>
         <details class="level-details">
           <summary>顯示詳情</summary>
@@ -812,7 +881,7 @@ html,body{
         </button>
         <button class="instruction-play" type="button" data-video-level="4"
           data-video-src="videos/fthue-level-4-setup-movement.mp4" data-testid="button-video-level-4">
-          <span class="play-icon" aria-hidden="true">▶</span>播放環境及動作教學
+          <span class="play-icon" aria-hidden="true">▶</span>教學短片
         </button>
         <details class="level-details">
           <summary>顯示詳情</summary>
@@ -839,7 +908,7 @@ html,body{
         </button>
         <button class="instruction-play" type="button" data-video-level="5"
           data-video-src="videos/fthue-level-5-setup-movement.mp4" data-testid="button-video-level-5">
-          <span class="play-icon" aria-hidden="true">▶</span>播放環境及動作教學
+          <span class="play-icon" aria-hidden="true">▶</span>教學短片
         </button>
         <details class="level-details">
           <summary>顯示詳情</summary>
@@ -869,7 +938,7 @@ html,body{
         </button>
         <button class="instruction-play" type="button" data-video-level="6"
           data-video-src="videos/fthue-level-6-setup-movement.mp4" data-testid="button-video-level-6">
-          <span class="play-icon" aria-hidden="true">▶</span>播放環境及動作教學
+          <span class="play-icon" aria-hidden="true">▶</span>教學短片
         </button>
         <details class="level-details">
           <summary>顯示詳情</summary>
@@ -895,12 +964,16 @@ html,body{
     aria-labelledby="instructionVideoTitle">
     <div class="video-dialog">
       <div class="video-dialog-head">
-        <h2 id="instructionVideoTitle">環境及動作教學</h2>
+        <h2 id="instructionVideoTitle">教學短片</h2>
         <button class="video-close" id="instructionVideoClose" type="button"
-          aria-label="關閉教學影片" data-testid="button-close-instruction-video">×</button>
+          aria-label="關閉教學短片" data-testid="button-close-instruction-video">×</button>
       </div>
-      <video id="instructionVideo" controls playsinline preload="metadata"
-        data-testid="video-instruction"></video>
+      <div class="video-frame">
+        <video id="instructionVideo" controls playsinline webkit-playsinline preload="metadata"
+          data-testid="video-instruction"></video>
+      </div>
+      <p class="video-caption" id="instructionVideoCaption"
+        data-testid="text-instruction-video-caption"></p>
     </div>
   </div>
 
@@ -1249,7 +1322,6 @@ html,body{
   <div id="screen-game" class="screen">
     <div class="game-stage">
       <div id="feedbackOverlay" style="display:none;position:absolute;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;pointer-events:none;font-size:180px;opacity:0;transition:opacity 0.15s;"></div>
-      <div id="levelIntroBanner" style="display:none;position:absolute;top:164px;right:12px;width:min(270px,30vw);z-index:30;background:rgba(0,0,0,0.82);color:#fff;text-align:right;padding:8px 10px;font-size:13px;line-height:1.3;border-radius:12px;pointer-events:none;"></div>
       <video id="gameVideo" playsinline autoplay muted></video>
       <canvas id="gameCanvas"></canvas>
       <div class="hud">
@@ -1261,18 +1333,32 @@ html,body{
       <div class="cog-overlay hidden" id="cogOverlay">
         <div class="cog-badge" id="cogBadge">指令</div>
       </div>
-      <div class="pilot-phase-hud" id="pilotPhaseHud" role="status" aria-live="polite">
-        <span id="pilotPhaseName">—</span>
-        <span class="pilot-phase-time" id="pilotPhaseTime">00:00</span>
-      </div>
-      <div class="pilot-cog" id="pilotCogPanel" role="group" aria-label="認知任務">
-        <div class="pilot-cog-meta" id="pilotCogTarget">目標：紅色圓形</div>
-        <div class="pilot-cog-prompt" id="pilotCogPrompt">—</div>
-        <div class="pilot-cog-actions">
-          <button type="button" id="btnCogYes">患者有回應</button>
-          <button type="button" id="btnCogNo">沒有回應</button>
+      <!-- Single prompt safe strip: phase pill, status + one-slot instruction,
+           and the cognitive task panel. Nothing here overlaps the target band. -->
+      <div class="prompt-zone" id="promptZone" data-testid="panel-prompt-zone">
+        <div class="pilot-phase-hud" id="pilotPhaseHud" role="status" aria-live="polite">
+          <span id="pilotPhaseName">—</span>
+          <span class="pilot-phase-time" id="pilotPhaseTime">00:00</span>
         </div>
-        <div class="pilot-cog-meta" id="pilotCogMeta"></div>
+        <div class="prompt-row">
+          <div class="status-bar" id="statusBar" data-testid="text-status-bar">
+            <span class="action-main">等待偵測手部</span>
+            <span class="action-detail">手放鏡頭前</span>
+          </div>
+          <div class="prompt-slot" id="promptSlot" data-testid="panel-prompt-slot">
+            <div id="levelIntroBanner" style="display:none;background:rgba(0,0,0,0.82);color:#fff;text-align:right;padding:8px 10px;font-size:13px;line-height:1.3;border-radius:12px;pointer-events:none;"></div>
+            <div id="persistentRules" class="secondary-rule">點心 → 同款碟</div>
+          </div>
+        </div>
+        <div class="pilot-cog" id="pilotCogPanel" role="group" aria-label="認知任務">
+          <div class="pilot-cog-meta" id="pilotCogTarget">目標：紅色圓形</div>
+          <div class="pilot-cog-prompt" id="pilotCogPrompt">—</div>
+          <div class="pilot-cog-actions">
+            <button type="button" id="btnCogYes">患者有回應</button>
+            <button type="button" id="btnCogNo">沒有回應</button>
+          </div>
+          <div class="pilot-cog-meta" id="pilotCogMeta"></div>
+        </div>
       </div>
       <div class="pilot-rest" id="pilotRestOverlay" role="status" aria-live="assertive">
         <strong id="pilotRestTitle">休息</strong>
@@ -1319,11 +1405,6 @@ html,body{
           data-testid="button-game-rest">休息</button>
         <button class="game-control-btn stop-btn" id="btnGameStop" aria-label="停止這一節"
           data-testid="button-game-stop">停止</button>
-      </div>
-      <div id="persistentRules" class="secondary-rule">點心 → 同款碟</div>
-      <div class="status-bar" id="statusBar">
-        <span class="action-main">等待偵測手部</span>
-        <span class="action-detail">請將手放在鏡頭前</span>
       </div>
     </div>
   </div>
@@ -2310,7 +2391,7 @@ window.confirmStop = confirmStop;
   if(pauseResume){
     pauseResume.addEventListener('click', ()=>{
       hideSafetyPause();
-      if(typeof setActionPrompt === 'function') setActionPrompt('繼續', '慢慢來，動作要舒服');
+      if(typeof setActionPrompt === 'function') setActionPrompt('繼續', '慢慢來，唔好痛');
     });
   }
   if(pauseStop) pauseStop.addEventListener('click', ()=> confirmStop('pain_or_discomfort'));
@@ -3343,17 +3424,38 @@ document.getElementById('btnLevel3').addEventListener('click', ()=>{
 const instructionVideoModal = document.getElementById('instructionVideoModal');
 const instructionVideo = document.getElementById('instructionVideo');
 const instructionVideoTitle = document.getElementById('instructionVideoTitle');
+const instructionVideoCaption = document.getElementById('instructionVideoCaption');
+/* Exactly ONE short level caption, rendered outside/below the 16:9 frame.
+   The clips carry no baked-in overlay text, so all wording lives here and can be
+   updated without re-rendering video. Keep each caption to a single short line. */
+const INSTRUCTION_VIDEO_CAPTIONS = {
+  '3': '前臂承托，雙手合攏向左右滑；痛就停。',
+  '4': '前臂貼桌，沿中線慢慢向前；肩聳就停。',
+  '5': '張開手拿起，移到目標再張開放低；不要用盡力。',
+  '6': '拇指食指輕輕捏合，張開放低；不要用盡力。',
+};
+let instructionVideoOpener = null;
 function closeInstructionVideo(){
   instructionVideo.pause();
   instructionVideo.removeAttribute('src');
   instructionVideo.load();
   instructionVideoModal.classList.remove('open');
+  if(instructionVideoOpener && document.contains(instructionVideoOpener)){
+    try{ instructionVideoOpener.focus(); }catch(e){}
+  }
+  instructionVideoOpener = null;
 }
 document.querySelectorAll('[data-video-src]').forEach(button=>{
   button.addEventListener('click', ()=>{
-    instructionVideoTitle.textContent = `FTHUE Level ${button.dataset.videoLevel} · 環境及動作教學`;
+    const level = button.dataset.videoLevel;
+    // Compact title; the level-specific instruction lives in the single caption below.
+    instructionVideoTitle.textContent = `Level ${level} 教學短片`;
+    instructionVideoCaption.textContent = INSTRUCTION_VIDEO_CAPTIONS[level] || '';
     instructionVideo.src = button.dataset.videoSrc;
+    instructionVideoOpener = button;
     instructionVideoModal.classList.add('open');
+    const closeBtn = document.getElementById('instructionVideoClose');
+    if(closeBtn) try{ closeBtn.focus({preventScroll:true}); }catch(e){}
     instructionVideo.play().catch(()=>{});
   });
 });
@@ -3965,6 +4067,21 @@ function playApplause(){
   }catch(e){ /* ignore */ }
 }
 
+/* ---- Single-slot prompt container ----
+   #promptSlot renders at most ONE instruction prompt at a time (either the short
+   level-intro banner or the persistent rule line), so in-game prompts can never
+   stack on each other and never leak over the target band. Advanced activities
+   own their own panel, so the rule line stays suppressed while they run. */
+let promptRulesEnabled = true;
+function setPromptSlot(which){
+  const banner = document.getElementById('levelIntroBanner');
+  const rules = document.getElementById('persistentRules');
+  const target = (which === 'rules' && !promptRulesEnabled) ? 'none' : which;
+  if(banner) banner.style.display = (target === 'intro') ? 'block' : 'none';
+  if(rules) rules.style.display = (target === 'rules') ? 'block' : 'none';
+}
+window.setPromptSlot = setPromptSlot;
+
 // 記錄上次 show 過的 level tier，避免重複觸發
 let lastLevelShown = 0;
 
@@ -4003,16 +4120,12 @@ function showLevelUpBanner(){
   }
 
   banner.innerHTML = msg;
-  banner.style.display = 'block';
   banner.style.fontSize = '17px';
   banner.style.padding = '10px 12px';
   banner.style.background = 'rgba(0,0,0,0.88)';
-
-  // 更新頂部持續 bar
-  if(persistBar){
-    persistBar.innerHTML = persistText;
-    persistBar.style.display = 'none';
-  }
+  if(persistBar) persistBar.innerHTML = persistText;
+  // Single slot: the intro banner replaces the rule line instead of stacking with it.
+  setPromptSlot('intro');
 
   // Tier 1+：先播一段短掌聲，再讀一次完整提示，避免掌聲與兩段語音重疊。
   if(tier >= 1){
@@ -4026,10 +4139,7 @@ function showLevelUpBanner(){
 
   // 短提示顯示 5 秒，避免長時間遮擋遊戲範圍。
   clearTimeout(window._lvlBannerTimer);
-  window._lvlBannerTimer = setTimeout(()=>{
-    banner.style.display='none';
-    if(persistBar) persistBar.style.display='';
-  }, 5000);
+  window._lvlBannerTimer = setTimeout(()=>{ setPromptSlot('rules'); }, 5000);
 }
 
 if('speechSynthesis' in window){
@@ -4072,7 +4182,7 @@ function triggerRecoveryPause(){
     document.querySelector('.game-stage').appendChild(overlay);
   }
   overlay.innerHTML = simpleMsg +
-    '<div style="margin-top:24px; font-size:18px; font-weight:700; color:#ffd166;">提示讀完後會自動繼續</div>';
+    '<div style="margin-top:24px; font-size:18px; font-weight:700; color:#ffd166;">讀完提示自動繼續</div>';
   overlay.style.display = 'flex';
 
   let resumed = false;
@@ -4149,8 +4259,8 @@ function leaveCurrentGame(){
   clearTimeout(window._lvlBannerTimer);
   try{ window.speechSynthesis.cancel(); }catch(e){}
   stopCamera();
-  document.getElementById('levelIntroBanner').style.display = 'none';
-  document.getElementById('persistentRules').style.display = '';
+  promptRulesEnabled = true;
+  setPromptSlot('rules');
   document.getElementById('btnPause').classList.remove('pause-active');
   document.getElementById('btnPause').textContent = 'Ⅱ 暫停';
   if(wasResearch){
@@ -5239,7 +5349,7 @@ function initGame(){
 
   resizeGameCanvas();
   // 先顯示提示，讓第一局生成物件時已可量度右上角提示禁區
-  setActionPrompt('等待偵測手部', '請將手放在鏡頭前');
+  setActionPrompt('等待偵測手部', '手放鏡頭前');
   if(isAdvTheme()){
     // 進階活動（麻雀 / 啤牌 / 煮飯 / 插花 / 收衫）有各自的玩法模組
     advInit();
@@ -5390,7 +5500,9 @@ function getInstructionExclusionRect(cw, ch, padding){
   if(!canvasRect.width || !canvasRect.height) return null;
   const scaleX = cw / canvasRect.width;
   const scaleY = ch / canvasRect.height;
-  const ids = ['statusBar', 'persistentRules', 'levelIntroBanner'];
+  // Every element that can render a prompt inside the safe strip. Each is measured
+  // separately so the exclusion islands stay small (see comment below).
+  const ids = ['statusBar', 'persistentRules', 'levelIntroBanner', 'pilotCogPanel', 'pilotPhaseHud'];
   const rects = ids.map(id=>document.getElementById(id))
     .filter(el=>el && !el.classList.contains('hidden') && getComputedStyle(el).display !== 'none')
     .map(el=>el.getBoundingClientRect())
@@ -5787,8 +5899,8 @@ function updateGameLogic(){
         }
       } else {
         dwellTarget = null;
-        if(!handDetected) setActionPrompt('等待偵測手部', '請將手放在鏡頭前');
-        else setActionPrompt('移動食指', '移到' + getTheme().itemWord + '上方');
+        if(!handDetected) setActionPrompt('等待偵測手部', '手放鏡頭前');
+        else setActionPrompt('移動食指', '移到' + getTheme().itemWord + '上');
       }
     }
 
@@ -5852,12 +5964,12 @@ function updateGameLogic(){
         }
       } else {
         dwellTarget = null;
-        setActionPrompt('移到目標', '在同款目標上停住');
+        setActionPrompt('移到目標', '停在同款目標');
       }
     }
   } else {
     dwellTarget = null;
-    setActionPrompt('等待偵測手部', '請將手放在鏡頭前');
+    setActionPrompt('等待偵測手部', '手放鏡頭前');
     if(!heldItem){ gripActive = false; }
   }
 }
@@ -5925,7 +6037,7 @@ function updateGraspLogic(){
     if(!overFood){
       basicOpenStart = 0; basicGraspStart = 0; basicGraspCandidate = ''; basicGraspArmed = false;
       basicContactCandidate = ''; basicContactUntil = 0;
-      setActionPrompt(graspPrompt('prep'), '移到' + getTheme().itemWord + '上方');
+      setActionPrompt(graspPrompt('prep'), '移到' + getTheme().itemWord + '上');
     } else if(!isGrasping && openPrep){
       basicGraspStart = 0; basicGraspCandidate = nearest.id;
       if(!basicOpenStart) basicOpenStart = now;
@@ -5935,7 +6047,7 @@ function updateGraspLogic(){
         basicGraspArmed ? graspPrompt('carry') : pct + '%');
     } else if(!basicGraspArmed || basicGraspCandidate !== nearest.id || !isGrasping){
       basicOpenStart = 0; basicGraspStart = 0; basicGraspArmed = false;
-      setActionPrompt(graspPrompt('prep'), isPinchMode() ? PILOT_TEXT[pilotLang].pinchHoldPrompt : '然後輕輕合手拿起');
+      setActionPrompt(graspPrompt('prep'), isPinchMode() ? PILOT_TEXT[pilotLang].pinchHoldPrompt : '再輕輕合手');
     } else {
       if(!basicGraspStart){
         basicGraspStart = now;
@@ -6040,7 +6152,7 @@ function updateGraspLogic(){
           } else {
             heldItem.x = heldItem.baseX;
             heldItem.y = heldItem.baseY;
-            setActionPrompt(graspPrompt('prep'), '移到' + getTheme().itemWord + '再' + (isPinchMode() ? '輕輕捏合' : '輕輕合手拿起'));
+            setActionPrompt(graspPrompt('prep'), '移到' + getTheme().itemWord + '，' + (isPinchMode() ? '輕輕捏合' : '輕輕合手'));
           }
           heldItem = null;
           noteHoldEnd();
@@ -9448,7 +9560,8 @@ function advInit(){
   rewardOnContinue = null;
   advSetNote('');
   cook.active = cards.active = laundry.active = flowers.active = mj.active = false;
-  document.getElementById('persistentRules').style.display = 'none';
+  promptRulesEnabled = false;
+  setPromptSlot('none');
   document.getElementById('statusBar').textContent = '';
 
   if(advCurrent === 'cooking'){
@@ -9489,7 +9602,8 @@ function advTeardown(){
   d.keep.classList.remove('show');
   cook.active = cards.active = laundry.active = flowers.active = mj.active = false;
   advCurrent = null;
-  document.getElementById('persistentRules').style.display = '';
+  promptRulesEnabled = true;
+  setPromptSlot('rules');
 }
 
 function advResizeCheck(){

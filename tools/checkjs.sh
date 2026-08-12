@@ -1,6 +1,9 @@
 #!/bin/bash
-# Validate every inline <script> block in index.html with node --check
-cd /home/user/workspace/dimsum_project
+# Validate every inline <script> block in index.html with node --check.
+# Run from anywhere: paths resolve relative to this repository.
+set -euo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
 python3 - <<'EOF'
 import io, re, subprocess, os
 s = io.open('index.html', encoding='utf-8').read()
