@@ -166,6 +166,7 @@ test('critical test IDs and safety hooks preserved', async (t) => {
     const found = await page.evaluate(() => {
       const ids = [
         'gif-level-3', 'gif-level-4',
+        'gif-level-6-clothes-peg', 'gif-level-6-chopsticks',
         'panel-safety-pause', 'panel-stop-confirm', 'panel-compensation',
         'button-game-rest', 'button-game-stop', 'button-pilot-rest-resume',
         'button-compensation-observe',
