@@ -207,3 +207,22 @@ test("subjective enjoyment score must be an integer-like value within 1 to 10", 
     /Subjective enjoyment score/,
   );
 });
+
+
+/* P0 clinical safety review: neutral protocol label with backward-compatible
+   legacy metadata for the deprecated "target elevation" field. */
+test("protocol variant is exported alongside the backward-compatible legacy field", () => {
+  const collector = new Level3BilateralDataCollector();
+  collector.startSession({ ...metadata(), protocolVariant: "B" }, 0);
+  const payload = collector.exportPayload(engine());
+  assert.equal(payload.sandbox_metadata.therapist_selected_protocol_variant, "B");
+  assert.equal(payload.sandbox_metadata.therapist_selected_target_elevation_deg, 45);
+});
+
+test("sessions without a protocol variant still export legacy metadata", () => {
+  const collector = new Level3BilateralDataCollector();
+  collector.startSession(metadata(), 0);
+  const payload = collector.exportPayload(engine());
+  assert.equal(payload.sandbox_metadata.therapist_selected_protocol_variant, null);
+  assert.equal(payload.sandbox_metadata.therapist_selected_target_elevation_deg, 45);
+});

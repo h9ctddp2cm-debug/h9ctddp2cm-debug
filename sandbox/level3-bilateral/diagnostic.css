@@ -836,3 +836,51 @@ footer {
     animation-duration: 0.01ms !important;
   }
 }
+
+
+/* ==================== P0 clinical safety additions ==================== */
+.safety-note.critical{
+  border: 2px solid #a1261b;
+  background: color-mix(in srgb, #a1261b 8%, transparent);
+}
+.safety-note.critical h2{ color: #a1261b; }
+.safety-note.critical .section-kicker{ color: #a1261b; letter-spacing: .08em; }
+.red-warning-list{
+  margin: 6px 0 10px; padding-left: 20px; color: #7d1a12;
+  font-weight: 700; line-height: 1.7;
+}
+
+.safety-gate{
+  position: fixed; inset: 0; z-index: 200; display: flex;
+  align-items: flex-start; justify-content: center; padding: 24px 16px;
+  overflow-y: auto; background: rgba(10, 16, 15, .82);
+}
+.safety-gate.hidden{ display: none; }
+.safety-gate-card{
+  width: min(680px, 100%); border-radius: 18px; padding: 22px;
+  border: 2px solid #a1261b; background: #ffffff; color: #101615; text-align: left;
+}
+.safety-gate-card h2{ margin: 0 0 12px; color: #a1261b; }
+.gate-red{
+  margin: 0 0 14px; padding: 12px 14px; border: 2px solid #a1261b; border-radius: 12px;
+  background: #fff2ef; color: #7d1a12; font-weight: 800; line-height: 1.6;
+}
+.gate-list{ margin: 0 0 14px; padding-left: 22px; line-height: 1.75; font-weight: 600; }
+.gate-ack{
+  display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px;
+  border: 2px solid currentColor; border-radius: 12px; font-weight: 700; cursor: pointer;
+}
+.gate-ack input{ width: 24px; height: 24px; margin: 2px 0 0; flex: 0 0 auto; }
+.gate-actions{ display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.gate-actions .button{ flex: 1 1 200px; min-height: 54px; }
+
+.camera-error{
+  display: none; margin-top: 12px; padding: 14px; border-radius: 12px;
+  border: 2px solid #a1261b; background: #fff2ef; color: #7d1a12; text-align: left;
+}
+.camera-error.show{ display: block; }
+.camera-error h3{ margin: 0 0 6px; font-size: 1rem; color: #a1261b; }
+.camera-error p{ margin: 0 0 6px; font-weight: 700; line-height: 1.55; }
+.camera-error .camera-error-detail{ font-size: .78rem; font-weight: 600; opacity: .8; }
+.camera-error-actions{ display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+.camera-error-actions .button{ flex: 1 1 150px; }

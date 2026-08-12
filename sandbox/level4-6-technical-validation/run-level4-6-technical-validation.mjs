@@ -170,6 +170,174 @@ try {
     check(label, "tracking", "sustained tracking loss clears detection safely",
       !lost.handDetected && !lost.detectionHeldGrace && lost.held === null, lost);
   }
+
+  // ================================================================
+  // P0 clinical safety review checks (mandatory gate, rest/stop,
+  // Level 4 compensation prompt, Level 5 hold timeout and repeated
+  // release difficulty, Level 6 bare-hand wording, camera failures).
+  // ================================================================
+  const safetyConstants = await page.evaluate(() => window.__qa.safety.constants());
+  check("5", "safety", "maximum carry duration defaults to a conservative 5 seconds",
+    safetyConstants.maxHoldMs === 5000, safetyConstants);
+  check("5", "safety", "repeated release difficulty limit is configured",
+    safetyConstants.releaseDifficultyLimit >= 2 && safetyConstants.releaseDifficultyLimit <= 3,
+    { limit: safetyConstants.releaseDifficultyLimit });
+
+  for (const levelKey of ["3", "4", "5", "67"]) {
+    const label = levelKey === "67" ? "6" : levelKey;
+    await page.evaluate(() => window.__qa.safety.resetGateFlags());
+    const opened = await page.evaluate(key => window.__qa.safety.openGate(key), levelKey);
+    check(label, "safety gate", "safety screen is shown before camera or game",
+      opened.screen === "safety", { screen: opened.screen });
+    check(label, "safety gate", "continue is blocked until the checklist is acknowledged",
+      opened.continueDisabled === true && opened.ackChecked === false, opened);
+
+    const blocked = await page.evaluate(() => window.__qa.safety.clickContinue());
+    check(label, "safety gate", "clicking continue without acknowledgement does not proceed",
+      blocked.continued === false && blocked.screen === "safety", blocked);
+
+    const acked = await page.evaluate(() => window.__qa.safety.ack(true));
+    check(label, "safety gate", "acknowledgement enables the continue action",
+      acked.continueDisabled === false, acked);
+    const proceeded = await page.evaluate(() => window.__qa.safety.clickContinue());
+    check(label, "safety gate", "explicit acknowledgement is required and then proceeds",
+      proceeded.continued === true, proceeded);
+
+    const note = opened.levelNote || "";
+    check(label, "safety gate", "level-specific safety note is visible on the screen",
+      note.length > 20, { length: note.length });
+  }
+
+  const notes = safetyConstants.levelNotes;
+  check("3", "safety copy", "Level 3 note states the affected hand is supported and need not interlock",
+    notes["3"].includes("承托") && notes["3"].includes("不需互扣")
+    && !notes["3"].includes("互扣合攏"), { note: notes["3"] });
+  check("4", "safety copy", "Level 4 note mandates three calibration attempts without compensation",
+    notes["4"].includes("三次練習") && notes["4"].includes("無肩膊抬高")
+    && notes["4"].includes("慢慢向前滑"), { note: notes["4"] });
+  check("5", "safety copy", "Level 5 note uses light closing wording and the personal release aperture",
+    notes["5"].includes("輕輕合手") && !notes["5"].includes("握拳") && !notes["5"].includes("握緊")
+    && notes["5"].includes("不需要張到完全伸直"), { note: notes["5"] });
+  check("6", "safety copy", "Level 6 note states bare-hand aperture default and no force detection",
+    notes["67"].includes("裸手") && notes["67"].includes("不會偵測夾力")
+    && notes["67"].includes("只需輕輕捏合，不要用盡力"), { note: notes["67"] });
+
+  const bodyText = await page.evaluate(() => document.body.innerText);
+  check("5", "safety copy", "no patient-facing 握拳/握緊 wording remains in the interface",
+    !bodyText.includes("握拳") && !bodyText.includes("握緊"), {
+      hasFist: bodyText.includes("握拳"), hasSqueeze: bodyText.includes("握緊"),
+    });
+
+  for (const level of ["4", "5", "67"]) {
+    const label = displayLevel[level];
+    await start(page, level);
+    const controls = await page.evaluate(() => window.__qa.safety.controlsVisible());
+    check(label, "rest/stop", "large 休息 and 停止 controls are always visible during play",
+      controls.rest === true && controls.stop === true, controls);
+
+    const rested = await page.evaluate(() => window.__qa.safety.rest());
+    check(label, "rest/stop", "rest pauses active game timing",
+      rested.paused === true && rested.blocking === true && rested.restCount === 1, rested);
+    check(label, "rest/stop", "rest overlay shows the 放下雙手、放鬆肩膀 instruction",
+      rested.body.includes("放下雙手") && rested.body.includes("放鬆肩膀"), { body: rested.body });
+
+    const beforeResume = await state(page);
+    await advance(page, 1200);
+    const stillPaused = await state(page);
+    check(label, "rest/stop", "game clock does not run while resting",
+      stillPaused.timeLeft === beforeResume.timeLeft,
+      { before: beforeResume.timeLeft, after: stillPaused.timeLeft });
+
+    const resumed = await page.evaluate(() => window.__qa.safety.resumeRest());
+    check(label, "rest/stop", "resume from rest is explicit and clears the pause",
+      resumed.paused === false && resumed.blocking === false, resumed);
+
+    const stopped = await page.evaluate(() => window.__qa.safety.stop("participant_request"));
+    check(label, "rest/stop", "stop ends the session safely with a recorded reason",
+      stopped.stoppedEarly === true && stopped.stopReason === "participant_request"
+      && stopped.screen !== "game", stopped);
+
+    const testids = await page.evaluate(() => ({
+      rest: !!document.querySelector('[data-testid="button-game-rest"]'),
+      stop: !!document.querySelector('[data-testid="button-game-stop"]'),
+      pause: !!document.querySelector('[data-testid="panel-safety-pause"]'),
+      confirm: !!document.querySelector('[data-testid="panel-stop-confirm"]'),
+    }));
+    check(label, "rest/stop", "stable data-testid attributes exist for the safety controls",
+      testids.rest && testids.stop && testids.pause && testids.confirm, testids);
+  }
+
+  // Level 4 therapist-confirmed compensation prompt (manual observation only).
+  await start(page, "4");
+  const firstComp = await page.evaluate(() => window.__qa.safety.compensation("shoulder_hiking"));
+  check("4", "compensation", "a single observed compensation is logged without pausing",
+    firstComp.counts.shoulder_hiking === 1 && firstComp.blocking === false, firstComp);
+  const secondComp = await page.evaluate(() => window.__qa.safety.compensation("shoulder_hiking"));
+  check("4", "compensation", "the same compensation observed twice pauses and prompts a shorter distance",
+    secondComp.counts.shoulder_hiking === 2 && secondComp.blocking === true
+    && secondComp.alert.includes("縮短滑行距離"), secondComp);
+
+  // Level 5 maximum hold duration.
+  await start(page, "5");
+  await page.evaluate(() => window.__qa.safety.holdStart());
+  const beforeTimeout = await page.evaluate(() => window.__qa.safety.holdCheck());
+  check("5", "hold timeout", "carrying below the maximum duration does not interrupt play",
+    beforeTimeout.fired === false && beforeTimeout.blocking === false, beforeTimeout);
+  await advance(page, 5200);
+  const afterTimeout = await page.evaluate(() => window.__qa.safety.holdCheck());
+  check("5", "hold timeout", "exceeding the maximum carry duration pauses the game",
+    afterTimeout.fired === true && afterTimeout.blocking === true
+    && afterTimeout.holdTimeoutCount === 1, afterTimeout);
+  check("5", "hold timeout", "hold timeout prompts 放下物件、張開手、放鬆",
+    afterTimeout.title.includes("放下物件") && afterTimeout.title.includes("張開手")
+    && afterTimeout.title.includes("放鬆"), { title: afterTimeout.title });
+  const timeoutLogged = (await state(page)).safety.holdTimeoutCount;
+  check("5", "hold timeout", "hold_timeout is tracked in the session safety data",
+    timeoutLogged === 1, { holdTimeoutCount: timeoutLogged });
+
+  // Level 5 repeated release difficulty.
+  await start(page, "5");
+  let releaseResult = null;
+  for (let attempt = 0; attempt < safetyConstants.releaseDifficultyLimit; attempt += 1) {
+    releaseResult = await page.evaluate(
+      () => window.__qa.safety.releaseAttempt(3500, false),
+    );
+  }
+  check("5", "release difficulty", "consecutive delayed or failed releases are counted",
+    releaseResult.releaseDelayCount === safetyConstants.releaseDifficultyLimit, releaseResult);
+  check("5", "release difficulty", "repeated release difficulty pauses and prompts reassessment",
+    releaseResult.repeated === 1 && releaseResult.blocking === true
+    && releaseResult.title.includes("放手"), releaseResult);
+
+  // Camera failures must always surface an in-page error with Retry and Return.
+  const cameraCases = [
+    ["UnsupportedError", "不支援"],
+    ["NotAllowedError", "權限"],
+    ["NotFoundError", "找不到"],
+    ["SomeUnexpectedError", "未能啟動相機"],
+  ];
+  for (const [name, expected] of cameraCases) {
+    const shown = await page.evaluate(errName => window.__qa.safety.cameraError(errName), name);
+    check("4", "camera error", `${name} shows an in-page error with Retry and Return`,
+      shown.visible === true && shown.hasRetry && shown.hasReturn
+      && shown.message.includes(expected), shown);
+    check("4", "camera error", `${name} shows a concise technical code without a raw stack`,
+      shown.detail.includes(name) && shown.detail.length < 40, { detail: shown.detail });
+    const cleared = await page.evaluate(() => window.__qa.safety.clearCameraError());
+    check("4", "camera error", `${name} error can be dismissed on retry`,
+      cleared.visible === false, cleared);
+  }
+
+  // Session data fields required by the safety review.
+  await start(page, "5");
+  const safetyFields = (await state(page)).safety;
+  const requiredFields = ["restCount", "restTotalSec", "stopReason", "stoppedEarly",
+    "trackingFailureCount", "holdTimeoutCount", "releaseDelayCount",
+    "repeatedReleaseDifficulty", "difficultyReducedCount"];
+  const missingFields = requiredFields.filter(field => !(field in safetyFields));
+  check("5", "data", "session safety fields are present for export",
+    missingFields.length === 0, { missing: missingFields });
+
 } catch (error) {
   errors.push({ level: "all", category: "runner", name: error.stack || error.message, passed: false, details: {} });
 } finally {
@@ -216,10 +384,14 @@ const lines = [
   "- Correct versus incorrect placement accounting.",
   "- Tracking-loss grace and sustained-loss reset.",
   "- Malformed hand-landmark fail-safe behaviour.",
+  "- Mandatory safety acknowledgement gate for Levels 3\u20136.",
+  "- Always-visible rest and stop controls, rest pausing active timing, and safe stop.",
+  "- Therapist-confirmed compensation prompt, Level 5 hold timeout and repeated release difficulty.",
+  "- In-page camera failure handling with Retry and Return for every getUserMedia error class.",
   "",
   "## Interpretation boundary",
   "",
-  "This is reproducible software technical verification only. It does not establish clinical validity, treatment efficacy, safety in real patients, or medical-device equivalence. Level 6 measures normalized thumb-index aperture state and does not measure pinch force.",
+  "This is reproducible software technical verification only. It does not establish clinical validity, treatment efficacy, safety in real patients, or medical-device equivalence. Level 6 measures normalized thumb-index aperture state and does not measure pinch force. Compensation, muscle tone and spasticity are never detected automatically: they are therapist observations entered manually. Safety-control behaviour verified here is software behaviour only and still requires supervised bedside testing on the target iPad.",
   "",
   "## Checks",
   "",

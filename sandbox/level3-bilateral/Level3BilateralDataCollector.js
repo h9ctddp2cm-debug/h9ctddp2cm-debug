@@ -134,7 +134,10 @@ export class Level3BilateralDataCollector {
         10,
         "Subjective enjoyment score",
       ),
+      // Deprecated field name kept for backward compatibility with existing
+      // exports/pipeline; the Level 3 task is horizontal sliding, not elevation.
       therapist_selected_target_elevation_deg: Number(metadata.targetElevationDeg),
+      therapist_selected_protocol_variant: metadata.protocolVariant ?? null,
       therapist_selected_range_profile: metadata.reachRangeProfile,
       therapist_selected_tolerance_mode: metadata.toleranceMode,
       camera_preprocess_direction_mapping: Number(metadata.patientLeftXSign),

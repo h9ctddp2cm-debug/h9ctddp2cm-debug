@@ -109,7 +109,7 @@ export class Level3BilateralSandbox {
     this.returnTriggeredByRelease = false;
     this.score = 0;
     this.lastMetrics = null;
-    this.lastMessage = "請將雙手合攏並承托於桌面中央";
+    this.lastMessage = "患手輕輕放在毛巾上，由健手承托，一起放在桌面中央（手指不需互扣）";
     this.lastAction = "RESET";
   }
 
@@ -321,7 +321,7 @@ export class Level3BilateralSandbox {
           this.isObjectVisible = true;
           this.resetTimer();
           return this.output({
-            message: "雙手中央基準校準成功，請保持雙手合攏",
+            message: "中央基準校準成功；患手繼續由健手輕輕承托，不需用力",
             action: "CALIBRATION_SUCCESS",
             nowMs,
             metrics,
@@ -332,7 +332,7 @@ export class Level3BilateralSandbox {
       if (elapsed >= this.maxCalibrationMs) {
         this.clearCalibration();
         return this.output({
-          message: "校準失敗：請維持雙手合攏及坐姿穩定後重試",
+          message: "校準失敗：請保持坐姿穩定、患手放鬆由健手承托後重試",
           action: "CALIBRATION_FAILED",
           nowMs,
           metrics,
@@ -371,7 +371,7 @@ export class Level3BilateralSandbox {
     if (Math.abs(leftWristDisplacement - rightWristDisplacement) > pairedWristAsymmetryLimit) {
       this.resetTimer();
       return this.output({
-        message: "雙手同步位移改變，請重新合攏並由治療師確認",
+        message: "雙手同步位移改變，請重新放好雙手並由治療師確認",
         action: "BILATERAL_ASYMMETRY_WARNING",
         nowMs,
         metrics,
@@ -408,8 +408,8 @@ export class Level3BilateralSandbox {
         }
         return this.output({
           message: handAction === "CLOSED"
-            ? "請將雙手合攏並維持在中央起點"
-            : "請先將雙手重新互扣合攏",
+            ? "雙手一起輕輕放在中央起點，肩膊放鬆"
+            : "請先把患手重新輕輕放好，由健手承托",
           action: "WAITING_AT_CENTER",
           nowMs,
           metrics,
@@ -432,7 +432,7 @@ export class Level3BilateralSandbox {
         if (handAction === "TRANSITION") {
           this.resetTimer();
           return this.output({
-            message: "雙手接近鬆開界線，請重新合攏後繼續",
+            message: "雙手快要分開，請重新把雙手輕輕靠攏後繼續",
             action: "HAND_TRANSITION",
             nowMs,
             metrics,
@@ -444,7 +444,7 @@ export class Level3BilateralSandbox {
             this.currentState = LEVEL3_STATES.RETURN_CENTER;
             this.resetTimer();
             return this.output({
-              message: "已到達側方目標，請保持雙手合攏並慢慢返回中央",
+              message: "已到達側方目標，雙手保持輕輕靠攏，慢慢滑回中央",
               action: "TARGET_REACHED",
               nowMs,
               metrics,
@@ -470,7 +470,7 @@ export class Level3BilateralSandbox {
               this.currentState = LEVEL3_STATES.MIDLINE_READY;
               this.resetTimer();
               return this.output({
-                message: "已安全回到中央，請重新互扣雙手再開始",
+                message: "已安全回到中央，休息一下，準備好再開始",
                 action: "RETURN_AFTER_RELEASE",
                 nowMs,
                 metrics,

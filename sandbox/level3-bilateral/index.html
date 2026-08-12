@@ -22,13 +22,57 @@
     </div>
   </header>
 
+  <div class="safety-gate" id="safetyGate" role="dialog" aria-modal="true"
+    aria-labelledby="safety-gate-title" data-testid="panel-level3-safety-gate">
+    <div class="safety-gate-card">
+      <h2 id="safety-gate-title">開始前安全確認</h2>
+      <p class="gate-red">
+        必須由職業治療師全程在場監督。如出現肩膊拉扯、手部愈來愈繃緊、軀幹向側傾斜或疼痛，請立即停止。
+      </p>
+      <ul class="gate-list">
+        <li data-testid="text-l3-safety-stable">患者醫學狀況穩定，可以安全坐穩</li>
+        <li data-testid="text-l3-safety-support">患手已有承托：前臂放在毛巾或滑板上，手指不需互扣、不需用力握住</li>
+        <li data-testid="text-l3-safety-baseline">已檢查基線：疼痛、疲勞及手部繃緊程度</li>
+        <li data-testid="text-l3-safety-practice">先做三次練習，確認動作安全、無疼痛才正式開始</li>
+        <li data-testid="text-l3-safety-rest">患者隨時可以休息或停止</li>
+        <li data-testid="text-l3-safety-quality">重視動作質素，不要追分數、不要趕速度</li>
+        <li data-testid="text-l3-safety-range">由治療師選定無疼痛、無代償的滑行範圍（預設短距離）</li>
+      </ul>
+      <label class="gate-ack" for="safetyGateAck">
+        <input type="checkbox" id="safetyGateAck" data-testid="checkbox-l3-safety-ack">
+        <span>治療師確認：已逐項核對以上安全項目，並會全程在場監督。</span>
+      </label>
+      <div class="gate-actions">
+        <button type="button" class="button primary" id="safetyGateContinue"
+          data-testid="button-l3-safety-continue" disabled>確認，繼續</button>
+        <button type="button" class="button ghost" id="safetyGateBack"
+          data-testid="button-l3-safety-back">返回主頁</button>
+      </div>
+    </div>
+  </div>
+
   <main id="main">
+    <section class="safety-note critical" aria-labelledby="safety-red-title" data-testid="panel-level3-red-warning">
+      <div>
+        <p class="section-kicker">⬤ 安全警告</p>
+        <h2 id="safety-red-title">出現以下情況請立即停止</h2>
+      </div>
+      <ul class="red-warning-list">
+        <li>肩膊被拉扯、肩關節不適或疼痛</li>
+        <li>患手愈來愈繃緊、手指愈抓愈緊</li>
+        <li>軀幹向側傾斜、坐姿不穩</li>
+        <li>任何疼痛、頭暈或不適</li>
+      </ul>
+      <p><b>患手只需輕輕放在毛巾或滑板上，由健手承托；手指不需互扣、不需用力握住。</b>
+        全程必須由職業治療師在場監督；患者隨時可以休息或停止。</p>
+    </section>
+
     <section class="safety-note" aria-labelledby="safety-title">
       <div>
         <p class="section-kicker">Prototype boundary</p>
         <h2 id="safety-title">只供治療師與工程人員作影子測試</h2>
       </div>
-      <p>肩部及手腕訊號只用作動作質素提示，不能診斷軀幹代償或雙側不同步。此頁不屬正式 FTHUE Level 5–7 Pilot Study，亦未獲准供病人自行使用。</p>
+      <p>肩部及手腕訊號只用作動作質素提示，不能診斷軀幹代償或雙側不同步，亦不會自動偵測肌張力或痙攣。此頁不屬正式 FTHUE Level 5–7 Pilot Study，亦未獲准供病人自行使用。</p>
     </section>
 
     <div class="diagnostic-grid">
@@ -141,22 +185,25 @@
         </fieldset>
 
         <label class="field">
-          <span>目標抬高角度</span>
-          <select id="targetElevation" data-testid="select-target-elevation">
-            <option value="30">30°</option>
-            <option value="45" selected>45°</option>
-            <option value="60">60°</option>
+          <span>節次協議標籤</span>
+          <select id="protocolVariant" data-testid="select-protocol-variant">
+            <option value="A">A</option>
+            <option value="B" selected>B</option>
+            <option value="C">C</option>
           </select>
-          <small>只作影子測試標記；不參與本橫向滑動引擎判定。</small>
+          <small>中性的節次標籤（取代舊「目標抬高角度」）。實際任務是桌面橫向滑行，並無抬高動作；
+            舊欄位仍以向後相容 metadata 保留。</small>
         </label>
 
         <label class="field">
           <span>橫向距離</span>
           <select id="reachProfile" data-testid="select-reach-profile">
-            <option value="SHORT">短</option>
-            <option value="STANDARD" selected>標準</option>
+            <option value="SHORT" selected>短（預設）</option>
+            <option value="STANDARD">標準</option>
             <option value="LONG">長</option>
           </select>
+          <small>預設短距離。請由治療師先做 3 次練習，選出無疼痛、無肩膊抬高、
+            無軀幹傾斜及手指不會愈來愈繃緊的範圍。</small>
         </label>
 
         <label class="field">
@@ -189,6 +236,18 @@
         <button id="beginCalibration" class="button warning" type="button" data-testid="button-begin-calibration">開始／重新校準</button>
         <button id="runSynthetic" class="button secondary" type="button" data-testid="button-run-synthetic">執行合成完整循環</button>
         <p id="cameraStatus" class="inline-status" data-testid="status-camera" aria-live="polite">相機尚未啟動；可先執行合成循環測試。</p>
+        <div class="camera-error" id="cameraErrorBox" role="alert" aria-live="assertive"
+          data-testid="panel-l3-camera-error">
+          <h3 data-testid="text-l3-camera-error-title">未能啟動相機</h3>
+          <p id="cameraErrorMessage" data-testid="text-l3-camera-error-message"></p>
+          <p class="camera-error-detail" id="cameraErrorDetail" data-testid="text-l3-camera-error-detail"></p>
+          <div class="camera-error-actions">
+            <button type="button" class="button primary" id="cameraRetry"
+              data-testid="button-l3-camera-retry">重新嘗試</button>
+            <button type="button" class="button ghost" id="cameraReturn"
+              data-testid="button-l3-camera-return">返回主頁</button>
+          </div>
+        </div>
       </aside>
 
       <section class="panel camera-panel" aria-labelledby="camera-title">
@@ -269,7 +328,7 @@
         </article>
       </div>
 
-      <p id="guidance" class="guidance" data-testid="text-guidance" aria-live="polite">請將雙手合攏並承托於桌面中央</p>
+      <p id="guidance" class="guidance" data-testid="text-guidance" aria-live="polite">患手輕輕放在毛巾上，由健手承托，一起放在桌面中央（手指不需互扣）</p>
     </section>
 
     <section class="log-section" aria-labelledby="cognitive-title">
@@ -337,7 +396,9 @@
   </main>
 
   <footer>
-    <p>Developer sandbox only. Target elevation is metadata; the active engine evaluates bilateral lateral tabletop trajectories.</p>
+    <p>Developer sandbox only. The active engine evaluates bilateral lateral tabletop trajectories.
+      The legacy &ldquo;target elevation&rdquo; control is renamed to a neutral protocol/session label because the
+      task is horizontal sliding; the legacy numeric metadata key is still written for backward compatibility.</p>
   </footer>
   <script type="module" src="./diagnosticApp.js"></script>
 </body>

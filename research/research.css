@@ -253,3 +253,14 @@ body.rs-test .rs-test-banner{ display:block; }
   .rs-navbar .rs-btn{ flex:1; }
 }
 @media print{ .rs-navbar,.rs-topbar-actions{ display:none; } }
+
+
+/* Safety hypothesis block (P0 clinical safety review) */
+.rs-safety-hypothesis{
+  margin: 18px 0; padding: 16px 18px; border-radius: 14px;
+  border: 2px solid #a1261b; background: rgba(161, 38, 27, .06);
+}
+.rs-safety-hypothesis .rs-section-title{ margin-top: 0; color: #a1261b; }
+.rs-safety-hypothesis p{ margin: 0 0 10px; line-height: 1.7; }
+.rs-safety-hypothesis p:last-child{ margin-bottom: 0; }
+.rs-safety-caveat{ font-weight: 700; }

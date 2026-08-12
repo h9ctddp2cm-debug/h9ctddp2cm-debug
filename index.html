@@ -189,6 +189,67 @@ html,body{
 }
 .game-control-btn:active{ transform:scale(.96); }
 .game-control-btn.pause-active{ background:#f5c451; border-color:#8b6500; color:#342600; }
+.game-control-btn.rest-btn{ background:#fff3d1; border-color:#8b6500; color:#5a4200; min-width:104px; font-size:22px; }
+.game-control-btn.stop-btn{ background:#ffe3de; border-color:#a1261b; color:#7d1a12; min-width:104px; font-size:22px; }
+.game-control-btn.therapist-btn{ background:#eef4ff; border-color:#2b4f8c; color:#1e3a68; font-size:15px; min-width:96px; }
+
+/* ---- 安全確認畫面（Level 3–6 共用） ---- */
+.safety-screen{ align-items:center; justify-content:flex-start; padding:22px 16px 40px; }
+.safety-card{ width:100%; max-width:720px; background:var(--surface); border:2px solid #a1261b;
+  border-radius:18px; padding:20px 20px 22px; box-shadow:0 4px 18px rgba(0,0,0,.12); text-align:left; }
+.safety-card h1{ margin:0 0 4px; font-size:24px; color:#a1261b; }
+.safety-card .safety-sub{ margin:0 0 14px; font-size:16px; font-weight:800; color:var(--text); }
+.safety-red{ margin:0 0 16px; padding:13px 14px; border:2px solid #a1261b; border-radius:12px;
+  background:#fff2ef; color:#7d1a12; font-size:17px; font-weight:800; line-height:1.55; }
+.safety-list{ list-style:none; margin:0 0 14px; padding:0; display:flex; flex-direction:column; gap:9px; }
+.safety-list li{ position:relative; padding:11px 12px 11px 40px; border:1.5px solid var(--border);
+  border-radius:12px; background:#f7fbf9; font-size:17px; font-weight:750; line-height:1.5; color:var(--text); }
+.safety-list li::before{ content:'✓'; position:absolute; left:13px; top:11px; color:#0a675d; font-weight:900; }
+.safety-level-note{ margin:0 0 14px; padding:13px 14px; border:1.5px solid #b8d8cf; border-radius:12px;
+  background:#f4fbf8; font-size:16px; font-weight:700; line-height:1.6; color:#20443e; }
+.safety-ack{ display:flex; gap:12px; align-items:flex-start; padding:13px 14px; border:2px solid var(--teal);
+  border-radius:12px; background:#fff; font-size:17px; font-weight:800; cursor:pointer; }
+.safety-ack input{ width:26px; height:26px; margin:2px 0 0; flex:0 0 auto; }
+.safety-actions{ display:flex; flex-direction:column; gap:10px; margin-top:14px; }
+.safety-actions .btn-primary:disabled{ opacity:.45; cursor:not-allowed; }
+
+/* ---- 相機錯誤（in-page，非 alert） ---- */
+.camera-error{ display:none; width:100%; max-width:560px; margin:12px auto 0; padding:16px;
+  border:2px solid #a1261b; border-radius:14px; background:#fff2ef; color:#7d1a12; text-align:left; }
+.camera-error.show{ display:block; }
+.camera-error h2{ margin:0 0 6px; font-size:19px; color:#a1261b; }
+.camera-error p{ margin:0 0 6px; font-size:16px; font-weight:750; line-height:1.55; }
+.camera-error .camera-error-detail{ font-size:13px; font-weight:600; opacity:.8; word-break:break-word; }
+.camera-error-actions{ display:flex; gap:10px; margin-top:10px; flex-wrap:wrap; }
+.camera-error-actions button{ flex:1 1 160px; min-height:56px; border-radius:12px; border:2px solid #a1261b;
+  background:#a1261b; color:#fff; font:900 18px/1.2 inherit; cursor:pointer; }
+.camera-error-actions button.secondary{ background:#fff; color:#a1261b; }
+
+/* ---- 安全暫停及停止確認 ---- */
+.safety-pause, .stop-confirm{ position:absolute; inset:0; z-index:70; display:none; flex-direction:column;
+  align-items:center; justify-content:center; gap:14px; padding:24px; text-align:center; color:#fff; }
+.safety-pause{ background:rgba(90,32,20,.94); }
+.stop-confirm{ background:rgba(12,38,34,.95); }
+.safety-pause.show, .stop-confirm.show{ display:flex; }
+.safety-pause strong, .stop-confirm strong{ font-size:clamp(26px,5vw,42px); font-weight:900; }
+.safety-pause span, .stop-confirm span{ max-width:640px; font-size:clamp(17px,2.8vw,22px); font-weight:750; line-height:1.55; }
+.safety-pause-actions{ display:flex; flex-wrap:wrap; gap:12px; justify-content:center; }
+.safety-pause-actions button, .stop-confirm button{ min-height:58px; padding:14px 22px; border-radius:12px;
+  border:2px solid #fff; background:#fff; color:#0C3F35; font:900 19px/1.2 inherit; cursor:pointer; }
+.safety-pause-actions button.ghost, .stop-confirm button.ghost{ background:transparent; color:#fff; }
+.stop-confirm-reasons{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; max-width:720px; }
+.stop-confirm-reasons button{ flex:1 1 200px; font-size:18px; }
+
+/* ---- 治療師代償觀察 ---- */
+.comp-panel{ position:absolute; top:78px; right:10px; z-index:24; display:none; width:min(300px,72vw);
+  padding:12px; border-radius:14px; border:2px solid #2b4f8c; background:rgba(255,255,255,.98);
+  box-shadow:0 6px 18px rgba(0,0,0,.28); text-align:left; }
+.comp-panel.show{ display:block; }
+.comp-panel h3{ margin:0 0 8px; font-size:15px; color:#1e3a68; }
+.comp-panel button{ display:block; width:100%; margin-bottom:7px; min-height:46px; border-radius:10px;
+  border:1.5px solid #2b4f8c; background:#fff; color:#1e3a68; font:800 15px/1.2 inherit; cursor:pointer; }
+.comp-panel .comp-alert{ margin:6px 0 0; padding:9px 10px; border-radius:10px; background:#fff2ef;
+  color:#7d1a12; font-size:14px; font-weight:800; line-height:1.5; }
 .secondary-rule{
   position:absolute; top:156px; right:12px; z-index:18;
   max-width:min(270px,30vw); padding:6px 9px;
@@ -767,12 +828,12 @@ html,body{
           <div class="level-copy">
             <span class="lv-tag">FTHUE Level 5</span>
             <h3>握放訓練</h3>
-            <p class="lv-action">握拳拿取，張手放下</p>
+            <p class="lv-action">輕輕合手拿起，張開手放下</p>
           </div>
           <div class="level-motion single">
             <figure>
-              <img src="img/advanced/hand_open_close.gif" alt="手掌重複張開及握拳示範">
-              <figcaption>張手 · 握拳</figcaption>
+              <img src="img/advanced/hand_open_close.gif" alt="手掌重複張開及輕輕合手示範">
+              <figcaption>張開手 · 輕輕合手</figcaption>
             </figure>
           </div>
         </button>
@@ -793,16 +854,16 @@ html,body{
           <div class="level-copy">
             <span class="lv-tag">FTHUE Level 6–7</span>
             <h3>精細動作訓練</h3>
-            <p class="lv-action">拇指食指捏取，張開放下</p>
+            <p class="lv-action">裸手輕輕捏合拿起，張開放下</p>
           </div>
           <div class="level-motion double">
             <figure>
-              <img src="img/advanced/hand_chopsticks.gif" alt="手指控制筷子開合示範">
-              <figcaption>拇食指捏取</figcaption>
+              <img src="img/advanced/hand_chopsticks.gif" alt="拇指與食指輕輕捏合示範">
+              <figcaption>裸手輕輕捏合（預設）</figcaption>
             </figure>
             <figure>
-              <img src="img/advanced/hand_clothes_peg.gif" alt="手指按壓衫夾示範">
-              <figcaption>衫夾捏取</figcaption>
+              <img src="img/advanced/hand_clothes_peg.gif" alt="實物夾子練習示範（治療師可選）">
+              <figcaption>實物工具（治療師可選）</figcaption>
             </figure>
           </div>
         </button>
@@ -813,9 +874,11 @@ html,body{
         <details class="level-details">
           <summary>顯示詳情</summary>
           <p class="lv-note">
-            <span class="lv-line">先以<b>裸手完成校準</b>；訓練時必須保持拇指、食指及手腕可見</span>
-            <span class="lv-line">如使用夾子或筷子遮擋指尖，請改用裸手螢幕捏取模式</span>
-            <span class="lv-line">系統量度拇食指 aperture，不量度 pinch force</span>
+            <span class="lv-line"><b>預設以裸手進行</b>：鏡頭偵測拇指與食指的張開幅度（aperture）</span>
+            <span class="lv-line">實物木釘、筷子或夾子屬<b>治療師可選的額外練習</b>，並非標準要求</span>
+            <span class="lv-line"><b>軟件不會偵測夾力</b>（pinch force），只偵測張開幅度</span>
+            <span class="lv-line">指令：「<b>只需輕輕捏合，不要用盡力</b>」</span>
+            <span class="lv-line">如工具遮擋指尖導致追蹤失敗，請改用裸手</span>
           </p>
         </details>
       </article>
@@ -1117,6 +1180,38 @@ html,body{
     </footer>
   </div>
 
+  <!-- ============ SHARED SAFETY SCREEN (Level 3–6) ============ -->
+  <div id="screen-safety" class="screen safety-screen">
+    <div class="safety-card" data-testid="panel-safety-screen">
+      <h1 data-testid="text-safety-title">開始前安全確認</h1>
+      <p class="safety-sub" id="safetyContext">FTHUE Level 4 · 桌面中線訓練</p>
+      <p class="safety-red" data-testid="text-safety-supervision">
+        此訓練必須由職業治療師全程在場監督，不可讓患者自行使用。<br>
+        如出現疼痛、肩膊拉扯、手部愈來愈繃緊、軀幹傾斜或不適，請立即停止。
+      </p>
+      <ul class="safety-list">
+        <li data-testid="text-safety-item-stable">患者醫學狀況穩定，可以安全坐穩（必要時使用坐墊或扶手）</li>
+        <li data-testid="text-safety-item-support">患手已有承托：前臂放在桌面、毛巾或滑板上，不需懸空</li>
+        <li data-testid="text-safety-item-baseline">已檢查基線：疼痛、疲勞及手部繃緊程度（訓練後再檢查一次）</li>
+        <li data-testid="text-safety-item-practice">先做三次練習，確認動作安全、無疼痛才正式開始</li>
+        <li data-testid="text-safety-item-rest">患者隨時可以休息或停止；畫面上有大按鈕「休息」及「停止」</li>
+        <li data-testid="text-safety-item-quality">重視動作質素，不要追分數、不要趕速度</li>
+      </ul>
+      <div class="safety-level-note" id="safetyLevelNote" data-testid="text-safety-level-note"></div>
+      <label class="safety-ack" for="safetyAckCheck">
+        <input type="checkbox" id="safetyAckCheck" data-testid="checkbox-safety-ack">
+        <span>治療師確認：已逐項核對以上安全項目，並會全程在場監督。</span>
+      </label>
+      <div class="safety-actions">
+        <button class="btn-primary" id="btnSafetyContinue" data-testid="button-safety-continue" disabled>確認，繼續 ▶</button>
+        <button class="btn-secondary" id="btnSafetyBack" data-testid="button-safety-back">← 返回</button>
+      </div>
+      <p style="margin:14px 0 0;font-size:12px;color:var(--muted);line-height:1.6;">
+        本系統為臨床訓練輔助工具，並非醫療儀器，不能自動偵測代償、肌張力或痙攣，亦不可取代治療師觀察及正式評估。
+      </p>
+    </div>
+  </div>
+
   <!-- ============ CALIBRATION SCREEN ============ -->
   <div id="screen-calib" class="screen">
     <div class="title-block" style="margin-bottom:8px;">
@@ -1135,7 +1230,18 @@ html,body{
     <div class="calib-checklist" id="calibChecklist">
       <span id="calibDetectCheck">○ 持續偵測手部 2 秒</span>
       <span id="calibOpenCheck">○ 持續張開手掌 2 秒</span>
-      <span id="calibCloseCheck">○ 持續握拳 2 秒</span>
+      <span id="calibCloseCheck">○ 持續輕輕合手 2 秒</span>
+    </div>
+    <div class="safety-level-note" id="calibLevelBrief" data-testid="text-calib-level-brief"
+      style="max-width:560px;margin:10px auto 0;"></div>
+    <div class="camera-error" id="cameraErrorBox" role="alert" aria-live="assertive" data-testid="panel-camera-error">
+      <h2 data-testid="text-camera-error-title">未能啟動相機</h2>
+      <p id="cameraErrorMessage" data-testid="text-camera-error-message"></p>
+      <p class="camera-error-detail" id="cameraErrorDetail" data-testid="text-camera-error-detail"></p>
+      <div class="camera-error-actions">
+        <button type="button" id="btnCameraRetry" data-testid="button-camera-retry">重新嘗試</button>
+        <button type="button" class="secondary" id="btnCameraReturn" data-testid="button-camera-return">返回上一頁</button>
+      </div>
     </div>
     <button class="btn-primary" id="btnStartGame" style="max-width:520px;" disabled>開始遊戲 ▶</button>
     <button class="btn-secondary" id="btnBackFromCalib" style="max-width:520px;">← 返回設定</button>
@@ -1191,9 +1297,45 @@ html,body{
         <div class="pilot-rest-count" id="pilotRestCount">00:00</div>
         <button type="button" id="btnPilotRestResume" data-testid="button-pilot-rest-resume" style="min-height:56px;padding:14px 22px;border:2px solid #fff;border-radius:12px;background:#fff;color:#0C3F35;font:900 19px/1.2 inherit;cursor:pointer;">患者已準備好，繼續訓練</button>
       </div>
+      <div class="safety-pause" id="safetyPauseOverlay" role="alertdialog" aria-live="assertive"
+        data-testid="panel-safety-pause">
+        <strong id="safetyPauseTitle">暫停</strong>
+        <span id="safetyPauseBody"></span>
+        <div class="safety-pause-actions">
+          <button type="button" id="btnSafetyPauseResume" data-testid="button-safety-pause-resume">患者已準備好，繼續</button>
+          <button type="button" class="ghost" id="btnSafetyPauseStop" data-testid="button-safety-pause-stop">停止這一節</button>
+        </div>
+      </div>
+      <div class="stop-confirm" id="stopConfirmOverlay" role="alertdialog" aria-live="assertive"
+        data-testid="panel-stop-confirm">
+        <strong>停止這一節？</strong>
+        <span>停止後會安全結束這一節，相機會關閉；已記錄的資料不會自動匯出或消失。</span>
+        <div class="stop-confirm-reasons" id="stopReasonRow">
+          <button type="button" data-stop-reason="participant_request" data-testid="button-stop-reason-participant">患者要求停止</button>
+          <button type="button" data-stop-reason="pain_or_discomfort" data-testid="button-stop-reason-pain">疼痛、不適或手部繃緊</button>
+          <button type="button" data-stop-reason="fatigue" data-testid="button-stop-reason-fatigue">疲勞</button>
+          <button type="button" data-stop-reason="technical" data-testid="button-stop-reason-technical">技術或追蹤問題</button>
+          <button type="button" data-stop-reason="other" data-testid="button-stop-reason-other">其他原因</button>
+        </div>
+        <button type="button" class="ghost" id="btnStopCancel" data-testid="button-stop-cancel">取消，繼續訓練</button>
+      </div>
+      <div class="comp-panel" id="compPanel" data-testid="panel-compensation">
+        <h3>治療師觀察記錄（人手確認）</h3>
+        <button type="button" data-comp="shoulder_hiking" data-testid="button-comp-shoulder">肩膊抬高</button>
+        <button type="button" data-comp="trunk_lean" data-testid="button-comp-trunk">軀幹傾斜</button>
+        <button type="button" data-comp="pain" data-testid="button-comp-pain">疼痛</button>
+        <button type="button" data-comp="finger_tightening" data-testid="button-comp-finger">手指愈握愈緊</button>
+        <p class="comp-alert" id="compAlert" data-testid="text-comp-alert" style="display:none;"></p>
+      </div>
       <div class="game-controls">
         <button class="game-control-btn" id="btnGameBack" aria-label="返回活動選擇">← 返回</button>
+        <button class="game-control-btn therapist-btn" id="btnCompObserve" aria-label="治療師代償觀察記錄"
+          data-testid="button-compensation-observe">代償觀察</button>
         <button class="game-control-btn" id="btnPause" aria-label="暫停遊戲">Ⅱ 暫停</button>
+        <button class="game-control-btn rest-btn" id="btnGameRest" aria-label="休息"
+          data-testid="button-game-rest">休息</button>
+        <button class="game-control-btn stop-btn" id="btnGameStop" aria-label="停止這一節"
+          data-testid="button-game-stop">停止</button>
       </div>
       <div id="persistentRules" class="secondary-rule">點心 → 同款碟</div>
       <div class="status-bar" id="statusBar">
@@ -1880,6 +2022,7 @@ const screens = {
   research: document.getElementById('screen-research'),
   library: document.getElementById('screen-library'),
   start: document.getElementById('screen-start'),
+  safety: document.getElementById('screen-safety'),
   calib: document.getElementById('screen-calib'),
   rules: document.getElementById('screen-rules'),
   game: document.getElementById('screen-game'),
@@ -1891,6 +2034,464 @@ function showScreen(name){
   screens[name].classList.add('active');
   currentScreen = name;
 }
+
+/* ==================== 臨床安全模組（Level 3–6 共用） ====================
+   P0 clinical safety review implementation.
+   - Mandatory pre-session safety acknowledgement screen (all public levels).
+   - Always-visible 休息 / 停止 controls during play.
+   - Therapist-confirmed compensation observation (manual; the app does NOT
+     automatically detect compensation, muscle tone or spasticity).
+   - Level 5 maximum hold duration and repeated release-difficulty prompts.
+   - Session safety counters exported with the session data.
+   ===================================================================== */
+
+/* Conservative default: an object should not be carried for longer than this
+   before the participant is prompted to put it down, open the hand and relax. */
+const MAX_HOLD_MS = 5000;
+/* Consecutive slow/failed release attempts before a reassessment prompt. */
+const RELEASE_DIFFICULTY_LIMIT = 3;
+/* A release attempt is "delayed" when the hand needs noticeably longer than the
+   normal release dwell to open enough to let go. */
+const RELEASE_DELAY_MS = 3000;
+/* Same observed compensation twice -> therapist-facing pause prompt. */
+const COMPENSATION_REPEAT_LIMIT = 2;
+
+const sessionSafety = {
+  restCount: 0,
+  restTotalSec: 0,
+  restStartedAtMs: 0,
+  stopReason: '',
+  stoppedEarly: false,
+  trackingFailureCount: 0,
+  holdTimeoutCount: 0,
+  releaseDelayCount: 0,
+  repeatedReleaseDifficulty: 0,
+  difficultyReducedCount: 0,
+  compensationCounts: {},
+  compensationPauseCount: 0,
+  safetyAckLevel: '',
+  safetyAckAtIso: '',
+};
+
+function resetSessionSafety(){
+  sessionSafety.restCount = 0;
+  sessionSafety.restTotalSec = 0;
+  sessionSafety.restStartedAtMs = 0;
+  sessionSafety.stopReason = '';
+  sessionSafety.stoppedEarly = false;
+  sessionSafety.trackingFailureCount = 0;
+  sessionSafety.holdTimeoutCount = 0;
+  sessionSafety.releaseDelayCount = 0;
+  sessionSafety.repeatedReleaseDifficulty = 0;
+  sessionSafety.difficultyReducedCount = 0;
+  sessionSafety.compensationCounts = {};
+  sessionSafety.compensationPauseCount = 0;
+}
+
+function safetyLog(event, payload){
+  try{
+    if(typeof researchLog === 'function' && research && research.active){
+      researchLog(event, payload || {});
+    }
+  }catch(e){ /* logging must never break the session */ }
+}
+
+/* ---------- 安全確認畫面 ---------- */
+const SAFETY_LEVEL_NOTES = {
+  '3': 'Level 3：患手放在毛巾或滑板上，由健手輕輕承托一同向前滑。患手手指不需互扣、不需用力握住，只需放鬆擺放。',
+  '4': 'Level 4：先由治療師帶患者做三次練習，選出「無肩膊抬高、無軀幹傾斜、無疼痛、手指亦無愈來愈繃緊」的最遠距離，之後全節只用這個距離。動作要慢慢向前滑，不需要快。',
+  '5': 'Level 5：只需輕輕合手拿起物件，不用大力握實。拿住物件最多約 5 秒就要放低、張開手、放鬆。放手用患者自己校準的張開幅度，不需要張到完全伸直。',
+  '67': 'Level 6：預設用裸手，由鏡頭偵測拇指與食指的張開幅度。實物筷子或木釘屬治療師可選的額外練習，軟件不會偵測夾力。只需輕輕捏合，不要用盡力。',
+};
+const SAFETY_LEVEL_TITLES = {
+  '3': 'FTHUE Level 3 · 雙手承托前滑（Sandbox）',
+  '4': 'FTHUE Level 4 · 桌面中線滑行',
+  '5': 'FTHUE Level 5 · 輕輕合手拿起與放下',
+  '67': 'FTHUE Level 6 · 拇食指輕捏',
+};
+
+let safetyGatePending = null;   // { levelKey, onContinue, onBack }
+
+function openSafetyGate(levelKey, onContinue, onBack){
+  safetyGatePending = { levelKey, onContinue, onBack };
+  const note = document.getElementById('safetyLevelNote');
+  const context = document.getElementById('safetyContext');
+  const ack = document.getElementById('safetyAckCheck');
+  const go = document.getElementById('btnSafetyContinue');
+  if(note) note.textContent = SAFETY_LEVEL_NOTES[levelKey] || SAFETY_LEVEL_NOTES['4'];
+  if(context) context.textContent = SAFETY_LEVEL_TITLES[levelKey] || '';
+  if(ack) ack.checked = false;
+  if(go) go.disabled = true;
+  showScreen('safety');
+}
+window.openSafetyGate = openSafetyGate;
+
+(function wireSafetyGate(){
+  const ack = document.getElementById('safetyAckCheck');
+  const go = document.getElementById('btnSafetyContinue');
+  const back = document.getElementById('btnSafetyBack');
+  if(ack && go){
+    ack.addEventListener('change', ()=>{ go.disabled = !ack.checked; });
+  }
+  if(go){
+    go.addEventListener('click', ()=>{
+      if(!ack || !ack.checked) return;
+      const pending = safetyGatePending;
+      safetyGatePending = null;
+      if(pending){
+        sessionSafety.safetyAckLevel = pending.levelKey;
+        sessionSafety.safetyAckAtIso = new Date().toISOString();
+        safetyLog('safety_ack', { level: pending.levelKey });
+        if(typeof pending.onContinue === 'function') pending.onContinue();
+      }
+    });
+  }
+  if(back){
+    back.addEventListener('click', ()=>{
+      const pending = safetyGatePending;
+      safetyGatePending = null;
+      if(pending && typeof pending.onBack === 'function') pending.onBack();
+      else showScreen('level');
+    });
+  }
+})();
+
+/* ---------- 相機錯誤（in-page，非 alert，永不無限等待） ---------- */
+let cameraErrorContext = null;   // { retry, back }
+
+function cameraErrorCopy(err){
+  const name = (err && (err.name || err.code)) || '';
+  if(name === 'NotAllowedError' || name === 'PermissionDeniedError' || name === 'SecurityError'){
+    return '相機權限被拒絕。請在裝置設定或瀏覽器網址列的相機圖示中，允許本頁使用相機，然後按「重新嘗試」。';
+  }
+  if(name === 'NotFoundError' || name === 'DevicesNotFoundError' || name === 'OverconstrainedError'){
+    return '找不到可用的相機。請確認 iPad／電腦有前置鏡頭，或連接相機後再按「重新嘗試」。';
+  }
+  if(name === 'NotReadableError' || name === 'TrackStartError' || name === 'AbortError'){
+    return '相機正被其他應用程式使用。請先關閉其他使用相機的程式（例如視像通話），然後按「重新嘗試」。';
+  }
+  if(name === 'UnsupportedError'){
+    return '此瀏覽器不支援相機功能。請改用 Safari 或 Chrome 最新版本，並確認使用 https 網址。';
+  }
+  return '未能啟動相機。請檢查相機權限及連接，然後按「重新嘗試」；如仍然不成功，可以先返回上一頁。';
+}
+
+function showCameraError(err, context){
+  cameraErrorContext = context || cameraErrorContext;
+  const box = document.getElementById('cameraErrorBox');
+  const msg = document.getElementById('cameraErrorMessage');
+  const detail = document.getElementById('cameraErrorDetail');
+  if(msg) msg.textContent = cameraErrorCopy(err);
+  if(detail){
+    const name = (err && (err.name || err.code)) || 'CameraError';
+    detail.textContent = '技術代碼：' + name;
+  }
+  if(box) box.classList.add('show');
+  const startBtn = document.getElementById('btnStartGame');
+  if(startBtn) startBtn.disabled = true;
+  sessionSafety.trackingFailureCount++;
+  safetyLog('camera_error', { error_name: (err && (err.name || err.code)) || 'unknown' });
+}
+function hideCameraError(){
+  const box = document.getElementById('cameraErrorBox');
+  if(box) box.classList.remove('show');
+}
+window.showCameraError = showCameraError;
+window.hideCameraError = hideCameraError;
+
+(function wireCameraError(){
+  const retry = document.getElementById('btnCameraRetry');
+  const back = document.getElementById('btnCameraReturn');
+  if(retry){
+    retry.addEventListener('click', async ()=>{
+      hideCameraError();
+      if(cameraErrorContext && typeof cameraErrorContext.retry === 'function'){
+        await cameraErrorContext.retry();
+      }
+    });
+  }
+  if(back){
+    back.addEventListener('click', ()=>{
+      hideCameraError();
+      if(cameraErrorContext && typeof cameraErrorContext.back === 'function'){
+        cameraErrorContext.back();
+      } else {
+        if(typeof stopCalibLoop === 'function') stopCalibLoop();
+        if(typeof stopCamera === 'function') stopCamera();
+        showScreen('level');
+      }
+    });
+  }
+})();
+
+/* ---------- 休息 / 停止 ---------- */
+let restPauseActive = false;
+let safetyPauseActive = false;
+
+function isSafetyBlocking(){ return restPauseActive || safetyPauseActive; }
+window.isSafetyBlocking = isSafetyBlocking;
+
+function showSafetyPause(title, body, options){
+  const overlay = document.getElementById('safetyPauseOverlay');
+  const t = document.getElementById('safetyPauseTitle');
+  const b = document.getElementById('safetyPauseBody');
+  if(t) t.textContent = title;
+  if(b) b.textContent = body;
+  if(overlay) overlay.classList.add('show');
+  safetyPauseActive = true;
+  state.paused = true;
+  if(options && options.reason) safetyLog('safety_pause', { reason: options.reason });
+}
+function hideSafetyPause(){
+  const overlay = document.getElementById('safetyPauseOverlay');
+  if(overlay) overlay.classList.remove('show');
+  safetyPauseActive = false;
+  if(!restPauseActive) state.paused = false;
+}
+window.showSafetyPause = showSafetyPause;
+
+function startRest(){
+  if(restPauseActive) return;
+  restPauseActive = true;
+  state.paused = true;
+  sessionSafety.restCount++;
+  sessionSafety.restStartedAtMs = nowMs();
+  const overlay = document.getElementById('pilotRestOverlay');
+  const title = document.getElementById('pilotRestTitle');
+  const body = document.getElementById('pilotRestBody');
+  if(title) title.textContent = '休息';
+  if(body) body.textContent = '放下雙手、放鬆肩膀。';
+  if(overlay) overlay.classList.add('show');
+  safetyLog('rest_start', { rest_index: sessionSafety.restCount });
+}
+function endRest(){
+  if(!restPauseActive) return;
+  const elapsed = Math.max(0, Math.round((nowMs() - sessionSafety.restStartedAtMs) / 1000));
+  sessionSafety.restTotalSec += elapsed;
+  sessionSafety.restStartedAtMs = 0;
+  restPauseActive = false;
+  const overlay = document.getElementById('pilotRestOverlay');
+  if(overlay && !(research.active && typeof pilotCurrentPhase === 'function'
+      && pilotCurrentPhase() && pilotCurrentPhase().kind === 'rest')){
+    overlay.classList.remove('show');
+  }
+  if(!safetyPauseActive) state.paused = false;
+  safetyLog('rest_end', { rest_index: sessionSafety.restCount, rest_seconds: elapsed });
+}
+window.startRest = startRest;
+window.endRest = endRest;
+
+function openStopConfirm(){
+  const overlay = document.getElementById('stopConfirmOverlay');
+  if(overlay) overlay.classList.add('show');
+  state.paused = true;
+}
+function closeStopConfirm(){
+  const overlay = document.getElementById('stopConfirmOverlay');
+  if(overlay) overlay.classList.remove('show');
+  if(!isSafetyBlocking()) state.paused = false;
+}
+function confirmStop(reason){
+  sessionSafety.stopReason = reason || 'unspecified';
+  sessionSafety.stoppedEarly = true;
+  safetyLog('session_stopped_early', { stop_reason: sessionSafety.stopReason });
+  closeStopConfirm();
+  hideSafetyPause();
+  restPauseActive = false;
+  if(typeof endGame === 'function'){
+    endGame('safety_stop');
+  } else if(typeof leaveCurrentGame === 'function'){
+    leaveCurrentGame();
+  }
+}
+window.confirmStop = confirmStop;
+
+(function wireRestStop(){
+  const rest = document.getElementById('btnGameRest');
+  const stop = document.getElementById('btnGameStop');
+  const resume = document.getElementById('btnPilotRestResume');
+  const cancel = document.getElementById('btnStopCancel');
+  const row = document.getElementById('stopReasonRow');
+  const pauseResume = document.getElementById('btnSafetyPauseResume');
+  const pauseStop = document.getElementById('btnSafetyPauseStop');
+  if(rest) rest.addEventListener('click', startRest);
+  if(stop) stop.addEventListener('click', openStopConfirm);
+  if(cancel) cancel.addEventListener('click', closeStopConfirm);
+  if(row){
+    row.addEventListener('click', event=>{
+      const btn = event.target.closest('[data-stop-reason]');
+      if(!btn) return;
+      confirmStop(btn.dataset.stopReason);
+    });
+  }
+  if(pauseResume){
+    pauseResume.addEventListener('click', ()=>{
+      hideSafetyPause();
+      if(typeof setActionPrompt === 'function') setActionPrompt('繼續', '慢慢來，動作要舒服');
+    });
+  }
+  if(pauseStop) pauseStop.addEventListener('click', ()=> confirmStop('pain_or_discomfort'));
+  if(resume){
+    // Existing research rest overlay button also ends a manual rest.
+    resume.addEventListener('click', ()=>{ if(restPauseActive) endRest(); });
+  }
+})();
+
+/* ---------- 治療師代償觀察（人手記錄，非自動偵測） ---------- */
+const COMPENSATION_LABELS = {
+  shoulder_hiking: '肩膊抬高',
+  trunk_lean: '軀幹傾斜',
+  pain: '疼痛',
+  finger_tightening: '手指愈握愈緊',
+};
+function recordCompensation(kind){
+  const counts = sessionSafety.compensationCounts;
+  counts[kind] = (counts[kind] || 0) + 1;
+  safetyLog('compensation_observed', { compensation: kind, count: counts[kind] });
+  const alertEl = document.getElementById('compAlert');
+  if(counts[kind] >= COMPENSATION_REPEAT_LIMIT){
+    sessionSafety.compensationPauseCount++;
+    sessionSafety.difficultyReducedCount++;
+    if(alertEl){
+      alertEl.style.display = 'block';
+      alertEl.textContent = '已第 ' + counts[kind] + ' 次觀察到「' + (COMPENSATION_LABELS[kind] || kind)
+        + '」。建議先暫停、讓患者休息，並縮短滑行距離或降低難度後再繼續。';
+    }
+    showSafetyPause('請先暫停',
+      '治療師已兩次觀察到「' + (COMPENSATION_LABELS[kind] || kind) + '」。請讓患者放下雙手、放鬆肩膀，'
+      + '並把物件或目標移近（縮短距離），確認無疼痛、無代償後才繼續。',
+      { reason: 'repeated_compensation_' + kind });
+  } else if(alertEl){
+    alertEl.style.display = 'block';
+    alertEl.textContent = '已記錄：' + (COMPENSATION_LABELS[kind] || kind) + '（第 ' + counts[kind] + ' 次）。';
+  }
+}
+window.recordCompensation = recordCompensation;
+
+(function wireCompensationPanel(){
+  const toggle = document.getElementById('btnCompObserve');
+  const panel = document.getElementById('compPanel');
+  if(toggle && panel){
+    toggle.addEventListener('click', ()=> panel.classList.toggle('show'));
+    panel.addEventListener('click', event=>{
+      const btn = event.target.closest('[data-comp]');
+      if(!btn) return;
+      recordCompensation(btn.dataset.comp);
+    });
+  }
+})();
+
+/* ---------- Level 5：最長持物時間 + 放手困難 ---------- */
+let holdStartedAtMs = 0;
+let holdTimeoutFired = false;
+let releaseAttemptStartMs = 0;
+let consecutiveReleaseDifficulty = 0;
+
+function noteHoldStart(){
+  holdStartedAtMs = nowMs();
+  holdTimeoutFired = false;
+}
+function noteHoldEnd(){
+  holdStartedAtMs = 0;
+  holdTimeoutFired = false;
+}
+/* Called every frame while an object is being carried. */
+function checkHoldTimeout(){
+  if(!holdStartedAtMs || holdTimeoutFired) return false;
+  if(nowMs() - holdStartedAtMs < MAX_HOLD_MS) return false;
+  holdTimeoutFired = true;
+  sessionSafety.holdTimeoutCount++;
+  safetyLog('hold_timeout', { max_hold_ms: MAX_HOLD_MS, count: sessionSafety.holdTimeoutCount });
+  showSafetyPause('放下物件、張開手、放鬆',
+    '已經拿住物件超過 ' + Math.round(MAX_HOLD_MS / 1000) + ' 秒。請放下物件、慢慢張開手、放鬆手指和肩膀，'
+    + '由治療師確認手部無愈來愈繃緊後才繼續。',
+    { reason: 'hold_timeout' });
+  return true;
+}
+function noteReleaseAttemptStart(){
+  if(!releaseAttemptStartMs) releaseAttemptStartMs = nowMs();
+}
+function noteReleaseAttemptEnd(succeeded){
+  if(!releaseAttemptStartMs){ if(succeeded) consecutiveReleaseDifficulty = 0; return; }
+  const elapsed = nowMs() - releaseAttemptStartMs;
+  releaseAttemptStartMs = 0;
+  const delayed = elapsed >= RELEASE_DELAY_MS;
+  if(delayed || !succeeded){
+    sessionSafety.releaseDelayCount++;
+    consecutiveReleaseDifficulty++;
+    safetyLog('release_delay', { elapsed_ms: Math.round(elapsed), succeeded: !!succeeded,
+      consecutive: consecutiveReleaseDifficulty });
+    if(consecutiveReleaseDifficulty >= RELEASE_DIFFICULTY_LIMIT){
+      sessionSafety.repeatedReleaseDifficulty++;
+      safetyLog('repeated_release_difficulty', { consecutive: consecutiveReleaseDifficulty });
+      consecutiveReleaseDifficulty = 0;
+      showSafetyPause('放手比較困難，先停一停',
+        '連續幾次放手都比較慢或未能放開。請放下物件、張開手、放鬆，並由治療師重新評估手部繃緊程度，'
+        + '需要時改用更大的物件或更短距離。',
+        { reason: 'repeated_release_difficulty' });
+    }
+  } else {
+    consecutiveReleaseDifficulty = 0;
+  }
+}
+function resetSafetyRuntime(){
+  holdStartedAtMs = 0;
+  holdTimeoutFired = false;
+  releaseAttemptStartMs = 0;
+  consecutiveReleaseDifficulty = 0;
+  restPauseActive = false;
+  safetyPauseActive = false;
+  hideSafetyPause();
+  closeStopConfirm();
+  const alertEl = document.getElementById('compAlert');
+  if(alertEl){ alertEl.style.display = 'none'; alertEl.textContent = ''; }
+  const panel = document.getElementById('compPanel');
+  if(panel) panel.classList.remove('show');
+}
+window.noteHoldStart = noteHoldStart;
+window.noteHoldEnd = noteHoldEnd;
+window.checkHoldTimeout = checkHoldTimeout;
+window.noteReleaseAttemptStart = noteReleaseAttemptStart;
+window.noteReleaseAttemptEnd = noteReleaseAttemptEnd;
+window.resetSessionSafety = resetSessionSafety;
+window.resetSafetyRuntime = resetSafetyRuntime;
+window.sessionSafety = sessionSafety;
+window.MAX_HOLD_MS = MAX_HOLD_MS;
+window.RELEASE_DIFFICULTY_LIMIT = RELEASE_DIFFICULTY_LIMIT;
+window.SAFETY_LEVEL_NOTES = SAFETY_LEVEL_NOTES;
+
+/* Therapist-facing brief shown on the calibration screen for each public level.
+   Level 4 carries the mandatory 3-attempt distance calibration instruction;
+   Level 5 explains the personalised release threshold; Level 6 states that
+   bare-hand aperture detection is the default. */
+const CALIB_LEVEL_BRIEF = {
+  '4': '<b>Level 4 距離校準（必做）</b><br>'
+     + '請先帶患者做 <b>3 次練習</b>，逐次試不同前滑距離，然後採用「<b>沒有肩膊抬高、'
+     + '沒有軀幹傾斜、沒有疼痛、手指也沒有愈來愈繃緊</b>」的最遠距離作為本節設定。<br>'
+     + '指令用「<b>慢慢向前滑</b>」，不要催快、不計速度。訓練中如同一種代償出現兩次，'
+     + '請按畫面上的「代償觀察」鍵記錄；系統會提示暫停及縮短距離。<br>'
+     + '<span style="color:#7d1a12;">注意：軟件不會自動偵測代償，代償需由治療師人手觀察及確認。</span>',
+  '5': '<b>Level 5 個人化放手標準</b><br>'
+     + '校準時拍到的「張開手」幅度，就是本節的放手標準；'
+     + '<b>患者不需要張到完全伸直</b>，只需張回自己校準時的幅度就可以放下。<br>'
+     + '拿取用「<b>輕輕合手拿起</b>」，不要大力握實；拿住物件超過 '
+     + '<b>5 秒</b> 系統會自動暫停，提示放下物件、張開手、放鬆。<br>'
+     + '預設使用<b>較大物件及較短距離</b>；如連續放手困難，系統會提示重新評估。',
+  '67': '<b>Level 6 裸手捏合幅度（預設）</b><br>'
+     + '<b>預設以裸手進行</b>，鏡頭只偵測拇指與食指的張開幅度（aperture）。<br>'
+     + '實物木釘、筷子或其他工具屬治療師可選的額外練習，<b>並非標準要求</b>，'
+     + '而且<b>軟件不會偵測夾力</b>。<br>'
+     + '指令用「<b>只需輕輕捏合，不要用盡力</b>」。如工具遮擋指尖導致追蹤失敗，請改用裸手。<br>'
+     + '個人化捏合幅度校準仍然必須完成。',
+};
+function renderCalibLevelBrief(){
+  const el = document.getElementById('calibLevelBrief');
+  if(!el) return;
+  const key = research.active ? (research.stratum === '5' ? '5' : '67') : (state.level || '4');
+  el.innerHTML = CALIB_LEVEL_BRIEF[key] || CALIB_LEVEL_BRIEF['4'];
+}
+window.renderCalibLevelBrief = renderCalibLevelBrief;
+window.CALIB_LEVEL_BRIEF = CALIB_LEVEL_BRIEF;
 
 function resetResearchCalibration(){
   research.calibration = { detectedStart:0, openStart:0, closedStart:0, detectedDone:false,
@@ -2316,6 +2917,10 @@ const RESEARCH_CSV_COLUMNS = ['row_type','version','timestamp','participant','vi
   'trad_activity_1','trad_minutes_1','trad_training_repetitions_1',
   'trad_activity_2','trad_minutes_2','trad_training_repetitions_2',
   'trad_activity_3','trad_minutes_3','trad_training_repetitions_3',
+  'safety_ack_level','rest_count','rest_total_sec','stop_reason','stopped_early',
+  'tracking_failure_count','hold_timeout_count','release_delay_count',
+  'repeated_release_difficulty','difficulty_reduced_count',
+  'therapist_observed_compensation',
   'details',
   ...RESEARCH_FEEDBACK_FIELDS];
 function downloadRowsCSV(rows, filename){
@@ -2406,8 +3011,8 @@ const PILOT_TEXT = {
     cogMeta:'正確／總數：', cogYes:'患者有回應', cogNo:'沒有回應',
     cogOnlyPrompt:'單一認知區組：只觀察圖形；見到紅色圓形時出聲。',
     pinchPrepPrompt:'張開拇指與食指，移到物件上。',
-    pinchHoldPrompt:'捏合拇食指並維持，拿起物件。',
-    pinchCarryPrompt:'維持捏住，搬到目標位置。',
+    pinchHoldPrompt:'只需輕輕捏合，不要用盡力。',
+    pinchCarryPrompt:'保持輕輕捏合，慢慢搬到目標。',
     pinchReleasePrompt:'張開拇食指並維持，放下物件。',
     ruleSwitchOn:'規則轉換：下一件請放到另一個目標。',
     strataNote:'正式 Pilot Study 納入 FTHUE Level 5–7。FTHUE 5：握放；FTHUE 6：真正拇食指捏住、維持及放下；FTHUE 7：較小物件、干擾及規則轉換。分層代表任務要求，不是研究組別。',
@@ -2719,7 +3324,7 @@ const LEVELS = {
   '4': { id:'4', tag:'FTHUE Level 4', name:'桌面中線訓練', gameType:'dwell',
          actionLabel:'桌面承托：中線停住、向前滑動、目標停住' },
   '5': { id:'5', tag:'FTHUE Level 5', name:'握放訓練', gameType:'grasp',
-         actionLabel:'握放：握拳拿取、張開手放下' },
+         actionLabel:'握放：輕輕合手拿起、張開手放下' },
   '67': { id:'67', tag:'FTHUE Level 6–7', name:'精細動作訓練', gameType:'pinch',
           actionLabel:'精細動作：拇指食指捏取、張開放下' },
 };
@@ -2746,7 +3351,11 @@ document.getElementById('btnLevel4').addEventListener('click', ()=> selectLevel(
 document.getElementById('btnLevel5').addEventListener('click', ()=> selectLevel('5'));
 document.getElementById('btnLevel67').addEventListener('click', ()=> selectLevel('67'));
 document.getElementById('btnLevel3').addEventListener('click', ()=>{
-  window.location.href = 'sandbox/level3-bilateral/index.html';
+  // Mandatory safety acknowledgement before the Level 3 module (which also carries
+  // its own gate when opened directly).
+  openSafetyGate('3',
+    ()=>{ window.location.href = 'sandbox/level3-bilateral/index.html?safetyAck=1'; },
+    ()=> showScreen('level'));
 });
 const instructionVideoModal = document.getElementById('instructionVideoModal');
 const instructionVideo = document.getElementById('instructionVideo');
@@ -2979,10 +3588,23 @@ document.getElementById('btnResearchBegin').addEventListener('click', async ()=>
   err.textContent = '';
   try{ const c = getAudioCtx(); if(c.state === 'suspended') await c.resume(); }catch(e){}
   showScreen('calib');
+  renderCalibLevelBrief();
+  hideCameraError();
+  resetSessionSafety();
+  resetSafetyRuntime();
   document.getElementById('btnStartGame').disabled = true;
   document.getElementById('pixelCount').textContent = '尚未偵測';
-  await ensureHandLandmarker();
-  await startCamera('calibVideo');
+  cameraErrorContext = {
+    retry: ()=> document.getElementById('btnResearchBegin').click(),
+    back: ()=>{ stopCalibLoop(); stopCamera(); showScreen('research'); },
+  };
+  try{
+    await ensureHandLandmarker();
+  }catch(e){
+    showCameraError({ name:'ModelLoadError' }, cameraErrorContext);
+    return;
+  }
+  if(await startCamera('calibVideo') === false) return;
   startCalibLoop();
 });
 document.getElementById('btnBackToLevel').addEventListener('click', ()=> showScreen('level'));
@@ -3094,6 +3716,39 @@ document.getElementById('fontOptions').addEventListener('click', e=>{
   updatePreview('preview-font', btn.textContent.trim());
 });
 
+async function enterCalibrationFlow(){
+  resetNormalCalibration();
+  resetSessionSafety();
+  resetSafetyRuntime();
+  hideCameraError();
+  const showHandChecks = isGraspStyleMode();
+  document.getElementById('calibChecklist').classList.toggle('active', showHandChecks);
+  document.getElementById('calibOpenCheck').style.display = showHandChecks ? 'block' : 'none';
+  document.getElementById('calibCloseCheck').style.display = showHandChecks ? 'block' : 'none';
+  // Unlock AudioContext on first interaction (Safari)
+  try{ const c = getAudioCtx(); if(c.state === 'suspended') await c.resume(); }catch(e){}
+  showScreen('calib');
+  renderCalibLevelBrief();
+  document.getElementById('btnStartGame').disabled = true;
+  document.getElementById('pixelCount').textContent = '尚未偵測';
+  cameraErrorContext = {
+    retry: ()=> enterCalibrationFlow(),
+    back: ()=>{ stopCalibLoop(); stopCamera(); renderActivityLibrary(); showScreen('library'); },
+  };
+  try{
+    await ensureHandLandmarker();
+  }catch(err){
+    showCameraError({ name:'ModelLoadError' }, cameraErrorContext);
+    return;
+  }
+  // 煮飯需要肩／肘／腕追蹤：校準期間先開始下載模型（約 6MB），失敗亦不阻塞
+  if(state.theme === 'cooking'){ ensurePoseLandmarker().catch(()=>{}); }
+  const cameraOk = await startCamera('calibVideo');
+  if(cameraOk === false) return;   // in-page error already shown; never wait forever
+  startCalibLoop();
+}
+window.enterCalibrationFlow = enterCalibrationFlow;
+
 document.getElementById('btnGoCalib').addEventListener('click', async ()=>{
   research.active = false;
   if(!state.affectedSide){
@@ -3102,21 +3757,10 @@ document.getElementById('btnGoCalib').addEventListener('click', async ()=>{
     if(card) card.classList.remove('collapsed');
     return;
   }
-  resetNormalCalibration();
-  const showHandChecks = isGraspStyleMode();
-  document.getElementById('calibChecklist').classList.toggle('active', showHandChecks);
-  document.getElementById('calibOpenCheck').style.display = showHandChecks ? 'block' : 'none';
-  document.getElementById('calibCloseCheck').style.display = showHandChecks ? 'block' : 'none';
-  // Unlock AudioContext on first interaction (Safari)
-  try{ const c = getAudioCtx(); if(c.state === 'suspended') await c.resume(); }catch(e){}
-  showScreen('calib');
-  document.getElementById('btnStartGame').disabled = true;
-  document.getElementById('pixelCount').textContent = '尚未偵測';
-  await ensureHandLandmarker();
-  // 煮飯需要肩／肘／腕追蹤：校準期間先開始下載模型（約 6MB），失敗亦不阻塞
-  if(state.theme === 'cooking'){ ensurePoseLandmarker().catch(()=>{}); }
-  await startCamera('calibVideo');
-  startCalibLoop();
+  // P0 clinical safety: mandatory acknowledgement before any camera / game start.
+  openSafetyGate(state.level || '4',
+    ()=>{ enterCalibrationFlow(); },
+    ()=> showScreen('start'));
 });
 
 document.getElementById('btnBackFromCalib').addEventListener('click', ()=>{
@@ -3187,7 +3831,7 @@ function updateRulesForActivity(){
     ? '前臂承托 → 中線停住 → 向前滑動 → 目標停住'
     : (isPinchMode()
       ? '拇食指張開 → 捏住拿取 → 張開放下'
-      : '張開手 → 握緊拿取 → 張開手放下');
+      : '張開手 → 輕輕合手拿起 → 張開手放下');
   if(research.active){
     const advanced = research.dualTaskLevel === 'advanced_sort_motor';
     const rule = pilotLang === 'en'
@@ -3207,7 +3851,7 @@ function updateRulesForActivity(){
     window.__CURRENT_RULES_CANTONESE = isPinchMode()
       ? '先張開拇指和食指，捏住物件。移到相同目標，再張開兩指放下。' +
         '由中線向患側外下方移動。' + (advanced ? '只拿目標物件，不要拿動物。' : '')
-      : '先張開手，握緊拿物件。移到相同目標，再張開手放下。' +
+      : '先張開手，輕輕合手拿起物件（不用大力握實）。移到相同目標，再張開手放下。' +
         '由中線向患側外下方移動。' + (advanced ? '只拿目標物件，不要拿動物。' : '');
     return;
   }
@@ -3225,7 +3869,7 @@ function updateRulesForActivity(){
         ? '前臂承托在桌面，手掌或滑墊停在物件上，向前滑動，再在目標停住。慢慢做，不計速度。'
         : (isPinchMode()
           ? '先張開拇指和食指，捏住拿取。移到位置，再張開兩指放下。'
-          : '先張開手，握緊拿取。移到位置，再張開手放下。')) +
+          : '先張開手，輕輕合手拿起。移到位置，再張開手放下。')) +
       r.lines[0] + '慢慢來。';
     return;
   }
@@ -3241,7 +3885,7 @@ function updateRulesForActivity(){
       ? `前臂承托在桌面。手掌或滑墊停在${th.itemWord}上，沿中線慢慢向前滑，再在同款目標停住。不用趕。`
       : (isPinchMode()
         ? `張開拇指和食指。捏住${th.itemWord}，移到同款目標，再張開兩指放下。慢慢來。`
-        : `先張開手。握緊拿${th.itemWord}。移到同款目標，再張開手放下。慢慢來。`);
+        : `先張開手。輕輕合手拿起${th.itemWord}，不用大力握。移到同款目標，再張開手放下。慢慢來。`);
 }
 
 let rulesStartTimer = 0;
@@ -3258,8 +3902,21 @@ async function startSelectedGame(){
     const gameVideo = document.getElementById('gameVideo');
     gameVideo.srcObject = state.stream;
     await gameVideo.play().catch(()=>{});
-  } else {
-    await startCamera('gameVideo');
+  } else if(!state.qaMode){
+    // No stream yet: try again, and on failure fall back to the calibration screen
+    // with the in-page camera error (never an indefinite blank waiting state).
+    cameraErrorContext = {
+      retry: ()=> enterCalibrationFlow(),
+      back: ()=>{ stopCalibLoop(); stopCamera(); renderActivityLibrary(); showScreen('library'); },
+    };
+    const ok = await startCamera('gameVideo');
+    if(ok === false){
+      showScreen('calib');
+      renderCalibLevelBrief();
+      showCameraError({ name:'NoStreamError' }, cameraErrorContext);
+      gameStartInProgress = false;
+      return;
+    }
   }
   resizeGameCanvas();
   initGame();
@@ -3382,7 +4039,7 @@ function showLevelUpBanner(){
       ? `遊戲開始。前臂放在桌面。手掌或滑墊停在${itemWord0}上，沿中線慢慢向前，再在目標停住。`
       : (isPinchMode()
         ? `遊戲開始。張開拇指和食指，捏住${itemWord0}，移到同款目標再張開放下。`
-        : `遊戲開始。張開手，握緊拿${itemWord0}。移到同款目標，再張開手放下。`);
+        : `遊戲開始。張開手，輕輕合手拿起${itemWord0}。移到同款目標，再張開手放下。`);
     persistText = okTag;
   } else if(tier === 1){
     msg = `<div style="font-size:20px;font-weight:900;">只拿${itemWord0} · 不拿動物</div>`;
@@ -3512,12 +4169,10 @@ document.getElementById('btnRetry').addEventListener('click', async ()=>{
     showScreen('research');
     return;
   }
-  showScreen('calib');
-  document.getElementById('btnStartGame').disabled = true;
-  document.getElementById('pixelCount').textContent = '尚未偵測';
-  await ensureHandLandmarker();
-  await startCamera('calibVideo');
-  startCalibLoop();
+  // Repeat session: the safety acknowledgement is required again for every session.
+  openSafetyGate(state.level || '4',
+    ()=> enterCalibrationFlow(),
+    ()=>{ renderActivityLibrary(); showScreen('library'); });
 });
 // Home：返回級別選擇畫面
 document.getElementById('btnHome').addEventListener('click', ()=>{
@@ -3534,6 +4189,7 @@ function leaveCurrentGame(){
   }
   state.running = false;
   state.paused = false;
+  resetSafetyRuntime();
   if(isAdvTheme()) advTeardown();
   if(gameTimerId){ clearInterval(gameTimerId); gameTimerId = null; }
   if(cogTimerId){ clearInterval(cogTimerId); cogTimerId = null; }
@@ -3623,6 +4279,10 @@ document.getElementById('researchSafetyPanel').addEventListener('input', event=>
 /* ==================== 相機控制 ==================== */
 async function startCamera(videoElId){
   const videoEl = document.getElementById(videoElId);
+  if(!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function'){
+    showCameraError({ name:'UnsupportedError' });
+    return false;
+  }
   try{
     if(state.stream){
       state.stream.getTracks().forEach(t=>t.stop());
@@ -3635,8 +4295,13 @@ async function startCamera(videoElId){
     state.stream = stream;
     videoEl.srcObject = stream;
     await videoEl.play().catch(()=>{});
+    hideCameraError();
+    return true;
   }catch(err){
-    alert('無法啟動相機，請確認已授予相機權限。錯誤：' + err.message);
+    // P0: never leave the participant on a blank waiting screen. Show an in-page
+    // error with Retry / Return instead of an alert.
+    showCameraError(err);
+    return false;
   }
 }
 function stopCamera(){
@@ -3912,13 +4577,15 @@ function updateCalibrationCopy(){
   const openCheck = document.getElementById('calibOpenCheck');
   const closeCheck = document.getElementById('calibCloseCheck');
   if(isPinchMode()){
-    hint.textContent = '鏡頭保持約 35–45° 斜上方。請確保手腕、拇指及食指同時入鏡；先不用筷子或夾子完成校準。';
+    hint.textContent = '鏡頭保持約 35–45° 斜上方。預設使用裸手：請確保手腕、拇指及食指同時入鏡，'
+      + '並以裸手完成個人化捏合幅度校準。實物筷子或夾子屬治療師可選練習，軟件不會偵測夾力。';
     openCheck.textContent = '○ 持續分開拇指與食指 2 秒';
     closeCheck.textContent = '○ 持續捏合拇指與食指 2 秒';
   }else if(state.gameType === 'grasp'){
-    hint.textContent = '掌心面向鏡頭，手腕及五隻指尖保持入鏡。請先張手，再握拳；建議使用純色背景及均勻光線。';
+    hint.textContent = '掌心面向鏡頭，手腕及五隻指尖保持入鏡。請先張開手，再輕輕合手；'
+      + '這個張開幅度就是患者個人化的放手標準，不需要張到完全伸直。建議使用純色背景及均勻光線。';
     openCheck.textContent = '○ 持續張開手掌 2 秒';
-    closeCheck.textContent = '○ 持續握拳 2 秒';
+    closeCheck.textContent = '○ 持續輕輕合手 2 秒';
   }else{
     hint.textContent = '請將手掌或滑墊置於鏡頭前，確認畫面中出現綠色圓點後即可開始。';
   }
@@ -4308,7 +4975,7 @@ function drawBasket(ctx, x, y, s){
 }
 
 /* ==================== 活動主題註冊表 ==================== */
-const LEVEL_VERB = { '4':'沿中線向前滑', '5':'握拳拿', '67':'捏起' };
+const LEVEL_VERB = { '4':'慢慢向前滑', '5':'輕輕合手拿起', '67':'輕輕捏起' };
 const LEVEL_ACTION = { '4':'桌面中線滑動', '5':'握放拿取', '67':'拇食指捏取' };
 const BASE_THEME = {
   verbFor(level){ return LEVEL_VERB[level] || LEVEL_VERB['4']; },
@@ -4641,6 +5308,10 @@ function initGame(){
 
   state.running = true;
   state.paused = false;
+  /* Safety counters are per game session: reset here as well as on entering
+     calibration, so a session started directly (or re-started) begins clean. */
+  resetSessionSafety();
+  resetSafetyRuntime();
   document.getElementById('btnPause').textContent = 'Ⅱ 暫停';
   document.getElementById('btnPause').classList.remove('pause-active');
   if(research.active){
@@ -4735,13 +5406,20 @@ function setupTargets(){
     return;
   }
   const sideSign = affectedSideSign();
+  // Safety default for public Level 5: a shorter transport distance. Targets are pulled
+  // toward the midline and slightly upward so the reach stays inside a comfortable,
+  // supported range. The therapist can still shorten it further on the table.
+  const shortReach = (!research.active && state.level === '5');
+  const pullToCentre = (x)=> shortReach ? (cw / 2 + (x - cw / 2) * 0.72) : x;
   // 患側名稱直接對應畫面方向：右患側向右下，左患側向左下。
   const tw = portrait ? Math.min(cw * 0.29, 230) : Math.min(cw * 0.24, 260);
   const th = tw * (style === 'steamer' ? 0.74 : 0.62);
-  const outsideX = sideSign > 0 ? cw * 0.78 : cw * 0.22;
-  const landscapeXs = sideSign > 0 ? [cw * 0.66, cw * 0.87] : [cw * 0.34, cw * 0.13];
-  const portraitYs = [ch * 0.72, Math.min(ch - th/2 - 64, ch * 0.88)];
-  const landscapeY = ch - th/2 - 18;
+  const outsideX = pullToCentre(sideSign > 0 ? cw * 0.78 : cw * 0.22);
+  const landscapeXs = (sideSign > 0 ? [cw * 0.66, cw * 0.87] : [cw * 0.34, cw * 0.13]).map(pullToCentre);
+  const portraitYs = shortReach
+    ? [ch * 0.66, Math.min(ch - th/2 - 64, ch * 0.80)]
+    : [ch * 0.72, Math.min(ch - th/2 - 64, ch * 0.88)];
+  const landscapeY = ch - th/2 - (shortReach ? 60 : 18);
   targets = cats.slice(0,2).map((c, i)=>({
     type: c.type,
     label: c.targetLabel,
@@ -4813,7 +5491,11 @@ function makeFoodAt(def, existingFoods){
   const cw = gameCanvas.width, ch = gameCanvas.height;
   const portrait = isPortrait();
   const advancedPilot = research.active && research.dualTaskLevel === 'advanced_sort_motor';
-  const baseR = isLevel4Tabletop() ? (portrait ? 78 : 104) : (portrait ? (advancedPilot ? 62 : 72) : 100);
+  // Safety default for public Level 5: larger objects are easier to pick up with a
+  // light, non-forceful grasp and easier to release.
+  const level5Boost = (!research.active && state.level === '5') ? 1.18 : 1;
+  const baseR = (isLevel4Tabletop() ? (portrait ? 78 : 104)
+    : (portrait ? (advancedPilot ? 62 : 72) : 100)) * level5Boost;
   // Task-specific strata: FTHUE 6 and 7 use progressively smaller objects.
   const r = baseR * (def.scale || 1.0) * (research.active ? pilotStratum().itemScale : 1);
 
@@ -5247,9 +5929,11 @@ function graspPrompt(key){
     if(key === 'carry')   return t.pinchCarryPrompt;
     if(key === 'release') return t.pinchReleasePrompt;
   }
+  // Patient-facing wording avoids '握拳 / 握緊', which encourages excessive flexor
+  // effort in a spastic hand. Internal variable names are unchanged.
   if(key === 'prep')    return '張開手';
-  if(key === 'hold')    return '握緊拿取';
-  if(key === 'carry')   return '保持握緊';
+  if(key === 'hold')    return '輕輕合手拿起';
+  if(key === 'carry')   return '保持輕握';
   return '張開手放下';
 }
 function updateGraspLogic(){
@@ -5263,7 +5947,7 @@ function updateGraspLogic(){
     setActionPrompt(
       '等待偵測手部',
       isPinchMode()
-        ? '手腕、拇指及食指同時入鏡；如工具遮擋指尖，先改用裸手'
+        ? '手腕、拇指及食指同時入鏡；如工具遮擋指尖導致追蹤失敗，請改用裸手'
         : '掌心面向鏡頭，保持手腕及五隻指尖入鏡'
     );
     basicOpenStart = 0; basicGraspStart = 0; basicGraspCandidate = '';
@@ -5300,7 +5984,7 @@ function updateGraspLogic(){
         basicGraspArmed ? graspPrompt('carry') : pct + '%');
     } else if(!basicGraspArmed || basicGraspCandidate !== nearest.id || !isGrasping){
       basicOpenStart = 0; basicGraspStart = 0; basicGraspArmed = false;
-      setActionPrompt(graspPrompt('prep'), isPinchMode() ? PILOT_TEXT[pilotLang].pinchHoldPrompt : '然後才握緊拿取');
+      setActionPrompt(graspPrompt('prep'), isPinchMode() ? PILOT_TEXT[pilotLang].pinchHoldPrompt : '然後輕輕合手拿起');
     } else {
       if(!basicGraspStart){
         basicGraspStart = now;
@@ -5309,6 +5993,7 @@ function updateGraspLogic(){
       const pct = Math.min(100, Math.round((now-basicGraspStart)/GRASP_HOLD_MS*100));
       if(now-basicGraspStart >= GRASP_HOLD_MS){
         nearest.held = true; heldItem = nearest; grabCount++;
+        noteHoldStart();
         pilotBump(isPinchMode() ? 'pinch_success' : 'grasp_success');
         transportStartX = cursorX; transportStartY = cursorY; transportStartAt = now;
         researchLog('pickup', {item:nearest.label, method:isPinchMode() ? 'separate_then_pinch' : 'open_then_grasp'});
@@ -5321,6 +6006,10 @@ function updateGraspLogic(){
       }
     }
   } else {
+    // Safety: a conservative maximum carry duration protects against sustained
+    // flexor effort. On timeout the game pauses and the patient is prompted to
+    // put the object down, open the hand and relax.
+    if(checkHoldTimeout()) return;
     // 正握住食物：跟隨游標移動
     heldItem.x = cursorX;
     heldItem.y = cursorY;
@@ -5351,6 +6040,7 @@ function updateGraspLogic(){
         releaseDwellStart = now;
         releaseDwellPlate = onPlate;
       }
+      noteReleaseAttemptStart();
       const elapsed = now - releaseDwellStart;
       if(elapsed >= DROP_DWELL_MS){
         // 真正 drop
@@ -5379,6 +6069,8 @@ function updateGraspLogic(){
           heldItem.removed = true;
           heldItem.held = false;
           heldItem = null;
+          noteHoldEnd();
+          noteReleaseAttemptEnd(true);
           ensureFoodCount();
           setActionPrompt('已放開', '完成');
         } else {
@@ -5397,9 +6089,11 @@ function updateGraspLogic(){
           } else {
             heldItem.x = heldItem.baseX;
             heldItem.y = heldItem.baseY;
-            setActionPrompt(graspPrompt('prep'), '移到' + getTheme().itemWord + '再' + (isPinchMode() ? '捏住' : '握緊'));
+            setActionPrompt(graspPrompt('prep'), '移到' + getTheme().itemWord + '再' + (isPinchMode() ? '輕輕捏合' : '輕輕合手拿起'));
           }
           heldItem = null;
+          noteHoldEnd();
+          noteReleaseAttemptEnd(false);
         }
         releaseDwellStart = 0;
         releaseDwellPlate = null;
@@ -5695,7 +6389,17 @@ function roundRect(ctx, x, y, w, h, r){
 }
 
 /* ---------- 結束遊戲 ---------- */
-function endGame(){
+/* endReason: 'time_up' (default) or 'safety_stop' when the therapist / participant
+   pressed 停止. Stopping early always lands on the normal result screen so that
+   nothing is exported automatically and no recorded data is lost. */
+function endGame(endReason){
+  const reason = endReason || 'time_up';
+  if(typeof sessionSafety === 'object'){
+    if(restPauseActive) endRest();
+    if(reason === 'safety_stop' && !sessionSafety.stopReason){
+      sessionSafety.stopReason = 'unspecified';
+    }
+  }
   if(research.active && !research.completed){
     if(research.trackingLostAt){
       research.totalTrackingLossMs += Math.max(0, nowMs() - research.trackingLostAt);
@@ -5710,11 +6414,26 @@ function endGame(){
       pause_count:research.pauseCount,
       actual_session_time_sec:research.actualSessionSec,
       actual_game_flow_time_sec:research.actualSessionSec,
+      end_reason:reason,
+      safety_ack_level:sessionSafety.safetyAckLevel,
+      rest_count:sessionSafety.restCount,
+      rest_total_sec:sessionSafety.restTotalSec,
+      stop_reason:sessionSafety.stopReason,
+      stopped_early:sessionSafety.stoppedEarly ? 1 : 0,
+      tracking_failure_count:sessionSafety.trackingFailureCount,
+      hold_timeout_count:sessionSafety.holdTimeoutCount,
+      release_delay_count:sessionSafety.releaseDelayCount,
+      repeated_release_difficulty:sessionSafety.repeatedReleaseDifficulty,
+      difficulty_reduced_count:sessionSafety.difficultyReducedCount,
+      therapist_observed_compensation:Object.keys(sessionSafety.compensationCounts)
+        .map(k=> k + ':' + sessionSafety.compensationCounts[k]).join('|'),
     });
     research.completed = true;
     archiveCurrentResearch();
   }
   state.running = false;
+  state.paused = false;
+  resetSafetyRuntime();
   if(isAdvTheme()) advTeardown();
   if(gameTimerId){ clearInterval(gameTimerId); gameTimerId = null; }
   if(cogTimerId){ clearInterval(cogTimerId); cogTimerId = null; }
@@ -6307,7 +7026,7 @@ function advDrawHeldReleasePrompt(ctx, held){
   if(!isGraspStyleMode() || !held || cursorX < 0) return;
   const text = (advCurrent === 'mahjong' || advCurrent === 'cards')
     ? '已拿住 · 移到放牌區'
-    : (isPinchMode() ? '已捏住 · 請張開拇食指放下' : '已拿住 · 請張手放下');
+    : (isPinchMode() ? '已捏住 · 請張開拇食指放下' : '已拿住 · 請張開手放下');
   ctx.save();
   ctx.font = 'bold 18px "PingFang TC","Noto Sans TC",sans-serif';
   const w = Math.min(250, ctx.measureText(text).width + 30);
@@ -6577,8 +7296,8 @@ function detectPose(videoEl){
 
 const COOK_STEPS = [
   { id:'loosen', text:'準備食材：現在將隔夜冷飯完全抓鬆', prop:'rice_bowl',
-    kind:'grasp',      need:3, goal:'握緊 → 張開，重複 3 次',
-    tts:'準備食材。現在將隔夜冷飯完全抓鬆。握緊手，然後張開，做三次。' },
+    kind:'grasp',      need:3, goal:'輕輕合手 → 張開，重複 3 次',
+    tts:'準備食材。現在將隔夜冷飯輕輕抓鬆。輕輕合手，然後張開，做三次，不用大力。' },
   { id:'beat', text:'將雞蛋打散', prop:'eggs',
     kind:'circle',     need:3, goal:'手腕畫圈 3 次',
     tts:'將雞蛋打散。手腕畫圈，做三次。' },
@@ -6740,11 +7459,11 @@ function cookDetect(){
 
   switch(st.kind){
     case 'grasp': {
-      // 握緊 → 張開 為一次循環
+      // 輕輕合手 → 張開 為一次循環
       if(isGrasping && !cook.graspPrev){ cook.graspPhase = 1; }
       if(!isGrasping && cook.graspPrev && cook.graspPhase === 1){ cook.graspPhase = 0; bumpRep(); }
       cook.graspPrev = isGrasping;
-      m = '手勢：' + (isGrasping ? '握緊 ✊' : '張開 🖐');
+      m = '手勢：' + (isGrasping ? '輕輕合手 ✊' : '張開 🖐');
       break;
     }
     case 'circle': {
@@ -6933,7 +7652,7 @@ function cookDetect(){
           if(el >= 1000){ cook.holdStart = 0; bumpRep(); }
         } else cook.holdStart = 0;
       } else if(!isPinchMode()){
-        m = '握緊蔥花 → 移到鍋上張開手';
+        m = '輕輕合手拿起蔥花 → 移到鍋上張開手';
         if(isGrasping) cook.pinchPrev = true;
         else if(cook.pinchPrev && inPan){ cook.pinchPrev = false; bumpRep(); }
       } else {
@@ -9302,9 +10021,90 @@ window.__qa = {
     score, correctCount, grabCount, wrongCount:totalWrong, timeLeft,
     handDetected, detectionHeldGrace,
     held: heldItem ? heldItem.label : null,
+    paused: !!state.paused,
+    safetyBlocking: isSafetyBlocking(),
+    safety: JSON.parse(JSON.stringify(sessionSafety)),
     items: foods.filter(f=>!f.removed).map(f=>({label:f.label, type:f.targetType, x:f.x, y:f.y, r:f.r})),
     targets: targets.map(t=>({label:t.label, type:t.type, x:t.x, y:t.y, w:t.w, h:t.h})),
   }; },
+  /* ---------- 臨床安全 QA hooks ---------- */
+  safety:{
+    openGate(levelKey){
+      openSafetyGate(levelKey, ()=>{ window.__qaSafetyGateContinued = true; },
+        ()=>{ window.__qaSafetyGateBacked = true; });
+      return this.gateState();
+    },
+    gateState(){
+      const ack = document.getElementById('safetyAckCheck');
+      const go = document.getElementById('btnSafetyContinue');
+      const note = document.getElementById('safetyLevelNote');
+      return {
+        screen: currentScreen,
+        ackChecked: !!(ack && ack.checked),
+        continueDisabled: !!(go && go.disabled),
+        levelNote: note ? note.textContent : '',
+        continued: !!window.__qaSafetyGateContinued,
+      };
+    },
+    ack(checked){
+      const el = document.getElementById('safetyAckCheck');
+      if(el){ el.checked = checked !== false; el.dispatchEvent(new Event('change')); }
+      return this.gateState();
+    },
+    clickContinue(){
+      const go = document.getElementById('btnSafetyContinue');
+      if(go) go.click();
+      return this.gateState();
+    },
+    resetGateFlags(){ window.__qaSafetyGateContinued = false; window.__qaSafetyGateBacked = false; return true; },
+    controlsVisible(){
+      const rest = document.getElementById('btnGameRest');
+      const stop = document.getElementById('btnGameStop');
+      const vis = el => !!el && el.offsetParent !== null;
+      return { rest: vis(rest), stop: vis(stop) };
+    },
+    rest(){ startRest(); return { blocking:isSafetyBlocking(), paused:!!state.paused,
+      restCount:sessionSafety.restCount,
+      body:(document.getElementById('pilotRestBody')||{}).textContent||'' }; },
+    resumeRest(){ endRest(); return { blocking:isSafetyBlocking(), paused:!!state.paused,
+      restTotalSec:sessionSafety.restTotalSec }; },
+    stop(reason){ confirmStop(reason); return { screen:currentScreen,
+      stopReason:sessionSafety.stopReason, stoppedEarly:sessionSafety.stoppedEarly }; },
+    compensation(kind){ recordCompensation(kind); return { counts:{...sessionSafety.compensationCounts},
+      blocking:isSafetyBlocking(), pauseCount:sessionSafety.compensationPauseCount,
+      alert:(document.getElementById('compAlert')||{}).textContent||'' }; },
+    holdStart(){ noteHoldStart(); return true; },
+    holdCheck(){ return { fired:checkHoldTimeout(), holdTimeoutCount:sessionSafety.holdTimeoutCount,
+      blocking:isSafetyBlocking(),
+      body:(document.getElementById('safetyPauseBody')||{}).textContent||'',
+      title:(document.getElementById('safetyPauseTitle')||{}).textContent||'' }; },
+    releaseAttempt(elapsedMs, succeeded){
+      noteReleaseAttemptStart();
+      if(typeof window.advanceTime === 'function' && elapsedMs) window.advanceTime(elapsedMs);
+      noteReleaseAttemptEnd(!!succeeded);
+      return { releaseDelayCount:sessionSafety.releaseDelayCount,
+        repeated:sessionSafety.repeatedReleaseDifficulty, blocking:isSafetyBlocking(),
+        title:(document.getElementById('safetyPauseTitle')||{}).textContent||'' };
+    },
+    cameraError(name){
+      const err = new Error('qa'); err.name = name;
+      showCameraError(err, { retry:()=>{ window.__qaCameraRetried = true; },
+        back:()=>{ window.__qaCameraReturned = true; } });
+      const box = document.getElementById('cameraErrorBox');
+      return {
+        visible: !!(box && box.classList.contains('show')),
+        message:(document.getElementById('cameraErrorMessage')||{}).textContent||'',
+        detail:(document.getElementById('cameraErrorDetail')||{}).textContent||'',
+        hasRetry: !!document.getElementById('btnCameraRetry'),
+        hasReturn: !!document.getElementById('btnCameraReturn'),
+      };
+    },
+    clearCameraError(){ hideCameraError();
+      const box = document.getElementById('cameraErrorBox');
+      return { visible: !!(box && box.classList.contains('show')) }; },
+    constants(){ return { maxHoldMs:MAX_HOLD_MS, releaseDifficultyLimit:RELEASE_DIFFICULTY_LIMIT,
+      levelNotes:{...SAFETY_LEVEL_NOTES} }; },
+  },
   themes(){ return THEME_ORDER.map(id=>({ id, title:THEMES[id].title,
     categories: THEMES[id].categoriesFor(state.level).map(c=>({type:c.type, item:c.itemLabel, target:c.targetLabel})) })); },
 

@@ -1,3 +1,8 @@
+// Backward-compatible mapping: neutral protocol label -> legacy numeric metadata.
+// The Level 3 task is horizontal tabletop sliding, so no elevation is performed;
+// the numeric key is retained only so existing datasets/tests keep parsing.
+export const PROTOCOL_VARIANT_LEGACY_DEG = { A: 30, B: 45, C: 60 };
+
 export class TherapistDashboard {
   constructor({ onStartSession, onPause, onResume, onInvalidate, onEndSession }) {
     this.onStartSession = onStartSession;
@@ -63,7 +68,13 @@ export class TherapistDashboard {
       cognitiveTier: document.getElementById("cognitiveTier").value,
       trialBlockNumber: document.getElementById("blockOrderPosition").value,
       therapistNotes: document.getElementById("therapistNotes").value.trim(),
-      targetElevationDeg: document.getElementById("targetElevation").value,
+      // Neutral session/protocol label. The legacy numeric "target elevation"
+      // key is still emitted (mapped from the label) for backward compatibility
+      // with existing exports and the R pipeline; the task is horizontal sliding.
+      protocolVariant: document.getElementById("protocolVariant").value,
+      targetElevationDeg: PROTOCOL_VARIANT_LEGACY_DEG[
+        document.getElementById("protocolVariant").value
+      ] ?? 45,
       reachRangeProfile: document.getElementById("reachProfile").value,
       toleranceMode: document.getElementById("toleranceMode").value,
       patientLeftXSign: document.getElementById("directionMapping").value,
@@ -81,7 +92,7 @@ export class TherapistDashboard {
   setFormLock(locked) {
     this.fields.forEach((field) => { field.disabled = locked; });
     document.querySelectorAll('input[name="affectedSide"]').forEach((field) => { field.disabled = locked; });
-    ["targetElevation", "reachProfile", "toleranceMode", "directionMapping"].forEach((id) => {
+    ["protocolVariant", "reachProfile", "toleranceMode", "directionMapping"].forEach((id) => {
       document.getElementById(id).disabled = locked;
     });
     document.getElementById("experimentalCondition").disabled = true;

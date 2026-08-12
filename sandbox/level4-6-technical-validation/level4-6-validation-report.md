@@ -1,14 +1,14 @@
 # Level 4–6 Technical Validation Report
 
-Generated: 2026-08-11T17:07:10.370Z
+Generated: 2026-08-12T05:12:43.317Z
 
-Result: **PASS** (47/47 checks passed)
+Result: **PASS** (120/120 checks passed)
 
 | FTHUE level | Passed | Failed |
 |---|---:|---:|
-| 4 | 13 | 0 |
-| 5 | 17 | 0 |
-| 6 | 17 | 0 |
+| 4 | 41 | 0 |
+| 5 | 41 | 0 |
+| 6 | 31 | 0 |
 
 ## Verified scope
 
@@ -17,10 +17,14 @@ Result: **PASS** (47/47 checks passed)
 - Correct versus incorrect placement accounting.
 - Tracking-loss grace and sustained-loss reset.
 - Malformed hand-landmark fail-safe behaviour.
+- Mandatory safety acknowledgement gate for Levels 3–6.
+- Always-visible rest and stop controls, rest pausing active timing, and safe stop.
+- Therapist-confirmed compensation prompt, Level 5 hold timeout and repeated release difficulty.
+- In-page camera failure handling with Retry and Return for every getUserMedia error class.
 
 ## Interpretation boundary
 
-This is reproducible software technical verification only. It does not establish clinical validity, treatment efficacy, safety in real patients, or medical-device equivalence. Level 6 measures normalized thumb-index aperture state and does not measure pinch force.
+This is reproducible software technical verification only. It does not establish clinical validity, treatment efficacy, safety in real patients, or medical-device equivalence. Level 6 measures normalized thumb-index aperture state and does not measure pinch force. Compensation, muscle tone and spasticity are never detected automatically: they are therapist observations entered manually. Safety-control behaviour verified here is software behaviour only and still requires supervised bedside testing on the target iPad.
 
 ## Checks
 
@@ -71,4 +75,77 @@ This is reproducible software technical verification only. It does not establish
 - PASS | Level 6 | flow | wrong placement increments only the wrong count
 - PASS | Level 6 | tracking | brief tracking loss uses the 750 ms grace window
 - PASS | Level 6 | tracking | sustained tracking loss clears detection safely
+- PASS | Level 5 | safety | maximum carry duration defaults to a conservative 5 seconds
+- PASS | Level 5 | safety | repeated release difficulty limit is configured
+- PASS | Level 3 | safety gate | safety screen is shown before camera or game
+- PASS | Level 3 | safety gate | continue is blocked until the checklist is acknowledged
+- PASS | Level 3 | safety gate | clicking continue without acknowledgement does not proceed
+- PASS | Level 3 | safety gate | acknowledgement enables the continue action
+- PASS | Level 3 | safety gate | explicit acknowledgement is required and then proceeds
+- PASS | Level 3 | safety gate | level-specific safety note is visible on the screen
+- PASS | Level 4 | safety gate | safety screen is shown before camera or game
+- PASS | Level 4 | safety gate | continue is blocked until the checklist is acknowledged
+- PASS | Level 4 | safety gate | clicking continue without acknowledgement does not proceed
+- PASS | Level 4 | safety gate | acknowledgement enables the continue action
+- PASS | Level 4 | safety gate | explicit acknowledgement is required and then proceeds
+- PASS | Level 4 | safety gate | level-specific safety note is visible on the screen
+- PASS | Level 5 | safety gate | safety screen is shown before camera or game
+- PASS | Level 5 | safety gate | continue is blocked until the checklist is acknowledged
+- PASS | Level 5 | safety gate | clicking continue without acknowledgement does not proceed
+- PASS | Level 5 | safety gate | acknowledgement enables the continue action
+- PASS | Level 5 | safety gate | explicit acknowledgement is required and then proceeds
+- PASS | Level 5 | safety gate | level-specific safety note is visible on the screen
+- PASS | Level 6 | safety gate | safety screen is shown before camera or game
+- PASS | Level 6 | safety gate | continue is blocked until the checklist is acknowledged
+- PASS | Level 6 | safety gate | clicking continue without acknowledgement does not proceed
+- PASS | Level 6 | safety gate | acknowledgement enables the continue action
+- PASS | Level 6 | safety gate | explicit acknowledgement is required and then proceeds
+- PASS | Level 6 | safety gate | level-specific safety note is visible on the screen
+- PASS | Level 3 | safety copy | Level 3 note states the affected hand is supported and need not interlock
+- PASS | Level 4 | safety copy | Level 4 note mandates three calibration attempts without compensation
+- PASS | Level 5 | safety copy | Level 5 note uses light closing wording and the personal release aperture
+- PASS | Level 6 | safety copy | Level 6 note states bare-hand aperture default and no force detection
+- PASS | Level 5 | safety copy | no patient-facing 握拳/握緊 wording remains in the interface
+- PASS | Level 4 | rest/stop | large 休息 and 停止 controls are always visible during play
+- PASS | Level 4 | rest/stop | rest pauses active game timing
+- PASS | Level 4 | rest/stop | rest overlay shows the 放下雙手、放鬆肩膀 instruction
+- PASS | Level 4 | rest/stop | game clock does not run while resting
+- PASS | Level 4 | rest/stop | resume from rest is explicit and clears the pause
+- PASS | Level 4 | rest/stop | stop ends the session safely with a recorded reason
+- PASS | Level 4 | rest/stop | stable data-testid attributes exist for the safety controls
+- PASS | Level 5 | rest/stop | large 休息 and 停止 controls are always visible during play
+- PASS | Level 5 | rest/stop | rest pauses active game timing
+- PASS | Level 5 | rest/stop | rest overlay shows the 放下雙手、放鬆肩膀 instruction
+- PASS | Level 5 | rest/stop | game clock does not run while resting
+- PASS | Level 5 | rest/stop | resume from rest is explicit and clears the pause
+- PASS | Level 5 | rest/stop | stop ends the session safely with a recorded reason
+- PASS | Level 5 | rest/stop | stable data-testid attributes exist for the safety controls
+- PASS | Level 6 | rest/stop | large 休息 and 停止 controls are always visible during play
+- PASS | Level 6 | rest/stop | rest pauses active game timing
+- PASS | Level 6 | rest/stop | rest overlay shows the 放下雙手、放鬆肩膀 instruction
+- PASS | Level 6 | rest/stop | game clock does not run while resting
+- PASS | Level 6 | rest/stop | resume from rest is explicit and clears the pause
+- PASS | Level 6 | rest/stop | stop ends the session safely with a recorded reason
+- PASS | Level 6 | rest/stop | stable data-testid attributes exist for the safety controls
+- PASS | Level 4 | compensation | a single observed compensation is logged without pausing
+- PASS | Level 4 | compensation | the same compensation observed twice pauses and prompts a shorter distance
+- PASS | Level 5 | hold timeout | carrying below the maximum duration does not interrupt play
+- PASS | Level 5 | hold timeout | exceeding the maximum carry duration pauses the game
+- PASS | Level 5 | hold timeout | hold timeout prompts 放下物件、張開手、放鬆
+- PASS | Level 5 | hold timeout | hold_timeout is tracked in the session safety data
+- PASS | Level 5 | release difficulty | consecutive delayed or failed releases are counted
+- PASS | Level 5 | release difficulty | repeated release difficulty pauses and prompts reassessment
+- PASS | Level 4 | camera error | UnsupportedError shows an in-page error with Retry and Return
+- PASS | Level 4 | camera error | UnsupportedError shows a concise technical code without a raw stack
+- PASS | Level 4 | camera error | UnsupportedError error can be dismissed on retry
+- PASS | Level 4 | camera error | NotAllowedError shows an in-page error with Retry and Return
+- PASS | Level 4 | camera error | NotAllowedError shows a concise technical code without a raw stack
+- PASS | Level 4 | camera error | NotAllowedError error can be dismissed on retry
+- PASS | Level 4 | camera error | NotFoundError shows an in-page error with Retry and Return
+- PASS | Level 4 | camera error | NotFoundError shows a concise technical code without a raw stack
+- PASS | Level 4 | camera error | NotFoundError error can be dismissed on retry
+- PASS | Level 4 | camera error | SomeUnexpectedError shows an in-page error with Retry and Return
+- PASS | Level 4 | camera error | SomeUnexpectedError shows a concise technical code without a raw stack
+- PASS | Level 4 | camera error | SomeUnexpectedError error can be dismissed on retry
+- PASS | Level 5 | data | session safety fields are present for export
 

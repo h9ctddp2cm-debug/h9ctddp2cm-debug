@@ -1,23 +1,23 @@
 {
-  "generated_at": "2026-08-11T17:07:10.370Z",
+  "generated_at": "2026-08-12T05:12:43.317Z",
   "base_url": "http://127.0.0.1:4173",
   "scope": "Independent technical verification for FTHUE Levels 4, 5, and 6",
   "limitation": "Not clinical validation; Level 6 aperture detection does not measure pinch force.",
   "summary": {
-    "total": 47,
-    "passed": 47,
+    "total": 120,
+    "passed": 120,
     "failed": 0,
     "by_level": {
       "4": {
-        "passed": 13,
+        "passed": 41,
         "failed": 0
       },
       "5": {
-        "passed": 17,
+        "passed": 41,
         "failed": 0
       },
       "6": {
-        "passed": 17,
+        "passed": 31,
         "failed": 0
       }
     }
@@ -403,10 +403,28 @@
         "handDetected": true,
         "detectionHeldGrace": true,
         "held": null,
+        "paused": false,
+        "safetyBlocking": false,
+        "safety": {
+          "restCount": 0,
+          "restTotalSec": 0,
+          "restStartedAtMs": 0,
+          "stopReason": "",
+          "stoppedEarly": false,
+          "trackingFailureCount": 0,
+          "holdTimeoutCount": 0,
+          "releaseDelayCount": 0,
+          "repeatedReleaseDifficulty": 0,
+          "difficultyReducedCount": 0,
+          "compensationCounts": {},
+          "compensationPauseCount": 0,
+          "safetyAckLevel": "",
+          "safetyAckAtIso": ""
+        },
         "items": [
           {
-            "label": "糯米雞",
-            "type": "lotusrice",
+            "label": "叉燒包",
+            "type": "charsiu",
             "x": 472,
             "y": 656,
             "r": 104
@@ -457,10 +475,28 @@
         "handDetected": false,
         "detectionHeldGrace": false,
         "held": null,
+        "paused": false,
+        "safetyBlocking": false,
+        "safety": {
+          "restCount": 0,
+          "restTotalSec": 0,
+          "restStartedAtMs": 0,
+          "stopReason": "",
+          "stoppedEarly": false,
+          "trackingFailureCount": 0,
+          "holdTimeoutCount": 0,
+          "releaseDelayCount": 0,
+          "repeatedReleaseDifficulty": 0,
+          "difficultyReducedCount": 0,
+          "compensationCounts": {},
+          "compensationPauseCount": 0,
+          "safetyAckLevel": "",
+          "safetyAckAtIso": ""
+        },
         "items": [
           {
-            "label": "糯米雞",
-            "type": "lotusrice",
+            "label": "叉燒包",
+            "type": "charsiu",
             "x": 472,
             "y": 656,
             "r": 104
@@ -545,43 +581,61 @@
         "handDetected": true,
         "detectionHeldGrace": true,
         "held": null,
+        "paused": false,
+        "safetyBlocking": false,
+        "safety": {
+          "restCount": 0,
+          "restTotalSec": 0,
+          "restStartedAtMs": 0,
+          "stopReason": "",
+          "stoppedEarly": false,
+          "trackingFailureCount": 0,
+          "holdTimeoutCount": 0,
+          "releaseDelayCount": 0,
+          "repeatedReleaseDifficulty": 0,
+          "difficultyReducedCount": 0,
+          "compensationCounts": {},
+          "compensationPauseCount": 0,
+          "safetyAckLevel": "",
+          "safetyAckAtIso": ""
+        },
         "items": [
           {
             "label": "糯米雞",
             "type": "lotusrice",
             "x": 259.6,
             "y": 442.8,
-            "r": 100
+            "r": 118
           },
           {
             "label": "叉燒包",
             "type": "charsiu",
             "x": 590,
             "y": 442.8,
-            "r": 100
+            "r": 118
           },
           {
             "label": "糯米雞",
             "type": "lotusrice",
             "x": 920.4,
             "y": 442.8,
-            "r": 100
+            "r": 118
           }
         ],
         "targets": [
           {
             "label": "叉燒包",
             "type": "charsiu",
-            "x": 778.8000000000001,
-            "y": 705.8,
+            "x": 725.936,
+            "y": 663.8,
             "w": 260,
             "h": 192.4
           },
           {
             "label": "糯米雞",
             "type": "lotusrice",
-            "x": 1026.6,
-            "y": 705.8,
+            "x": 904.3519999999999,
+            "y": 663.8,
             "w": 260,
             "h": 192.4
           }
@@ -606,43 +660,61 @@
         "handDetected": false,
         "detectionHeldGrace": false,
         "held": null,
+        "paused": false,
+        "safetyBlocking": false,
+        "safety": {
+          "restCount": 0,
+          "restTotalSec": 0,
+          "restStartedAtMs": 0,
+          "stopReason": "",
+          "stoppedEarly": false,
+          "trackingFailureCount": 0,
+          "holdTimeoutCount": 0,
+          "releaseDelayCount": 0,
+          "repeatedReleaseDifficulty": 0,
+          "difficultyReducedCount": 0,
+          "compensationCounts": {},
+          "compensationPauseCount": 0,
+          "safetyAckLevel": "",
+          "safetyAckAtIso": ""
+        },
         "items": [
           {
             "label": "糯米雞",
             "type": "lotusrice",
             "x": 259.6,
             "y": 442.8,
-            "r": 100
+            "r": 118
           },
           {
             "label": "叉燒包",
             "type": "charsiu",
             "x": 590,
             "y": 442.8,
-            "r": 100
+            "r": 118
           },
           {
             "label": "糯米雞",
             "type": "lotusrice",
             "x": 920.4,
             "y": 442.8,
-            "r": 100
+            "r": 118
           }
         ],
         "targets": [
           {
             "label": "叉燒包",
             "type": "charsiu",
-            "x": 778.8000000000001,
-            "y": 705.8,
+            "x": 725.936,
+            "y": 663.8,
             "w": 260,
             "h": 192.4
           },
           {
             "label": "糯米雞",
             "type": "lotusrice",
-            "x": 1026.6,
-            "y": 705.8,
+            "x": 904.3519999999999,
+            "y": 663.8,
             "w": 260,
             "h": 192.4
           }
@@ -701,6 +773,24 @@
         "handDetected": true,
         "detectionHeldGrace": true,
         "held": null,
+        "paused": false,
+        "safetyBlocking": false,
+        "safety": {
+          "restCount": 0,
+          "restTotalSec": 0,
+          "restStartedAtMs": 0,
+          "stopReason": "",
+          "stoppedEarly": false,
+          "trackingFailureCount": 0,
+          "holdTimeoutCount": 0,
+          "releaseDelayCount": 0,
+          "repeatedReleaseDifficulty": 0,
+          "difficultyReducedCount": 0,
+          "compensationCounts": {},
+          "compensationPauseCount": 0,
+          "safetyAckLevel": "",
+          "safetyAckAtIso": ""
+        },
         "items": [
           {
             "label": "蝦餃",
@@ -710,18 +800,18 @@
             "r": 145
           },
           {
-            "label": "蝦餃",
-            "type": "hargau",
-            "x": 590,
-            "y": 442.8,
-            "r": 145
-          },
-          {
             "label": "燒賣",
             "type": "siumai",
-            "x": 920.4,
+            "x": 590,
             "y": 442.8,
             "r": 100
+          },
+          {
+            "label": "蝦餃",
+            "type": "hargau",
+            "x": 920.4,
+            "y": 442.8,
+            "r": 145
           }
         ],
         "targets": [
@@ -762,6 +852,24 @@
         "handDetected": false,
         "detectionHeldGrace": false,
         "held": null,
+        "paused": false,
+        "safetyBlocking": false,
+        "safety": {
+          "restCount": 0,
+          "restTotalSec": 0,
+          "restStartedAtMs": 0,
+          "stopReason": "",
+          "stoppedEarly": false,
+          "trackingFailureCount": 0,
+          "holdTimeoutCount": 0,
+          "releaseDelayCount": 0,
+          "repeatedReleaseDifficulty": 0,
+          "difficultyReducedCount": 0,
+          "compensationCounts": {},
+          "compensationPauseCount": 0,
+          "safetyAckLevel": "",
+          "safetyAckAtIso": ""
+        },
         "items": [
           {
             "label": "蝦餃",
@@ -771,18 +879,18 @@
             "r": 145
           },
           {
-            "label": "蝦餃",
-            "type": "hargau",
-            "x": 590,
-            "y": 442.8,
-            "r": 145
-          },
-          {
             "label": "燒賣",
             "type": "siumai",
-            "x": 920.4,
+            "x": 590,
             "y": 442.8,
             "r": 100
+          },
+          {
+            "label": "蝦餃",
+            "type": "hargau",
+            "x": 920.4,
+            "y": 442.8,
+            "r": 145
           }
         ],
         "targets": [
@@ -803,6 +911,811 @@
             "h": 192.4
           }
         ]
+      }
+    },
+    {
+      "level": "5",
+      "category": "safety",
+      "name": "maximum carry duration defaults to a conservative 5 seconds",
+      "passed": true,
+      "details": {
+        "maxHoldMs": 5000,
+        "releaseDifficultyLimit": 3,
+        "levelNotes": {
+          "3": "Level 3：患手放在毛巾或滑板上，由健手輕輕承托一同向前滑。患手手指不需互扣、不需用力握住，只需放鬆擺放。",
+          "4": "Level 4：先由治療師帶患者做三次練習，選出「無肩膊抬高、無軀幹傾斜、無疼痛、手指亦無愈來愈繃緊」的最遠距離，之後全節只用這個距離。動作要慢慢向前滑，不需要快。",
+          "5": "Level 5：只需輕輕合手拿起物件，不用大力握實。拿住物件最多約 5 秒就要放低、張開手、放鬆。放手用患者自己校準的張開幅度，不需要張到完全伸直。",
+          "67": "Level 6：預設用裸手，由鏡頭偵測拇指與食指的張開幅度。實物筷子或木釘屬治療師可選的額外練習，軟件不會偵測夾力。只需輕輕捏合，不要用盡力。"
+        }
+      }
+    },
+    {
+      "level": "5",
+      "category": "safety",
+      "name": "repeated release difficulty limit is configured",
+      "passed": true,
+      "details": {
+        "limit": 3
+      }
+    },
+    {
+      "level": "3",
+      "category": "safety gate",
+      "name": "safety screen is shown before camera or game",
+      "passed": true,
+      "details": {
+        "screen": "safety"
+      }
+    },
+    {
+      "level": "3",
+      "category": "safety gate",
+      "name": "continue is blocked until the checklist is acknowledged",
+      "passed": true,
+      "details": {
+        "screen": "safety",
+        "ackChecked": false,
+        "continueDisabled": true,
+        "levelNote": "Level 3：患手放在毛巾或滑板上，由健手輕輕承托一同向前滑。患手手指不需互扣、不需用力握住，只需放鬆擺放。",
+        "continued": false
+      }
+    },
+    {
+      "level": "3",
+      "category": "safety gate",
+      "name": "clicking continue without acknowledgement does not proceed",
+      "passed": true,
+      "details": {
+        "screen": "safety",
+        "ackChecked": false,
+        "continueDisabled": true,
+        "levelNote": "Level 3：患手放在毛巾或滑板上，由健手輕輕承托一同向前滑。患手手指不需互扣、不需用力握住，只需放鬆擺放。",
+        "continued": false
+      }
+    },
+    {
+      "level": "3",
+      "category": "safety gate",
+      "name": "acknowledgement enables the continue action",
+      "passed": true,
+      "details": {
+        "screen": "safety",
+        "ackChecked": true,
+        "continueDisabled": false,
+        "levelNote": "Level 3：患手放在毛巾或滑板上，由健手輕輕承托一同向前滑。患手手指不需互扣、不需用力握住，只需放鬆擺放。",
+        "continued": false
+      }
+    },
+    {
+      "level": "3",
+      "category": "safety gate",
+      "name": "explicit acknowledgement is required and then proceeds",
+      "passed": true,
+      "details": {
+        "screen": "safety",
+        "ackChecked": true,
+        "continueDisabled": false,
+        "levelNote": "Level 3：患手放在毛巾或滑板上，由健手輕輕承托一同向前滑。患手手指不需互扣、不需用力握住，只需放鬆擺放。",
+        "continued": true
+      }
+    },
+    {
+      "level": "3",
+      "category": "safety gate",
+      "name": "level-specific safety note is visible on the screen",
+      "passed": true,
+      "details": {
+        "length": 55
+      }
+    },
+    {
+      "level": "4",
+      "category": "safety gate",
+      "name": "safety screen is shown before camera or game",
+      "passed": true,
+      "details": {
+        "screen": "safety"
+      }
+    },
+    {
+      "level": "4",
+      "category": "safety gate",
+      "name": "continue is blocked until the checklist is acknowledged",
+      "passed": true,
+      "details": {
+        "screen": "safety",
+        "ackChecked": false,
+        "continueDisabled": true,
+        "levelNote": "Level 4：先由治療師帶患者做三次練習，選出「無肩膊抬高、無軀幹傾斜、無疼痛、手指亦無愈來愈繃緊」的最遠距離，之後全節只用這個距離。動作要慢慢向前滑，不需要快。",
+        "continued": false
+      }
+    },
+    {
+      "level": "4",
+      "category": "safety gate",
+      "name": "clicking continue without acknowledgement does not proceed",
+      "passed": true,
+      "details": {
+        "screen": "safety",
+        "ackChecked": false,
+        "continueDisabled": true,
+        "levelNote": "Level 4：先由治療師帶患者做三次練習，選出「無肩膊抬高、無軀幹傾斜、無疼痛、手指亦無愈來愈繃緊」的最遠距離，之後全節只用這個距離。動作要慢慢向前滑，不需要快。",
+        "continued": false
+      }
+    },
+    {
+      "level": "4",
+      "category": "safety gate",
+      "name": "acknowledgement enables the continue action",
+      "passed": true,
+      "details": {
+        "screen": "safety",
+        "ackChecked": true,
+        "continueDisabled": false,
+        "levelNote": "Level 4：先由治療師帶患者做三次練習，選出「無肩膊抬高、無軀幹傾斜、無疼痛、手指亦無愈來愈繃緊」的最遠距離，之後全節只用這個距離。動作要慢慢向前滑，不需要快。",
+        "continued": false
+      }
+    },
+    {
+      "level": "4",
+      "category": "safety gate",
+      "name": "explicit acknowledgement is required and then proceeds",
+      "passed": true,
+      "details": {
+        "screen": "safety",
+        "ackChecked": true,
+        "continueDisabled": false,
+        "levelNote": "Level 4：先由治療師帶患者做三次練習，選出「無肩膊抬高、無軀幹傾斜、無疼痛、手指亦無愈來愈繃緊」的最遠距離，之後全節只用這個距離。動作要慢慢向前滑，不需要快。",
+        "continued": true
+      }
+    },
+    {
+      "level": "4",
+      "category": "safety gate",
+      "name": "level-specific safety note is visible on the screen",
+      "passed": true,
+      "details": {
+        "length": 82
+      }
+    },
+    {
+      "level": "5",
+      "category": "safety gate",
+      "name": "safety screen is shown before camera or game",
+      "passed": true,
+      "details": {
+        "screen": "safety"
+      }
+    },
+    {
+      "level": "5",
+      "category": "safety gate",
+      "name": "continue is blocked until the checklist is acknowledged",
+      "passed": true,
+      "details": {
+        "screen": "safety",
+        "ackChecked": false,
+        "continueDisabled": true,
+        "levelNote": "Level 5：只需輕輕合手拿起物件，不用大力握實。拿住物件最多約 5 秒就要放低、張開手、放鬆。放手用患者自己校準的張開幅度，不需要張到完全伸直。",
+        "continued": false
+      }
+    },
+    {
+      "level": "5",
+      "category": "safety gate",
+      "name": "clicking continue without acknowledgement does not proceed",
+      "passed": true,
+      "details": {
+        "screen": "safety",
+        "ackChecked": false,
+        "continueDisabled": true,
+        "levelNote": "Level 5：只需輕輕合手拿起物件，不用大力握實。拿住物件最多約 5 秒就要放低、張開手、放鬆。放手用患者自己校準的張開幅度，不需要張到完全伸直。",
+        "continued": false
+      }
+    },
+    {
+      "level": "5",
+      "category": "safety gate",
+      "name": "acknowledgement enables the continue action",
+      "passed": true,
+      "details": {
+        "screen": "safety",
+        "ackChecked": true,
+        "continueDisabled": false,
+        "levelNote": "Level 5：只需輕輕合手拿起物件，不用大力握實。拿住物件最多約 5 秒就要放低、張開手、放鬆。放手用患者自己校準的張開幅度，不需要張到完全伸直。",
+        "continued": false
+      }
+    },
+    {
+      "level": "5",
+      "category": "safety gate",
+      "name": "explicit acknowledgement is required and then proceeds",
+      "passed": true,
+      "details": {
+        "screen": "safety",
+        "ackChecked": true,
+        "continueDisabled": false,
+        "levelNote": "Level 5：只需輕輕合手拿起物件，不用大力握實。拿住物件最多約 5 秒就要放低、張開手、放鬆。放手用患者自己校準的張開幅度，不需要張到完全伸直。",
+        "continued": true
+      }
+    },
+    {
+      "level": "5",
+      "category": "safety gate",
+      "name": "level-specific safety note is visible on the screen",
+      "passed": true,
+      "details": {
+        "length": 74
+      }
+    },
+    {
+      "level": "6",
+      "category": "safety gate",
+      "name": "safety screen is shown before camera or game",
+      "passed": true,
+      "details": {
+        "screen": "safety"
+      }
+    },
+    {
+      "level": "6",
+      "category": "safety gate",
+      "name": "continue is blocked until the checklist is acknowledged",
+      "passed": true,
+      "details": {
+        "screen": "safety",
+        "ackChecked": false,
+        "continueDisabled": true,
+        "levelNote": "Level 6：預設用裸手，由鏡頭偵測拇指與食指的張開幅度。實物筷子或木釘屬治療師可選的額外練習，軟件不會偵測夾力。只需輕輕捏合，不要用盡力。",
+        "continued": false
+      }
+    },
+    {
+      "level": "6",
+      "category": "safety gate",
+      "name": "clicking continue without acknowledgement does not proceed",
+      "passed": true,
+      "details": {
+        "screen": "safety",
+        "ackChecked": false,
+        "continueDisabled": true,
+        "levelNote": "Level 6：預設用裸手，由鏡頭偵測拇指與食指的張開幅度。實物筷子或木釘屬治療師可選的額外練習，軟件不會偵測夾力。只需輕輕捏合，不要用盡力。",
+        "continued": false
+      }
+    },
+    {
+      "level": "6",
+      "category": "safety gate",
+      "name": "acknowledgement enables the continue action",
+      "passed": true,
+      "details": {
+        "screen": "safety",
+        "ackChecked": true,
+        "continueDisabled": false,
+        "levelNote": "Level 6：預設用裸手，由鏡頭偵測拇指與食指的張開幅度。實物筷子或木釘屬治療師可選的額外練習，軟件不會偵測夾力。只需輕輕捏合，不要用盡力。",
+        "continued": false
+      }
+    },
+    {
+      "level": "6",
+      "category": "safety gate",
+      "name": "explicit acknowledgement is required and then proceeds",
+      "passed": true,
+      "details": {
+        "screen": "safety",
+        "ackChecked": true,
+        "continueDisabled": false,
+        "levelNote": "Level 6：預設用裸手，由鏡頭偵測拇指與食指的張開幅度。實物筷子或木釘屬治療師可選的額外練習，軟件不會偵測夾力。只需輕輕捏合，不要用盡力。",
+        "continued": true
+      }
+    },
+    {
+      "level": "6",
+      "category": "safety gate",
+      "name": "level-specific safety note is visible on the screen",
+      "passed": true,
+      "details": {
+        "length": 71
+      }
+    },
+    {
+      "level": "3",
+      "category": "safety copy",
+      "name": "Level 3 note states the affected hand is supported and need not interlock",
+      "passed": true,
+      "details": {
+        "note": "Level 3：患手放在毛巾或滑板上，由健手輕輕承托一同向前滑。患手手指不需互扣、不需用力握住，只需放鬆擺放。"
+      }
+    },
+    {
+      "level": "4",
+      "category": "safety copy",
+      "name": "Level 4 note mandates three calibration attempts without compensation",
+      "passed": true,
+      "details": {
+        "note": "Level 4：先由治療師帶患者做三次練習，選出「無肩膊抬高、無軀幹傾斜、無疼痛、手指亦無愈來愈繃緊」的最遠距離，之後全節只用這個距離。動作要慢慢向前滑，不需要快。"
+      }
+    },
+    {
+      "level": "5",
+      "category": "safety copy",
+      "name": "Level 5 note uses light closing wording and the personal release aperture",
+      "passed": true,
+      "details": {
+        "note": "Level 5：只需輕輕合手拿起物件，不用大力握實。拿住物件最多約 5 秒就要放低、張開手、放鬆。放手用患者自己校準的張開幅度，不需要張到完全伸直。"
+      }
+    },
+    {
+      "level": "6",
+      "category": "safety copy",
+      "name": "Level 6 note states bare-hand aperture default and no force detection",
+      "passed": true,
+      "details": {
+        "note": "Level 6：預設用裸手，由鏡頭偵測拇指與食指的張開幅度。實物筷子或木釘屬治療師可選的額外練習，軟件不會偵測夾力。只需輕輕捏合，不要用盡力。"
+      }
+    },
+    {
+      "level": "5",
+      "category": "safety copy",
+      "name": "no patient-facing 握拳/握緊 wording remains in the interface",
+      "passed": true,
+      "details": {
+        "hasFist": false,
+        "hasSqueeze": false
+      }
+    },
+    {
+      "level": "4",
+      "category": "rest/stop",
+      "name": "large 休息 and 停止 controls are always visible during play",
+      "passed": true,
+      "details": {
+        "rest": true,
+        "stop": true
+      }
+    },
+    {
+      "level": "4",
+      "category": "rest/stop",
+      "name": "rest pauses active game timing",
+      "passed": true,
+      "details": {
+        "blocking": true,
+        "paused": true,
+        "restCount": 1,
+        "body": "放下雙手、放鬆肩膀。"
+      }
+    },
+    {
+      "level": "4",
+      "category": "rest/stop",
+      "name": "rest overlay shows the 放下雙手、放鬆肩膀 instruction",
+      "passed": true,
+      "details": {
+        "body": "放下雙手、放鬆肩膀。"
+      }
+    },
+    {
+      "level": "4",
+      "category": "rest/stop",
+      "name": "game clock does not run while resting",
+      "passed": true,
+      "details": {
+        "before": 180,
+        "after": 180
+      }
+    },
+    {
+      "level": "4",
+      "category": "rest/stop",
+      "name": "resume from rest is explicit and clears the pause",
+      "passed": true,
+      "details": {
+        "blocking": false,
+        "paused": false,
+        "restTotalSec": 1
+      }
+    },
+    {
+      "level": "4",
+      "category": "rest/stop",
+      "name": "stop ends the session safely with a recorded reason",
+      "passed": true,
+      "details": {
+        "screen": "result",
+        "stopReason": "participant_request",
+        "stoppedEarly": true
+      }
+    },
+    {
+      "level": "4",
+      "category": "rest/stop",
+      "name": "stable data-testid attributes exist for the safety controls",
+      "passed": true,
+      "details": {
+        "rest": true,
+        "stop": true,
+        "pause": true,
+        "confirm": true
+      }
+    },
+    {
+      "level": "5",
+      "category": "rest/stop",
+      "name": "large 休息 and 停止 controls are always visible during play",
+      "passed": true,
+      "details": {
+        "rest": true,
+        "stop": true
+      }
+    },
+    {
+      "level": "5",
+      "category": "rest/stop",
+      "name": "rest pauses active game timing",
+      "passed": true,
+      "details": {
+        "blocking": true,
+        "paused": true,
+        "restCount": 1,
+        "body": "放下雙手、放鬆肩膀。"
+      }
+    },
+    {
+      "level": "5",
+      "category": "rest/stop",
+      "name": "rest overlay shows the 放下雙手、放鬆肩膀 instruction",
+      "passed": true,
+      "details": {
+        "body": "放下雙手、放鬆肩膀。"
+      }
+    },
+    {
+      "level": "5",
+      "category": "rest/stop",
+      "name": "game clock does not run while resting",
+      "passed": true,
+      "details": {
+        "before": 180,
+        "after": 180
+      }
+    },
+    {
+      "level": "5",
+      "category": "rest/stop",
+      "name": "resume from rest is explicit and clears the pause",
+      "passed": true,
+      "details": {
+        "blocking": false,
+        "paused": false,
+        "restTotalSec": 1
+      }
+    },
+    {
+      "level": "5",
+      "category": "rest/stop",
+      "name": "stop ends the session safely with a recorded reason",
+      "passed": true,
+      "details": {
+        "screen": "result",
+        "stopReason": "participant_request",
+        "stoppedEarly": true
+      }
+    },
+    {
+      "level": "5",
+      "category": "rest/stop",
+      "name": "stable data-testid attributes exist for the safety controls",
+      "passed": true,
+      "details": {
+        "rest": true,
+        "stop": true,
+        "pause": true,
+        "confirm": true
+      }
+    },
+    {
+      "level": "6",
+      "category": "rest/stop",
+      "name": "large 休息 and 停止 controls are always visible during play",
+      "passed": true,
+      "details": {
+        "rest": true,
+        "stop": true
+      }
+    },
+    {
+      "level": "6",
+      "category": "rest/stop",
+      "name": "rest pauses active game timing",
+      "passed": true,
+      "details": {
+        "blocking": true,
+        "paused": true,
+        "restCount": 1,
+        "body": "放下雙手、放鬆肩膀。"
+      }
+    },
+    {
+      "level": "6",
+      "category": "rest/stop",
+      "name": "rest overlay shows the 放下雙手、放鬆肩膀 instruction",
+      "passed": true,
+      "details": {
+        "body": "放下雙手、放鬆肩膀。"
+      }
+    },
+    {
+      "level": "6",
+      "category": "rest/stop",
+      "name": "game clock does not run while resting",
+      "passed": true,
+      "details": {
+        "before": 180,
+        "after": 180
+      }
+    },
+    {
+      "level": "6",
+      "category": "rest/stop",
+      "name": "resume from rest is explicit and clears the pause",
+      "passed": true,
+      "details": {
+        "blocking": false,
+        "paused": false,
+        "restTotalSec": 1
+      }
+    },
+    {
+      "level": "6",
+      "category": "rest/stop",
+      "name": "stop ends the session safely with a recorded reason",
+      "passed": true,
+      "details": {
+        "screen": "result",
+        "stopReason": "participant_request",
+        "stoppedEarly": true
+      }
+    },
+    {
+      "level": "6",
+      "category": "rest/stop",
+      "name": "stable data-testid attributes exist for the safety controls",
+      "passed": true,
+      "details": {
+        "rest": true,
+        "stop": true,
+        "pause": true,
+        "confirm": true
+      }
+    },
+    {
+      "level": "4",
+      "category": "compensation",
+      "name": "a single observed compensation is logged without pausing",
+      "passed": true,
+      "details": {
+        "counts": {
+          "shoulder_hiking": 1
+        },
+        "blocking": false,
+        "pauseCount": 0,
+        "alert": "已記錄：肩膊抬高（第 1 次）。"
+      }
+    },
+    {
+      "level": "4",
+      "category": "compensation",
+      "name": "the same compensation observed twice pauses and prompts a shorter distance",
+      "passed": true,
+      "details": {
+        "counts": {
+          "shoulder_hiking": 2
+        },
+        "blocking": true,
+        "pauseCount": 1,
+        "alert": "已第 2 次觀察到「肩膊抬高」。建議先暫停、讓患者休息，並縮短滑行距離或降低難度後再繼續。"
+      }
+    },
+    {
+      "level": "5",
+      "category": "hold timeout",
+      "name": "carrying below the maximum duration does not interrupt play",
+      "passed": true,
+      "details": {
+        "fired": false,
+        "holdTimeoutCount": 0,
+        "blocking": false,
+        "body": "治療師已兩次觀察到「肩膊抬高」。請讓患者放下雙手、放鬆肩膀，並把物件或目標移近（縮短距離），確認無疼痛、無代償後才繼續。",
+        "title": "請先暫停"
+      }
+    },
+    {
+      "level": "5",
+      "category": "hold timeout",
+      "name": "exceeding the maximum carry duration pauses the game",
+      "passed": true,
+      "details": {
+        "fired": true,
+        "holdTimeoutCount": 1,
+        "blocking": true,
+        "body": "已經拿住物件超過 5 秒。請放下物件、慢慢張開手、放鬆手指和肩膀，由治療師確認手部無愈來愈繃緊後才繼續。",
+        "title": "放下物件、張開手、放鬆"
+      }
+    },
+    {
+      "level": "5",
+      "category": "hold timeout",
+      "name": "hold timeout prompts 放下物件、張開手、放鬆",
+      "passed": true,
+      "details": {
+        "title": "放下物件、張開手、放鬆"
+      }
+    },
+    {
+      "level": "5",
+      "category": "hold timeout",
+      "name": "hold_timeout is tracked in the session safety data",
+      "passed": true,
+      "details": {
+        "holdTimeoutCount": 1
+      }
+    },
+    {
+      "level": "5",
+      "category": "release difficulty",
+      "name": "consecutive delayed or failed releases are counted",
+      "passed": true,
+      "details": {
+        "releaseDelayCount": 3,
+        "repeated": 1,
+        "blocking": true,
+        "title": "放手比較困難，先停一停"
+      }
+    },
+    {
+      "level": "5",
+      "category": "release difficulty",
+      "name": "repeated release difficulty pauses and prompts reassessment",
+      "passed": true,
+      "details": {
+        "releaseDelayCount": 3,
+        "repeated": 1,
+        "blocking": true,
+        "title": "放手比較困難，先停一停"
+      }
+    },
+    {
+      "level": "4",
+      "category": "camera error",
+      "name": "UnsupportedError shows an in-page error with Retry and Return",
+      "passed": true,
+      "details": {
+        "visible": true,
+        "message": "此瀏覽器不支援相機功能。請改用 Safari 或 Chrome 最新版本，並確認使用 https 網址。",
+        "detail": "技術代碼：UnsupportedError",
+        "hasRetry": true,
+        "hasReturn": true
+      }
+    },
+    {
+      "level": "4",
+      "category": "camera error",
+      "name": "UnsupportedError shows a concise technical code without a raw stack",
+      "passed": true,
+      "details": {
+        "detail": "技術代碼：UnsupportedError"
+      }
+    },
+    {
+      "level": "4",
+      "category": "camera error",
+      "name": "UnsupportedError error can be dismissed on retry",
+      "passed": true,
+      "details": {
+        "visible": false
+      }
+    },
+    {
+      "level": "4",
+      "category": "camera error",
+      "name": "NotAllowedError shows an in-page error with Retry and Return",
+      "passed": true,
+      "details": {
+        "visible": true,
+        "message": "相機權限被拒絕。請在裝置設定或瀏覽器網址列的相機圖示中，允許本頁使用相機，然後按「重新嘗試」。",
+        "detail": "技術代碼：NotAllowedError",
+        "hasRetry": true,
+        "hasReturn": true
+      }
+    },
+    {
+      "level": "4",
+      "category": "camera error",
+      "name": "NotAllowedError shows a concise technical code without a raw stack",
+      "passed": true,
+      "details": {
+        "detail": "技術代碼：NotAllowedError"
+      }
+    },
+    {
+      "level": "4",
+      "category": "camera error",
+      "name": "NotAllowedError error can be dismissed on retry",
+      "passed": true,
+      "details": {
+        "visible": false
+      }
+    },
+    {
+      "level": "4",
+      "category": "camera error",
+      "name": "NotFoundError shows an in-page error with Retry and Return",
+      "passed": true,
+      "details": {
+        "visible": true,
+        "message": "找不到可用的相機。請確認 iPad／電腦有前置鏡頭，或連接相機後再按「重新嘗試」。",
+        "detail": "技術代碼：NotFoundError",
+        "hasRetry": true,
+        "hasReturn": true
+      }
+    },
+    {
+      "level": "4",
+      "category": "camera error",
+      "name": "NotFoundError shows a concise technical code without a raw stack",
+      "passed": true,
+      "details": {
+        "detail": "技術代碼：NotFoundError"
+      }
+    },
+    {
+      "level": "4",
+      "category": "camera error",
+      "name": "NotFoundError error can be dismissed on retry",
+      "passed": true,
+      "details": {
+        "visible": false
+      }
+    },
+    {
+      "level": "4",
+      "category": "camera error",
+      "name": "SomeUnexpectedError shows an in-page error with Retry and Return",
+      "passed": true,
+      "details": {
+        "visible": true,
+        "message": "未能啟動相機。請檢查相機權限及連接，然後按「重新嘗試」；如仍然不成功，可以先返回上一頁。",
+        "detail": "技術代碼：SomeUnexpectedError",
+        "hasRetry": true,
+        "hasReturn": true
+      }
+    },
+    {
+      "level": "4",
+      "category": "camera error",
+      "name": "SomeUnexpectedError shows a concise technical code without a raw stack",
+      "passed": true,
+      "details": {
+        "detail": "技術代碼：SomeUnexpectedError"
+      }
+    },
+    {
+      "level": "4",
+      "category": "camera error",
+      "name": "SomeUnexpectedError error can be dismissed on retry",
+      "passed": true,
+      "details": {
+        "visible": false
+      }
+    },
+    {
+      "level": "5",
+      "category": "data",
+      "name": "session safety fields are present for export",
+      "passed": true,
+      "details": {
+        "missing": []
       }
     }
   ],

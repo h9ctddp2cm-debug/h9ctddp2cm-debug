@@ -1,11 +1,20 @@
 import { Level3BilateralSandbox } from "./Level3BilateralSandbox.js";
 import { Level3BilateralDataCollector } from "./Level3BilateralDataCollector.js";
-import { TherapistDashboard } from "./TherapistDashboard.js";
+import { TherapistDashboard, PROTOCOL_VARIANT_LEGACY_DEG } from "./TherapistDashboard.js";
 import { VamsInterfaceOverlay } from "./VamsInterfaceOverlay.js";
 
 const elements = {
   affectedSides: [...document.querySelectorAll('input[name="affectedSide"]')],
-  targetElevation: document.querySelector("#targetElevation"),
+  protocolVariant: document.querySelector("#protocolVariant"),
+  safetyGate: document.querySelector("#safetyGate"),
+  safetyGateAck: document.querySelector("#safetyGateAck"),
+  safetyGateContinue: document.querySelector("#safetyGateContinue"),
+  safetyGateBack: document.querySelector("#safetyGateBack"),
+  cameraErrorBox: document.querySelector("#cameraErrorBox"),
+  cameraErrorMessage: document.querySelector("#cameraErrorMessage"),
+  cameraErrorDetail: document.querySelector("#cameraErrorDetail"),
+  cameraRetry: document.querySelector("#cameraRetry"),
+  cameraReturn: document.querySelector("#cameraReturn"),
   reachProfile: document.querySelector("#reachProfile"),
   toleranceMode: document.querySelector("#toleranceMode"),
   directionMapping: document.querySelector("#directionMapping"),
@@ -152,7 +161,7 @@ function updateMetrics(output) {
   elements.scoreValue.textContent = String(output.score);
   elements.directionValue.textContent = `目前向${output.targetDirection === "LEFT" ? "左" : "右"}；首次患側 ${engine.affectedSide}`;
   elements.vcpValue.textContent = `${format(metrics?.vcpX)} / ${format(engine.calibrationVcpXMedian)} / ±${format(engine.dynamicVcpTolerance)}`;
-  elements.targetValue.textContent = `目標距離 ${format(engine.scaledTargetRangeX)}；抬高標記 ${elements.targetElevation.value}°`;
+  elements.targetValue.textContent = `目標距離 ${format(engine.scaledTargetRangeX)}；節次標籤 ${elements.protocolVariant.value}`;
   elements.shoulderValue.textContent = `${format(metrics?.shoulderWidth)} / ${format(metrics?.shoulderCenterX)}`;
 
   const symmetryRatio = Number.isFinite(diagnostics.wristDelta)
@@ -193,7 +202,9 @@ function eventRecord(output, reason = output.action) {
     action: output.action,
     affectedSide: engine.affectedSide,
     targetDirection: output.targetDirection,
-    targetElevationMetadataDeg: Number(elements.targetElevation.value),
+    // Legacy key retained for backward compatibility; see PROTOCOL_VARIANT_LEGACY_DEG.
+    targetElevationMetadataDeg: PROTOCOL_VARIANT_LEGACY_DEG[elements.protocolVariant.value] ?? 45,
+    protocolVariant: elements.protocolVariant.value,
     reachRangeProfile: engine.reachRangeProfile,
     toleranceMode: engine.toleranceMode,
     vcpX: metrics.vcpX ?? null,
@@ -270,6 +281,7 @@ function csvCell(value) {
 
 dashboard = new TherapistDashboard({
   onStartSession: (inputs) => {
+    if (!requireSafetyAck("開始 Session")) return;
     engine = new Level3BilateralSandbox(currentConfig());
     resetSessionLog();
     latestDatasetPayload = null;
@@ -356,7 +368,7 @@ elements.exportJson.addEventListener("click", () => {
 elements.exportCsv.addEventListener("click", () => {
   const columns = [
     "timestamp", "sessionId", "reason", "state", "action", "affectedSide", "targetDirection",
-    "targetElevationMetadataDeg", "reachRangeProfile", "toleranceMode", "vcpX",
+    "targetElevationMetadataDeg", "protocolVariant", "reachRangeProfile", "toleranceMode", "vcpX",
     "calibrationVcpXMedian", "targetRangeX", "shoulderWidth", "shoulderMidPointX",
     "wristSeparation", "wristSeparationDelta", "pairedWristAsymmetry", "trunkTranslationDelta",
   ];
@@ -512,9 +524,91 @@ function cameraLoop(now) {
   animationFrameId = requestAnimationFrame(cameraLoop);
 }
 
-elements.startCamera.addEventListener("click", async () => {
+// ------------------------------------------------------------------
+// Mandatory safety acknowledgement gate (blocks camera and session).
+// ------------------------------------------------------------------
+let safetyAcknowledged = false;
+
+function safetyGateVisible() {
+  return !elements.safetyGate.classList.contains("hidden");
+}
+
+function closeSafetyGate() {
+  safetyAcknowledged = true;
+  elements.safetyGate.classList.add("hidden");
+  logToConsole("SAFETY_CHECKLIST_ACKNOWLEDGED | therapist supervised");
+}
+
+elements.safetyGateAck.addEventListener("change", () => {
+  elements.safetyGateContinue.disabled = !elements.safetyGateAck.checked;
+});
+
+elements.safetyGateContinue.addEventListener("click", () => {
+  if (!elements.safetyGateAck.checked) return;
+  closeSafetyGate();
+});
+
+elements.safetyGateBack.addEventListener("click", () => {
+  cameraStream?.getTracks().forEach((track) => track.stop());
+  cameraStream = null;
+  window.location.href = "../../index.html";
+});
+
+function requireSafetyAck(actionLabel) {
+  if (safetyAcknowledged) return true;
+  elements.safetyGate.classList.remove("hidden");
+  elements.safetyGateAck.focus();
+  elements.cameraStatus.textContent = `請先完成安全確認，才可${actionLabel}。`;
+  return false;
+}
+
+// ------------------------------------------------------------------
+// In-page camera failure surface (never an indefinite waiting state).
+// ------------------------------------------------------------------
+function hideCameraError() {
+  elements.cameraErrorBox.classList.remove("show");
+  elements.cameraErrorMessage.textContent = "";
+  elements.cameraErrorDetail.textContent = "";
+}
+
+function describeCameraError(error) {
+  const name = error?.name || "";
+  if (name === "UnsupportedError") {
+    return "這部裝置或瀏覽器不支援相機功能。請改用 Safari（iPad）或 Chrome，並確認網址為 https。";
+  }
+  if (name === "NotAllowedError" || name === "SecurityError") {
+    return "相機權限被拒絕。請在瀏覽器設定允許此網站使用相機，然後按「重新嘗試」。";
+  }
+  if (name === "NotFoundError" || name === "OverconstrainedError" || name === "DevicesNotFoundError") {
+    return "找不到可用的相機。請確認裝置有前置鏡頭，或改用其他裝置。";
+  }
+  if (name === "NotReadableError" || name === "TrackStartError") {
+    return "相機正被其他應用程式使用。請關閉其他使用相機的程式，然後按「重新嘗試」。";
+  }
+  return "未能啟動相機。請按「重新嘗試」，或先使用「執行合成完整循環」作離線測試。";
+}
+
+function showCameraError(error) {
+  elements.cameraErrorMessage.textContent = describeCameraError(error);
+  elements.cameraErrorDetail.textContent = error?.name
+    ? `技術代碼：${error.name}`
+    : "技術代碼：UNKNOWN";
+  elements.cameraErrorBox.classList.add("show");
+  elements.cameraStatus.textContent = "相機未啟動；可重新嘗試或返回主頁。";
+  elements.startCamera.disabled = false;
+}
+
+async function startCameraFlow() {
+  if (!requireSafetyAck("啟動相機")) return false;
+  hideCameraError();
   elements.startCamera.disabled = true;
+  elements.cameraStatus.textContent = "正在啟動相機…";
   try {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      const unsupported = new Error("getUserMedia unavailable");
+      unsupported.name = "UnsupportedError";
+      throw unsupported;
+    }
     await loadPoseLandmarker();
     cameraStream = await navigator.mediaDevices.getUserMedia({
       video: {
@@ -530,17 +624,36 @@ elements.startCamera.addEventListener("click", async () => {
     elements.cameraStatus.textContent = "Pose Lite 已啟動（480×360、每兩幀推論一次、無 Hands 模型、無骨架繪製）。";
     if (animationFrameId) cancelAnimationFrame(animationFrameId);
     animationFrameId = requestAnimationFrame(cameraLoop);
+    return true;
   } catch (error) {
-    elements.startCamera.disabled = false;
-    elements.cameraStatus.textContent = `未能啟動相機：${error.message}`;
+    cameraStream?.getTracks().forEach((track) => track.stop());
+    cameraStream = null;
+    showCameraError(error);
+    logToConsole(`CAMERA_ERROR | ${error?.name || "UNKNOWN"}`);
+    return false;
   }
+}
+
+// A parent-page acknowledgement (?safetyAck=1) pre-fills the checkbox but the
+// therapist must still confirm explicitly on this page.
+if (new URLSearchParams(window.location.search).get("safetyAck") === "1") {
+  elements.safetyGateAck.checked = true;
+  elements.safetyGateContinue.disabled = false;
+}
+
+elements.startCamera.addEventListener("click", () => { startCameraFlow(); });
+elements.cameraRetry.addEventListener("click", () => { startCameraFlow(); });
+elements.cameraReturn.addEventListener("click", () => {
+  cameraStream?.getTracks().forEach((track) => track.stop());
+  cameraStream = null;
+  window.location.href = "../../index.html";
 });
 
 elements.beginCalibration.addEventListener("click", () => {
   engine = new Level3BilateralSandbox(currentConfig());
   lastPose = null;
   handleOutput(engine.output({
-    message: "已重置，請將雙手合攏並承托於桌面中央",
+    message: "已重置：患手輕輕放在毛巾上由健手承托，一起放回桌面中央",
     action: "CALIBRATION_STARTED",
     nowMs: performance.now(),
   }));
@@ -606,7 +719,8 @@ window.render_game_to_text = () => JSON.stringify({
   logCount: sessionEvents.length,
   collectedRepetitionCount: dataCollector.repetitions.length,
   sessionActive: dataCollector.sessionActive,
-  targetElevationMetadataDeg: Number(elements.targetElevation.value),
+  targetElevationMetadataDeg: PROTOCOL_VARIANT_LEGACY_DEG[elements.protocolVariant.value] ?? 45,
+  protocolVariant: elements.protocolVariant.value,
   cameraActive: Boolean(cameraStream),
 });
 
@@ -626,6 +740,13 @@ window.injectDiagnosticFrame = (poseLandmarks, poseWorldLandmarks = poseLandmark
 
 window.__level3Diagnostic = {
   get engine() { return engine; },
+  get safetyAcknowledged() { return safetyAcknowledged; },
+  get safetyGateVisible() { return safetyGateVisible(); },
+  get cameraErrorVisible() { return elements.cameraErrorBox.classList.contains("show"); },
+  describeCameraError,
+  showCameraError,
+  hideCameraError,
+  requireSafetyAck,
   get events() { return sessionEvents.slice(); },
   get dataset() { return dataCollector.exportPayload(engine); },
   get dashboard() { return dashboard; },

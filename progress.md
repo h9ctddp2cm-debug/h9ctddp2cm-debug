@@ -563,3 +563,58 @@
 - Level 6 改用掌長及掌寬的較穩定 normalization、降低 MediaPipe presence／tracking confidence、加入 120ms gesture confirmation，以及個人化 pinch enter／exit／open threshold；校準及失敗提示要求手腕、拇指及食指同時入鏡。
 - Level 6 明確提示先以裸手校準；如筷子或夾子遮擋指尖，改用裸手螢幕捏取。系統只量度 normalized thumb-index aperture，不量度 pinch force。
 - 最終 QA：Level 3 回歸測試 20/20、Level 4–6 技術驗證 47/47、標準 browser-game client 通過；820×1180 iPad 直向版有 4 張 Level 卡及 4 個影片按鈕，影片 metadata／播放、Level 3 路由、水平及垂直 overflow、console error 全部通過。
+
+## 2026-08-12：臨床安全檢討 P0 修改（Level 3–6）
+
+### 1. 共用強制安全確認畫面
+- Level 4、5、6 進入相機／遊戲前，以及 Level 3 進入相機／Session 前，均先顯示 `#screen-safety`（Level 3 沙盒為頁內 `#safetyGate`）。
+- 內容為繁體中文、治療師監督框架，逐項列出：醫學狀況穩定並可安全坐穩、患側上肢已有承托、已檢查疼痛／疲勞／手部繃緊基線、先做三次練習、患者隨時可休息或停止、重視動作質素而非分數。
+- 必須勾選「治療師確認」後「確認，繼續」才會啟用；重要安全資訊全部直接顯示，不再收藏在「顯示詳情」內。
+- 明確聲明本程式不會自動偵測代償、肌張力或痙攣。
+
+### 2. Level 4–6 遊戲畫面常設「休息」／「停止」
+- 遊戲 HUD 常設大按鈕 `button-game-rest`、`button-game-stop`，另有 `button-compensation-observe`。
+- 「休息」會暫停計時（`state.paused`）並顯示「放下雙手、放鬆肩膀」，必須按明確的「繼續」才恢復。
+- 「停止」先要求選擇停止原因（患者要求／疼痛／疲勞／技術問題／其他），記錄 `stop_reason`、`stopped_early` 後安全結束並返回結果畫面，不會意外匯出或遺失資料。
+
+### 3. Level 4：距離校準與代償提示
+- 校準畫面加入治療師簡報：必須先做 3 次練習，採用「無肩膊抬高、無軀幹傾斜、無疼痛、手指無愈來愈繃緊」的最遠距離；用語改為「慢慢向前滑」，不施加速度壓力。
+- 治療師可人手記錄觀察到的代償；同一項代償第二次被記錄時暫停並提示縮短距離或降低難度。此為人手觀察確認，**程式不會自動偵測代償**。
+
+### 4. Level 5：輕握用語、個人化放手門檻、最長持物時間
+- 所有面向患者的「握拳／握緊」用語改為「輕輕合手拿起」「保持輕握」；只有內部變數與程式註解保留舊命名。
+- 介面明確說明放手採用患者自己校準的張開幅度，不需要張到完全伸直；判定邏輯使用該次 session 的個人 threshold。
+- 加入保守的最長持物時間（預設 5 秒），逾時暫停並提示「放下物件、張開手、放鬆」，需治療師／患者明確恢復；記錄 `hold_timeout`。
+- 連續延遲或未能放手達設定次數時暫停並提示重新評估，記錄 `repeated_release_difficulty`。
+- Level 5 預設使用較大物件及較短距離。
+
+### 5. Level 6：裸手 aperture 為預設
+- 明示裸手拇食指張開幅度偵測為預設方式；實物木釘或筷子屬治療師可選的額外練習，軟件**不會偵測夾力**，亦不把筷子描述為標準。
+- 提示改為「只需輕輕捏合，不要用盡力」；個人化 aperture 校準保留。
+- 指尖被遮擋導致追蹤失敗時，明確指示改用裸手。
+
+### 6. Level 3 沙盒
+- 面向患者的「雙手合攏／互扣／保持合攏」用語，全部改為患手在承托下輕輕擺放、手指不需互扣或用力握住。
+- 頁面頂部加入顯眼紅色警告：肩膊拉扯、手部愈來愈繃緊、軀幹側傾或疼痛須立即停止；原有「只供治療師與工程人員作影子測試」的監督警告保留。
+- 「目標抬高角度 30/45/60」改名為中性的「節次協議標籤 A/B/C」，因實際任務是桌面橫向滑行；舊有數值欄位（`targetElevationDeg`／`therapist_selected_target_elevation_deg`）以 `PROTOCOL_VARIANT_LEGACY_DEG` 映射保留，向後相容既有匯出與 R pipeline。
+- 橫向距離預設改為「短」，並提示由治療師選出無疼痛、無代償的範圍。
+
+### 7. 相機失敗處理
+- Level 4–6 及 Level 3 均以頁內錯誤面板顯示，附「重新嘗試」與「返回」按鈕，不再只用 alert 或無限等待。
+- 分別處理 getUserMedia 不支援、權限被拒、找不到裝置、裝置被佔用及一般錯誤；只向患者顯示簡短技術代碼，不顯示原始錯誤堆疊。
+
+### 8. 資料欄位與研究安全性假設
+- Session CSV 追加（向後相容）欄位：`safety_ack_level`、`rest_count`、`rest_total_sec`、`stop_reason`、`stopped_early`、`tracking_failure_count`、`hold_timeout_count`、`release_delay_count`、`repeated_release_difficulty`、`difficulty_reduced_count`、`therapist_observed_compensation`。
+- 研究入口新增安全性假設段落：在治療師全程監督、個別化無痛範圍、上肢有承托、緩慢自訂節奏及即時休息的條件下進行；結果指標為可接受的完成率、無介入相關 SAE、無持續屈肌張力惡化訊號，**不表述為「沒有傷害」**。
+- 同時列明程式不會自動量度肌張力或痙攣。
+
+### 9. 測試結果
+- Level 4–6 技術驗證（Playwright，`sandbox/level4-6-technical-validation`）：**120/120 通過**（Level 4 41、Level 5 41、Level 6 31），console error 0，新增安全確認、休息／停止、代償提示、hold timeout、放手困難、相機錯誤及資料欄位檢查。
+- Level 3 沙盒 node:test：**29/29 通過**（原有 20 項回歸 + 9 項新安全與用語測試）。
+- `index.html` 兩個 inline script 及 research／sandbox 全部 JS 通過 `node --check`。
+- 未引入任何新依賴或後端。
+
+### 10. 仍需真實 iPad 床邊驗證的限制
+- 相機權限、裝置佔用及 Safari 私隱提示的實際行為，只能在真機測試。
+- 5 秒最長持物時間及放手困難門檻為保守預設值，須按實際患者反應調整。
+- 代償、肌張力及痙攣全部依靠治療師臨床觀察，程式無法自動判斷。
