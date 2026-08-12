@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-12T05:46:30.504Z",
+  "generated_at": "2026-08-12T10:54:57.969Z",
   "base_url": "http://127.0.0.1:4173",
   "scope": "Independent technical verification for FTHUE Levels 4, 5, and 6",
   "limitation": "Not clinical validation; Level 6 aperture detection does not measure pinch force.",
@@ -430,8 +430,8 @@
             "r": 104
           },
           {
-            "label": "糯米雞",
-            "type": "lotusrice",
+            "label": "叉燒包",
+            "type": "charsiu",
             "x": 708,
             "y": 656,
             "r": 104
@@ -502,8 +502,8 @@
             "r": 104
           },
           {
-            "label": "糯米雞",
-            "type": "lotusrice",
+            "label": "叉燒包",
+            "type": "charsiu",
             "x": 708,
             "y": 656,
             "r": 104
@@ -608,8 +608,8 @@
             "r": 118
           },
           {
-            "label": "糯米雞",
-            "type": "lotusrice",
+            "label": "叉燒包",
+            "type": "charsiu",
             "x": 590,
             "y": 442.8,
             "r": 118
@@ -687,8 +687,8 @@
             "r": 118
           },
           {
-            "label": "糯米雞",
-            "type": "lotusrice",
+            "label": "叉燒包",
+            "type": "charsiu",
             "x": 590,
             "y": 442.8,
             "r": 118
@@ -807,11 +807,11 @@
             "r": 100
           },
           {
-            "label": "燒賣",
-            "type": "siumai",
+            "label": "蝦餃",
+            "type": "hargau",
             "x": 920.4,
             "y": 442.8,
-            "r": 100
+            "r": 145
           }
         ],
         "targets": [
@@ -886,11 +886,11 @@
             "r": 100
           },
           {
-            "label": "燒賣",
-            "type": "siumai",
+            "label": "蝦餃",
+            "type": "hargau",
             "x": 920.4,
             "y": 442.8,
-            "r": 100
+            "r": 145
           }
         ],
         "targets": [
