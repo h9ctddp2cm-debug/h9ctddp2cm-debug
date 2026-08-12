@@ -682,73 +682,6 @@ html,body{
 .level-card .lv-note{ font-size:13.5px; line-height:1.7; color:#4a5d5a; font-weight:600; margin:0 0 18px; }
 .level-card .lv-note b{ color:#1466B8; font-weight:800; }
 .level-card .lv-note .lv-line{ display:block; margin-top:6px; }
-.instruction-play{
-  display:flex; align-items:center; justify-content:center; gap:9px;
-  width:calc(100% - 36px); min-height:46px; margin:0 18px 13px;
-  border:2px solid var(--teal); border-radius:13px; background:#eef9f6;
-  color:var(--teal-dark); font:800 15px/1.2 inherit; cursor:pointer;
-}
-.instruction-play:hover,.instruction-play:focus-visible{ background:#dff3ed; outline:3px solid rgba(26,107,90,.18); }
-.instruction-play .play-icon{
-  display:grid; place-items:center; width:27px; height:27px; border-radius:50%;
-  background:var(--teal); color:#fff; font-size:13px; padding-left:2px;
-}
-/* Instruction-video modal.
-   Layout contract (regression-tested in tests/ui-layout.test.mjs):
-   - the <video> lives inside a fixed 16:9 .video-frame, so no overlay text is ever
-     assumed to be baked into the clip and the clip is never letterboxed by the dialog;
-   - exactly ONE short level caption is rendered OUTSIDE and BELOW the frame;
-   - the header (title + close) is sticky, so the close button stays reachable even
-     when a small portrait viewport forces the dialog to scroll. */
-.video-modal{
-  display:none; position:fixed; inset:0; z-index:12000; padding:16px;
-  align-items:center; justify-content:center; background:rgba(18,28,27,.86);
-  overflow-y:auto; overscroll-behavior:contain;
-}
-.video-modal.open{ display:flex; }
-.video-dialog{
-  width:min(920px,96vw); max-height:min(94vh,94dvh); overflow-y:auto; border-radius:20px;
-  background:#fff; padding:14px; box-shadow:0 24px 70px rgba(0,0,0,.38);
-}
-.video-dialog-head{
-  position:sticky; top:0; z-index:2; background:#fff;
-  display:flex; align-items:center; justify-content:space-between; gap:12px;
-  padding-bottom:8px; margin-bottom:8px;
-}
-.video-dialog-head h2{ margin:0; color:var(--teal-dark); font:800 17px/1.25 inherit; }
-.video-close{
-  flex:0 0 auto; min-width:48px; min-height:48px; border:0; border-radius:50%;
-  background:#eee7dd; color:#40372f; font-size:28px; cursor:pointer;
-}
-.video-frame{
-  position:relative; width:100%; aspect-ratio:16/9;
-  border-radius:14px; overflow:hidden; background:#111;
-}
-.video-frame video{
-  position:absolute; inset:0; display:block; width:100%; height:100%;
-  object-fit:contain; background:#111;
-}
-.video-caption{
-  margin:10px 0 0; padding:9px 11px; border-radius:11px;
-  background:#f2f8f6; border:1px solid #cfe6df; color:#1a3c36;
-  font:800 15px/1.45 inherit; text-align:left;
-}
-/* Portrait phones/tablets: top-align and shrink chrome so the dialog hugs the 16:9
-   frame instead of becoming a mostly-black fullscreen takeover. */
-@media (orientation:portrait){
-  .video-modal{ padding:10px; align-items:flex-start; }
-  .video-dialog{
-    width:100%; padding:10px; border-radius:16px;
-    margin-top:max(10px, env(safe-area-inset-top));
-    max-height:calc(100dvh - 24px);
-  }
-  .video-dialog-head h2{ font-size:15px; }
-  .video-caption{ font-size:14px; padding:8px 10px; }
-}
-@media (max-width:520px){
-  .video-dialog-head h2{ font-size:14.5px; }
-  .video-close{ min-width:46px; min-height:46px; font-size:26px; }
-}
 @media (max-width:819px){
   .level-select{ grid-template-columns:minmax(0,1fr) 210px; }
 }
@@ -847,14 +780,12 @@ html,body{
           </div>
           <div class="level-motion single">
             <figure>
-              <div aria-hidden="true" style="font-size:52px;line-height:1;color:#0a7d75;font-weight:900;">↔</div>
-              <figcaption>中央 ↔ 左／右</figcaption>
+              <img src="img/advanced/level3_towel_abduction.gif"
+                alt="雙手連同毛巾由中線向左右側滑，軀幹保持正中"
+                data-testid="gif-level-3">
+              <figcaption>毛巾跟手 · 左右側滑</figcaption>
             </figure>
           </div>
-        </button>
-        <button class="instruction-play" type="button" data-video-level="3"
-          data-video-src="videos/fthue-level-3-setup-movement.mp4" data-testid="button-video-level-3">
-          <span class="play-icon" aria-hidden="true">▶</span>教學短片
         </button>
         <details class="level-details">
           <summary>顯示詳情</summary>
@@ -875,14 +806,12 @@ html,body{
           </div>
           <div class="level-motion single">
             <figure>
-              <div aria-hidden="true" style="font-size:58px;line-height:1;color:#0a7d75;font-weight:900;">↑</div>
-              <figcaption>沿中線慢慢向前滑</figcaption>
+              <img src="img/advanced/level4_safe_slide.gif"
+                alt="滑板離開身體並沿中線慢慢向前滑"
+                data-testid="gif-level-4">
+              <figcaption>滑板離身 · 慢慢前滑</figcaption>
             </figure>
           </div>
-        </button>
-        <button class="instruction-play" type="button" data-video-level="4"
-          data-video-src="videos/fthue-level-4-setup-movement.mp4" data-testid="button-video-level-4">
-          <span class="play-icon" aria-hidden="true">▶</span>教學短片
         </button>
         <details class="level-details">
           <summary>顯示詳情</summary>
@@ -907,10 +836,6 @@ html,body{
             </figure>
           </div>
         </button>
-        <button class="instruction-play" type="button" data-video-level="5"
-          data-video-src="videos/fthue-level-5-setup-movement.mp4" data-testid="button-video-level-5">
-          <span class="play-icon" aria-hidden="true">▶</span>教學短片
-        </button>
         <details class="level-details">
           <summary>顯示詳情</summary>
           <p class="lv-note">
@@ -934,10 +859,6 @@ html,body{
             </figure>
           </div>
         </button>
-        <button class="instruction-play" type="button" data-video-level="6"
-          data-video-src="videos/fthue-level-6-setup-movement.mp4" data-testid="button-video-level-6">
-          <span class="play-icon" aria-hidden="true">▶</span>教學短片
-        </button>
         <details class="level-details">
           <summary>顯示詳情</summary>
           <p class="lv-note">
@@ -957,23 +878,6 @@ html,body{
     <footer style="margin-top:32px;padding:16px 12px 8px;text-align:center;font-size:11px;color:var(--muted);line-height:1.6;border-top:1px solid var(--border);opacity:0.75;max-width:760px;width:100%;">
       訓練由仁濟醫院職業治療師鄧姑娘設計，網頁由 AI 協助製作
     </footer>
-  </div>
-
-  <div class="video-modal" id="instructionVideoModal" role="dialog" aria-modal="true"
-    aria-labelledby="instructionVideoTitle">
-    <div class="video-dialog">
-      <div class="video-dialog-head">
-        <h2 id="instructionVideoTitle">教學短片</h2>
-        <button class="video-close" id="instructionVideoClose" type="button"
-          aria-label="關閉教學短片" data-testid="button-close-instruction-video">×</button>
-      </div>
-      <div class="video-frame">
-        <video id="instructionVideo" controls playsinline webkit-playsinline preload="metadata"
-          data-testid="video-instruction"></video>
-      </div>
-      <p class="video-caption" id="instructionVideoCaption"
-        data-testid="text-instruction-video-caption"></p>
-    </div>
   </div>
 
   <!-- ============ PILOT RESEARCH SETUP ============ -->
@@ -3419,51 +3323,6 @@ document.getElementById('btnLevel3').addEventListener('click', ()=>{
   openSafetyGate('3',
     ()=>{ window.location.href = 'sandbox/level3-bilateral/index.html?safetyAck=1'; },
     ()=> showScreen('level'));
-});
-const instructionVideoModal = document.getElementById('instructionVideoModal');
-const instructionVideo = document.getElementById('instructionVideo');
-const instructionVideoTitle = document.getElementById('instructionVideoTitle');
-const instructionVideoCaption = document.getElementById('instructionVideoCaption');
-/* Exactly ONE short level caption, rendered outside/below the 16:9 frame.
-   The clips carry no baked-in overlay text, so all wording lives here and can be
-   updated without re-rendering video. Keep each caption to a single short line. */
-const INSTRUCTION_VIDEO_CAPTIONS = {
-  '3': '毛巾跟手側滑；軀幹保持正中。',
-  '4': '滑板離身，桌面清空，慢慢前滑。',
-  '5': '手臂離桌：伸手、鬆握、移動、張手。',
-  '6': '手臂離桌：伸手、輕捏、移動、張開。',
-};
-let instructionVideoOpener = null;
-function closeInstructionVideo(){
-  instructionVideo.pause();
-  instructionVideo.removeAttribute('src');
-  instructionVideo.load();
-  instructionVideoModal.classList.remove('open');
-  if(instructionVideoOpener && document.contains(instructionVideoOpener)){
-    try{ instructionVideoOpener.focus(); }catch(e){}
-  }
-  instructionVideoOpener = null;
-}
-document.querySelectorAll('[data-video-src]').forEach(button=>{
-  button.addEventListener('click', ()=>{
-    const level = button.dataset.videoLevel;
-    // Compact title; the level-specific instruction lives in the single caption below.
-    instructionVideoTitle.textContent = `Level ${level} 教學短片`;
-    instructionVideoCaption.textContent = INSTRUCTION_VIDEO_CAPTIONS[level] || '';
-    instructionVideo.src = button.dataset.videoSrc;
-    instructionVideoOpener = button;
-    instructionVideoModal.classList.add('open');
-    const closeBtn = document.getElementById('instructionVideoClose');
-    if(closeBtn) try{ closeBtn.focus({preventScroll:true}); }catch(e){}
-    instructionVideo.play().catch(()=>{});
-  });
-});
-document.getElementById('instructionVideoClose').addEventListener('click', closeInstructionVideo);
-instructionVideoModal.addEventListener('click', event=>{
-  if(event.target === instructionVideoModal) closeInstructionVideo();
-});
-document.addEventListener('keydown', event=>{
-  if(event.key === 'Escape' && instructionVideoModal.classList.contains('open')) closeInstructionVideo();
 });
 /* Research Mode now routes to the separate role hub (research/index.html) so that
    the blinded assessor bundle never shares a page with allocation or training data.

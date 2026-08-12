@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-12T14:01:05.434Z",
+  "generated_at": "2026-08-12T14:06:22.566Z",
   "base_url": "http://127.0.0.1:4173",
   "scope": "Independent technical verification for FTHUE Levels 4, 5, and 6",
   "limitation": "Not clinical validation; Level 6 aperture detection does not measure pinch force.",
@@ -423,15 +423,15 @@
         },
         "items": [
           {
-            "label": "叉燒包",
-            "type": "charsiu",
+            "label": "糯米雞",
+            "type": "lotusrice",
             "x": 472,
             "y": 656,
             "r": 104
           },
           {
-            "label": "叉燒包",
-            "type": "charsiu",
+            "label": "糯米雞",
+            "type": "lotusrice",
             "x": 708,
             "y": 656,
             "r": 104
@@ -495,15 +495,15 @@
         },
         "items": [
           {
-            "label": "叉燒包",
-            "type": "charsiu",
+            "label": "糯米雞",
+            "type": "lotusrice",
             "x": 472,
             "y": 656,
             "r": 104
           },
           {
-            "label": "叉燒包",
-            "type": "charsiu",
+            "label": "糯米雞",
+            "type": "lotusrice",
             "x": 708,
             "y": 656,
             "r": 104
@@ -608,15 +608,15 @@
             "r": 118
           },
           {
-            "label": "叉燒包",
-            "type": "charsiu",
+            "label": "糯米雞",
+            "type": "lotusrice",
             "x": 590,
             "y": 442.8,
             "r": 118
           },
           {
-            "label": "糯米雞",
-            "type": "lotusrice",
+            "label": "叉燒包",
+            "type": "charsiu",
             "x": 920.4,
             "y": 442.8,
             "r": 118
@@ -687,15 +687,15 @@
             "r": 118
           },
           {
-            "label": "叉燒包",
-            "type": "charsiu",
+            "label": "糯米雞",
+            "type": "lotusrice",
             "x": 590,
             "y": 442.8,
             "r": 118
           },
           {
-            "label": "糯米雞",
-            "type": "lotusrice",
+            "label": "叉燒包",
+            "type": "charsiu",
             "x": 920.4,
             "y": 442.8,
             "r": 118

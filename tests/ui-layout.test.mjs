@@ -1,15 +1,12 @@
 /**
- * Layout regression tests for the instruction-video modal and the single
- * in-game prompt safe strip.
+ * Layout regression tests for the Level 3–4 inline GIF demonstrations and
+ * the single in-game prompt safe strip.
  *
  * These guard the fixes for the therapist report that instruction text
  * overlapped / blocked the view on portrait iPhone and iPad:
  *
- *   1. the instruction video renders in a true 16:9 frame (no baked-in overlay
- *      assumptions) with a compact title and EXACTLY ONE short caption that
- *      lives outside and below the video;
- *   2. on portrait viewports the dialog does not become a mostly-black
- *      fullscreen takeover and the close button stays inside the viewport;
+ *   1. Level 3–4 render direct 16:9 looping GIFs inside their cards;
+ *   2. Level 5–6 expose no instruction-video controls;
  *   3. in-game prompts live in one non-overlapping safe strip (#promptZone),
  *      never stack on each other and never reach the bottom target band;
  *   4. the prompt slot is single-slot: at most one instruction prompt visible.
@@ -64,13 +61,10 @@ function overlaps(a, b) {
 }
 
 for (const vp of VIEWPORTS) {
-  test(`instruction video modal layout — ${vp.name}`, async (t) => {
+  test(`inline Level 3–4 GIF layout — ${vp.name}`, async (t) => {
     if (!browser) return t.skip('playwright unavailable');
     await withPage(vp, async (page) => {
-      await page.click('[data-testid="button-video-level-5"]');
-      await page.waitForTimeout(200);
-
-      const box = await page.evaluate(() => {
+      const result = await page.evaluate(() => {
         const rect = (sel) => {
           const el = document.querySelector(sel);
           if (!el) return null;
@@ -78,48 +72,30 @@ for (const vp of VIEWPORTS) {
           return { left: r.left, top: r.top, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
         };
         return {
-          frame: rect('.video-frame'),
-          video: rect('#instructionVideo'),
-          caption: rect('#instructionVideoCaption'),
-          close: rect('#instructionVideoClose'),
-          dialog: rect('.video-dialog'),
-          captionCount: document.querySelectorAll('.video-dialog .video-caption').length,
-          captionText: document.getElementById('instructionVideoCaption').textContent.trim(),
-          title: document.getElementById('instructionVideoTitle').textContent.trim(),
-          playsinline: document.getElementById('instructionVideo').hasAttribute('playsinline'),
-          viewportH: window.innerHeight,
-          viewportW: window.innerWidth,
+          gifs: ['3', '4'].map(level => {
+            const img = document.querySelector(`[data-testid="gif-level-${level}"]`);
+            return {
+              level,
+              rect: rect(`[data-testid="gif-level-${level}"]`),
+              src: img?.getAttribute('src') || '',
+              alt: img?.getAttribute('alt') || '',
+            };
+          }),
+          videoButtons: document.querySelectorAll('.instruction-play,[data-video-src]').length,
+          instructionVideoElements: document.querySelectorAll(
+            '#instructionVideo,.video-modal video,[data-testid="video-instruction"]'
+          ).length,
         };
       });
-
-      // 16:9 frame, playsinline, no overlay text assumptions inside the frame.
-      assert.ok(box.frame, 'video frame present');
-      assert.ok(Math.abs(box.frame.width / box.frame.height - 16 / 9) < 0.03,
-        `frame should be 16:9, got ${(box.frame.width / box.frame.height).toFixed(3)}`);
-      assert.ok(box.playsinline, 'video must be playsinline');
-
-      // Exactly one caption, outside and below the video, never overlapping it.
-      assert.equal(box.captionCount, 1, 'exactly one caption element');
-      assert.ok(box.captionText.length > 0 && box.captionText.length <= 30,
-        `caption must be short, got ${box.captionText.length} chars`);
-      assert.ok(box.caption.top >= box.video.bottom - 0.5, 'caption sits below the video');
-      assert.ok(!overlaps(box.caption, box.video), 'caption never overlays the video');
-
-      // Compact title.
-      assert.ok(box.title.length <= 20, `title must stay compact, got "${box.title}"`);
-
-      // Close button always reachable inside the viewport.
-      assert.ok(box.close.top >= -0.5 && box.close.bottom <= box.viewportH + 0.5,
-        'close button inside viewport vertically');
-      assert.ok(box.close.right <= box.viewportW + 0.5, 'close button inside viewport horizontally');
-      assert.ok(box.close.width >= 44 && box.close.height >= 44, 'close button >= 44px touch target');
-
-      // Portrait: the dialog should hug the video, not become a black takeover.
-      if (vp.height > vp.width) {
-        assert.ok(box.dialog.height <= box.viewportH * 0.9,
-          'portrait dialog should not fill the whole screen');
-        assert.ok(box.dialog.top <= box.viewportH * 0.25, 'portrait dialog is top-aligned');
+      for (const gif of result.gifs) {
+        assert.ok(gif.rect, `Level ${gif.level} GIF is present`);
+        assert.ok(gif.src.endsWith('.gif'), `Level ${gif.level} uses a GIF`);
+        assert.ok(gif.alt.length > 0, `Level ${gif.level} GIF has alt text`);
+        assert.ok(Math.abs(gif.rect.width / gif.rect.height - 16 / 9) < 0.03,
+          `Level ${gif.level} GIF should be 16:9`);
       }
+      assert.equal(result.videoButtons, 0, 'no instruction-video buttons remain');
+      assert.equal(result.instructionVideoElements, 0, 'no instruction-video players remain');
     });
   });
 
@@ -189,8 +165,7 @@ test('critical test IDs and safety hooks preserved', async (t) => {
   await withPage(VIEWPORTS[0], async (page) => {
     const found = await page.evaluate(() => {
       const ids = [
-        'button-video-level-3', 'button-video-level-4', 'button-video-level-5',
-        'button-video-level-6', 'button-close-instruction-video', 'video-instruction',
+        'gif-level-3', 'gif-level-4',
         'panel-safety-pause', 'panel-stop-confirm', 'panel-compensation',
         'button-game-rest', 'button-game-stop', 'button-pilot-rest-resume',
         'button-compensation-observe',

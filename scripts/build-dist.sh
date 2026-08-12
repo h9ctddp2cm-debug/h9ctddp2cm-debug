@@ -2,7 +2,7 @@
 # Deterministic build of the PUBLIC static distribution (dist/public).
 #
 # dist/public contains ONLY the patient/therapist-facing FTHUE Level 3-6 app:
-#   index.html, img/, videos/, sandbox/level3-bilateral runtime files.
+#   index.html, img/, sandbox/level3-bilateral runtime files.
 # It must never contain research/ (served exclusively by the auth backend),
 # .git, QA artifacts, tools/, progress notes, zip archives, node_modules,
 # or any secret/config material.
@@ -19,7 +19,6 @@ mkdir -p "$DIST"
 # --- public entry point + media -------------------------------------------
 cp "$ROOT/index.html" "$DIST/index.html"
 cp -R "$ROOT/img" "$DIST/img"
-cp -R "$ROOT/videos" "$DIST/videos"
 
 # --- public Level 3 bilateral sandbox (runtime files only) -----------------
 mkdir -p "$DIST/sandbox/level3-bilateral"
