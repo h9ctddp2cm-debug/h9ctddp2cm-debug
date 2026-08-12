@@ -209,18 +209,20 @@ try {
   }
 
   const notes = safetyConstants.levelNotes;
-  check("3", "safety copy", "Level 3 note states the affected hand is supported and need not interlock",
+  check("3", "safety copy", "Level 3 note specifies supported lateral shoulder abduction and rejects forward reach",
     notes["3"].includes("承托") && notes["3"].includes("不需互扣")
+    && notes["3"].includes("肩外展") && notes["3"].includes("不要向前伸")
     && !notes["3"].includes("互扣合攏"), { note: notes["3"] });
   check("4", "safety copy", "Level 4 note mandates three calibration attempts without compensation",
     notes["4"].includes("三次練習") && notes["4"].includes("無肩膊抬高")
     && notes["4"].includes("慢慢向前滑"), { note: notes["4"] });
-  check("5", "safety copy", "Level 5 note uses light closing wording and the personal release aperture",
-    notes["5"].includes("輕輕合手") && !notes["5"].includes("握拳") && !notes["5"].includes("握緊")
-    && notes["5"].includes("不需要張到完全伸直"), { note: notes["5"] });
-  check("6", "safety copy", "Level 6 note states bare-hand aperture default and no force detection",
-    notes["67"].includes("裸手") && notes["67"].includes("不會偵測夾力")
-    && notes["67"].includes("只需輕輕捏合，不要用盡力"), { note: notes["67"] });
+  check("5", "safety copy", "Level 5 note specifies simulated empty-air grasp and individualized release calibration",
+    notes["5"].includes("空手模擬") && notes["5"].includes("輕輕合手")
+    && !notes["5"].includes("握拳") && !notes["5"].includes("握緊")
+    && notes["5"].includes("按患者當日張手幅度校準"), { note: notes["5"] });
+  check("6", "safety copy", "Level 6 note specifies empty-hand pinch without an object or tool",
+    notes["67"].includes("只用空手") && notes["67"].includes("不要拿實物")
+    && notes["67"].includes("不要用盡力"), { note: notes["67"] });
 
   const bodyText = await page.evaluate(() => document.body.innerText);
   check("5", "safety copy", "no patient-facing 握拳/握緊 wording remains in the interface",

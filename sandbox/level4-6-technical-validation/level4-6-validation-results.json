@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-12T10:54:57.969Z",
+  "generated_at": "2026-08-12T11:49:13.814Z",
   "base_url": "http://127.0.0.1:4173",
   "scope": "Independent technical verification for FTHUE Levels 4, 5, and 6",
   "limitation": "Not clinical validation; Level 6 aperture detection does not measure pinch force.",
@@ -423,15 +423,15 @@
         },
         "items": [
           {
-            "label": "叉燒包",
-            "type": "charsiu",
+            "label": "糯米雞",
+            "type": "lotusrice",
             "x": 472,
             "y": 656,
             "r": 104
           },
           {
-            "label": "叉燒包",
-            "type": "charsiu",
+            "label": "糯米雞",
+            "type": "lotusrice",
             "x": 708,
             "y": 656,
             "r": 104
@@ -495,15 +495,15 @@
         },
         "items": [
           {
-            "label": "叉燒包",
-            "type": "charsiu",
+            "label": "糯米雞",
+            "type": "lotusrice",
             "x": 472,
             "y": 656,
             "r": 104
           },
           {
-            "label": "叉燒包",
-            "type": "charsiu",
+            "label": "糯米雞",
+            "type": "lotusrice",
             "x": 708,
             "y": 656,
             "r": 104
@@ -601,8 +601,8 @@
         },
         "items": [
           {
-            "label": "糯米雞",
-            "type": "lotusrice",
+            "label": "叉燒包",
+            "type": "charsiu",
             "x": 259.6,
             "y": 442.8,
             "r": 118
@@ -680,8 +680,8 @@
         },
         "items": [
           {
-            "label": "糯米雞",
-            "type": "lotusrice",
+            "label": "叉燒包",
+            "type": "charsiu",
             "x": 259.6,
             "y": 442.8,
             "r": 118
@@ -807,11 +807,11 @@
             "r": 100
           },
           {
-            "label": "蝦餃",
-            "type": "hargau",
+            "label": "燒賣",
+            "type": "siumai",
             "x": 920.4,
             "y": 442.8,
-            "r": 145
+            "r": 100
           }
         ],
         "targets": [
@@ -886,11 +886,11 @@
             "r": 100
           },
           {
-            "label": "蝦餃",
-            "type": "hargau",
+            "label": "燒賣",
+            "type": "siumai",
             "x": 920.4,
             "y": 442.8,
-            "r": 145
+            "r": 100
           }
         ],
         "targets": [
@@ -922,10 +922,10 @@
         "maxHoldMs": 5000,
         "releaseDifficultyLimit": 3,
         "levelNotes": {
-          "3": "Level 3：患手放在毛巾或滑板上，由健手輕輕承托一同向前滑。患手手指不需互扣、不需用力握住，只需放鬆擺放。",
+          "3": "Level 3：患手放在毛巾或滑板上，由健手輕輕承托，從身體中線向左或右側滑作肩外展；不要向前伸。患手手指不需互扣或用力握住。",
           "4": "Level 4：先由治療師帶患者做三次練習，選出「無肩膊抬高、無軀幹傾斜、無疼痛、手指亦無愈來愈繃緊」的最遠距離，之後全節只用這個距離。動作要慢慢向前滑，不需要快。",
-          "5": "Level 5：只需輕輕合手拿起物件，不用大力握實。拿住物件最多約 5 秒就要放低、張開手、放鬆。放手用患者自己校準的張開幅度，不需要張到完全伸直。",
-          "67": "Level 6：預設用裸手，由鏡頭偵測拇指與食指的張開幅度。實物筷子或木釘屬治療師可選的額外練習，軟件不會偵測夾力。只需輕輕捏合，不要用盡力。"
+          "5": "Level 5：在鏡頭前空手模擬握取。輕輕合手，不用力屈曲手指；保持合手最多約 5 秒，之後張開手及放鬆。放手門檻按患者當日張手幅度校準。",
+          "67": "Level 6：只用空手在鏡頭前模擬捏取，由系統偵測拇指與食指的張開幅度。不要拿實物或使用工具；只需輕輕捏合，不要用盡力。"
         }
       }
     },
@@ -956,7 +956,7 @@
         "screen": "safety",
         "ackChecked": false,
         "continueDisabled": true,
-        "levelNote": "Level 3：患手放在毛巾或滑板上，由健手輕輕承托一同向前滑。患手手指不需互扣、不需用力握住，只需放鬆擺放。",
+        "levelNote": "Level 3：患手放在毛巾或滑板上，由健手輕輕承托，從身體中線向左或右側滑作肩外展；不要向前伸。患手手指不需互扣或用力握住。",
         "continued": false
       }
     },
@@ -969,7 +969,7 @@
         "screen": "safety",
         "ackChecked": false,
         "continueDisabled": true,
-        "levelNote": "Level 3：患手放在毛巾或滑板上，由健手輕輕承托一同向前滑。患手手指不需互扣、不需用力握住，只需放鬆擺放。",
+        "levelNote": "Level 3：患手放在毛巾或滑板上，由健手輕輕承托，從身體中線向左或右側滑作肩外展；不要向前伸。患手手指不需互扣或用力握住。",
         "continued": false
       }
     },
@@ -982,7 +982,7 @@
         "screen": "safety",
         "ackChecked": true,
         "continueDisabled": false,
-        "levelNote": "Level 3：患手放在毛巾或滑板上，由健手輕輕承托一同向前滑。患手手指不需互扣、不需用力握住，只需放鬆擺放。",
+        "levelNote": "Level 3：患手放在毛巾或滑板上，由健手輕輕承托，從身體中線向左或右側滑作肩外展；不要向前伸。患手手指不需互扣或用力握住。",
         "continued": false
       }
     },
@@ -995,7 +995,7 @@
         "screen": "safety",
         "ackChecked": true,
         "continueDisabled": false,
-        "levelNote": "Level 3：患手放在毛巾或滑板上，由健手輕輕承托一同向前滑。患手手指不需互扣、不需用力握住，只需放鬆擺放。",
+        "levelNote": "Level 3：患手放在毛巾或滑板上，由健手輕輕承托，從身體中線向左或右側滑作肩外展；不要向前伸。患手手指不需互扣或用力握住。",
         "continued": true
       }
     },
@@ -1005,7 +1005,7 @@
       "name": "level-specific safety note is visible on the screen",
       "passed": true,
       "details": {
-        "length": 55
+        "length": 63
       }
     },
     {
@@ -1096,7 +1096,7 @@
         "screen": "safety",
         "ackChecked": false,
         "continueDisabled": true,
-        "levelNote": "Level 5：只需輕輕合手拿起物件，不用大力握實。拿住物件最多約 5 秒就要放低、張開手、放鬆。放手用患者自己校準的張開幅度，不需要張到完全伸直。",
+        "levelNote": "Level 5：在鏡頭前空手模擬握取。輕輕合手，不用力屈曲手指；保持合手最多約 5 秒，之後張開手及放鬆。放手門檻按患者當日張手幅度校準。",
         "continued": false
       }
     },
@@ -1109,7 +1109,7 @@
         "screen": "safety",
         "ackChecked": false,
         "continueDisabled": true,
-        "levelNote": "Level 5：只需輕輕合手拿起物件，不用大力握實。拿住物件最多約 5 秒就要放低、張開手、放鬆。放手用患者自己校準的張開幅度，不需要張到完全伸直。",
+        "levelNote": "Level 5：在鏡頭前空手模擬握取。輕輕合手，不用力屈曲手指；保持合手最多約 5 秒，之後張開手及放鬆。放手門檻按患者當日張手幅度校準。",
         "continued": false
       }
     },
@@ -1122,7 +1122,7 @@
         "screen": "safety",
         "ackChecked": true,
         "continueDisabled": false,
-        "levelNote": "Level 5：只需輕輕合手拿起物件，不用大力握實。拿住物件最多約 5 秒就要放低、張開手、放鬆。放手用患者自己校準的張開幅度，不需要張到完全伸直。",
+        "levelNote": "Level 5：在鏡頭前空手模擬握取。輕輕合手，不用力屈曲手指；保持合手最多約 5 秒，之後張開手及放鬆。放手門檻按患者當日張手幅度校準。",
         "continued": false
       }
     },
@@ -1135,7 +1135,7 @@
         "screen": "safety",
         "ackChecked": true,
         "continueDisabled": false,
-        "levelNote": "Level 5：只需輕輕合手拿起物件，不用大力握實。拿住物件最多約 5 秒就要放低、張開手、放鬆。放手用患者自己校準的張開幅度，不需要張到完全伸直。",
+        "levelNote": "Level 5：在鏡頭前空手模擬握取。輕輕合手，不用力屈曲手指；保持合手最多約 5 秒，之後張開手及放鬆。放手門檻按患者當日張手幅度校準。",
         "continued": true
       }
     },
@@ -1145,7 +1145,7 @@
       "name": "level-specific safety note is visible on the screen",
       "passed": true,
       "details": {
-        "length": 74
+        "length": 69
       }
     },
     {
@@ -1166,7 +1166,7 @@
         "screen": "safety",
         "ackChecked": false,
         "continueDisabled": true,
-        "levelNote": "Level 6：預設用裸手，由鏡頭偵測拇指與食指的張開幅度。實物筷子或木釘屬治療師可選的額外練習，軟件不會偵測夾力。只需輕輕捏合，不要用盡力。",
+        "levelNote": "Level 6：只用空手在鏡頭前模擬捏取，由系統偵測拇指與食指的張開幅度。不要拿實物或使用工具；只需輕輕捏合，不要用盡力。",
         "continued": false
       }
     },
@@ -1179,7 +1179,7 @@
         "screen": "safety",
         "ackChecked": false,
         "continueDisabled": true,
-        "levelNote": "Level 6：預設用裸手，由鏡頭偵測拇指與食指的張開幅度。實物筷子或木釘屬治療師可選的額外練習，軟件不會偵測夾力。只需輕輕捏合，不要用盡力。",
+        "levelNote": "Level 6：只用空手在鏡頭前模擬捏取，由系統偵測拇指與食指的張開幅度。不要拿實物或使用工具；只需輕輕捏合，不要用盡力。",
         "continued": false
       }
     },
@@ -1192,7 +1192,7 @@
         "screen": "safety",
         "ackChecked": true,
         "continueDisabled": false,
-        "levelNote": "Level 6：預設用裸手，由鏡頭偵測拇指與食指的張開幅度。實物筷子或木釘屬治療師可選的額外練習，軟件不會偵測夾力。只需輕輕捏合，不要用盡力。",
+        "levelNote": "Level 6：只用空手在鏡頭前模擬捏取，由系統偵測拇指與食指的張開幅度。不要拿實物或使用工具；只需輕輕捏合，不要用盡力。",
         "continued": false
       }
     },
@@ -1205,7 +1205,7 @@
         "screen": "safety",
         "ackChecked": true,
         "continueDisabled": false,
-        "levelNote": "Level 6：預設用裸手，由鏡頭偵測拇指與食指的張開幅度。實物筷子或木釘屬治療師可選的額外練習，軟件不會偵測夾力。只需輕輕捏合，不要用盡力。",
+        "levelNote": "Level 6：只用空手在鏡頭前模擬捏取，由系統偵測拇指與食指的張開幅度。不要拿實物或使用工具；只需輕輕捏合，不要用盡力。",
         "continued": true
       }
     },
@@ -1215,16 +1215,16 @@
       "name": "level-specific safety note is visible on the screen",
       "passed": true,
       "details": {
-        "length": 71
+        "length": 61
       }
     },
     {
       "level": "3",
       "category": "safety copy",
-      "name": "Level 3 note states the affected hand is supported and need not interlock",
+      "name": "Level 3 note specifies supported lateral shoulder abduction and rejects forward reach",
       "passed": true,
       "details": {
-        "note": "Level 3：患手放在毛巾或滑板上，由健手輕輕承托一同向前滑。患手手指不需互扣、不需用力握住，只需放鬆擺放。"
+        "note": "Level 3：患手放在毛巾或滑板上，由健手輕輕承托，從身體中線向左或右側滑作肩外展；不要向前伸。患手手指不需互扣或用力握住。"
       }
     },
     {
@@ -1239,19 +1239,19 @@
     {
       "level": "5",
       "category": "safety copy",
-      "name": "Level 5 note uses light closing wording and the personal release aperture",
+      "name": "Level 5 note specifies simulated empty-air grasp and individualized release calibration",
       "passed": true,
       "details": {
-        "note": "Level 5：只需輕輕合手拿起物件，不用大力握實。拿住物件最多約 5 秒就要放低、張開手、放鬆。放手用患者自己校準的張開幅度，不需要張到完全伸直。"
+        "note": "Level 5：在鏡頭前空手模擬握取。輕輕合手，不用力屈曲手指；保持合手最多約 5 秒，之後張開手及放鬆。放手門檻按患者當日張手幅度校準。"
       }
     },
     {
       "level": "6",
       "category": "safety copy",
-      "name": "Level 6 note states bare-hand aperture default and no force detection",
+      "name": "Level 6 note specifies empty-hand pinch without an object or tool",
       "passed": true,
       "details": {
-        "note": "Level 6：預設用裸手，由鏡頭偵測拇指與食指的張開幅度。實物筷子或木釘屬治療師可選的額外練習，軟件不會偵測夾力。只需輕輕捏合，不要用盡力。"
+        "note": "Level 6：只用空手在鏡頭前模擬捏取，由系統偵測拇指與食指的張開幅度。不要拿實物或使用工具；只需輕輕捏合，不要用盡力。"
       }
     },
     {

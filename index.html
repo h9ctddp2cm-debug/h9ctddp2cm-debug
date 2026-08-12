@@ -842,8 +842,8 @@ html,body{
         <button class="level-select" id="btnLevel3" data-level="3">
           <div class="level-copy">
             <span class="lv-tag">FTHUE Level 3</span>
-            <h3>雙手水平掃掠</h3>
-            <p class="lv-action">前臂承托，雙手合攏向左／右滑動</p>
+            <h3>雙手承托側向掃掠</h3>
+            <p class="lv-action">由身體中線向左／右側滑（肩外展）</p>
           </div>
           <div class="level-motion single">
             <figure>
@@ -897,7 +897,7 @@ html,body{
           <div class="level-copy">
             <span class="lv-tag">FTHUE Level 5</span>
             <h3>握放訓練</h3>
-            <p class="lv-action">輕輕合手拿起，張開手放下</p>
+            <p class="lv-action">空手模擬握取，再張開手放下</p>
           </div>
           <div class="level-motion single">
             <figure>
@@ -914,7 +914,7 @@ html,body{
           <summary>顯示詳情</summary>
           <p class="lv-note">
             <span class="lv-line">建議螢幕距離病人<b>一個手臂</b>遠</span>
-            <span class="lv-line">慢速控制伸手、握取及放手</span>
+            <span class="lv-line">鏡頭前空手模擬：張手、輕輕合手、再張手</span>
           </p>
         </details>
       </article>
@@ -923,16 +923,12 @@ html,body{
           <div class="level-copy">
             <span class="lv-tag">FTHUE Level 6–7</span>
             <h3>精細動作訓練</h3>
-            <p class="lv-action">裸手輕輕捏合拿起，張開放下</p>
+            <p class="lv-action">空中模擬拇食指捏取，再張開放下</p>
           </div>
-          <div class="level-motion double">
+          <div class="level-motion single">
             <figure>
-              <img src="img/advanced/hand_chopsticks.gif" alt="拇指與食指輕輕捏合示範">
-              <figcaption>裸手預設</figcaption>
-            </figure>
-            <figure>
-              <img src="img/advanced/hand_clothes_peg.gif" alt="實物夾子練習示範（治療師可選）">
-              <figcaption>工具可選</figcaption>
+              <div aria-hidden="true" style="font-size:32px;line-height:1;color:#0a7d75;font-weight:900;">○ → ● → ○</div>
+              <figcaption>空手：張開 → 捏合 → 張開</figcaption>
             </figure>
           </div>
         </button>
@@ -943,11 +939,11 @@ html,body{
         <details class="level-details">
           <summary>顯示詳情</summary>
           <p class="lv-note">
-            <span class="lv-line"><b>預設以裸手進行</b>：鏡頭偵測拇指與食指的張開幅度（aperture）</span>
-            <span class="lv-line">實物木釘、筷子或夾子屬<b>治療師可選的額外練習</b>，並非標準要求</span>
+            <span class="lv-line"><b>標準流程只用空手模擬</b>：鏡頭偵測拇指與食指的張開幅度（aperture）</span>
+            <span class="lv-line">不拿實物、不用筷子或夾子，避免遮擋指尖</span>
             <span class="lv-line"><b>軟件不會偵測夾力</b>（pinch force），只偵測張開幅度</span>
             <span class="lv-line">指令：「<b>只需輕輕捏合，不要用盡力</b>」</span>
-            <span class="lv-line">如工具遮擋指尖導致追蹤失敗，請改用裸手</span>
+            <span class="lv-line">拇指、食指及手腕須全程保持入鏡</span>
           </p>
         </details>
       </article>
@@ -2162,16 +2158,16 @@ function safetyLog(event, payload){
 
 /* ---------- 安全確認畫面 ---------- */
 const SAFETY_LEVEL_NOTES = {
-  '3': 'Level 3：患手放在毛巾或滑板上，由健手輕輕承托一同向前滑。患手手指不需互扣、不需用力握住，只需放鬆擺放。',
+  '3': 'Level 3：患手放在毛巾或滑板上，由健手輕輕承托，從身體中線向左或右側滑作肩外展；不要向前伸。患手手指不需互扣或用力握住。',
   '4': 'Level 4：先由治療師帶患者做三次練習，選出「無肩膊抬高、無軀幹傾斜、無疼痛、手指亦無愈來愈繃緊」的最遠距離，之後全節只用這個距離。動作要慢慢向前滑，不需要快。',
-  '5': 'Level 5：只需輕輕合手拿起物件，不用大力握實。拿住物件最多約 5 秒就要放低、張開手、放鬆。放手用患者自己校準的張開幅度，不需要張到完全伸直。',
-  '67': 'Level 6：預設用裸手，由鏡頭偵測拇指與食指的張開幅度。實物筷子或木釘屬治療師可選的額外練習，軟件不會偵測夾力。只需輕輕捏合，不要用盡力。',
+  '5': 'Level 5：在鏡頭前空手模擬握取。輕輕合手，不用力屈曲手指；保持合手最多約 5 秒，之後張開手及放鬆。放手門檻按患者當日張手幅度校準。',
+  '67': 'Level 6：只用空手在鏡頭前模擬捏取，由系統偵測拇指與食指的張開幅度。不要拿實物或使用工具；只需輕輕捏合，不要用盡力。',
 };
 const SAFETY_LEVEL_TITLES = {
-  '3': 'FTHUE Level 3 · 雙手承托前滑（Sandbox）',
+  '3': 'FTHUE Level 3 · 雙手承托側滑／肩外展（Sandbox）',
   '4': 'FTHUE Level 4 · 桌面中線滑行',
-  '5': 'FTHUE Level 5 · 輕輕合手拿起與放下',
-  '67': 'FTHUE Level 6 · 拇食指輕捏',
+  '5': 'FTHUE Level 5 · 空手模擬握放',
+  '67': 'FTHUE Level 6 · 空手模擬拇食指捏放',
 };
 
 let safetyGatePending = null;   // { levelKey, onContinue, onBack }
@@ -3429,10 +3425,10 @@ const instructionVideoCaption = document.getElementById('instructionVideoCaption
    The clips carry no baked-in overlay text, so all wording lives here and can be
    updated without re-rendering video. Keep each caption to a single short line. */
 const INSTRUCTION_VIDEO_CAPTIONS = {
-  '3': '前臂承托，雙手合攏向左右滑；痛就停。',
+  '3': '由中線向側滑作肩外展；不要向前伸。',
   '4': '前臂貼桌，沿中線慢慢向前；肩聳就停。',
-  '5': '張開手拿起，移到目標再張開放低；不要用盡力。',
-  '6': '拇指食指輕輕捏合，張開放低；不要用盡力。',
+  '5': '空手張開、輕輕合手、移動，再張開。',
+  '6': '空中輕捏、移動，再張開拇指食指。',
 };
 let instructionVideoOpener = null;
 function closeInstructionVideo(){
