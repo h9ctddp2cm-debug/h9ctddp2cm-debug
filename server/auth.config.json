@@ -1,0 +1,14 @@
+{
+  "algorithm": "scrypt",
+  "createdAt": "2026-08-12T05:36:04.375Z",
+  "note": "Plaintext passcode is intentionally absent. Regenerate with server/generate-passcode.mjs.",
+  "params": {
+    "N": 32768,
+    "r": 8,
+    "p": 1,
+    "keylen": 32,
+    "maxmem": 100663296
+  },
+  "saltHex": "1ddaa73a2446286649caa9ea1380326b",
+  "hashHex": "aa1f7f5ac14677082e6a1d5a2812cdad8af57d4430c410c758870a551e878b0f"
+}

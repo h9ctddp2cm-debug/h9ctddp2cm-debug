@@ -904,23 +904,6 @@ html,body{
     </div>
   </div>
 
-  <div class="pilot-access-overlay" id="pilotAccessOverlay" role="dialog" aria-modal="true" aria-labelledby="pilotAccessTitle">
-    <form class="pilot-access-card" id="pilotAccessForm">
-      <h2 id="pilotAccessTitle">Pilot Study</h2>
-      <p>請輸入密碼</p>
-      <label class="sr-only" for="pilotAccessCode">Pilot Study 密碼</label>
-      <input id="pilotAccessCode" type="password" inputmode="text" autocomplete="off"
-        maxlength="20" placeholder="輸入密碼" data-testid="input-pilot-password">
-      <div class="pilot-access-error" id="pilotAccessError" role="alert" aria-live="polite"></div>
-      <div class="pilot-access-actions">
-        <button class="pilot-access-cancel" id="btnPilotAccessCancel" type="button"
-          data-testid="button-cancel-pilot-login">取消</button>
-        <button class="pilot-access-submit" type="submit"
-          data-testid="button-submit-pilot-login">進入</button>
-      </div>
-    </form>
-  </div>
-
   <!-- ============ PILOT RESEARCH SETUP ============ -->
   <div id="screen-research" class="screen">
     <div class="research-card">
@@ -3425,54 +3408,22 @@ function applyInterventionDeepLink(){
     window.setTimeout(()=>document.getElementById('btnResearchBegin').click(), 50);
   }
 }
-const pilotAccessOverlay = document.getElementById('pilotAccessOverlay');
-const pilotAccessCode = document.getElementById('pilotAccessCode');
-const pilotAccessError = document.getElementById('pilotAccessError');
-function openPilotAccess(){
-  pilotAccessError.textContent = '';
-  pilotAccessCode.value = '';
-  pilotAccessOverlay.classList.add('show');
-  window.setTimeout(()=>pilotAccessCode.focus(), 50);
+/* Research Mode is gated by the Node backend on port 5000 (server/research-auth-server.js).
+   No passcode, hash, or comparison exists in this static bundle: the button only navigates
+   to the backend login page, which authenticates the shared passcode server-side and issues
+   a signed, expiring __Host- session cookie. The literal below is rewritten to the proxied
+   backend origin by deploy_website / publish_website. */
+const RESEARCH_BACKEND_ORIGIN = '__PORT_5000__';
+function researchLoginUrl(){
+  const configured = RESEARCH_BACKEND_ORIGIN;
+  const base = configured.indexOf('__PORT_') === 0 ? 'http://localhost:5000' : configured.replace(/\/$/, '');
+  return base + '/research/login';
 }
-function closePilotAccess(){
-  pilotAccessOverlay.classList.remove('show');
-  pilotAccessCode.value = '';
-  pilotAccessError.textContent = '';
-  document.getElementById('btnResearchMode').focus();
-}
-async function sha256Hex(value){
-  const bytes = new TextEncoder().encode(value);
-  const digest = await crypto.subtle.digest('SHA-256', bytes);
-  return Array.from(new Uint8Array(digest), b=>b.toString(16).padStart(2,'0')).join('');
-}
-document.getElementById('btnResearchMode').addEventListener('click', openPilotAccess);
-document.getElementById('btnPilotAccessCancel').addEventListener('click', closePilotAccess);
-pilotAccessOverlay.addEventListener('click', e=>{
-  if(e.target === pilotAccessOverlay) closePilotAccess();
-});
-document.addEventListener('keydown', e=>{
-  if(e.key === 'Escape' && pilotAccessOverlay.classList.contains('show')) closePilotAccess();
-});
-document.getElementById('pilotAccessForm').addEventListener('submit', async e=>{
-  e.preventDefault();
-  const entered = pilotAccessCode.value.trim();
-  if(!entered){
-    pilotAccessError.textContent = '請輸入密碼';
-    pilotAccessCode.focus();
-    return;
-  }
-  try{
-    const hash = await sha256Hex(entered);
-    if(hash === '35619761ce97f0a1e08220882954ce869ad9c3d411b2bbba529f7f4a7f0c12e6'){
-      pilotAccessError.textContent = '';
-      window.location.href = 'research/index.html';
-      return;
-    }
-    pilotAccessError.textContent = '密碼不正確';
-    pilotAccessCode.select();
-  }catch(err){
-    pilotAccessError.textContent = '暫時無法驗證，請重新載入頁面';
-  }
+document.getElementById('btnResearchMode').addEventListener('click', ()=>{
+  /* Opened at top level so the backend can keep frame-ancestors 'self'. */
+  const url = researchLoginUrl();
+  const opened = window.open(url, '_blank', 'noopener');
+  if(!opened) window.top.location.href = url;
 });
 window.addEventListener('load', ()=>{
   try{

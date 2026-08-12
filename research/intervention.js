@@ -172,7 +172,9 @@
       tool: F.tool,
       track: F.difficulty,
       safety: 'confirmed',
-      return: 'research/intervention.html'
+      // Absolute URL back to this protected page on the auth backend; the public
+      // static bundle does not contain research/ so a relative path cannot work.
+      return: new URL('intervention.html', window.location.href).href
     });
     window.location.href = '../index.html?' + params.toString();
   }
