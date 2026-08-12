@@ -112,9 +112,9 @@ html,body{
 }
 .calib-wrap video, .calib-wrap canvas{
   position:absolute; inset:0; width:100%; height:100%; object-fit:fill;
-  transform:scaleX(-1);
 }
-.calib-wrap canvas{ pointer-events:none; }
+.calib-wrap video{ transform:scaleX(-1); }
+.calib-wrap canvas{ pointer-events:none; transform:none; }
 .calib-info{
   text-align:center; margin-top:14px; font-size:15px; color:var(--muted);
 }
@@ -1204,10 +1204,12 @@ html,body{
     <div class="calib-hint" id="calibHint">
       手放鏡頭前，見綠點即可。
     </div>
+    <button class="btn-secondary" id="btnMirrorX" type="button"
+      style="max-width:220px;padding:9px;margin-top:8px;">左右反轉</button>
     <div class="calib-checklist" id="calibChecklist">
-      <span id="calibDetectCheck">○ 偵測 2 秒</span>
-      <span id="calibOpenCheck">○ 張手 2 秒</span>
-      <span id="calibCloseCheck">○ 輕合手 2 秒</span>
+      <span id="calibDetectCheck">○ 偵測</span>
+      <span id="calibOpenCheck">○ 張手</span>
+      <span id="calibCloseCheck">○ 輕合手</span>
     </div>
     <details class="calib-advanced">
       <summary>校準重點</summary>
@@ -1762,6 +1764,7 @@ const state = {
     openDone:false, closedDone:false, ready:false, openScores:[], closedScores:[] },
   personalGraspEnter:null, personalGraspExit:null,
   personalPinchEnter:null, personalPinchExit:null, personalPinchOpen:null,
+  mirrorX:true,
 };
 const RESEARCH_VERSION = 'pilot-5.0.0-neuroscience';
 const PILOT_TRAINING_SCENARIOS = {
@@ -3666,14 +3669,21 @@ async function enterCalibrationFlow(){
     retry: ()=> enterCalibrationFlow(),
     back: ()=>{ stopCalibLoop(); stopCamera(); renderActivityLibrary(); showScreen('library'); },
   };
+  let trackingModelReady = false;
   try{
     await ensureHandLandmarker();
+    trackingModelReady = true;
   }catch(err){
+    // Level 4 may still work through the Pose wrist fallback below.
+  }
+  if(state.theme === 'cooking' || isLevel4Tabletop()){
+    const pose = await ensurePoseLandmarker().catch(()=>null);
+    trackingModelReady = trackingModelReady || Boolean(pose);
+  }
+  if(!trackingModelReady){
     showCameraError({ name:'ModelLoadError' }, cameraErrorContext);
     return;
   }
-  // 煮飯需要肩／肘／腕追蹤：校準期間先開始下載模型（約 6MB），失敗亦不阻塞
-  if(state.theme === 'cooking'){ ensurePoseLandmarker().catch(()=>{}); }
   const cameraOk = await startCamera('calibVideo');
   if(cameraOk === false) return;   // in-page error already shown; never wait forever
   startCalibLoop();
@@ -4254,6 +4264,14 @@ function stopCamera(){
 let handLandmarker = null;
 let handLandmarkerPromise = null;
 
+function isAppleTouchDevice(){
+  return /iPad|iPhone|iPod/.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+function interactionX(rawX){
+  return state.mirrorX ? (1 - rawX) : rawX;
+}
+
 async function ensureHandLandmarker(){
   if(handLandmarker) return handLandmarker;
   if(handLandmarkerPromise) return handLandmarkerPromise;
@@ -4263,17 +4281,25 @@ async function ensureHandLandmarker(){
     const vision = await FilesetResolver.forVisionTasks(
       "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
     );
-    handLandmarker = await HandLandmarker.createFromOptions(vision, {
+    const options = {
       baseOptions: {
         modelAssetPath: "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
-        delegate: "GPU"
+        delegate: isAppleTouchDevice() ? "CPU" : "GPU"
       },
       runningMode: "VIDEO",
       numHands: 1,
-      minHandDetectionConfidence: 0.30,
-      minHandPresenceConfidence: 0.25,
-      minTrackingConfidence: 0.25
-    });
+      minHandDetectionConfidence: 0.20,
+      minHandPresenceConfidence: 0.18,
+      minTrackingConfidence: 0.18
+    };
+    try{
+      handLandmarker = await HandLandmarker.createFromOptions(vision, options);
+    }catch(error){
+      handLandmarker = await HandLandmarker.createFromOptions(vision, {
+        ...options,
+        baseOptions:{...options.baseOptions, delegate:"CPU"}
+      });
+    }
     return handLandmarker;
   })();
   try{
@@ -4294,14 +4320,16 @@ function hasFiniteHandLandmarks(lm, indices){
 
 // 偵測食指尖位置，回傳 {detected, nx, ny}（nx/ny 已經鏡像處理，範圍 0-1）
 function detectWrist(videoEl){
-  if(!handLandmarker || videoEl.readyState < 2){
+  if(!videoEl || videoEl.readyState < 2){
     return { detected:false };
   }
-  let results;
-  try{
-    results = handLandmarker.detectForVideo(videoEl, performance.now()); // MediaPipe 需要真實時間戳
-  }catch(e){
-    return { detected:false };
+  let results = null;
+  if(handLandmarker){
+    try{
+      results = handLandmarker.detectForVideo(videoEl, nextTs('hand'));
+    }catch(e){
+      results = null;
+    }
   }
   if(results && results.landmarks && results.landmarks.length > 0){
     const lm = results.landmarks[0]; // 第一隻手
@@ -4310,7 +4338,9 @@ function detectWrist(videoEl){
       : isLevel4Tabletop()
         ? [0,5,9,13,17]
         : [0,2,4,5,8,9,12,13,16,17,20];
-    if(!hasFiniteHandLandmarks(lm, required)) return { detected:false };
+    if(!hasFiniteHandLandmarks(lm, required)){
+      results = null;
+    }else{
     // Cursor position
     const tip = lm[8]; // index finger tip = landmark 8 (reach mode)
     // palm center = average of landmarks 0,5,9,13,17
@@ -4321,18 +4351,38 @@ function detectWrist(videoEl){
       const pinch = computePinchState(lm, isGrasping);
       const midX = (lm[4].x + lm[8].x) / 2;
       const midY = (lm[4].y + lm[8].y) / 2;
-      return { detected:true, nx:1 - midX, ny:midY,
+      return { detected:true, nx:interactionX(midX), ny:midY,
         isGrasping:stabiliseDetectedGesture(pinch.isPinching, 'pinch'),
         graspScore:pinch.score, isOpenPrep:pinch.isSeparated, pinchRatio:pinch.ratio, lm };
     }
     const usePalmCursor = state.gameType === 'grasp' || isLevel4Tabletop();
-    const nx = usePalmCursor ? (1 - palmX) : (1 - tip.x);
+    const nx = interactionX(usePalmCursor ? palmX : tip.x);
     const ny = usePalmCursor ? palmY : tip.y;
     const grasp = computeGraspScore(lm, isGrasping);  // 傳入目前 state 以計算 hysteresis threshold
     return { detected:true, nx, ny,
       isGrasping:stabiliseDetectedGesture(grasp.isGrasping, 'grasp'),
       graspScore: grasp.score,
       isOpenPrep: !grasp.isGrasping, lm };
+    }
+  }
+  // Tabletop hands are often partly hidden by the table edge. For Level 4,
+  // retain playability by following the visible wrist from Pose Landmarker.
+  if(isLevel4Tabletop()){
+    const pose = detectPose(videoEl);
+    const wristIndex = activeAffectedSide() === 'left' ? 15 : 16;
+    const wrist = pose?.[wristIndex];
+    if(wrist && Number.isFinite(wrist.x) && Number.isFinite(wrist.y)
+      && (wrist.visibility == null || wrist.visibility >= 0.20)){
+      return {
+        detected:true,
+        nx:interactionX(wrist.x),
+        ny:wrist.y,
+        isGrasping:false,
+        isOpenPrep:true,
+        graspScore:0,
+        source:'pose-wrist'
+      };
+    }
   }
   return { detected:false };
 }
@@ -4344,60 +4394,31 @@ function computeGraspScore(lm, isGraspingPrev){
   if(!hasFiniteHandLandmarks(lm, [0,2,4,5,8,9,12,13,16,17,20])){
     return { isGrasping:false, score:0, valid:false };
   }
-  const wrist = lm[0];
-
-  // For each finger, measure how close tip is to palm (MCP base)
-  // Landmarks: thumb tip=4, index tip=8, middle tip=12, ring tip=16, pinky tip=20
-  // MCPs: thumb=2, index=5, middle=9, ring=13, pinky=17
-  function curl(tipIdx, mcpIdx){
-    const tip = lm[tipIdx], mcp = lm[mcpIdx], w = lm[0];
-    // distance from tip to wrist, normalized by distance from MCP to wrist
-    const tipDist = Math.hypot(tip.x-w.x, tip.y-w.y, tip.z-w.z);
-    const mcpDist = Math.hypot(mcp.x-w.x, mcp.y-w.y, mcp.z-w.z);
-    if(mcpDist < 0.001) return 0;
-    // curl ratio: lower means more curled (tip closer to wrist than MCP)
-    return Math.min(1, tipDist / mcpDist);
-  }
-
-  const thumbCurl = curl(4, 2);
-  const indexCurl = curl(8, 5);
-  const middleCurl = curl(12, 9);
-  const ringCurl = curl(16, 13);
-  const pinkyCurl = curl(20, 17);
-
-  // Hysteresis: 拿取時要求清楚屈曲；已拿住後則必須見到大部分主要手指
-  // 清楚伸直才視為放手。這比單一 threshold 更能抵抗中風手部姿勢及追蹤抖動。
-  const CURL_ENTER = 0.74;  // 必須有清楚屈曲才進入握拳，避免手指微彎便誤判拿取
-  const CURL_OPEN  = 0.86;  // 不要求接近正常的完全伸直；持續放手 dwell 仍會抑制誤觸
-
-  let isGrasping = false;
-  if(isGraspingPrev){
-    if(state.graspType === 'tripod'){
-      // tripod 已拿住後，三隻相關手指中至少兩隻清楚張開才放手
-      const open = [thumbCurl, indexCurl, middleCurl].filter(c => c >= CURL_OPEN).length;
-      isGrasping = open < 2;
-    } else {
-      // full / any：忽略較易抖動的拇指；四隻主要手指中至少三隻清楚張開才放手
-      const open = [indexCurl, middleCurl, ringCurl, pinkyCurl].filter(c => c >= CURL_OPEN).length;
-      isGrasping = open < 3;
-    }
-  } else if(state.graspType === 'full'){
-    // 四指中至少三指明顯屈曲
-    const curled = [indexCurl, middleCurl, ringCurl, pinkyCurl].filter(c => c < CURL_ENTER).length;
-    isGrasping = curled >= 3;
-  } else if(state.graspType === 'tripod'){
-    // thumb + index + middle: 3中任 2
-    const curled = [thumbCurl, indexCurl, middleCurl].filter(c => c < CURL_ENTER).length;
-    isGrasping = curled >= 2;
-  } else {
-    // any 仍要求至少兩指明顯屈曲，避免單一手指動作被當成真正握取
-    const curled = [thumbCurl, indexCurl, middleCurl, ringCurl, pinkyCurl].filter(c => c < CURL_ENTER).length;
-    isGrasping = curled >= 2;
-  }
-
-  // score: average curl of relevant fingers (1 = fully open, 0 = fully closed)
-  const avg = (indexCurl + middleCurl + ringCurl + pinkyCurl) / 4;
-  const score = 1 - avg;
+  const distance = (a,b)=>Math.hypot(a.x-b.x, a.y-b.y, (a.z-b.z) * 0.25);
+  const palmCenter = {
+    x:(lm[0].x + lm[5].x + lm[9].x + lm[13].x + lm[17].x) / 5,
+    y:(lm[0].y + lm[5].y + lm[9].y + lm[13].y + lm[17].y) / 5,
+    z:(lm[0].z + lm[5].z + lm[9].z + lm[13].z + lm[17].z) / 5,
+  };
+  const palmScale = Math.max(distance(lm[0], lm[9]), distance(lm[5], lm[17]), 0.001);
+  const mainFingerPairs = [[5,8],[9,12],[13,16],[17,20]];
+  const graspFingerPairs = [[2,4], ...mainFingerPairs];
+  const fingerExtensionRatios = mainFingerPairs.map(([mcp,tip]) =>
+    distance(lm[tip], lm[0]) / Math.max(distance(lm[mcp], lm[0]), 0.001)
+  );
+  const meanTipDistance = mainFingerPairs.map(([,tip]) => tip)
+    .map(index => distance(lm[index], palmCenter) / palmScale)
+    .reduce((sum,value)=>sum+value,0) / 4;
+  // Open fingers are far from the palm centre; a loose grasp moves the tips inward.
+  // Unlike the previous clamped wrist ratio, this remains different for open and closed hands.
+  const score = clamp01((1.72 - meanTipDistance) / 1.02);
+  const curledCount = graspFingerPairs.map(([mcp,tip]) =>
+    distance(lm[tip], lm[0]) / Math.max(distance(lm[mcp], lm[0]), 0.001)
+  ).filter(value => value <= 1.45).length;
+  const openCount = fingerExtensionRatios.filter(value => value >= 1.72).length;
+  // Enter only when at least two main fingers curl. Once holding, release when
+  // at least three visibly reopen; this tolerates one poorly tracked finger.
+  let isGrasping = isGraspingPrev ? openCount < 3 : curledCount >= 2;
   const graspThresholds = research.active ? research : state;
   const usePersonalGrasp = (!research.active || research.stratum === '5') &&
     Number.isFinite(graspThresholds.personalGraspEnter) &&
@@ -4513,18 +4534,35 @@ const calibCanvas = document.getElementById('calibOverlay');
 let calibDotEmaX = -1, calibDotEmaY = -1;
 let calibDetectedOnce = false;
 
+function applyMirrorMode(){
+  const transform = state.mirrorX ? 'scaleX(-1)' : 'none';
+  document.querySelectorAll('#calibVideo,#gameVideo').forEach(video => {
+    video.style.transform = transform;
+  });
+  // Overlay and game canvases use already-mapped interaction coordinates.
+  calibCanvas.style.transform = 'none';
+}
+document.getElementById('btnMirrorX').addEventListener('click', ()=>{
+  state.mirrorX = !state.mirrorX;
+  calibDotEmaX = -1;
+  calibDotEmaY = -1;
+  trackingPointHistory = [];
+  applyMirrorMode();
+});
+applyMirrorMode();
+
 function updateCalibrationCopy(){
   const hint = document.getElementById('calibHint');
   const openCheck = document.getElementById('calibOpenCheck');
   const closeCheck = document.getElementById('calibCloseCheck');
   if(isPinchMode()){
     hint.textContent = '手腕、拇指、食指入鏡。先張開，再輕捏。';
-    openCheck.textContent = '○ 張開兩指 2 秒';
-    closeCheck.textContent = '○ 輕捏 2 秒';
+    openCheck.textContent = '○ 張開兩指';
+    closeCheck.textContent = '○ 輕捏';
   }else if(state.gameType === 'grasp'){
     hint.textContent = '掌心向鏡頭。張到可達幅度，再輕合手。';
-    openCheck.textContent = '○ 張手 2 秒';
-    closeCheck.textContent = '○ 輕合手 2 秒';
+    openCheck.textContent = '○ 張手';
+    closeCheck.textContent = '○ 輕合手';
   }else{
     hint.textContent = '手掌／滑墊入鏡；見綠點即可。';
   }
@@ -4533,6 +4571,7 @@ function updateCalibrationCopy(){
 function startCalibLoop(){
   updateCalibrationCopy();
   const video = document.getElementById('calibVideo');
+  const hint = document.getElementById('calibHint');
   function loop(){
     if(!screens.calib.classList.contains('active')){ return; }
     const wrap = calibCanvas.parentElement;
@@ -4551,20 +4590,30 @@ function startCalibLoop(){
         const c = research.active ? research.calibration : state.calibration;
         const thresholds = research.active ? research : state;
         if(!c.detectedStart) c.detectedStart = now;
-        if(!c.detectedDone && now - c.detectedStart >= 2000) c.detectedDone = true;
+        if(!c.detectedDone && now - c.detectedStart >= 800) c.detectedDone = true;
         if(isGraspStyleMode()){
-          if(res.isGrasping){
-            c.openStart = 0;
-            const closedValue = isPinchMode() ? res.pinchRatio : res.graspScore;
-            if(Number.isFinite(closedValue)) c.closedScores.push(closedValue);
-            if(!c.closedStart) c.closedStart = now;
-            if(!c.closedDone && now - c.closedStart >= 2000) c.closedDone = true;
-          } else {
-            c.closedStart = 0;
-            const openValue = isPinchMode() ? res.pinchRatio : res.graspScore;
-            if(Number.isFinite(openValue)) c.openScores.push(openValue);
+          const value = isPinchMode() ? res.pinchRatio : res.graspScore;
+          if(!c.openDone){
+            if(Number.isFinite(value)) c.openScores.push(value);
             if(!c.openStart) c.openStart = now;
-            if(!c.openDone && now - c.openStart >= 2000) c.openDone = true;
+            if(now - c.openStart >= 1000){
+              c.openDone = true;
+              c.closedStart = 0;
+              hint.textContent = isPinchMode() ? '而家輕捏。' : '而家輕合手。';
+            }
+          }else if(!c.closedDone && Number.isFinite(value)){
+            const openMean = c.openScores.reduce((a,b)=>a+b,0) / Math.max(1,c.openScores.length);
+            const changedEnough = isPinchMode()
+              ? value <= openMean - 0.10
+              : value >= openMean + 0.08;
+            if(changedEnough){
+              c.closedScores.push(value);
+              if(!c.closedStart) c.closedStart = now;
+              if(now - c.closedStart >= 900) c.closedDone = true;
+            }else{
+              c.closedStart = 0;
+              c.closedScores = [];
+            }
           }
         } else {
           c.openDone = true; c.closedDone = true;
@@ -7202,14 +7251,25 @@ async function ensurePoseLandmarker(){
     const vision = await FilesetResolver.forVisionTasks(
       "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
     );
-    poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
+    const options = {
       baseOptions: {
         modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
-        delegate: "GPU"
+        delegate: isAppleTouchDevice() ? "CPU" : "GPU"
       },
       runningMode: "VIDEO",
-      numPoses: 1
-    });
+      numPoses: 1,
+      minPoseDetectionConfidence:0.25,
+      minPosePresenceConfidence:0.25,
+      minTrackingConfidence:0.25
+    };
+    try{
+      poseLandmarker = await PoseLandmarker.createFromOptions(vision, options);
+    }catch(error){
+      poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
+        ...options,
+        baseOptions:{...options.baseOptions, delegate:"CPU"}
+      });
+    }
     return poseLandmarker;
   })();
   try{
@@ -9948,7 +10008,10 @@ window.__qa = {
         const angle = index * Math.PI * 0.32;
         const ux = Math.cos(angle), uy = Math.sin(angle);
         lm[mcp] = {x:ux,y:uy,z:0};
-        lm[tip] = {x:ux * Number(values[index]),y:uy * Number(values[index]),z:0};
+        // Map the legacy 0.6–1.0 QA control to realistic wrist-normalized
+        // extension ratios: curled≈1.2, partly open≈1.55, open≈1.9.
+        const extension = 0.15 + 1.75 * Number(values[index]);
+        lm[tip] = {x:ux * extension,y:uy * extension,z:0};
       });
       const priorType = state.graspType;
       state.graspType = graspType;

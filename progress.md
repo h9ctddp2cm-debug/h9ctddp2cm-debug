@@ -630,3 +630,15 @@
 - 保留治療師全程監督、停止準則、Level 3 影子測試限制、私隱及臨床／技術限制，不以減字換取安全資訊缺失。
 - 回歸結果：Level 3 Data Collector + Sandbox **31/31**、Level 4–6 **120/120**、iPhone／iPad 版面 **7/7**；inline JavaScript 語法檢查通過。
 - 真實 iPad Safari 的鏡頭高度、向下傾角、病房光線、衣袖／桌面遮擋及患者手部姿勢仍需床邊驗證。
+
+## 2026-08-12：iPad 左右映射、桌面備援及握放校準修復
+
+- 修正普通模式校準畫面把鏡像影片及已映射 overlay 同時反轉的錯誤；現在影片只鏡像一次，綠點、遊戲座標及患者看到的方向一致，並保留「左右反轉」按鈕作真機例外處理。
+- 修正 Level 3 原本未鏡像相機、但方向選單仍預設為相反 X 軸符號的錯誤；相機、Pose landmarks、中央線及左右目標現在使用同一顯示座標。
+- Level 4 在桌面遮擋指尖或 Hand Landmarker 單幀失效時，新增患側 Pose wrist 備援；Hand 模型失敗不再阻止可用的 Pose 模式開始。
+- iPad／iPhone 預設使用 MediaPipe CPU delegate，其他裝置先試 GPU，失敗後亦會重試 CPU；Hand 及 Pose confidence 降至較適合桌面遮擋視角的保守門檻。
+- 修正 Level 5 舊 grasp score 因距離比例被 clamp 而令張手與屈曲手接近同分的問題；現在至少兩指屈曲才進入握取，至少三隻主要手指重新張開才放手，並保留患者當日個人化 threshold。
+- 修正 Level 5／6 校準的循環依賴：舊版要先通過未校準的通用手勢判定，才會收集 closed samples；新版先量度張手／張指基線，再以同一人的相對變化收集輕合手／輕捏數據。
+- Level 3 預設畫面移除研究參數、遙測、console、圖例及長篇 footer，只保留安全提示、相機、校準、Session 控制、目標、分數及一句動作提示；目標改成高對比圓形並使用「中央／向左／向右」。
+- 回歸結果：Level 3 **31/31**、Level 4–6 **120/120**、鏡像／CPU／Pose fallback／握放規則 **5/5**、iPhone／iPad 版面 **7/7**，inline JavaScript 及 `git diff --check` 通過。
+- 以上仍屬軟件與模擬驗證。真實 iPad 相機曝光、桌面遮擋、個別中風手姿勢及 Safari MediaPipe 行為，必須由同一部實機重新測試後才可判定是否真正解決。

@@ -884,3 +884,40 @@ footer {
 .camera-error .camera-error-detail{ font-size: .78rem; font-weight: 600; opacity: .8; }
 .camera-error-actions{ display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
 .camera-error-actions .button{ flex: 1 1 150px; }
+
+/* Default participant view: keep only the playable camera, score, guidance,
+   and essential session controls. Research fields remain in the DOM/export
+   pipeline but do not crowd the bedside screen. */
+.controls-panel > .panel-heading,
+.controls-panel > .form-grid,
+.controls-panel > .fatigue-panel,
+.controls-panel > fieldset,
+.controls-panel > label.field,
+#runSynthetic,
+#invalidateRep,
+.camera-heading .fps,
+.canvas-legend,
+.metrics-section > .section-heading,
+.metric-card:not(:last-child),
+.monitor-grid,
+.log-section{
+  display:none;
+}
+.topbar .eyebrow,
+.topbar .isolation-badge,
+details.safety-note{ display:none; }
+.topbar{ padding-block:14px 10px; }
+main{ padding-block:12px 28px; }
+.safety-note.critical{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  padding:12px 16px;
+}
+.safety-note.critical h2{ font-size:1rem; }
+.safety-note.critical p{ margin:0; }
+.diagnostic-grid{ margin-top:12px; }
+.metric-grid{ grid-template-columns:minmax(180px,320px); justify-content:center; }
+.metrics-section{ padding-block:12px; }
+.guidance{ margin:10px auto 0; max-width:760px; font-size:clamp(1rem,2vw,1.35rem); }
+footer{ display:none; }

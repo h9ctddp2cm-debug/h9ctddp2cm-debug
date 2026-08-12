@@ -407,7 +407,11 @@ function drawCanvas() {
   context.fillStyle = "#101715";
   context.fillRect(0, 0, width, height);
   if (cameraStream && elements.video.readyState >= 2) {
+    context.save();
+    context.translate(width, 0);
+    context.scale(-1, 1);
     context.drawImage(elements.video, 0, 0, width, height);
+    context.restore();
     context.fillStyle = "rgba(8, 20, 17, 0.2)";
     context.fillRect(0, 0, width, height);
   } else {
@@ -429,28 +433,32 @@ function drawCanvas() {
   context.moveTo(centerX, height * 0.08);
   context.lineTo(centerX, height * 0.94);
   context.stroke();
-  context.strokeStyle = "#f28b82";
-  context.setLineDash([12, 9]);
+  const targetY = height * 0.72;
+  context.fillStyle = "rgba(242, 139, 130, 0.28)";
+  context.strokeStyle = "#ff8d83";
+  context.lineWidth = 5;
   context.beginPath();
-  context.moveTo(targetX, height * 0.38);
-  context.lineTo(targetX, height * 0.94);
+  context.arc(targetX, targetY, 42, 0, Math.PI * 2);
+  context.fill();
   context.stroke();
-  context.setLineDash([]);
 
   const vcpX = lastOutput.metrics?.vcpX;
   const vcpY = lastOutput.metrics?.vcpY;
   if (Number.isFinite(vcpX) && Number.isFinite(vcpY)) {
-    context.fillStyle = "#ffffff";
+    context.fillStyle = "#00ffcc";
+    context.strokeStyle = "#10211d";
+    context.lineWidth = 4;
     context.beginPath();
-    context.arc(vcpX * width, vcpY * height, 12, 0, Math.PI * 2);
+    context.arc(vcpX * width, vcpY * height, 15, 0, Math.PI * 2);
     context.fill();
+    context.stroke();
   }
 
   context.fillStyle = "#ffffff";
-  context.font = "700 18px Satoshi, sans-serif";
-  context.textAlign = "left";
-  context.fillText(`CENTER ${format(engine.calibrationVcpXMedian)}`, Math.max(12, centerX + 10), 34);
-  context.fillText(`TARGET ${lastOutput.targetDirection}`, Math.max(12, Math.min(width - 160, targetX + 10)), height - 24);
+  context.font = "800 20px Satoshi, sans-serif";
+  context.textAlign = "center";
+  context.fillText("中央", centerX, 34);
+  context.fillText(lastOutput.targetDirection === "LEFT" ? "向左" : "向右", targetX, targetY + 7);
 }
 
 function updateFps(now) {
@@ -471,17 +479,19 @@ async function loadPoseLandmarker() {
   const vision = await visionBundle.FilesetResolver.forVisionTasks(
     "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm",
   );
+  const appleTouch = /iPad|iPhone|iPod/.test(navigator.userAgent)
+    || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   const options = {
     baseOptions: {
       // Tasks Vision equivalent of the legacy Pose solution's modelComplexity: 0.
       modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
-      delegate: "GPU",
+      delegate: appleTouch ? "CPU" : "GPU",
     },
     runningMode: "VIDEO",
     numPoses: 1,
-    minPoseDetectionConfidence: 0.5,
-    minPosePresenceConfidence: 0.5,
-    minTrackingConfidence: 0.5,
+    minPoseDetectionConfidence: 0.25,
+    minPosePresenceConfidence: 0.25,
+    minTrackingConfidence: 0.25,
   };
   try {
     poseLandmarker = await visionBundle.PoseLandmarker.createFromOptions(vision, options);
@@ -492,6 +502,11 @@ async function loadPoseLandmarker() {
     });
   }
   return poseLandmarker;
+}
+
+function mirrorPoseForDisplay(pose) {
+  if (!Array.isArray(pose)) return null;
+  return pose.map((point) => point ? { ...point, x: 1 - point.x } : point);
 }
 
 function cameraLoop(now) {
@@ -514,7 +529,7 @@ function cameraLoop(now) {
       return;
     }
     const result = poseLandmarker.detectForVideo(elements.video, now);
-    lastPose = result?.landmarks?.[0] || null;
+    lastPose = mirrorPoseForDisplay(result?.landmarks?.[0] || null);
     const worldPose = result?.worldLandmarks?.[0] || null;
     handleOutput(engine.update(lastPose, worldPose, !lastPose, now));
   } catch {

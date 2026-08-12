@@ -13,8 +13,7 @@
   <a class="skip-link" href="#main">跳到主要內容</a>
   <header class="topbar">
     <div>
-      <p class="eyebrow">Developer-only clinical diagnostics</p>
-      <h1>Level 3 雙側桌面滑動 Sandbox</h1>
+      <h1>Level 3 左右側滑</h1>
     </div>
     <div class="header-actions">
       <span class="isolation-badge" data-testid="status-isolation">與正式 Pilot Study 隔離</span>
@@ -30,13 +29,12 @@
       <ul class="gate-list">
         <li data-testid="text-l3-safety-stable">坐姿穩定</li>
         <li data-testid="text-l3-safety-support">毛巾必須跟手一同側滑；不互扣、不用力</li>
-        <li data-testid="text-l3-camera-angle">iPad 向下傾；肩、肘、手、路徑全入鏡</li>
+        <li data-testid="text-l3-camera-angle">鏡頭見到肩、肘、手及路徑</li>
         <li data-testid="text-l3-safety-trunk">軀幹保持正中；不可側彎、旋轉或向前傾</li>
         <li data-testid="text-l3-safety-baseline">先檢查痛、攰、手緊</li>
-        <li data-testid="text-l3-safety-practice">先試 3 次，無痛才開始</li>
+        <li data-testid="text-l3-safety-practice">先試 3 次</li>
         <li data-testid="text-l3-safety-rest">隨時休息／停止</li>
-        <li data-testid="text-l3-safety-quality">慢、穩、不追分</li>
-        <li data-testid="text-l3-safety-range">短距離；無痛、無代償</li>
+        <li data-testid="text-l3-safety-quality">慢、穩、短距離</li>
       </ul>
       <label class="gate-ack" for="safetyGateAck">
         <input type="checkbox" id="safetyGateAck" data-testid="checkbox-l3-safety-ack">
@@ -53,16 +51,8 @@
 
   <main id="main">
     <section class="safety-note critical" aria-labelledby="safety-red-title" data-testid="panel-level3-red-warning">
-      <div>
-        <p class="section-kicker">⬤ 安全警告</p>
-        <h2 id="safety-red-title">出現以下情況請立即停止</h2>
-      </div>
-      <ul class="red-warning-list">
-        <li>肩膊被拉扯／疼痛</li>
-        <li>患手愈來愈繃緊</li>
-        <li>軀幹向側傾斜／旋轉</li>
-      </ul>
-      <p><b>毛巾跟手側滑；軀幹正中；不需互扣。</b> 治療師監督，可隨時停止。</p>
+      <h2 id="safety-red-title">肩膊被拉扯／疼痛、患手愈來愈繃緊、軀幹向側傾斜：停止</h2>
+      <p><b>毛巾跟手側滑；軀幹正中。</b></p>
     </section>
 
     <details class="safety-note" aria-labelledby="safety-title">
@@ -211,24 +201,24 @@
         <label class="field">
           <span>患者左側的追蹤方向</span>
           <select id="directionMapping" data-testid="select-direction-mapping">
-            <option value="1" selected>X 增加</option>
-            <option value="-1">X 減少</option>
+            <option value="1">X 增加</option>
+            <option value="-1" selected>X 減少</option>
           </select>
           <small>按實際追蹤方向設定。</small>
         </label>
 
         <div class="session-controls" aria-label="Session controls">
-          <button id="startSession" class="button primary" type="button" data-testid="button-start-session">開始 Session</button>
-          <button id="pauseSession" class="button warning" type="button" disabled data-testid="button-pause-session">暫停 Session</button>
+          <button id="startSession" class="button primary" type="button" data-testid="button-start-session">開始</button>
+          <button id="pauseSession" class="button warning" type="button" disabled data-testid="button-pause-session">暫停</button>
           <button id="invalidateRep" class="button danger" type="button" disabled data-testid="button-invalidate-rep">作廢目前 Rep</button>
-          <button id="endSession" class="button secondary" type="button" disabled data-testid="button-end-session">結束 Session</button>
+          <button id="endSession" class="button secondary" type="button" disabled data-testid="button-end-session">結束</button>
         </div>
         <p id="sessionControlStatus" class="inline-status" data-testid="status-session" aria-live="polite">請先確認設定並開始 Session。</p>
 
-        <button id="startCamera" class="button primary" type="button" data-testid="button-start-camera">啟動相機與 MediaPipe</button>
-        <button id="beginCalibration" class="button warning" type="button" data-testid="button-begin-calibration">開始／重新校準</button>
-        <button id="runSynthetic" class="button secondary" type="button" data-testid="button-run-synthetic">執行合成完整循環</button>
-        <p id="cameraStatus" class="inline-status" data-testid="status-camera" aria-live="polite">相機尚未啟動；可先執行合成循環測試。</p>
+        <button id="startCamera" class="button primary" type="button" data-testid="button-start-camera">開相機</button>
+        <button id="beginCalibration" class="button warning" type="button" data-testid="button-begin-calibration">校準</button>
+        <button id="runSynthetic" class="button secondary" type="button" data-testid="button-run-synthetic">測試</button>
+        <p id="cameraStatus" class="inline-status" data-testid="status-camera" aria-live="polite">先開相機。</p>
         <div class="camera-error" id="cameraErrorBox" role="alert" aria-live="assertive"
           data-testid="panel-l3-camera-error">
           <h3 data-testid="text-l3-camera-error-title">未能啟動相機</h3>
@@ -246,8 +236,7 @@
       <section class="panel camera-panel" aria-labelledby="camera-title">
         <div class="camera-heading">
           <div>
-            <p class="section-kicker">Raw tracking coordinates</p>
-            <h2 id="camera-title">視訊、VCP 與校準邊界</h2>
+            <h2 id="camera-title">Level 3 左右側滑</h2>
           </div>
           <span class="fps" id="fpsValue" data-testid="text-fps">FPS --</span>
         </div>
