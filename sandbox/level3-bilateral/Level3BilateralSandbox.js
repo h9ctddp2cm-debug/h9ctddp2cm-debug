@@ -125,7 +125,7 @@ export class Level3BilateralSandbox {
     this.returnTriggeredByRelease = false;
     this.score = 0;
     this.lastMetrics = null;
-    this.lastMessage = "前臂承托，不需互扣；伸肘承重，肩向後及外旋；毛巾跟手側滑，軀幹保持正中。";
+    this.lastMessage = "前臂承托，不需互扣；肩外展向患側外滑，手肘按能力保持或逐步伸直；毛巾跟手側滑，軀幹保持正中。";
     this.lastAction = "RESET";
     this.movementQualitySince = new Map();
   }
@@ -374,7 +374,7 @@ export class Level3BilateralSandbox {
           this.isObjectVisible = true;
           this.resetTimer();
           return this.output({
-            message: "校準成功；保持伸肘承重、肩向後及外旋方向",
+            message: "校準成功；肩外展向患側外滑，手肘按能力保持或逐步伸直",
             action: "CALIBRATION_SUCCESS",
             nowMs,
             metrics,
@@ -453,7 +453,7 @@ export class Level3BilateralSandbox {
     )) {
       this.resetTimer();
       return this.output({
-        message: "治療師請即時檢查：手腕向內偏移，留意肩屈曲／內旋代償",
+        message: "治療師請即時檢查：手腕向內偏移，留意是否偏離外滑路徑或出現軀幹代償",
         action: "MEDIAL_ARM_PATTERN_WARNING",
         nowMs,
         metrics,
@@ -505,7 +505,7 @@ export class Level3BilateralSandbox {
         }
         return this.output({
           message: handAction === "CLOSED"
-            ? "中央準備：伸肘承重，肩向後及外旋方向"
+            ? "中央準備：肩外展向患側外滑，手肘按能力保持或逐步伸直"
             : "重新承托患手，保持手肘伸直",
           action: "WAITING_AT_CENTER",
           nowMs,

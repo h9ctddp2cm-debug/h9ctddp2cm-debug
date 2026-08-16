@@ -169,14 +169,88 @@ test('critical test IDs and safety hooks preserved', async (t) => {
       const ids = [
         'gif-level-3', 'gif-level-4',
         'gif-level-6-clothes-peg', 'gif-level-6-chopsticks',
+        'button-trial-therapist-3', 'button-trial-patient-3',
+        'button-trial-therapist-4', 'button-trial-patient-4',
+        'button-trial-therapist-5', 'button-trial-patient-5',
+        'button-trial-therapist-67', 'button-trial-patient-67',
         'panel-safety-pause', 'panel-stop-confirm', 'panel-compensation',
         'button-game-rest', 'button-game-stop', 'button-pilot-rest-resume',
         'button-compensation-observe',
+        'indicator-trial-mode',
+        'indicator-silent-recording', 'panel-movement-review',
+        'video-movement-review', 'button-download-movement-video',
+        'button-delete-movement-video',
       ];
       return ids.filter(id => !document.querySelector(`[data-testid="${id}"]`));
     });
     assert.deepEqual(found, [], `missing test IDs: ${found.join(', ')}`);
   });
+});
+
+test('every FTHUE level offers therapist and patient trials with accessible controls', async (t) => {
+  if (!browser) return t.skip('playwright unavailable');
+  for (const vp of VIEWPORTS) {
+    await withPage(vp, async (page) => {
+      const controls = await page.evaluate(() => (
+        [...document.querySelectorAll('[data-trial-level][data-trial-audience]')].map(button => {
+          const rect = button.getBoundingClientRect();
+          return {
+            level: button.dataset.trialLevel,
+            audience: button.dataset.trialAudience,
+            label: button.textContent.trim(),
+            aria: button.getAttribute('aria-label') || '',
+            width: rect.width,
+            height: rect.height,
+          };
+        })
+      ));
+      assert.equal(controls.length, 8, `${vp.name}: four levels should each have two trial controls`);
+      for (const level of ['3', '4', '5', '67']) {
+        assert.deepEqual(
+          controls.filter(control => control.level === level).map(control => control.audience).sort(),
+          ['patient', 'therapist'],
+          `${vp.name}: Level ${level} should provide both audiences`
+        );
+      }
+      for (const control of controls) {
+        assert.ok(control.aria.includes('不錄影'), `${vp.name}: trial aria label states no recording`);
+        assert.ok(control.width >= 44 && control.height >= 44,
+          `${vp.name}: ${control.level}/${control.audience} remains a 44px touch target`);
+      }
+    });
+  }
+});
+
+test('trial entry is visibly identified and bypasses recording/review code paths', async (t) => {
+  assert.match(PAGE_SOURCE, /function beginTrial\(levelId, audience\)/);
+  assert.match(PAGE_SOURCE, /trial:'1',[\s\S]*?audience:state\.trialAudience/);
+  assert.match(PAGE_SOURCE, /selectLevel\(levelId\);[\s\S]*?治療師試玩[\s\S]*?病人試玩[\s\S]*?不錄影/);
+  assert.match(PAGE_SOURCE, /if\(isTrialMode\(\)\)\{[\s\S]*?clearMovementRecording\(\);[\s\S]*?trialModeIndicator[\s\S]*?classList\.add\('show'\)/);
+  assert.match(PAGE_SOURCE, /if\(isTrialMode\(\)\)\{[\s\S]*?clearMovementRecording\(\);[\s\S]*?stopCamera\(\);[\s\S]*?\}else\{[\s\S]*?stopMovementRecording\(true\)/);
+
+  if (!browser) return t.skip('playwright unavailable');
+  await withPage(VIEWPORTS[1], async (page) => {
+    await page.locator('[data-testid="button-trial-patient-5"]').click();
+    await page.waitForSelector('#screen-library.active');
+    const visibleState = await page.evaluate(() => ({
+      label: document.getElementById('libraryLevelLabel')?.textContent.trim(),
+      active: document.getElementById('screen-library')?.classList.contains('active'),
+    }));
+    assert.equal(visibleState.active, true);
+    assert.match(visibleState.label, /FTHUE Level 5.*病人試玩.*不錄影/);
+  });
+});
+
+test('live camera is bright and movement recording is local, silent and downloadable', () => {
+  assert.match(PAGE_SOURCE, /#screen-game\{\s*padding:0;\s*background:#eef3f1/);
+  assert.match(PAGE_SOURCE, /\.game-stage video\{[\s\S]*?object-fit:cover;[\s\S]*?opacity:1;/);
+  assert.match(PAGE_SOURCE, /new MediaRecorder\(state\.stream/);
+  assert.match(PAGE_SOURCE, /videoBitsPerSecond:\s*650000/);
+  assert.match(PAGE_SOURCE, /navigator\.share/);
+  assert.match(PAGE_SOURCE, /link\.download\s*=\s*filename/);
+  assert.match(PAGE_SOURCE, /URL\.revokeObjectURL/);
+  assert.match(PAGE_SOURCE, /audio:\s*false/);
+  assert.doesNotMatch(PAGE_SOURCE, /movementRecording[\s\S]{0,120}(localStorage|sessionStorage|indexedDB)/);
 });
 
 test('participant flows skip the standalone safety interstitial for every level', () => {
@@ -194,7 +268,7 @@ test('participant flows skip the standalone safety interstitial for every level'
   );
 
   assert.doesNotMatch(level3Flow, /openSafetyGate/);
-  assert.match(level3Flow, /level3-bilateral\/index\.html\?safetyAck=1/);
+  assert.match(level3Flow, /level3-bilateral\/\?safetyAck=1/);
   assert.doesNotMatch(calibrationFlow, /openSafetyGate/);
   assert.match(calibrationFlow, /await enterCalibrationFlow\(\)/);
   assert.doesNotMatch(retryFlow, /openSafetyGate/);

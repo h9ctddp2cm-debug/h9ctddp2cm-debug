@@ -171,11 +171,9 @@ function updateMetrics(output) {
 
   elements.stateValue.textContent = output.state;
   elements.actionValue.textContent = output.action;
-  elements.guidance.textContent = output.message;
-  elements.guidance.classList.toggle(
-    "movement-warning",
-    MOVEMENT_QUALITY_WARNING_ACTIONS.has(output.action),
-  );
+  const isMovementWarning = MOVEMENT_QUALITY_WARNING_ACTIONS.has(output.action);
+  elements.guidance.textContent = isMovementWarning ? "請即時糾正姿勢" : "";
+  elements.guidance.classList.toggle("movement-warning", isMovementWarning);
   elements.scoreValue.textContent = String(output.score);
   elements.directionValue.textContent = `目前向${output.targetDirection === "LEFT" ? "左" : "右"}；首次患側 ${engine.affectedSide}`;
   elements.vcpValue.textContent = `${format(metrics?.vcpX)} / ${format(engine.calibrationVcpXMedian)} / ±${format(engine.dynamicVcpTolerance)}`;
@@ -674,7 +672,7 @@ async function startCameraFlow() {
     });
     elements.video.srcObject = cameraStream;
     await elements.video.play();
-    elements.cameraStatus.textContent = "Pose Lite 已啟動（最高 1280×720、每兩幀推論一次）。請把 iPad 稍為向下傾，畫面須見到肩、手肘、雙手及整段側滑路徑。";
+    elements.cameraStatus.textContent = "鏡頭對準";
     if (animationFrameId) cancelAnimationFrame(animationFrameId);
     animationFrameId = requestAnimationFrame(cameraLoop);
     return true;
@@ -687,11 +685,22 @@ async function startCameraFlow() {
   }
 }
 
-// A parent-page acknowledgement (?safetyAck=1) pre-fills the checkbox but the
-// therapist must still confirm explicitly on this page.
-if (new URLSearchParams(window.location.search).get("safetyAck") === "1") {
+// The parent-page route carries ?safetyAck=1 so participant and trial flows
+// skip this duplicated interstitial. In-game stop and supervision prompts remain.
+const launchParams = new URLSearchParams(window.location.search);
+if (launchParams.get("trial") === "1") {
+  const trialBadge = document.getElementById("trialModeBadge");
+  const audience = launchParams.get("audience") === "therapist" ? "治療師" : "病人";
+  if (trialBadge) {
+    trialBadge.hidden = false;
+    trialBadge.textContent = `${audience}試玩 · 不錄影`;
+  }
+  document.body.dataset.sessionMode = "trial";
+}
+if (launchParams.get("safetyAck") === "1") {
   elements.safetyGateAck.checked = true;
   elements.safetyGateContinue.disabled = false;
+  closeSafetyGate();
 }
 
 elements.startCamera.addEventListener("click", () => { startCameraFlow(); });

@@ -165,6 +165,7 @@ h2 {
 }
 
 .isolation-badge,
+.trial-badge,
 .tracking-badge,
 .fps {
   padding: 7px 11px;
@@ -173,6 +174,15 @@ h2 {
   color: var(--warning);
   font-size: 12px;
   font-weight: 700;
+}
+
+.trial-badge {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.trial-badge[hidden] {
+  display: none;
 }
 
 .tracking-badge.stable {
@@ -200,6 +210,22 @@ main {
   border: 1px solid var(--warning);
   border-radius: 12px;
   background: var(--warning-soft);
+}
+
+.movement-alert-bar {
+  display: none;
+}
+
+.movement-alert-bar.movement-alert-active {
+  display: grid;
+}
+
+.compact-status:empty {
+  display: none;
+}
+
+.guidance:empty {
+  display: none;
 }
 
 .diagnostic-grid {

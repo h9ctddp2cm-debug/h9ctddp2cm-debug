@@ -16,6 +16,7 @@
       <h1>Level 3 左右側滑</h1>
     </div>
     <div class="header-actions">
+      <span class="trial-badge" id="trialModeBadge" data-testid="indicator-level3-trial" hidden>試玩模式 · 不錄影</span>
       <span class="isolation-badge" data-testid="status-isolation">與正式 Pilot Study 隔離</span>
       <button class="icon-button" type="button" id="themeToggle" data-testid="button-theme" aria-label="切換深色模式">◐</button>
     </div>
@@ -44,10 +45,10 @@
   </div>
 
   <main id="main">
-    <section id="movementAlertBar" class="safety-note critical" aria-labelledby="safety-red-title"
+    <section id="movementAlertBar" class="safety-note critical movement-alert-bar" aria-labelledby="safety-red-title"
       data-testid="panel-level3-red-warning">
       <h2 id="safety-red-title" data-testid="text-level3-live-warning">肩膊被拉扯／疼痛、患手愈來愈繃緊、軀幹向側傾斜：停止</h2>
-      <p><b>伸肘承重；避免肩屈曲、內旋、左右不對稱。</b></p>
+      <p><b>肩外展向患側外滑；手肘按能力保持或逐步伸直，身體保持正中。</b></p>
     </section>
 
     <details class="safety-note" aria-labelledby="safety-title">
@@ -208,12 +209,12 @@
           <button id="invalidateRep" class="button danger" type="button" disabled data-testid="button-invalidate-rep">作廢目前 Rep</button>
           <button id="endSession" class="button secondary" type="button" disabled data-testid="button-end-session">結束</button>
         </div>
-        <p id="sessionControlStatus" class="inline-status" data-testid="status-session" aria-live="polite">請先確認設定並開始 Session。</p>
+        <p id="sessionControlStatus" class="inline-status compact-status" data-testid="status-session" aria-live="polite"></p>
 
         <button id="startCamera" class="button primary" type="button" data-testid="button-start-camera">開相機</button>
         <button id="beginCalibration" class="button warning" type="button" data-testid="button-begin-calibration">校準</button>
         <button id="runSynthetic" class="button secondary" type="button" data-testid="button-run-synthetic">測試</button>
-        <p id="cameraStatus" class="inline-status" data-testid="status-camera" aria-live="polite">先開相機。</p>
+        <p id="cameraStatus" class="inline-status" data-testid="status-camera" aria-live="polite">鏡頭對準</p>
         <div class="camera-error" id="cameraErrorBox" role="alert" aria-live="assertive"
           data-testid="panel-l3-camera-error">
           <h3 data-testid="text-l3-camera-error-title">未能啟動相機</h3>
@@ -305,7 +306,7 @@
         </article>
       </div>
 
-      <p id="guidance" class="guidance" data-testid="text-guidance" aria-live="assertive">伸肘承重；肩向後及外旋方向；軀幹正中</p>
+      <p id="guidance" class="guidance" data-testid="text-guidance" aria-live="assertive"></p>
     </section>
 
     <section class="log-section" aria-labelledby="cognitive-title">

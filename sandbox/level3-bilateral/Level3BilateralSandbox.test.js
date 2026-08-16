@@ -165,7 +165,7 @@ test("sustained elbow flexion pauses progression and asks for therapist review",
   assert.match(output.message, /治療師請即時檢查/);
 });
 
-test("sustained inward wrist drift asks the therapist to check flexion and internal-rotation compensation", () => {
+test("sustained inward wrist drift asks the therapist to check lateral-path and trunk compensation", () => {
   const { engine, clock } = calibratedEngine();
   let output = null;
   for (let i = 0; i < 12; i += 1) {
@@ -181,7 +181,7 @@ test("sustained inward wrist drift asks the therapist to check flexion and inter
     clock.value += 50;
   }
   assert.equal(output.action, "MEDIAL_ARM_PATTERN_WARNING");
-  assert.match(output.message, /肩屈曲／內旋代償/);
+  assert.match(output.message, /偏離外滑路徑或出現軀幹代償/);
 });
 
 test("missing elbow landmarks do not break the existing tabletop tracking path", () => {
@@ -315,11 +315,14 @@ test("Level 3 page shows a prominent red stop warning before use", () => {
   assert.ok(pageSource.includes("影子測試"), "supervised shadow-testing warning must be kept");
 });
 
-test("Level 3 instructions prioritise extension, ER direction and midline trunk control", () => {
-  assert.match(pageSource, /伸肘承重/);
-  assert.match(pageSource, /肩向後及外旋方向/);
-  assert.match(pageSource, /肩屈曲、內旋、左右不對稱/);
+test("Level 3 instructions prioritise shoulder abduction, optional elbow extension and midline trunk control", () => {
+  assert.match(pageSource, /肩外展向患側外滑/);
+  assert.match(pageSource, /手肘按能力保持或逐步伸直/);
+  assert.doesNotMatch(pageSource, /外旋|內旋/);
   const engine = new Level3BilateralSandbox();
+  assert.match(engine.lastMessage, /肩外展向患側外滑/);
+  assert.match(engine.lastMessage, /手肘按能力保持或逐步伸直/);
+  assert.doesNotMatch(engine.lastMessage, /外旋|內旋/);
   assert.match(engine.lastMessage, /毛巾跟手側滑/);
   assert.match(engine.lastMessage, /軀幹保持正中/);
 });
@@ -345,6 +348,7 @@ test("Level 3 page gates camera and session behind an explicit acknowledgement",
   assert.match(appSource, /function requireSafetyAck/);
   assert.match(appSource, /requireSafetyAck\("啟動相機"\)/);
   assert.match(appSource, /requireSafetyAck\("開始 Session"\)/);
+  assert.match(appSource, /launchParams\.get\("safetyAck"\) === "1"[\s\S]*closeSafetyGate\(\)/);
 });
 
 test("camera failures surface an in-page error with retry and return", () => {
