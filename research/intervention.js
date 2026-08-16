@@ -19,13 +19,18 @@
 
   var F = {
     participantId: '', group: '', session: '1', datetime: RC.nowLocalInput(), therapistCode: '',
-    fthue: '', affectedSide: '', deliveryType: '', scenario: '', tool: '', difficulty: '',
+    fthue: '', fthuePost: '', gripPreKg: '', gripPostKg: '', pinchPreKg: '', pinchPostKg: '',
+    affectedSide: '', deliveryType: '', scenario: '', tool: '', difficulty: '',
     conventional: '', plannedMin: 15, activeSec: '', correct: '', wrong: '', drops: '',
+    singleMotorRate: '', dualMotorRate: '', singleCognitiveAccuracy: '', dualCognitiveAccuracy: '',
+    shoulderHiking: '', trunkLean: '', fingerTightening: '', painCount: '',
     assistance: 'unobserved', trunk: 'unobserved', painPre: '', painPost: '', fatiguePre: '', fatiguePost: '',
     patientDifficulty: '', patientMotivation: '', acceptability: '', movementQuality: '', setupMin: '', therapistComment: '',
     techFailure: '', interrupted: '', techDetail: '', adverseEvent: '', aeSerious: '', aeRelated: '', aeDetail: '', deviation: '', deviationDetail: '',
     completion: '', fidelity: {}, safetyConfirmed: false, autoSource: '',
-    score: '', grabs: '', pauseCount: '', trackingLossSec: '', technicalFailures: ''
+    score: '', grabs: '', pauseCount: '', trackingLossSec: '', technicalFailures: '',
+    trackingFailures: '', holdTimeouts: '', releaseDelays: '',
+    recordingStatus: '', recordingBytes: '', recordingMime: ''
   };
   var rest = new RC.RestLogger();
   var sessions = [];
@@ -33,15 +38,22 @@
   var restTick = null;
   var timer = { running: false, startMs: 0, acc: 0 };
   var uiStep = 1;
+  var importedSessions = [];
   var STEP_NAMES = ['病人及節數', '今節數據', '完成及下載'];
 
   var MAP = [
     ['#inpParticipantId', 'participantId'], ['#selGroup', 'group'], ['#selSession', 'session'],
     ['#inpSessionDatetime', 'datetime'], ['#inpTherapistCode', 'therapistCode'], ['#selFthue', 'fthue'],
+    ['#selFthuePost', 'fthuePost'], ['#inpGripPre', 'gripPreKg'], ['#inpGripPost', 'gripPostKg'],
+    ['#inpPinchPre', 'pinchPreKg'], ['#inpPinchPost', 'pinchPostKg'],
     ['#selAffectedSide', 'affectedSide'], ['#selDeliveryType', 'deliveryType'], ['#selScenario', 'scenario'],
     ['#selTool', 'tool'], ['#selDifficulty', 'difficulty'], ['#inpConventional', 'conventional'],
     ['#inpPlannedMin', 'plannedMin'], ['#inpActiveSec', 'activeSec'], ['#inpCorrect', 'correct'],
-    ['#inpWrong', 'wrong'], ['#inpDrops', 'drops'], ['#selAssistance', 'assistance'], ['#selTrunk', 'trunk'],
+    ['#inpWrong', 'wrong'], ['#inpDrops', 'drops'], ['#inpSingleMotorRate', 'singleMotorRate'],
+    ['#inpDualMotorRate', 'dualMotorRate'], ['#inpSingleCognitiveAccuracy', 'singleCognitiveAccuracy'],
+    ['#inpDualCognitiveAccuracy', 'dualCognitiveAccuracy'], ['#inpShoulderHiking', 'shoulderHiking'],
+    ['#inpTrunkLean', 'trunkLean'], ['#inpFingerTightening', 'fingerTightening'], ['#inpPainCount', 'painCount'],
+    ['#selAssistance', 'assistance'], ['#selTrunk', 'trunk'],
     ['#inpPainPre', 'painPre'], ['#inpPainPost', 'painPost'], ['#inpFatiguePre', 'fatiguePre'],
       ['#inpFatiguePost', 'fatiguePost'], ['#selPatientDifficulty', 'patientDifficulty'],
     ['#selPatientMotivation', 'patientMotivation'], ['#selAcceptability', 'acceptability'], ['#selMovementQuality', 'movementQuality'],
@@ -52,7 +64,7 @@
     ['#inpDeviationDetail', 'deviationDetail'], ['#selCompletion', 'completion']
   ];
 
-  function markDirty() { dirty = true; renderStatus(); renderAuto(); }
+  function markDirty() { dirty = true; renderStatus(); renderAuto(); renderTaskMetrics(); renderTrend(); }
   function renderStatus() {
     var el = $('#statusDownload');
     el.className = 'rs-status-pill ' + (dirty ? 'rs-status-pending' : 'rs-status-done');
@@ -66,6 +78,7 @@
       if (c) c.checked = !!F.fidelity[f[0]];
     });
     renderFidelityScore(); renderAuto(); renderRest(); renderGroupFlow(); renderAutoSummary();
+    renderTaskMetrics(); renderSystemMetrics(); renderTrend();
   }
   function bind() {
     MAP.forEach(function (m) {
@@ -102,6 +115,7 @@
     $('#btnFinishDownload').addEventListener('click', function () {
       if (addSession()) downloadSessions();
     });
+    $('#inpPreviousCsv').addEventListener('change', importPreviousCsvFile);
   }
   function showBlocker(msg) {
     $('#interventionBlocker').innerHTML = msg ? '<div class="rs-note rs-note-danger"><span class="rs-note-icon">✖</span><span>' + RC.esc(msg) + '</span></div>' : '';
@@ -295,11 +309,51 @@
     panel.classList.toggle('rs-hidden', !isAuto);
     if (!isAuto) return;
     $('#autoGameMetrics').textContent =
-      '時間 ' + (F.activeSec || 0) + ' 秒　·　正確 ' + (F.correct || 0) +
-      '　·　錯誤 ' + (F.wrong || 0) + '　·　跌落 ' + (F.drops || 0);
+      '時間 ' + displayValue(F.activeSec, ' 秒') + '　·　正確 ' + displayValue(F.correct) +
+      '　·　錯誤 ' + displayValue(F.wrong) + '　·　跌落 ' + displayValue(F.drops);
     ['#inpActiveSec', '#inpCorrect', '#inpWrong', '#inpDrops'].forEach(function (selector) {
       $(selector).readOnly = true;
     });
+  }
+  function displayValue(value, suffix) {
+    return value === '' || value === null || value === undefined ? '—' : String(value) + (suffix || '');
+  }
+  function taskMetrics(values) {
+    values = values || F;
+    return {
+      motor_dtc_pct: RC.dtc(values.singleMotorRate, values.dualMotorRate),
+      cognitive_accuracy_dtc_pct: RC.dtc(values.singleCognitiveAccuracy, values.dualCognitiveAccuracy)
+    };
+  }
+  function dtcText(label, singleLabel, single, dual, value) {
+    var formula = label + ' = (' + singleLabel + ' − 雙重任務) ÷ ' + singleLabel + ' × 100';
+    var raw = '；raw：' + displayValue(single) + ' → ' + displayValue(dual);
+    return value === null ? formula + raw + '；不可計算' : formula + raw + ' = ' + value + '%';
+  }
+  function renderTaskMetrics() {
+    var metrics = taskMetrics();
+    $('#motorDtcText').textContent = dtcText('Motor DTC', '單一動作正確／分鐘',
+      F.singleMotorRate, F.dualMotorRate, metrics.motor_dtc_pct);
+    $('#cognitiveDtcText').textContent = dtcText('Cognitive Accuracy DTC', '單一認知正確率',
+      F.singleCognitiveAccuracy, F.dualCognitiveAccuracy, metrics.cognitive_accuracy_dtc_pct);
+  }
+  function recordingFileText() {
+    var bytes = displayValue(F.recordingBytes, F.recordingBytes === '' ? '' : ' bytes');
+    var mime = displayValue(F.recordingMime);
+    return bytes === '—' && mime === '—' ? '—' : bytes + ' · ' + mime;
+  }
+  function renderSystemMetrics() {
+    var hasSystemData = F.autoSource === 'game-result' || [
+      F.trackingLossSec, F.trackingFailures, F.holdTimeouts, F.releaseDelays,
+      F.recordingStatus, F.recordingBytes, F.recordingMime
+    ].some(function (v) { return v !== ''; });
+    $('#systemMetricsPanel').classList.toggle('rs-hidden', !hasSystemData);
+    $('#outTrackingLoss').textContent = displayValue(F.trackingLossSec, F.trackingLossSec === '' ? '' : ' 秒');
+    $('#outTrackingFailures').textContent = displayValue(F.trackingFailures);
+    $('#outHoldTimeouts').textContent = displayValue(F.holdTimeouts);
+    $('#outReleaseDelays').textContent = displayValue(F.releaseDelays);
+    $('#outRecordingStatus').textContent = displayValue(F.recordingStatus);
+    $('#outRecordingFile').textContent = recordingFileText();
   }
   function symptomText(v) {
     return ({ none: '無', mild: '少少', moderate: '幾', severe: '好', unable: '未能可靠回答' })[v] || '—';
@@ -325,6 +379,12 @@
       session_datetime: F.datetime,
       therapist_code: F.therapistCode,
       fthue_level: F.fthue,
+      fthue_level_pre: F.fthue,
+      fthue_level_post: F.fthuePost,
+      grip_power_pre_kg: F.gripPreKg,
+      grip_power_post_kg: F.gripPostKg,
+      pinch_power_pre_kg: F.pinchPreKg,
+      pinch_power_post_kg: F.pinchPostKg,
       affected_side: F.affectedSide,
       delivery_type: F.deliveryType,
       chosen_scenario: F.scenario,
@@ -344,8 +404,26 @@
       game_pause_count: F.pauseCount,
       game_tracking_loss_sec: F.trackingLossSec,
       game_technical_failures: F.technicalFailures,
+      system_tracking_failure_count: F.trackingFailures,
+      system_hold_timeout_count: F.holdTimeouts,
+      system_release_delay_count: F.releaseDelays,
+      recording_status: F.recordingStatus,
+      recording_bytes: F.recordingBytes,
+      recording_mime: F.recordingMime,
       objective_data_source: F.autoSource || 'manual',
       correct_per_min: RC.perMinute(F.correct, F.activeSec),
+      single_task_motor_correct_per_min: F.singleMotorRate,
+      dual_task_motor_correct_per_min: F.dualMotorRate,
+      motor_dtc_pct: taskMetrics().motor_dtc_pct === null ? '' : taskMetrics().motor_dtc_pct,
+      motor_dtc_formula: '(single_motor_correct_per_min-dual_motor_correct_per_min)/single_motor_correct_per_min*100',
+      single_task_cognitive_accuracy_pct: F.singleCognitiveAccuracy,
+      dual_task_cognitive_accuracy_pct: F.dualCognitiveAccuracy,
+      cognitive_accuracy_dtc_pct: taskMetrics().cognitive_accuracy_dtc_pct === null ? '' : taskMetrics().cognitive_accuracy_dtc_pct,
+      cognitive_accuracy_dtc_formula: '(single_cognitive_accuracy_pct-dual_cognitive_accuracy_pct)/single_cognitive_accuracy_pct*100',
+      therapist_confirmed_shoulder_hiking_count: F.shoulderHiking,
+      therapist_confirmed_trunk_lean_count: F.trunkLean,
+      therapist_confirmed_finger_tightening_count: F.fingerTightening,
+      therapist_confirmed_pain_count: F.painCount,
       assistance: F.assistance, trunk_compensation: F.trunk,
       symptom_rating_method: 'verbal_4_or_unable',
       pain_pre: F.painPre, pain_post: F.painPost,
@@ -418,6 +496,150 @@
     feedback('已下載 <b>' + RC.esc(name) + '</b>。');
   }
 
+  /* Exploratory cross-session comparison. Imported CSV rows stay only in this
+     page's memory; nothing is persisted or sent to a server. */
+  function firstPresent(row, keys) {
+    var i, key, value;
+    for (i = 0; i < keys.length; i++) {
+      key = keys[i];
+      value = row[key];
+      if (value !== undefined && value !== null && String(value).trim() !== '') return String(value).trim();
+    }
+    return '';
+  }
+  function importedSessionRow(row) {
+    return {
+      participant_id: firstPresent(row, ['participant_id', 'participantId', 'participant']),
+      session: firstPresent(row, ['session', 'session_no', 'session_number']),
+      session_datetime: firstPresent(row, ['session_datetime', 'datetime', 'recorded_at']),
+      recorded_at: firstPresent(row, ['recorded_at', 'session_datetime', 'datetime']),
+      therapist_confirmed_shoulder_hiking_count: firstPresent(row, ['therapist_confirmed_shoulder_hiking_count', 'shoulder_hiking_count', 'shoulder_hiking']),
+      therapist_confirmed_trunk_lean_count: firstPresent(row, ['therapist_confirmed_trunk_lean_count', 'trunk_lean_count', 'trunk_lean']),
+      therapist_confirmed_finger_tightening_count: firstPresent(row, ['therapist_confirmed_finger_tightening_count', 'finger_tightening_count', 'finger_tightening']),
+      therapist_confirmed_pain_count: firstPresent(row, ['therapist_confirmed_pain_count', 'pain_count', 'pain']),
+      system_tracking_failure_count: firstPresent(row, ['system_tracking_failure_count', 'tracking_failure_count', 'tracking_failures', 'game_technical_failures', 'technical_failures']),
+      system_hold_timeout_count: firstPresent(row, ['system_hold_timeout_count', 'hold_timeout_count', 'hold_timeouts']),
+      system_release_delay_count: firstPresent(row, ['system_release_delay_count', 'release_delay_count', 'release_delays'])
+    };
+  }
+  function parsePreviousSessionCSV(text) {
+    return RC.csvToObjects(String(text || '')).map(importedSessionRow)
+      .filter(function (row) { return row.participant_id !== ''; });
+  }
+  function sessionNumber(value) {
+    var match = String(value || '').match(/(\d+)/);
+    return match ? Number(match[1]) : null;
+  }
+  function dateValue(row) {
+    var raw = row.session_datetime || row.recorded_at || '';
+    var ms = Date.parse(raw);
+    return isFinite(ms) ? ms : null;
+  }
+  function nearestEarlierSession(current, rows) {
+    var participant = String(current.participant_id || '').toUpperCase();
+    var currentSession = sessionNumber(current.session);
+    var currentDate = dateValue(current);
+    var candidates = (rows || []).filter(function (row) {
+      if (String(row.participant_id || '').toUpperCase() !== participant) return false;
+      var candidateSession = sessionNumber(row.session);
+      var candidateDate = dateValue(row);
+      if (currentSession !== null && candidateSession !== null) return candidateSession < currentSession;
+      return currentDate !== null && candidateDate !== null && candidateDate < currentDate;
+    });
+    candidates.sort(function (a, b) {
+      var aSession = sessionNumber(a.session), bSession = sessionNumber(b.session);
+      if (aSession !== null && bSession !== null && aSession !== bSession) return bSession - aSession;
+      return (dateValue(b) || 0) - (dateValue(a) || 0);
+    });
+    return candidates[0] || null;
+  }
+  var TREND_GROUPS = [
+    {
+      title: '治療師確認：代償／疼痛計數',
+      fields: [
+        ['聳肩', 'therapist_confirmed_shoulder_hiking_count'],
+        ['軀幹側傾', 'therapist_confirmed_trunk_lean_count'],
+        ['手指過度緊繃', 'therapist_confirmed_finger_tightening_count'],
+        ['疼痛表達／反應', 'therapist_confirmed_pain_count']
+      ]
+    },
+    {
+      title: '系統事件',
+      fields: [
+        ['追蹤失敗', 'system_tracking_failure_count'],
+        ['停留逾時', 'system_hold_timeout_count'],
+        ['放開延遲', 'system_release_delay_count']
+      ]
+    }
+  ];
+  function countTrend(current, previous, label, key) {
+    var before = RC.num(previous[key]), after = RC.num(current[key]);
+    var delta = before === null || after === null ? null : RC.round(after - before, 1);
+    return {
+      label: label, previous: before, current: after, delta: delta,
+      comparable: before !== null && after !== null
+    };
+  }
+  function buildTrend(current, rows) {
+    var earlier = nearestEarlierSession(current, rows || []);
+    var groups = TREND_GROUPS.map(function (group) {
+      return {
+        title: group.title,
+        metrics: group.fields.map(function (field) {
+          return countTrend(current, earlier || {}, field[0], field[1]);
+        })
+      };
+    });
+    return {
+      participant_id: current.participant_id || '',
+      previous: earlier,
+      groups: groups
+    };
+  }
+  function formatTrendMetric(metric) {
+    if (!metric.comparable) return '<li><b>' + RC.esc(metric.label) + '</b>：不可比較（缺少原始計數）</li>';
+    var sign = metric.delta > 0 ? '+' : '';
+    return '<li><b>' + RC.esc(metric.label) + '</b>：前次 ' + metric.previous + ' → 本次 ' + metric.current +
+      '（Δ ' + sign + metric.delta + '）</li>';
+  }
+  function renderTrend() {
+    var current = rowObject();
+    var trend = buildTrend(current, importedSessions);
+    var out = $('#trendResult');
+    if (!current.participant_id) {
+      out.textContent = '請先輸入目前匿名編號，才會比較同一參加者的較早節次。';
+      return;
+    }
+    if (!trend.previous) {
+      out.textContent = '沒有找到同一匿名編號的較早節次；不作趨勢比較。';
+      return;
+    }
+    out.innerHTML = '<p><b>比較：</b>Session ' + RC.esc(trend.previous.session || '—') + ' → Session ' +
+      RC.esc(current.session || '—') + '。以下為探索性原始計數差異，並非改善判定。</p>' +
+      trend.groups.map(function (group) {
+        return '<section class="rs-trend-group"><h4>' + RC.esc(group.title) + '</h4><ul>' +
+          group.metrics.map(formatTrendMetric).join('') + '</ul></section>';
+      }).join('');
+  }
+  function importPreviousSessions(text) {
+    importedSessions = parsePreviousSessionCSV(text);
+    $('#trendImportStatus').textContent = importedSessions.length
+      ? '已匯入 ' + importedSessions.length + ' 筆 CSV 紀錄，只保留在本頁記憶體。'
+      : '沒有找到可辨識的匿名編號欄位；未匯入資料。';
+    renderTrend();
+    return { imported_count: importedSessions.length, trend: buildTrend(rowObject(), importedSessions) };
+  }
+  function importPreviousCsvFile(event) {
+    var file = event.target.files && event.target.files[0];
+    if (!file) return;
+    RC.readFileText(file).then(function (text) {
+      importPreviousSessions(text);
+    }).catch(function () {
+      $('#trendImportStatus').textContent = '無法讀取 CSV；請選擇 UTF-8 CSV 檔案。';
+    });
+    event.target.value = '';
+  }
+
   /* presets */
   function applyPreset(code) {
     if (!code) { location.reload(); return; }
@@ -452,29 +674,53 @@
   function applyGameReturn() {
     var p = new URLSearchParams(window.location.search);
     if (p.get('source') !== 'game-result') return false;
+    function returnedValue(names) {
+      var i, value;
+      for (i = 0; i < names.length; i++) {
+        value = p.get(names[i]);
+        if (value !== null) return value;
+      }
+      return '';
+    }
     var scenarioMap = {
       dimsum: 'tea_house', mahjong: 'mahjong', cards: 'cards',
       laundry: 'laundry', flowers: 'flower'
     };
-    F.participantId = (p.get('participant') || '').toUpperCase();
-    F.group = p.get('group') || 'game_intervention';
-    F.session = p.get('session') || '1';
-    F.fthue = p.get('fthue') || '';
+    F.participantId = returnedValue(['participant']).toUpperCase();
+    F.group = returnedValue(['group']) || 'game_intervention';
+    F.session = returnedValue(['session']) || '1';
+    F.fthue = returnedValue(['fthue_pre', 'fthue']);
+    F.fthuePost = returnedValue(['fthue_post']);
     F.affectedSide = p.get('side') || '';
     F.deliveryType = 'game';
     F.scenario = scenarioMap[p.get('scenario')] || 'tea_house';
     F.tool = p.get('tool') || 'none';
     F.difficulty = p.get('difficulty') || 'simple_sort_motor';
-    F.activeSec = p.get('active_sec') || '';
-    F.correct = p.get('correct') || '0';
-    F.wrong = p.get('wrong') || '0';
-    F.drops = p.get('drops') || '0';
-    F.score = p.get('score') || '';
-    F.grabs = p.get('grabs') || '';
-    F.pauseCount = p.get('pause_count') || '0';
-    F.trackingLossSec = p.get('tracking_loss_sec') || '0';
-    F.technicalFailures = p.get('technical_failures') || '0';
-    F.techFailure = Number(F.technicalFailures) > 0 ? 'yes' : 'no';
+    F.activeSec = returnedValue(['active_sec']);
+    F.correct = returnedValue(['correct']);
+    F.wrong = returnedValue(['wrong']);
+    F.drops = returnedValue(['drops']);
+    F.score = returnedValue(['score']);
+    F.grabs = returnedValue(['grabs']);
+    F.pauseCount = returnedValue(['pause_count']);
+    F.trackingLossSec = returnedValue(['tracking_loss_sec']);
+    F.technicalFailures = returnedValue(['technical_failures']);
+    F.trackingFailures = returnedValue(['tracking_failure_count', 'tracking_failures', 'technical_failures']);
+    F.holdTimeouts = returnedValue(['hold_timeout_count', 'hold_timeouts']);
+    F.releaseDelays = returnedValue(['release_delay_count', 'release_delays']);
+    F.recordingStatus = returnedValue(['recording_status', 'movement_recording_status', 'video_recording_status']);
+    F.recordingBytes = returnedValue(['recording_bytes', 'recording_size_bytes', 'movement_recording_bytes', 'video_recording_bytes']);
+    F.recordingMime = returnedValue(['recording_mime', 'recording_mime_type', 'movement_recording_mime', 'video_recording_mime']);
+    F.singleMotorRate = returnedValue(['single_task_motor_correct_per_min', 'single_motor_correct_per_min']);
+    F.dualMotorRate = returnedValue(['dual_task_motor_correct_per_min', 'dual_motor_correct_per_min']);
+    F.singleCognitiveAccuracy = returnedValue(['single_task_cognitive_accuracy_pct', 'single_cognitive_accuracy_pct']);
+    F.dualCognitiveAccuracy = returnedValue(['dual_task_cognitive_accuracy_pct', 'dual_cognitive_accuracy_pct']);
+    F.shoulderHiking = returnedValue(['therapist_confirmed_shoulder_hiking_count']);
+    F.trunkLean = returnedValue(['therapist_confirmed_trunk_lean_count']);
+    F.fingerTightening = returnedValue(['therapist_confirmed_finger_tightening_count']);
+    F.painCount = returnedValue(['therapist_confirmed_pain_count']);
+    F.techFailure = [F.technicalFailures, F.trackingFailures, F.holdTimeouts, F.releaseDelays]
+      .some(function (value) { return RC.isNum(value) && Number(value) > 0; }) ? 'yes' : 'no';
     F.completion = 'yes';
     F.assistance = 'unobserved';
     F.trunk = 'unobserved';
@@ -497,5 +743,20 @@
     RC.installUnloadGuard(function () { return dirty; });
   }
   document.addEventListener('DOMContentLoaded', init);
-  window.__interventionQA = { form: function () { return F; }, sessions: function () { return sessions; }, row: rowObject, step: function () { return uiStep; } };
+  window.__interventionQA = {
+    form: function () { return F; },
+    sessions: function () { return sessions; },
+    row: rowObject,
+    step: function () { return uiStep; },
+    calculations: function (values) { return taskMetrics(values || F); },
+    calculateDtc: function (single, dual) { return RC.dtc(single, dual); },
+    parseImportedCSV: parsePreviousSessionCSV,
+    parseCSV: parsePreviousSessionCSV,
+    importCSV: importPreviousSessions,
+    importedSessions: function () { return importedSessions.slice(); },
+    nearestEarlier: nearestEarlierSession,
+    trend: function (current, previousRows) {
+      return buildTrend(current || rowObject(), previousRows || importedSessions);
+    }
+  };
 })();

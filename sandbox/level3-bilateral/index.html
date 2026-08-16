@@ -16,7 +16,7 @@
       <h1>Level 3 左右側滑</h1>
     </div>
     <div class="header-actions">
-      <span class="trial-badge" id="trialModeBadge" data-testid="indicator-level3-trial" hidden>試玩模式 · 不錄影</span>
+      <span class="mode-badge" id="sessionModeBadge" data-testid="indicator-level3-mode">訓練 · 錄影及姿勢提示</span>
       <span class="isolation-badge" data-testid="status-isolation">與正式 Pilot Study 隔離</span>
       <button class="icon-button" type="button" id="themeToggle" data-testid="button-theme" aria-label="切換深色模式">◐</button>
     </div>
@@ -234,7 +234,10 @@
           <div>
             <h2 id="camera-title">Level 3 左右側滑</h2>
           </div>
-          <span class="fps" id="fpsValue" data-testid="text-fps">FPS --</span>
+          <div class="camera-status-chips">
+            <span class="recording-indicator" id="recordingIndicator" data-testid="status-level3-recording" aria-live="polite">REC 待機</span>
+            <span class="fps" id="fpsValue" data-testid="text-fps">FPS --</span>
+          </div>
         </div>
         <div class="canvas-wrap">
           <canvas id="diagnosticCanvas" width="480" height="360" aria-label="即時視訊、VCP 及校準邊界診斷圖"></canvas>
@@ -246,6 +249,19 @@
           <span><i class="legend-target"></i>當前目標</span>
           <span><i class="legend-skeleton"></i>VCP 中點</span>
         </div>
+        <section id="recordingReview" class="recording-review" data-testid="panel-level3-recording-review" hidden
+          aria-labelledby="recording-review-title">
+          <div>
+            <h3 id="recording-review-title">本次訓練影片回看</h3>
+            <p>只錄頭部以下；需要時可手動下載。</p>
+          </div>
+          <video id="recordingReviewVideo" playsinline preload="metadata" aria-label="本次訓練影片回看"></video>
+          <div class="recording-review-actions">
+            <button id="recordingPlay" class="button secondary" type="button" data-testid="button-level3-recording-play">播放</button>
+            <button id="recordingDownload" class="button primary" type="button" data-testid="button-level3-recording-download">下載／儲存</button>
+            <button id="recordingDelete" class="button ghost" type="button" data-testid="button-level3-recording-delete">刪除</button>
+          </div>
+        </section>
       </section>
     </div>
 

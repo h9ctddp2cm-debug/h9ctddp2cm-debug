@@ -3,6 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0F4A3D">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="FTHUE 復康">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
 <title>仁濟醫院職業治療部｜中風上肢功能訓練</title>
 <style>
 :root{
@@ -860,11 +866,11 @@ html,body{
             </figure>
           </div>
         </button>
-        <div class="trial-actions" aria-label="FTHUE Level 3 試玩">
-          <button type="button" data-trial-level="3" data-trial-audience="therapist"
-            data-testid="button-trial-therapist-3" aria-label="FTHUE Level 3 治療師試玩，不錄影">治療師試玩</button>
-          <button type="button" data-trial-level="3" data-trial-audience="patient"
-            data-testid="button-trial-patient-3" aria-label="FTHUE Level 3 病人試玩，不錄影">病人試玩</button>
+        <div class="trial-actions" aria-label="FTHUE Level 3 模式">
+          <button type="button" data-session-level="3" data-session-mode="trial"
+            data-testid="button-mode-trial-3" aria-label="FTHUE Level 3 試玩，不錄影及不提示治療師">試玩</button>
+          <button type="button" data-session-level="3" data-session-mode="training"
+            data-testid="button-mode-training-3" aria-label="FTHUE Level 3 訓練，錄影及提示治療師">訓練</button>
         </div>
         <details class="level-details">
           <summary>詳情</summary>
@@ -893,11 +899,11 @@ html,body{
             </figure>
           </div>
         </button>
-        <div class="trial-actions" aria-label="FTHUE Level 4 試玩">
-          <button type="button" data-trial-level="4" data-trial-audience="therapist"
-            data-testid="button-trial-therapist-4" aria-label="FTHUE Level 4 治療師試玩，不錄影">治療師試玩</button>
-          <button type="button" data-trial-level="4" data-trial-audience="patient"
-            data-testid="button-trial-patient-4" aria-label="FTHUE Level 4 病人試玩，不錄影">病人試玩</button>
+        <div class="trial-actions" aria-label="FTHUE Level 4 模式">
+          <button type="button" data-session-level="4" data-session-mode="trial"
+            data-testid="button-mode-trial-4" aria-label="FTHUE Level 4 試玩，不錄影及不提示治療師">試玩</button>
+          <button type="button" data-session-level="4" data-session-mode="training"
+            data-testid="button-mode-training-4" aria-label="FTHUE Level 4 訓練，錄影及提示治療師">訓練</button>
         </div>
         <details class="level-details">
           <summary>詳情</summary>
@@ -922,11 +928,11 @@ html,body{
             </figure>
           </div>
         </button>
-        <div class="trial-actions" aria-label="FTHUE Level 5 試玩">
-          <button type="button" data-trial-level="5" data-trial-audience="therapist"
-            data-testid="button-trial-therapist-5" aria-label="FTHUE Level 5 治療師試玩，不錄影">治療師試玩</button>
-          <button type="button" data-trial-level="5" data-trial-audience="patient"
-            data-testid="button-trial-patient-5" aria-label="FTHUE Level 5 病人試玩，不錄影">病人試玩</button>
+        <div class="trial-actions" aria-label="FTHUE Level 5 模式">
+          <button type="button" data-session-level="5" data-session-mode="trial"
+            data-testid="button-mode-trial-5" aria-label="FTHUE Level 5 試玩，不錄影及不提示治療師">試玩</button>
+          <button type="button" data-session-level="5" data-session-mode="training"
+            data-testid="button-mode-training-5" aria-label="FTHUE Level 5 訓練，錄影及提示治療師">訓練</button>
         </div>
         <details class="level-details">
           <summary>詳情</summary>
@@ -962,11 +968,11 @@ html,body{
             </figure>
           </div>
         </button>
-        <div class="trial-actions" aria-label="FTHUE Level 6 至 7 試玩">
-          <button type="button" data-trial-level="67" data-trial-audience="therapist"
-            data-testid="button-trial-therapist-67" aria-label="FTHUE Level 6 至 7 治療師試玩，不錄影">治療師試玩</button>
-          <button type="button" data-trial-level="67" data-trial-audience="patient"
-            data-testid="button-trial-patient-67" aria-label="FTHUE Level 6 至 7 病人試玩，不錄影">病人試玩</button>
+        <div class="trial-actions" aria-label="FTHUE Level 6 至 7 模式">
+          <button type="button" data-session-level="67" data-session-mode="trial"
+            data-testid="button-mode-trial-67" aria-label="FTHUE Level 6 至 7 試玩，不錄影及不提示治療師">試玩</button>
+          <button type="button" data-session-level="67" data-session-mode="training"
+            data-testid="button-mode-training-67" aria-label="FTHUE Level 6 至 7 訓練，錄影及提示治療師">訓練</button>
         </div>
         <details class="level-details">
           <summary>詳情</summary>
@@ -1334,9 +1340,9 @@ html,body{
       <video id="gameVideo" playsinline autoplay muted></video>
       <canvas id="gameCanvas"></canvas>
       <div class="recording-indicator" id="recordingIndicator" role="status" aria-live="polite"
-        data-testid="indicator-silent-recording">無聲錄影中</div>
+        data-testid="indicator-silent-recording">無聲錄影中 · 不錄頭部</div>
       <div class="trial-mode-indicator" id="trialModeIndicator" role="status" aria-live="polite"
-        data-testid="indicator-trial-mode">試玩模式 · 不錄影</div>
+        data-testid="indicator-trial-mode">試玩 · 不錄影／不提示</div>
       <div class="hud">
         <div class="hud-item"><span class="hud-label">得分</span><span class="hud-value" id="hudScore">0</span></div>
         <div class="hud-item"><span class="hud-label">正確</span><span class="hud-value" id="hudCorrect">0</span></div>
@@ -1436,7 +1442,7 @@ html,body{
         data-testid="panel-movement-review" aria-labelledby="movementReviewTitle">
         <div class="movement-review-head">
           <h3 id="movementReviewTitle">即時動作回看</h3>
-          <span class="movement-review-badge">無聲 · 未自動上傳</span>
+          <span class="movement-review-badge">不錄頭部 · 未自動上傳</span>
         </div>
         <video id="movementReviewVideo" controls playsinline muted
           data-testid="video-movement-review"></video>
@@ -1870,8 +1876,7 @@ const state = {
   personalGraspEnter:null, personalGraspExit:null,
   personalPinchEnter:null, personalPinchExit:null, personalPinchOpen:null,
   mirrorX:true,
-  sessionMode:'standard', // standard | trial
-  trialAudience:'',       // therapist | patient
+  sessionMode:'training', // training | trial
 };
 const RESEARCH_VERSION = 'pilot-5.0.0-neuroscience';
 const PILOT_TRAINING_SCENARIOS = {
@@ -2498,6 +2503,7 @@ const COMPENSATION_LABELS = {
   finger_tightening: '手指愈握愈緊',
 };
 function recordCompensation(kind){
+  if(isTrialMode()) return false;
   const counts = sessionSafety.compensationCounts;
   counts[kind] = (counts[kind] || 0) + 1;
   safetyLog('compensation_observed', { compensation: kind, count: counts[kind] });
@@ -3500,40 +3506,30 @@ function selectLevel(levelId){
   renderActivityLibrary();
   showScreen('library');
 }
-function setStandardSession(){
-  state.sessionMode = 'standard';
-  state.trialAudience = '';
-}
 function isTrialMode(){ return state.sessionMode === 'trial'; }
-function beginTrial(levelId, audience){
-  state.sessionMode = 'trial';
-  state.trialAudience = audience === 'therapist' ? 'therapist' : 'patient';
+function beginSessionMode(levelId, mode){
+  state.sessionMode = mode === 'trial' ? 'trial' : 'training';
   research.active = false;
   if(levelId === '3'){
     const params = new URLSearchParams({
       safetyAck:'1',
-      trial:'1',
-      audience:state.trialAudience
+      mode:state.sessionMode
     });
-    window.location.href = 'sandbox/level3-bilateral/?' + params.toString();
+    window.location.href = 'sandbox/level3-bilateral/index.html?' + params.toString();
     return;
   }
   selectLevel(levelId);
-  const audienceLabel = state.trialAudience === 'therapist' ? '治療師試玩' : '病人試玩';
-  document.getElementById('libraryLevelLabel').textContent += ' · ' + audienceLabel + ' · 不錄影';
+  document.getElementById('libraryLevelLabel').textContent += isTrialMode()
+    ? ' · 試玩 · 不錄影／不提示'
+    : ' · 訓練 · 錄影及姿勢提示';
 }
-document.getElementById('btnLevel4').addEventListener('click', ()=>{ setStandardSession(); selectLevel('4'); });
-document.getElementById('btnLevel5').addEventListener('click', ()=>{ setStandardSession(); selectLevel('5'); });
-document.getElementById('btnLevel67').addEventListener('click', ()=>{ setStandardSession(); selectLevel('67'); });
-document.getElementById('btnLevel3').addEventListener('click', ()=>{
-  setStandardSession();
-  // Participant flow skips the standalone safety interstitial. In-game rest,
-  // stop and movement-quality warnings remain active.
-  window.location.href = 'sandbox/level3-bilateral/?safetyAck=1';
-});
-document.querySelectorAll('[data-trial-level][data-trial-audience]').forEach(button=>{
+document.getElementById('btnLevel4').addEventListener('click', ()=> beginSessionMode('4', 'training'));
+document.getElementById('btnLevel5').addEventListener('click', ()=> beginSessionMode('5', 'training'));
+document.getElementById('btnLevel67').addEventListener('click', ()=> beginSessionMode('67', 'training'));
+document.getElementById('btnLevel3').addEventListener('click', ()=> beginSessionMode('3', 'training'));
+document.querySelectorAll('[data-session-level][data-session-mode]').forEach(button=>{
   button.addEventListener('click', ()=>{
-    beginTrial(button.dataset.trialLevel, button.dataset.trialAudience);
+    beginSessionMode(button.dataset.sessionLevel, button.dataset.sessionMode);
   });
 });
 /* Research Mode now routes to the separate role hub (research/index.html) so that
@@ -4368,6 +4364,20 @@ document.getElementById('btnReturnSessionRecord').addEventListener('click', ()=>
   const summaryRows = research.phaseSummaries.filter(row=>row.condition !== 'rest');
   const drops = summaryRows.reduce((sum,row)=>sum + (Number(row.drops) || 0),0);
   const technicalFailures = summaryRows.reduce((sum,row)=>sum + (Number(row.technical_failures) || 0),0);
+  const motorSummary = pilotPhaseSummaryFor('motor');
+  const cognitiveSummary = pilotPhaseSummaryFor('cognitive');
+  const dualSummary = pilotPhaseSummaryFor('dual');
+  const cognitivePct = value => (
+    value === '' || value == null || !Number.isFinite(Number(value))
+      ? ''
+      : String(Number((Number(value) * 100).toFixed(1)))
+  );
+  const confirmedCounts = sessionSafety.compensationCounts || {};
+  const recordingStatus = isTrialMode()
+    ? 'disabled_trial_mode'
+    : (movementRecording.blob
+      ? 'recorded'
+      : (typeof MediaRecorder === 'undefined' ? 'unsupported' : 'not_recorded'));
   const destination = new URL(research.returnUrl, window.location.href);
   const params = destination.searchParams;
   params.set('source','game-result');
@@ -4376,6 +4386,8 @@ document.getElementById('btnReturnSessionRecord').addEventListener('click', ()=>
   params.set('session',String(research.sessionNo));
   params.set('group',research.studyArm === 'game_intervention' ? 'game_intervention' : 'conventional_control');
   params.set('fthue',research.stratum);
+  params.set('fthue_pre',research.stratum || '');
+  params.set('fthue_post',research.postFthue || '');
   params.set('side',research.affectedSide);
   params.set('scenario',research.scenarioId);
   params.set('tool',research.toolUsed);
@@ -4389,6 +4401,25 @@ document.getElementById('btnReturnSessionRecord').addEventListener('click', ()=>
   params.set('pause_count',String(research.pauseCount || 0));
   params.set('tracking_loss_sec',String(Math.round(research.totalTrackingLossMs / 1000)));
   params.set('technical_failures',String(technicalFailures));
+  params.set('tracking_failure_count',String(sessionSafety.trackingFailureCount || 0));
+  params.set('hold_timeout_count',String(sessionSafety.holdTimeoutCount || 0));
+  params.set('release_delay_count',String(sessionSafety.releaseDelayCount || 0));
+  params.set('therapist_confirmed_shoulder_hiking_count',String(confirmedCounts.shoulder_hiking || 0));
+  params.set('therapist_confirmed_trunk_lean_count',String(confirmedCounts.trunk_lean || 0));
+  params.set('therapist_confirmed_finger_tightening_count',String(confirmedCounts.finger_tightening || 0));
+  params.set('therapist_confirmed_pain_count',String(confirmedCounts.pain || 0));
+  params.set('recording_status',recordingStatus);
+  params.set('recording_bytes',movementRecording.blob ? String(movementRecording.blob.size || 0) : '');
+  params.set('recording_mime',
+    movementRecording.blob?.type || movementRecording.mimeType || '');
+  params.set('single_task_motor_correct_per_min',
+    motorSummary?.correct_per_min == null ? '' : String(motorSummary.correct_per_min));
+  params.set('dual_task_motor_correct_per_min',
+    dualSummary?.correct_per_min == null ? '' : String(dualSummary.correct_per_min));
+  params.set('single_task_cognitive_accuracy_pct',
+    cognitivePct(cognitiveSummary?.cognitive_accuracy));
+  params.set('dual_task_cognitive_accuracy_pct',
+    cognitivePct(dualSummary?.cognitive_accuracy));
   window.location.href = destination.toString();
 });
 document.getElementById('researchPostFthue').addEventListener('change', ()=>{
@@ -4422,8 +4453,12 @@ const movementRecording = {
   blob: null,
   url: '',
   mimeType: '',
-  stopCameraAfter: false
+  stopCameraAfter: false,
+  privacyCanvas: null,
+  privacyStream: null,
+  privacyFrameId: 0
 };
+const RECORDING_HEAD_EXCLUSION_RATIO = 0.30;
 
 function recordingElements(){
   return {
@@ -4445,6 +4480,7 @@ function clearMovementRecording(){
   movementRecording.blob = null;
   movementRecording.mimeType = '';
   movementRecording.stopCameraAfter = false;
+  stopPrivacyRecordingStream();
   if(movementRecording.url){
     URL.revokeObjectURL(movementRecording.url);
     movementRecording.url = '';
@@ -4456,6 +4492,48 @@ function clearMovementRecording(){
   }
   if(el.panel) el.panel.hidden = true;
   if(el.indicator) el.indicator.classList.remove('show');
+}
+
+function stopPrivacyRecordingStream(){
+  if(movementRecording.privacyFrameId){
+    cancelAnimationFrame(movementRecording.privacyFrameId);
+    movementRecording.privacyFrameId = 0;
+  }
+  movementRecording.privacyStream?.getTracks().forEach(track=>track.stop());
+  movementRecording.privacyStream = null;
+  movementRecording.privacyCanvas = null;
+}
+
+function createHeadExcludedRecordingStream(videoEl){
+  if(!videoEl || typeof HTMLCanvasElement === 'undefined'
+    || typeof HTMLCanvasElement.prototype.captureStream !== 'function') return null;
+  const sourceTrack = state.stream?.getVideoTracks?.()[0];
+  const settings = sourceTrack?.getSettings?.() || {};
+  const sourceWidth = videoEl.videoWidth || settings.width || 640;
+  const sourceHeight = videoEl.videoHeight || settings.height || 480;
+  if(sourceWidth < 2 || sourceHeight < 2) return null;
+  const cropTop = Math.round(sourceHeight * RECORDING_HEAD_EXCLUSION_RATIO);
+  const cropHeight = Math.max(2, sourceHeight - cropTop);
+  const outputWidth = Math.min(720, sourceWidth);
+  const outputHeight = Math.max(240, Math.round(outputWidth * cropHeight / sourceWidth));
+  const canvas = document.createElement('canvas');
+  canvas.width = outputWidth;
+  canvas.height = outputHeight;
+  const ctx = canvas.getContext('2d', { alpha:false });
+  if(!ctx) return null;
+  const draw = ()=>{
+    ctx.fillStyle = '#eef3f1';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if(videoEl.readyState >= 2){
+      ctx.drawImage(videoEl, 0, cropTop, sourceWidth, cropHeight,
+        0, 0, canvas.width, canvas.height);
+    }
+    movementRecording.privacyFrameId = requestAnimationFrame(draw);
+  };
+  draw();
+  movementRecording.privacyCanvas = canvas;
+  movementRecording.privacyStream = canvas.captureStream(20);
+  return movementRecording.privacyStream;
 }
 
 function preferredRecordingMimeType(){
@@ -4484,7 +4562,7 @@ function finalizeMovementRecording(){
     el.video.src = movementRecording.url;
     el.panel.hidden = false;
     el.download.disabled = false;
-    el.status.textContent = '可即時回看或下載到裝置。影片不會自動上傳。';
+    el.status.textContent = '只錄頭部以下，可即時回看或下載。影片不會自動上傳。';
   }else{
     el.panel.hidden = false;
     el.download.disabled = true;
@@ -4494,6 +4572,7 @@ function finalizeMovementRecording(){
     movementRecording.stopCameraAfter = false;
     stopCamera();
   }
+  stopPrivacyRecordingStream();
 }
 
 function startMovementRecording(){
@@ -4506,16 +4585,24 @@ function startMovementRecording(){
     return false;
   }
   try{
+    const privacyStream = createHeadExcludedRecordingStream(document.getElementById('gameVideo'));
+    if(!privacyStream){
+      el.panel.hidden = false;
+      el.download.disabled = true;
+      el.status.textContent = '此瀏覽器未能安全裁走頭部，因此不會錄影；遊戲仍可繼續。';
+      return false;
+    }
     const mimeType = preferredRecordingMimeType();
     const options = { videoBitsPerSecond: 650000 };
     if(mimeType) options.mimeType = mimeType;
-    const recorder = new MediaRecorder(state.stream, options);
+    const recorder = new MediaRecorder(privacyStream, options);
     movementRecording.recorder = recorder;
     movementRecording.mimeType = recorder.mimeType || mimeType;
     recorder.addEventListener('dataavailable', event=>{
       if(event.data && event.data.size > 0) movementRecording.chunks.push(event.data);
     });
     recorder.addEventListener('error', ()=>{
+      stopPrivacyRecordingStream();
       el.indicator.classList.remove('show');
       el.panel.hidden = false;
       el.download.disabled = true;
@@ -4526,6 +4613,7 @@ function startMovementRecording(){
     el.indicator.classList.add('show');
     return true;
   }catch(err){
+    stopPrivacyRecordingStream();
     el.panel.hidden = false;
     el.download.disabled = true;
     el.status.textContent = '未能啟動錄影；遊戲仍可繼續。';
@@ -4643,14 +4731,14 @@ async function ensureHandLandmarker(){
   if(handLandmarker) return handLandmarker;
   if(handLandmarkerPromise) return handLandmarkerPromise;
   handLandmarkerPromise = (async ()=>{
-    const mpVision = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs");
+    const mpVision = await import("./vendor/mediapipe/vision_bundle.mjs");
     const { HandLandmarker, FilesetResolver } = mpVision;
     const vision = await FilesetResolver.forVisionTasks(
-      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
+      "./vendor/mediapipe/wasm"
     );
     const options = {
       baseOptions: {
-        modelAssetPath: "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
+        modelAssetPath: "./vendor/mediapipe/models/hand_landmarker.task",
         delegate: isAppleTouchDevice() ? "CPU" : "GPU"
       },
       runningMode: "VIDEO",
@@ -5623,11 +5711,16 @@ function triggerFeedback(correct){
 
 function initGame(){
   const trialIndicator = document.getElementById('trialModeIndicator');
+  const compensationButton = document.getElementById('btnCompObserve');
+  const compensationPanel = document.getElementById('compPanel');
   if(isTrialMode()){
     clearMovementRecording();
     if(trialIndicator) trialIndicator.classList.add('show');
+    if(compensationButton) compensationButton.hidden = true;
+    if(compensationPanel) compensationPanel.classList.remove('show');
   }else{
     if(trialIndicator) trialIndicator.classList.remove('show');
+    if(compensationButton) compensationButton.hidden = false;
     startMovementRecording();
   }
   DWELL_MS = state.dwellMs; // 套用用家選擇嘅停留時間
@@ -6834,7 +6927,7 @@ function endGame(endReason){
     ? research.participantId + ' · Session ' + research.sessionNo + ' · ' +
       pilotScenarioName(research.scenarioId) + ' · ' + researchTrackName(research.dualTaskLevel) + ' · ' + currentLevel().tag
     : (isTrialMode()
-      ? currentLevel().tag + ' · ' + (state.trialAudience === 'therapist' ? '治療師試玩' : '病人試玩') + ' · 不錄影'
+      ? currentLevel().tag + ' · 試玩 · 不錄影／不提示'
       : currentLevel().tag + ' · ' + getTheme().title);
   document.getElementById('resScore').textContent = score;
   document.getElementById('resCorrect').textContent = correctCount;
@@ -7634,14 +7727,14 @@ async function ensurePoseLandmarker(){
   if(poseFailed) return null;
   if(poseLoading) return poseLoading;
   poseLoading = (async ()=>{
-    const mpVision = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs");
+    const mpVision = await import("./vendor/mediapipe/vision_bundle.mjs");
     const { PoseLandmarker, FilesetResolver } = mpVision;
     const vision = await FilesetResolver.forVisionTasks(
-      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
+      "./vendor/mediapipe/wasm"
     );
     const options = {
       baseOptions: {
-        modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+        modelAssetPath: "./vendor/mediapipe/models/pose_landmarker_lite.task",
         delegate: isAppleTouchDevice() ? "CPU" : "GPU"
       },
       runningMode: "VIDEO",
@@ -11070,5 +11163,14 @@ window.__qa = {
   });
 })();
 
+</script>
+<script>
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./service-worker.js").catch((error) => {
+      console.warn("[offline] Service worker registration failed:", error);
+    });
+  });
+}
 </script></body>
 </html>

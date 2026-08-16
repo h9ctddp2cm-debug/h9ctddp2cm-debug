@@ -381,3 +381,38 @@ test("short reach profile is the therapist-selected default", () => {
   assert.match(reachSelect[0], /<option value="SHORT"[^>]*selected/);
   assert.equal(/<option value="(STANDARD|LONG)"[^>]*selected/.test(reachSelect[0]), false);
 });
+
+test("Level 3 separates query-driven trial and training recording behavior", () => {
+  assert.match(appSource, /launchParams\.get\("mode"\)/);
+  assert.match(appSource, /const sessionMode = requestedMode === "trial" \? "trial" : "training"/);
+  assert.match(appSource, /試玩 · 不錄影／不提示/);
+  assert.match(pageSource, /訓練 · 錄影及姿勢提示/);
+  assert.match(appSource, /const isMovementWarning = !isTrialMode && MOVEMENT_QUALITY_WARNING_ACTIONS\.has/);
+  assert.match(appSource, /function flashMovementQualityWarning\(output\) \{\s+if \(isTrialMode\) return;/);
+  assert.match(appSource, /function startTrainingRecordingIfPossible/);
+  assert.match(appSource, /createHeadExcludedRecordingStream\(\)/);
+  assert.match(appSource, /new MediaRecorder\(videoOnlyStream,\s*options\)/);
+  assert.match(appSource, /queueMicrotask\(\(\) => startTrainingRecordingIfPossible\(inputs\.patientId\)\)/);
+  assert.match(appSource, /elements\.cameraStatus\.textContent = "鏡頭對準";\s+startTrainingRecordingIfPossible\(\)/);
+  assert.match(appSource, /onEndSession: \(inputs\) => new Promise\(\(resolve\) => \{\s+stopTrainingRecording\(\)/);
+  assert.match(appSource, /recording: \{\s+state: recordingState/);
+  assert.equal(appSource.includes('rgba(8, 20, 17, 0.2)'), false);
+});
+
+test("Level 3 recording review has play, download, delete, and an anonymized filename", () => {
+  for (const id of ["recordingPlay", "recordingDownload", "recordingDelete"]) {
+    assert.ok(pageSource.includes(`id="${id}"`), `missing recording control: ${id}`);
+  }
+  assert.match(appSource, /function makeRecordingFilename\(patientId = "ANON"\)/);
+  assert.match(appSource, /replace\(\/\[\^A-Z0-9_-\]\/g, ""\)/);
+  assert.match(appSource, /downloadFile\(recordingFilename, recordingBlob/);
+  assert.match(appSource, /URL\.revokeObjectURL\(recordingUrl\)/);
+});
+
+test("Level 3 training recording excludes the top head region before MediaRecorder", () => {
+  assert.match(appSource, /RECORDING_HEAD_EXCLUSION_RATIO\s*=\s*0\.30/);
+  assert.match(appSource, /canvas\.captureStream\(20\)/);
+  assert.match(appSource, /drawImage\(elements\.video,\s*0,\s*cropTop/);
+  assert.match(appSource, /new MediaRecorder\(videoOnlyStream,\s*options\)/);
+  assert.match(pageSource, /只錄頭部以下/);
+});

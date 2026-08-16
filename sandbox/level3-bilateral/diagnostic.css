@@ -165,7 +165,7 @@ h2 {
 }
 
 .isolation-badge,
-.trial-badge,
+.mode-badge,
 .tracking-badge,
 .fps {
   padding: 7px 11px;
@@ -176,13 +176,14 @@ h2 {
   font-weight: 700;
 }
 
-.trial-badge {
+.mode-badge {
   border-color: var(--primary);
   color: var(--primary);
 }
 
-.trial-badge[hidden] {
-  display: none;
+.mode-badge.trial-mode {
+  border-color: var(--muted);
+  color: var(--muted);
 }
 
 .tracking-badge.stable {
@@ -539,10 +540,45 @@ legend,
   margin-bottom: 16px;
 }
 
+.camera-status-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .fps {
   border-color: var(--border);
   color: var(--muted);
   font-family: ui-monospace, monospace;
+}
+
+.recording-indicator {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 6px 9px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  background: var(--surface-2);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.recording-indicator.is-recording {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.recording-indicator.is-recording::before {
+  width: 7px;
+  height: 7px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  content: "";
 }
 
 .canvas-wrap {
@@ -550,7 +586,7 @@ legend,
   aspect-ratio: 16 / 9;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #111;
+  background: #eaf0ee;
 }
 
 @keyframes movement-quality-edge-pulse {
@@ -579,6 +615,47 @@ legend,
 
 #cameraVideo {
   display: none;
+}
+
+.recording-review {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.8fr) minmax(210px, 1.2fr);
+  gap: 12px 16px;
+  align-items: center;
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+
+.recording-review[hidden] {
+  display: none;
+}
+
+.recording-review h3 {
+  margin-bottom: 4px;
+  font-family: var(--font-body);
+  font-size: 15px;
+}
+
+.recording-review p {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+#recordingReviewVideo {
+  width: 100%;
+  max-height: 180px;
+  border-radius: 7px;
+  background: #eaf0ee;
+}
+
+.recording-review-actions {
+  display: flex;
+  grid-column: 1 / -1;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .canvas-legend {
@@ -845,6 +922,10 @@ footer {
 
   .canvas-wrap {
     aspect-ratio: 4 / 3;
+  }
+
+  .recording-review {
+    grid-template-columns: 1fr;
   }
 
   .log-actions {

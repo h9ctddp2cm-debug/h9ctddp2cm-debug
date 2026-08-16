@@ -19,6 +19,11 @@ mkdir -p "$DIST"
 # --- public entry point + media -------------------------------------------
 cp "$ROOT/index.html" "$DIST/index.html"
 cp -R "$ROOT/img" "$DIST/img"
+cp "$ROOT/manifest.webmanifest" "$DIST/manifest.webmanifest"
+cp "$ROOT/service-worker.js" "$DIST/service-worker.js"
+cp "$ROOT/offline.html" "$DIST/offline.html"
+cp -R "$ROOT/icons" "$DIST/icons"
+cp -R "$ROOT/vendor" "$DIST/vendor"
 
 # --- public Level 3 bilateral sandbox (runtime files only) -----------------
 mkdir -p "$DIST/sandbox/level3-bilateral"
@@ -45,5 +50,15 @@ done
 if grep -rIl "crypto.subtle.digest" "$DIST" >/dev/null 2>&1; then
   fail "client-side password hashing still present in dist/public"
 fi
+
+# Generate the exact same-origin asset inventory consumed by service-worker.js.
+# Each item is cached independently so one transient download cannot invalidate
+# the full offline installation.
+{
+  printf 'self.__OFFLINE_ASSETS = [\n'
+  find "$DIST" -type f ! -name 'offline-assets.js' \
+    -printf '%P\n' | LC_ALL=C sort | sed 's#^#  "./#; s#$#",#'
+  printf '];\n'
+} > "$DIST/offline-assets.js"
 
 echo "dist/public built: $(find "$DIST" -type f | wc -l) files, $(du -sh "$DIST" | cut -f1)"

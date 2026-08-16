@@ -227,6 +227,36 @@ table.rs-table tbody tr:nth-child(even){ background:#FFFDF8; }
 .rs-auto-summary strong{ font-size:22px; }
 .rs-auto-summary div{ font-size:18px; font-weight:900; font-variant-numeric:tabular-nums; }
 .rs-input[readonly]{ background:#F1F0EC; color:#31302C; cursor:not-allowed; }
+.rs-system-summary,.rs-trend-panel{
+  margin:0 0 16px; padding:16px; border:2px solid var(--border); border-radius:12px; background:#FFFDF8;
+}
+.rs-system-summary h3,.rs-trend-panel h3{ margin:0; color:var(--teal-dark); }
+.rs-metric-grid{
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(145px,1fr)); gap:8px; margin-top:10px;
+}
+.rs-metric-grid > div{ padding:9px 10px; border:1.5px solid var(--border); border-radius:8px; background:#fff; }
+.rs-metric-grid span,.rs-metric-grid output{ display:block; }
+.rs-metric-grid span{ color:var(--muted); font-size:13px; font-weight:800; }
+.rs-metric-grid output{ font-size:16px; font-weight:900; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+.rs-system-caveat{ margin:10px 0 0; color:var(--muted); font-size:14px; font-weight:800; }
+.rs-dtc-summary{
+  display:grid; gap:4px; margin-top:16px; padding:12px; border-left:5px solid var(--teal);
+  background:#EEF7F3; color:#0C3F35; font-size:14px; font-weight:700;
+}
+.rs-dtc-summary strong{ font-size:16px; }
+.rs-trend-heading{ display:flex; flex-wrap:wrap; gap:12px; align-items:flex-start; justify-content:space-between; }
+.rs-trend-heading p,.rs-trend-status{ margin:4px 0 0; color:var(--muted); font-size:14px; font-weight:700; }
+.rs-file-button{ position:relative; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; }
+.rs-file-button input{ position:absolute; inline-size:1px; block-size:1px; opacity:0; overflow:hidden; }
+.rs-trend-result{
+  margin-top:12px; padding:12px; border:1.5px solid var(--border); border-radius:8px; background:#fff;
+  color:var(--text); font-size:15px; font-weight:700;
+}
+.rs-trend-result p{ margin:0 0 8px; }
+.rs-trend-group + .rs-trend-group{ margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }
+.rs-trend-group h4{ margin:0; color:var(--teal-dark); font-size:15px; }
+.rs-trend-group ul{ margin:4px 0 0; padding-left:22px; }
+.rs-trend-group li{ margin:2px 0; }
 
 /* ---------- test mode banner ---------- */
 .rs-test-banner{
@@ -251,6 +281,7 @@ body.rs-test .rs-test-banner{ display:block; }
 @media (max-width:520px){
   .rs-grid-compact{ grid-template-columns:1fr; }
   .rs-navbar .rs-btn{ flex:1; }
+  .rs-trend-heading{ flex-direction:column; }
 }
 @media print{ .rs-navbar,.rs-topbar-actions{ display:none; } }
 

@@ -50,15 +50,28 @@
           <option value="1">Session 1</option><option value="2">Session 2</option><option value="3">Session 3</option>
           <option value="4">Session 4</option><option value="5">Session 5</option>
         </select></div>
-      <div class="rs-field"><label for="selFthue">今日 FTHUE（5–7）</label>
+      <div class="rs-field"><label for="selFthue">訓練前 FTHUE（5–7）</label>
         <select id="selFthue" class="rs-select" data-testid="select-fthue-level">
           <option value="">請選擇</option><option value="5">5</option>
+          <option value="6">6</option><option value="7">7</option>
+        </select></div>
+      <div class="rs-field"><label for="selFthuePost">訓練後 FTHUE（選填）</label>
+        <select id="selFthuePost" class="rs-select" data-testid="select-fthue-post-level">
+          <option value="">未量度／留空</option><option value="5">5</option>
           <option value="6">6</option><option value="7">7</option>
         </select></div>
       <div class="rs-field"><label for="selAffectedSide">患側</label>
         <select id="selAffectedSide" class="rs-select" data-testid="select-affected-side">
           <option value="">請選擇</option><option value="left">左</option><option value="right">右</option>
         </select></div>
+      <div class="rs-field"><label for="inpGripPre">訓練前握力（kg，選填）</label>
+        <input id="inpGripPre" type="number" min="0" step="0.1" class="rs-input" data-testid="input-grip-pre" placeholder="留空＝未量度"></div>
+      <div class="rs-field"><label for="inpGripPost">訓練後握力（kg，選填）</label>
+        <input id="inpGripPost" type="number" min="0" step="0.1" class="rs-input" data-testid="input-grip-post" placeholder="留空＝未量度"></div>
+      <div class="rs-field"><label for="inpPinchPre">訓練前捏力（kg，選填）</label>
+        <input id="inpPinchPre" type="number" min="0" step="0.1" class="rs-input" data-testid="input-pinch-pre" placeholder="留空＝未量度"></div>
+      <div class="rs-field"><label for="inpPinchPost">訓練後捏力（kg，選填）</label>
+        <input id="inpPinchPost" type="number" min="0" step="0.1" class="rs-input" data-testid="input-pinch-post" placeholder="留空＝未量度"></div>
     </div>
     <label class="rs-check rs-safety-check" for="chkSafety">
       <input id="chkSafety" type="checkbox" data-testid="checkbox-safety-confirmed">
@@ -134,6 +147,18 @@
       <strong>遊戲數據已自動填入</strong>
       <div id="autoGameMetrics" data-testid="text-auto-game-metrics"></div>
     </div>
+    <section class="rs-system-summary rs-hidden" id="systemMetricsPanel" aria-labelledby="systemMetricsTitle" data-testid="panel-system-metrics">
+      <h3 id="systemMetricsTitle">系統／錄影回傳資料</h3>
+      <div class="rs-metric-grid">
+        <div><span>追蹤遺失</span><output id="outTrackingLoss">—</output></div>
+        <div><span>追蹤失敗</span><output id="outTrackingFailures">—</output></div>
+        <div><span>停留逾時</span><output id="outHoldTimeouts">—</output></div>
+        <div><span>放開延遲</span><output id="outReleaseDelays">—</output></div>
+        <div><span>錄影狀態</span><output id="outRecordingStatus">—</output></div>
+        <div><span>錄影檔案</span><output id="outRecordingFile">—</output></div>
+      </div>
+      <p class="rs-system-caveat">單鏡頭／系統旗標只作技術及探索性記錄，並非臨床診斷。</p>
+    </section>
 
     <details class="rs-details" data-testid="details-session-performance">
       <summary>選填：如有時間再填</summary>
@@ -142,6 +167,14 @@
           <div class="rs-field"><label for="inpCorrect">正確（自動）</label><input id="inpCorrect" type="number" min="0" step="1" class="rs-input" data-testid="input-correct"></div>
           <div class="rs-field"><label for="inpWrong">錯誤（自動）</label><input id="inpWrong" type="number" min="0" step="1" class="rs-input" data-testid="input-wrong"></div>
           <div class="rs-field"><label for="inpDrops">跌落（自動）</label><input id="inpDrops" type="number" min="0" step="1" class="rs-input" data-testid="input-drops"></div>
+          <div class="rs-field"><label for="inpSingleMotorRate">單一任務動作正確／分鐘</label><input id="inpSingleMotorRate" type="number" min="0" step="0.01" class="rs-input" data-testid="input-single-motor-rate" placeholder="留空＝未量度"></div>
+          <div class="rs-field"><label for="inpDualMotorRate">雙重任務動作正確／分鐘</label><input id="inpDualMotorRate" type="number" min="0" step="0.01" class="rs-input" data-testid="input-dual-motor-rate" placeholder="留空＝未量度"></div>
+          <div class="rs-field"><label for="inpSingleCognitiveAccuracy">單一任務認知正確率（%）</label><input id="inpSingleCognitiveAccuracy" type="number" min="0" max="100" step="0.1" class="rs-input" data-testid="input-single-cognitive-accuracy" placeholder="留空＝未量度"></div>
+          <div class="rs-field"><label for="inpDualCognitiveAccuracy">雙重任務認知正確率（%）</label><input id="inpDualCognitiveAccuracy" type="number" min="0" max="100" step="0.1" class="rs-input" data-testid="input-dual-cognitive-accuracy" placeholder="留空＝未量度"></div>
+          <div class="rs-field"><label for="inpShoulderHiking">治療師確認：聳肩次數</label><input id="inpShoulderHiking" type="number" min="0" step="1" class="rs-input" data-testid="input-shoulder-hiking-count" placeholder="留空＝未觀察"></div>
+          <div class="rs-field"><label for="inpTrunkLean">治療師確認：軀幹側傾次數</label><input id="inpTrunkLean" type="number" min="0" step="1" class="rs-input" data-testid="input-trunk-lean-count" placeholder="留空＝未觀察"></div>
+          <div class="rs-field"><label for="inpFingerTightening">治療師確認：手指過度緊繃次數</label><input id="inpFingerTightening" type="number" min="0" step="1" class="rs-input" data-testid="input-finger-tightening-count" placeholder="留空＝未觀察"></div>
+          <div class="rs-field"><label for="inpPainCount">治療師確認：疼痛表達／反應次數</label><input id="inpPainCount" type="number" min="0" step="1" class="rs-input" data-testid="input-pain-count" placeholder="留空＝未觀察"></div>
           <div class="rs-field"><label for="selAssistance">協助</label><select id="selAssistance" class="rs-select" data-testid="select-assistance">
             <option value="unobserved">未觀察</option><option value="none">無</option><option value="verbal">口頭</option><option value="physical">身體協助</option></select></div>
           <div class="rs-field"><label for="selTrunk">軀幹代償</label><select id="selTrunk" class="rs-select" data-testid="select-trunk">
@@ -166,9 +199,24 @@
           <div class="rs-field"><label for="inpSetupMin">準備時間（分鐘）</label><input id="inpSetupMin" type="number" min="0" max="60" step="0.5" class="rs-input" data-testid="input-setup-min"></div>
           <div class="rs-field"><label for="inpTherapistComment">OT／OTA簡短意見</label><input id="inpTherapistComment" class="rs-input" maxlength="160" data-testid="input-therapist-comment" placeholder="可留空"></div>
         </div>
+        <div class="rs-dtc-summary" aria-live="polite" data-testid="summary-dtc">
+          <strong>雙重任務成本（探索性）</strong>
+          <span id="motorDtcText">Motor DTC：不可計算</span>
+          <span id="cognitiveDtcText">Cognitive Accuracy DTC：不可計算</span>
+        </div>
         <p class="rs-lead" data-testid="text-session-auto">—</p>
       </div>
     </details>
+
+    <section class="rs-trend-panel" aria-labelledby="trendTitle" data-testid="panel-exploratory-trends">
+      <div class="rs-trend-heading">
+        <div><h3 id="trendTitle">跨節趨勢（探索性）</h3><p>只在本頁記憶體比較同一匿名編號的最近較早節次；不會自動判定改善。</p></div>
+        <label class="rs-btn rs-btn-secondary rs-btn-small rs-file-button" for="inpPreviousCsv">匯入較早 CSV<input id="inpPreviousCsv" type="file" accept=".csv,text/csv" data-testid="input-previous-csv"></label>
+      </div>
+      <p id="trendImportStatus" class="rs-trend-status" role="status" aria-live="polite">尚未匯入較早 CSV。</p>
+      <div id="trendResult" class="rs-trend-result" aria-live="polite">填寫目前節次後會顯示比較；沒有較早同一參加者節次時不作比較。</div>
+      <p class="rs-system-caveat">治療師確認的代償計數與系統事件分開顯示。單鏡頭／系統旗標不是臨床診斷。</p>
+    </section>
 
     <details class="rs-details" data-testid="details-session-problems">
       <summary>有問題</summary>

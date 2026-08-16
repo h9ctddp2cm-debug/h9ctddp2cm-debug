@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-16T14:00:35.175Z",
+  "generated_at": "2026-08-16T14:30:09.217Z",
   "base_url": "http://127.0.0.1:4173",
   "scope": "Independent technical verification for FTHUE Levels 4, 5, and 6",
   "limitation": "Not clinical validation; Level 6 aperture detection does not measure pinch force.",
@@ -793,11 +793,11 @@
         },
         "items": [
           {
-            "label": "燒賣",
-            "type": "siumai",
+            "label": "蝦餃",
+            "type": "hargau",
             "x": 259.6,
             "y": 442.8,
-            "r": 100
+            "r": 145
           },
           {
             "label": "蝦餃",
@@ -807,11 +807,11 @@
             "r": 145
           },
           {
-            "label": "燒賣",
-            "type": "siumai",
+            "label": "蝦餃",
+            "type": "hargau",
             "x": 920.4,
             "y": 442.8,
-            "r": 100
+            "r": 145
           }
         ],
         "targets": [
@@ -872,11 +872,11 @@
         },
         "items": [
           {
-            "label": "燒賣",
-            "type": "siumai",
+            "label": "蝦餃",
+            "type": "hargau",
             "x": 259.6,
             "y": 442.8,
-            "r": 100
+            "r": 145
           },
           {
             "label": "蝦餃",
@@ -886,11 +886,11 @@
             "r": 145
           },
           {
-            "label": "燒賣",
-            "type": "siumai",
+            "label": "蝦餃",
+            "type": "hargau",
             "x": 920.4,
             "y": 442.8,
-            "r": 100
+            "r": 145
           }
         ],
         "targets": [

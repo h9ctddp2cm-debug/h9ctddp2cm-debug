@@ -27,6 +27,13 @@ const elements = {
   canvasWrap: document.querySelector(".canvas-wrap"),
   canvas: document.querySelector("#diagnosticCanvas"),
   video: document.querySelector("#cameraVideo"),
+  sessionModeBadge: document.querySelector("#sessionModeBadge"),
+  recordingIndicator: document.querySelector("#recordingIndicator"),
+  recordingReview: document.querySelector("#recordingReview"),
+  recordingReviewVideo: document.querySelector("#recordingReviewVideo"),
+  recordingPlay: document.querySelector("#recordingPlay"),
+  recordingDownload: document.querySelector("#recordingDownload"),
+  recordingDelete: document.querySelector("#recordingDelete"),
   fpsValue: document.querySelector("#fpsValue"),
   stateValue: document.querySelector("#stateValue"),
   actionValue: document.querySelector("#actionValue"),
@@ -60,6 +67,12 @@ const elements = {
   responseAccuracy: document.querySelector("#responseAccuracy"),
   applyCognitiveResponse: document.querySelector("#applyCognitiveResponse"),
 };
+
+const launchParams = new URLSearchParams(window.location.search);
+const requestedMode = launchParams.get("mode")
+  || (launchParams.get("trial") === "1" ? "trial" : null);
+const sessionMode = requestedMode === "trial" ? "trial" : "training";
+const isTrialMode = sessionMode === "trial";
 
 const AUTO_LOG_ACTIONS = new Set([
   "CALIBRATION_SUCCESS",
@@ -113,8 +126,187 @@ let latestDatasetPayload = null;
 let warningFlashTimer = null;
 let lastWarningFlashAt = -Infinity;
 const DEFAULT_MOVEMENT_ALERT = "肩膊被拉扯／疼痛、患手愈來愈繃緊、軀幹向側傾斜：停止";
+let mediaRecorder = null;
+let recordingChunks = [];
+let recordingBlob = null;
+let recordingUrl = null;
+let recordingFilename = "";
+let recordingState = isTrialMode ? "disabled_trial" : "idle";
+let recordingPrivacyCanvas = null;
+let recordingPrivacyStream = null;
+let recordingPrivacyFrameId = 0;
+const RECORDING_HEAD_EXCLUSION_RATIO = 0.30;
+
+function setSessionModeUi() {
+  elements.sessionModeBadge.textContent = isTrialMode
+    ? "試玩 · 不錄影／不提示"
+    : "訓練 · 錄影及姿勢提示";
+  elements.sessionModeBadge.classList.toggle("trial-mode", isTrialMode);
+  document.body.dataset.sessionMode = sessionMode;
+}
+
+function updateRecordingIndicator() {
+  const textByState = {
+    disabled_trial: "試玩：不錄影",
+    idle: "REC 待機",
+    recording: "REC 錄影中 · 不錄頭部",
+    processing: "REC 處理中",
+    available: "REC 可回看",
+    unsupported: "REC 不支援",
+    unavailable: "REC 未可用",
+  };
+  elements.recordingIndicator.textContent = textByState[recordingState] || "REC 待機";
+  elements.recordingIndicator.classList.toggle("is-recording", recordingState === "recording");
+}
+
+function clearRecordingReview() {
+  elements.recordingReviewVideo.pause();
+  elements.recordingReviewVideo.removeAttribute("src");
+  elements.recordingReviewVideo.load();
+  elements.recordingReview.hidden = true;
+  if (recordingUrl) URL.revokeObjectURL(recordingUrl);
+  recordingUrl = null;
+  recordingBlob = null;
+  recordingFilename = "";
+  if (!isTrialMode && recordingState === "available") {
+    recordingState = "idle";
+    updateRecordingIndicator();
+  }
+}
+
+function makeRecordingFilename(patientId = "ANON") {
+  const anonymousId = String(patientId).toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 40) || "ANON";
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  return `${anonymousId}_FTHUE-L3_${timestamp}.webm`;
+}
+
+function supportedRecorderOptions() {
+  if (typeof window.MediaRecorder !== "function") return null;
+  const mimeTypes = [
+    "video/webm;codecs=vp9",
+    "video/webm;codecs=vp8",
+    "video/webm",
+    "video/mp4",
+  ];
+  const mimeType = mimeTypes.find((type) => !MediaRecorder.isTypeSupported || MediaRecorder.isTypeSupported(type));
+  return mimeType ? { mimeType } : {};
+}
+
+function stopRecordingPrivacyStream() {
+  if (recordingPrivacyFrameId) {
+    cancelAnimationFrame(recordingPrivacyFrameId);
+    recordingPrivacyFrameId = 0;
+  }
+  recordingPrivacyStream?.getTracks().forEach((track) => track.stop());
+  recordingPrivacyStream = null;
+  recordingPrivacyCanvas = null;
+}
+
+function createHeadExcludedRecordingStream() {
+  if (typeof HTMLCanvasElement === "undefined"
+      || typeof HTMLCanvasElement.prototype.captureStream !== "function") return null;
+  const sourceTrack = cameraStream?.getVideoTracks?.()[0];
+  const settings = sourceTrack?.getSettings?.() || {};
+  const sourceWidth = elements.video.videoWidth || settings.width || 640;
+  const sourceHeight = elements.video.videoHeight || settings.height || 480;
+  if (sourceWidth < 2 || sourceHeight < 2) return null;
+  const cropTop = Math.round(sourceHeight * RECORDING_HEAD_EXCLUSION_RATIO);
+  const cropHeight = Math.max(2, sourceHeight - cropTop);
+  const outputWidth = Math.min(720, sourceWidth);
+  const outputHeight = Math.max(240, Math.round(outputWidth * cropHeight / sourceWidth));
+  const canvas = document.createElement("canvas");
+  canvas.width = outputWidth;
+  canvas.height = outputHeight;
+  const context = canvas.getContext("2d", { alpha: false });
+  if (!context) return null;
+  const draw = () => {
+    context.fillStyle = "#eaf0ee";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    if (elements.video.readyState >= 2) {
+      context.drawImage(elements.video, 0, cropTop, sourceWidth, cropHeight,
+        0, 0, canvas.width, canvas.height);
+    }
+    recordingPrivacyFrameId = requestAnimationFrame(draw);
+  };
+  draw();
+  recordingPrivacyCanvas = canvas;
+  recordingPrivacyStream = canvas.captureStream(20);
+  return recordingPrivacyStream;
+}
+
+function recordingCanStart() {
+  return !isTrialMode && Boolean(cameraStream) && Boolean(dashboard?.sessionActive || dataCollector.sessionActive);
+}
+
+function startTrainingRecordingIfPossible(patientId) {
+  if (!recordingCanStart() || mediaRecorder?.state === "recording") return false;
+  const options = supportedRecorderOptions();
+  if (!options) {
+    recordingState = "unsupported";
+    updateRecordingIndicator();
+    return false;
+  }
+  clearRecordingReview();
+  recordingChunks = [];
+  recordingFilename = makeRecordingFilename(patientId || dashboard?.getFormInputs?.().patientId);
+  try {
+    const videoOnlyStream = createHeadExcludedRecordingStream();
+    if (!videoOnlyStream) {
+      recordingState = "unsupported";
+      updateRecordingIndicator();
+      return false;
+    }
+    mediaRecorder = new MediaRecorder(videoOnlyStream, options);
+    mediaRecorder.addEventListener("dataavailable", (event) => {
+      if (event.data?.size) recordingChunks.push(event.data);
+    });
+    mediaRecorder.addEventListener("stop", () => {
+      const type = mediaRecorder?.mimeType || recordingChunks[0]?.type || "video/webm";
+      if (recordingChunks.length) {
+        recordingBlob = new Blob(recordingChunks, { type });
+        recordingUrl = URL.createObjectURL(recordingBlob);
+        elements.recordingReviewVideo.src = recordingUrl;
+        elements.recordingReview.hidden = false;
+        recordingState = "available";
+      } else {
+        recordingState = "unavailable";
+      }
+      mediaRecorder = null;
+      recordingChunks = [];
+      stopRecordingPrivacyStream();
+      updateRecordingIndicator();
+    }, { once: true });
+    mediaRecorder.start(1000);
+    recordingState = "recording";
+    updateRecordingIndicator();
+    return true;
+  } catch (error) {
+    stopRecordingPrivacyStream();
+    mediaRecorder = null;
+    recordingChunks = [];
+    recordingState = "unavailable";
+    updateRecordingIndicator();
+    logToConsole(`RECORDING_UNAVAILABLE | ${error?.name || "UNKNOWN"}`);
+    return false;
+  }
+}
+
+function stopTrainingRecording() {
+  if (isTrialMode || !mediaRecorder || mediaRecorder.state === "inactive") return;
+  recordingState = "processing";
+  updateRecordingIndicator();
+  try {
+    mediaRecorder.stop();
+  } catch {
+    stopRecordingPrivacyStream();
+    recordingState = "unavailable";
+    updateRecordingIndicator();
+  }
+}
 
 elements.sessionId.textContent = sessionId;
+setSessionModeUi();
+updateRecordingIndicator();
 
 function setTheme(theme) {
   document.documentElement.setAttribute("data-theme", theme);
@@ -171,7 +363,7 @@ function updateMetrics(output) {
 
   elements.stateValue.textContent = output.state;
   elements.actionValue.textContent = output.action;
-  const isMovementWarning = MOVEMENT_QUALITY_WARNING_ACTIONS.has(output.action);
+  const isMovementWarning = !isTrialMode && MOVEMENT_QUALITY_WARNING_ACTIONS.has(output.action);
   elements.guidance.textContent = isMovementWarning ? "請即時糾正姿勢" : "";
   elements.guidance.classList.toggle("movement-warning", isMovementWarning);
   elements.scoreValue.textContent = String(output.score);
@@ -207,6 +399,7 @@ function updateMetrics(output) {
 }
 
 function flashMovementQualityWarning(output) {
+  if (isTrialMode) return;
   if (!MOVEMENT_QUALITY_WARNING_ACTIONS.has(output.action)) return;
   const now = output.timestampMs || performance.now();
   if (now - lastWarningFlashAt < 1800) return;
@@ -332,6 +525,7 @@ dashboard = new TherapistDashboard({
       : "PENDING";
     elements.responseAccuracy.value = "";
     logToConsole(`SESSION_STARTED | ${inputs.experimentalCondition} | planned ${inputs.experimentalCondition === "SINGLE_TASK_BASELINE" ? 5 : 8} min`);
+    queueMicrotask(() => startTrainingRecordingIfPossible(inputs.patientId));
     handleOutput(engine.output({
       message: "Session 已建立，請開始中央桌面校準",
       action: "SESSION_STARTED",
@@ -358,6 +552,7 @@ dashboard = new TherapistDashboard({
     }));
   },
   onEndSession: (inputs) => new Promise((resolve) => {
+    stopTrainingRecording();
     new VamsInterfaceOverlay({
       onScoreSubmitted: (score) => {
         dataCollector.updateBlockMetadata({
@@ -373,6 +568,24 @@ dashboard = new TherapistDashboard({
       },
     }).show();
   }),
+});
+
+elements.recordingPlay.addEventListener("click", async () => {
+  if (!recordingBlob) return;
+  try {
+    await elements.recordingReviewVideo.play();
+  } catch {
+    // A browser may require another direct user gesture before it can play.
+  }
+});
+
+elements.recordingDownload.addEventListener("click", () => {
+  if (!recordingBlob || !recordingFilename) return;
+  downloadFile(recordingFilename, recordingBlob, recordingBlob.type || "video/webm");
+});
+
+elements.recordingDelete.addEventListener("click", () => {
+  clearRecordingReview();
 });
 
 elements.applyCognitiveResponse.addEventListener("click", () => {
@@ -448,8 +661,6 @@ function drawCanvas() {
     context.scale(-1, 1);
     context.drawImage(elements.video, 0, 0, width, height);
     context.restore();
-    context.fillStyle = "rgba(8, 20, 17, 0.2)";
-    context.fillRect(0, 0, width, height);
   } else {
     context.fillStyle = "#d9e4e0";
     context.font = "600 18px Satoshi, sans-serif";
@@ -511,16 +722,16 @@ function updateFps(now) {
 async function loadPoseLandmarker() {
   if (poseLandmarker) return poseLandmarker;
   elements.cameraStatus.textContent = "正在載入 MediaPipe Pose 模型…";
-  const visionBundle = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs");
+  const visionBundle = await import("../../vendor/mediapipe/vision_bundle.mjs");
   const vision = await visionBundle.FilesetResolver.forVisionTasks(
-    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm",
+    "../../vendor/mediapipe/wasm",
   );
   const appleTouch = /iPad|iPhone|iPod/.test(navigator.userAgent)
     || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   const options = {
     baseOptions: {
       // Tasks Vision equivalent of the legacy Pose solution's modelComplexity: 0.
-      modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+      modelAssetPath: "../../vendor/mediapipe/models/pose_landmarker_lite.task",
       delegate: appleTouch ? "CPU" : "GPU",
     },
     runningMode: "VIDEO",
@@ -673,6 +884,7 @@ async function startCameraFlow() {
     elements.video.srcObject = cameraStream;
     await elements.video.play();
     elements.cameraStatus.textContent = "鏡頭對準";
+    startTrainingRecordingIfPossible();
     if (animationFrameId) cancelAnimationFrame(animationFrameId);
     animationFrameId = requestAnimationFrame(cameraLoop);
     return true;
@@ -685,18 +897,8 @@ async function startCameraFlow() {
   }
 }
 
-// The parent-page route carries ?safetyAck=1 so participant and trial flows
+// The parent-page route carries ?safetyAck=1 so participant and training flows
 // skip this duplicated interstitial. In-game stop and supervision prompts remain.
-const launchParams = new URLSearchParams(window.location.search);
-if (launchParams.get("trial") === "1") {
-  const trialBadge = document.getElementById("trialModeBadge");
-  const audience = launchParams.get("audience") === "therapist" ? "治療師" : "病人";
-  if (trialBadge) {
-    trialBadge.hidden = false;
-    trialBadge.textContent = `${audience}試玩 · 不錄影`;
-  }
-  document.body.dataset.sessionMode = "trial";
-}
 if (launchParams.get("safetyAck") === "1") {
   elements.safetyGateAck.checked = true;
   elements.safetyGateContinue.disabled = false;
@@ -784,6 +986,13 @@ window.render_game_to_text = () => JSON.stringify({
   targetElevationMetadataDeg: PROTOCOL_VARIANT_LEGACY_DEG[elements.protocolVariant.value] ?? 45,
   protocolVariant: elements.protocolVariant.value,
   cameraActive: Boolean(cameraStream),
+  mode: sessionMode,
+  recording: {
+    state: recordingState,
+    active: mediaRecorder?.state === "recording",
+    reviewAvailable: Boolean(recordingBlob),
+    supported: typeof window.MediaRecorder === "function",
+  },
 });
 
 window.advanceTime = (milliseconds) => {
@@ -812,10 +1021,16 @@ window.__level3Diagnostic = {
   get events() { return sessionEvents.slice(); },
   get dataset() { return dataCollector.exportPayload(engine); },
   get dashboard() { return dashboard; },
+  get mode() { return sessionMode; },
+  get recordingState() { return recordingState; },
+  startTrainingRecordingIfPossible,
+  stopTrainingRecording,
   runSyntheticCycle,
 };
 
 window.addEventListener("beforeunload", () => {
+  stopTrainingRecording();
+  if (recordingUrl) URL.revokeObjectURL(recordingUrl);
   cameraStream?.getTracks().forEach((track) => track.stop());
 });
 
