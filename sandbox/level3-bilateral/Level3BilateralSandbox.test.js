@@ -123,7 +123,7 @@ test("midline requires a fresh continuous 0.8-second hold", () => {
   assert.equal(engine.currentState, LEVEL3_STATES.WIPING_LATERAL);
 });
 
-test("a completed lateral cycle alternates direction and increments score", () => {
+test("a completed lateral cycle repeats the affected-side direction and increments score", () => {
   const { engine, clock } = calibratedEngine();
   advance(engine, {}, clock, 900, 100);
   assert.equal(engine.currentState, LEVEL3_STATES.WIPING_LATERAL);
@@ -135,7 +135,7 @@ test("a completed lateral cycle alternates direction and increments score", () =
 
   advance(engine, {}, clock, 900, 100);
   assert.equal(engine.currentState, LEVEL3_STATES.MIDLINE_READY);
-  assert.equal(engine.targetDirection, "RIGHT");
+  assert.equal(engine.targetDirection, "LEFT");
   assert.equal(engine.score, 1);
 });
 
@@ -202,7 +202,7 @@ test("missing elbow landmarks do not break the existing tabletop tracking path",
   assert.equal(output.trackingStable, true);
 });
 
-test("tracking interruption clears debounce and requires 2.5 seconds plus fresh evidence", () => {
+test("tracking interruption clears debounce and requires 0.9 seconds plus fresh evidence", () => {
   const { engine, clock } = calibratedEngine();
   advance(engine, {}, clock, 600, 100);
   const lost = engine.update(null, null, true, clock.value);
@@ -212,7 +212,7 @@ test("tracking interruption clears debounce and requires 2.5 seconds plus fresh 
   clock.value += 100;
   let pose = makePose();
   assert.equal(updateWithPose(engine, pose, false, clock.value).action, "STABILIZING");
-  clock.value += 2400;
+  clock.value += 700;
   pose = makePose();
   assert.equal(updateWithPose(engine, pose, false, clock.value).action, "STABILIZING");
   clock.value += 200;
@@ -417,7 +417,7 @@ test("Level 3 separates query-driven trial and training recording behavior", () 
   assert.match(appSource, /createHeadExcludedRecordingStream\(\)/);
   assert.match(appSource, /new MediaRecorder\(videoOnlyStream,\s*options\)/);
   assert.match(appSource, /queueMicrotask\(\(\) => startTrainingRecordingIfPossible\(inputs\.patientId\)\)/);
-  assert.match(appSource, /elements\.cameraStatus\.textContent = "鏡頭對準";\s+startTrainingRecordingIfPossible\(\)/);
+  assert.match(appSource, /elements\.cameraStatus\.textContent = "本機偵測已啟動 · 正在校準";\s+startTrainingRecordingIfPossible\(\)/);
   assert.match(appSource, /onEndSession: \(inputs\) => new Promise\(\(resolve\) => \{\s+stopTrainingRecording\(\)/);
   assert.match(appSource, /recording: \{\s+state: recordingState/);
   assert.equal(appSource.includes('rgba(8, 20, 17, 0.2)'), false);
@@ -435,8 +435,37 @@ test("Level 3 recording review has play, download, delete, and an anonymized fil
 
 test("Level 3 training recording excludes the top head region before MediaRecorder", () => {
   assert.match(appSource, /RECORDING_HEAD_EXCLUSION_RATIO\s*=\s*0\.30/);
-  assert.match(appSource, /canvas\.captureStream\(20\)/);
+  assert.match(appSource, /canvas\.captureStream\(12\)/);
   assert.match(appSource, /drawImage\(elements\.video,\s*0,\s*cropTop/);
   assert.match(appSource, /new MediaRecorder\(videoOnlyStream,\s*options\)/);
   assert.match(pageSource, /只錄頭部以下/);
+});
+
+test("Level 3 requires an explicit affected-side choice before starting", () => {
+  const sideFieldset = pageSource.match(
+    /<fieldset id="affectedSideFieldset"[\s\S]*?<\/fieldset>/,
+  );
+  assert.ok(sideFieldset, "affected-side fieldset is missing");
+  assert.doesNotMatch(sideFieldset[0], /name="affectedSide"[^>]*checked/);
+  assert.match(sideFieldset[0], /左手患側/);
+  assert.match(sideFieldset[0], /右手患側/);
+  assert.match(pageSource, /id="startCamera"[\s\S]*?disabled>先選患手<\/button>/);
+  assert.match(dashboardSource, /if \(!inputs\.affectedSide\)/);
+  assert.match(appSource, /if \(!selectedSide\)/);
+});
+
+test("Level 3 first affected-side movement empirically binds camera left-right", () => {
+  assert.match(appSource, /mirrorPoseForDisplay/);
+  assert.match(engineSource, /bindEmpiricalDirection\(this\.affectedSide, rawDisplacement\)/);
+  assert.match(engineSource, /action: "DIRECTION_AUTO_BOUND"/);
+  assert.match(appSource, /requestedAffectedSide === "LEFT" \|\| requestedAffectedSide === "RIGHT"/);
+});
+
+test("Level 3 uses a single game-start action and a responsive local inference loop", () => {
+  assert.match(pageSource, /開始 Level 3 遊戲|先選患手/);
+  assert.match(appSource, /if \(!dashboard\.sessionActive && dashboard\.start\(\) !== true\) return false/);
+  assert.doesNotMatch(appSource, /inferenceFrameCount % 2/);
+  assert.match(appSource, /isAppleTouchDevice\(\) \? 50 : 40/);
+  assert.match(appSource, /canvas\.captureStream\(12\)/);
+  assert.match(appSource, /localInference: true/);
 });

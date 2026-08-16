@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
-  <title>Level 3 雙側桌面滑動 · 診斷 Sandbox</title>
+  <title>Level 3 患側外滑 · 診斷 Sandbox</title>
   <link rel="preconnect" href="https://api.fontshare.com">
   <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&f[]=cabinet-grotesk@600,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./diagnostic.css">
@@ -13,7 +13,7 @@
   <a class="skip-link" href="#main">跳到主要內容</a>
   <header class="topbar">
     <div>
-      <h1>Level 3 左右側滑</h1>
+      <h1>Level 3 患側外滑</h1>
     </div>
     <div class="header-actions">
       <span class="mode-badge" id="sessionModeBadge" data-testid="indicator-level3-mode">訓練 · 錄影及姿勢提示</span>
@@ -157,12 +157,13 @@
           </div>
         </details>
 
-        <fieldset>
-          <legend>患側與首次方向</legend>
+        <fieldset id="affectedSideFieldset" class="affected-side-fieldset">
+          <legend>患手是？</legend>
           <div class="segmented">
-            <label><input type="radio" name="affectedSide" value="LEFT" checked data-testid="radio-side-left"><span>左側</span></label>
-            <label><input type="radio" name="affectedSide" value="RIGHT" data-testid="radio-side-right"><span>右側</span></label>
+            <label><input type="radio" name="affectedSide" value="LEFT" data-testid="radio-side-left"><span>左手患側</span></label>
+            <label><input type="radio" name="affectedSide" value="RIGHT" data-testid="radio-side-right"><span>右手患側</span></label>
           </div>
+          <small id="affectedSideHint" class="affected-side-hint" aria-live="polite">必須先選患側，系統才會判斷外滑方向。</small>
         </fieldset>
 
         <label class="field">
@@ -211,7 +212,7 @@
         </div>
         <p id="sessionControlStatus" class="inline-status compact-status" data-testid="status-session" aria-live="polite"></p>
 
-        <button id="startCamera" class="button primary" type="button" data-testid="button-start-camera">開相機</button>
+        <button id="startCamera" class="button primary" type="button" data-testid="button-start-camera" disabled>先選患手</button>
         <button id="beginCalibration" class="button warning" type="button" data-testid="button-begin-calibration">校準</button>
         <button id="runSynthetic" class="button secondary" type="button" data-testid="button-run-synthetic">測試</button>
         <p id="cameraStatus" class="inline-status" data-testid="status-camera" aria-live="polite">鏡頭對準</p>
@@ -232,7 +233,7 @@
       <section class="panel camera-panel" aria-labelledby="camera-title">
         <div class="camera-heading">
           <div>
-            <h2 id="camera-title">Level 3 左右側滑</h2>
+          <h2 id="camera-title">Level 3 患側外滑</h2>
           </div>
           <div class="camera-status-chips">
             <span class="recording-indicator" id="recordingIndicator" data-testid="status-level3-recording" aria-live="polite">REC 待機</span>
@@ -240,8 +241,8 @@
           </div>
         </div>
         <div class="canvas-wrap">
-          <canvas id="diagnosticCanvas" width="480" height="360" aria-label="即時視訊、VCP 及校準邊界診斷圖"></canvas>
           <video id="cameraVideo" playsinline muted></video>
+          <canvas id="diagnosticCanvas" width="640" height="480" aria-label="即時視訊、VCP 及校準邊界診斷圖"></canvas>
         </div>
         <div class="canvas-legend" aria-label="圖例">
           <span><i class="legend-center"></i>中央基準</span>
@@ -293,7 +294,7 @@
         <article class="metric-card">
           <span>完成次數</span>
           <strong id="scoreValue" data-testid="text-score">0</strong>
-          <small>左右交替完成循環</small>
+            <small>患側外滑並返回中央</small>
         </article>
       </div>
 

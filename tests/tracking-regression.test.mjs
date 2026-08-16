@@ -8,6 +8,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const publicSource = readFileSync(path.join(root, "index.html"), "utf8");
 const level3Page = readFileSync(path.join(root, "sandbox/level3-bilateral/index.html"), "utf8");
 const level3App = readFileSync(path.join(root, "sandbox/level3-bilateral/diagnosticApp.js"), "utf8");
+const level3Engine = readFileSync(path.join(root, "sandbox/level3-bilateral/Level3BilateralSandbox.js"), "utf8");
 
 test("public calibration mirrors the video once and leaves mapped overlay coordinates unflipped", () => {
   assert.match(publicSource, /\.calib-wrap video\{\s*transform:scaleX\(-1\)/);
@@ -62,8 +63,10 @@ test("Level 5 calibration accepts the participant's available opening range with
 });
 
 test("Level 3 display and target coordinates share the same mirrored direction", () => {
-  assert.match(level3App, /context\.translate\(width,\s*0\)/);
+  assert.match(level3Page, /id="cameraVideo"/);
+  assert.match(level3App, /mirrorPoseForDisplay/);
   assert.match(level3App, /x:\s*1\s*-\s*point\.x/);
-  assert.match(level3Page, /option value="-1" selected/);
+  assert.match(level3Engine, /bindEmpiricalDirection\(this\.affectedSide,\s*rawDisplacement\)/);
+  assert.doesNotMatch(level3Page, /name="affectedSide"[^>]*checked/);
   assert.doesNotMatch(level3App, /TARGET \$\{/);
 });

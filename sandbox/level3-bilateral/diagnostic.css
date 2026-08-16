@@ -582,8 +582,9 @@ legend,
 }
 
 .canvas-wrap {
+  position: relative;
   overflow: hidden;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 4 / 3;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: #eaf0ee;
@@ -608,13 +609,23 @@ legend,
 }
 
 #diagnosticCanvas {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
   display: block;
   width: 100%;
   height: 100%;
 }
 
 #cameraVideo {
-  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
 }
 
 .recording-review {
@@ -1034,10 +1045,12 @@ footer {
 .controls-panel > .panel-heading,
 .controls-panel > .form-grid,
 .controls-panel > .fatigue-panel,
-.controls-panel > fieldset,
+.controls-panel > fieldset:not(#affectedSideFieldset),
 .controls-panel > label.field,
 #runSynthetic,
 #invalidateRep,
+#startSession,
+#beginCalibration,
 .camera-heading .fps,
 .canvas-legend,
 .metrics-section > .section-heading,
@@ -1064,3 +1077,31 @@ main{ padding-block:12px 28px; }
 .metrics-section{ padding-block:12px; }
 .guidance{ margin:10px auto 0; max-width:760px; font-size:clamp(1rem,2vw,1.35rem); }
 footer{ display:none; }
+
+.affected-side-fieldset{
+  display:block;
+  padding:14px;
+  border:2px solid var(--primary);
+  border-radius:10px;
+  background:var(--primary-soft);
+}
+.affected-side-fieldset legend{
+  padding:0 7px;
+  font-size:1.05rem;
+}
+.affected-side-fieldset .segmented span{
+  min-height:52px;
+  display:grid;
+  place-items:center;
+  font-size:1rem;
+}
+.affected-side-hint{
+  display:block;
+  margin-top:8px;
+  color:var(--muted);
+  line-height:1.4;
+}
+.affected-side-hint.is-error{
+  color:var(--danger);
+  font-weight:700;
+}

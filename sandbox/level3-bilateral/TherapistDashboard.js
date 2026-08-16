@@ -57,7 +57,7 @@ export class TherapistDashboard {
   }
 
   getFormInputs() {
-    const affectedSide = document.querySelector('input[name="affectedSide"]:checked')?.value || "LEFT";
+    const affectedSide = document.querySelector('input[name="affectedSide"]:checked')?.value || "";
     return {
       patientId: document.getElementById("patientId").value.trim(),
       fthueLevel: document.getElementById("fthueLevel").value,
@@ -101,22 +101,27 @@ export class TherapistDashboard {
 
   start() {
     const inputs = this.getFormInputs();
+    if (!inputs.affectedSide) {
+      this.status.textContent = "請先選擇左手或右手患側。";
+      document.getElementById("affectedSideFieldset")?.scrollIntoView({ block: "center" });
+      return false;
+    }
     if (!/^[A-Za-z0-9_-]{3,40}$/.test(inputs.patientId)) {
       this.status.textContent = "匿名 ID 只可包含 3–40 個英文字母、數字、底線或連字號。";
-      return;
+      return false;
     }
     const invalidInstrumentField = [...document.querySelectorAll(".fatigue-grid input")]
       .find((field) => !field.checkValidity());
     if (invalidInstrumentField) {
       invalidInstrumentField.reportValidity();
       this.status.textContent = "疲勞量尺超出容許範圍，請修正後再開始。";
-      return;
+      return false;
     }
     try {
       this.onStartSession?.(inputs);
     } catch (error) {
       this.status.textContent = `未能開始 Session：${error.message}`;
-      return;
+      return false;
     }
     this.sessionActive = true;
     this.isPaused = false;
@@ -126,6 +131,7 @@ export class TherapistDashboard {
     this.invalidateButton.disabled = false;
     this.endButton.disabled = false;
     this.status.textContent = `Session 已開始：${inputs.patientId} · ${inputs.participantSequence} Block ${inputs.blockOrderPosition}`;
+    return true;
   }
 
   togglePause() {

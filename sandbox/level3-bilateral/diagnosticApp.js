@@ -5,6 +5,8 @@ import { VamsInterfaceOverlay } from "./VamsInterfaceOverlay.js";
 
 const elements = {
   affectedSides: [...document.querySelectorAll('input[name="affectedSide"]')],
+  affectedSideFieldset: document.querySelector("#affectedSideFieldset"),
+  affectedSideHint: document.querySelector("#affectedSideHint"),
   protocolVariant: document.querySelector("#protocolVariant"),
   safetyGate: document.querySelector("#safetyGate"),
   safetyGateAck: document.querySelector("#safetyGateAck"),
@@ -73,6 +75,8 @@ const requestedMode = launchParams.get("mode")
   || (launchParams.get("trial") === "1" ? "trial" : null);
 const sessionMode = requestedMode === "trial" ? "trial" : "training";
 const isTrialMode = sessionMode === "trial";
+const isAppleTouchDevice = () => /iPad|iPhone|iPod/.test(navigator.userAgent)
+  || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
 const AUTO_LOG_ACTIONS = new Set([
   "CALIBRATION_SUCCESS",
@@ -94,7 +98,7 @@ const MOVEMENT_QUALITY_WARNING_ACTIONS = new Set([
 
 function currentConfig() {
   return {
-    affectedSide: elements.affectedSides.find((input) => input.checked)?.value || "LEFT",
+    affectedSide: elements.affectedSides.find((input) => input.checked)?.value || null,
     reachRangeProfile: elements.reachProfile.value,
     toleranceMode: elements.toleranceMode.value,
     patientLeftXSign: Number(elements.directionMapping.value),
@@ -194,7 +198,7 @@ function supportedRecorderOptions() {
 
 function stopRecordingPrivacyStream() {
   if (recordingPrivacyFrameId) {
-    cancelAnimationFrame(recordingPrivacyFrameId);
+    clearTimeout(recordingPrivacyFrameId);
     recordingPrivacyFrameId = 0;
   }
   recordingPrivacyStream?.getTracks().forEach((track) => track.stop());
@@ -226,11 +230,11 @@ function createHeadExcludedRecordingStream() {
       context.drawImage(elements.video, 0, cropTop, sourceWidth, cropHeight,
         0, 0, canvas.width, canvas.height);
     }
-    recordingPrivacyFrameId = requestAnimationFrame(draw);
+    recordingPrivacyFrameId = window.setTimeout(draw, 80);
   };
   draw();
   recordingPrivacyCanvas = canvas;
-  recordingPrivacyStream = canvas.captureStream(20);
+  recordingPrivacyStream = canvas.captureStream(12);
   return recordingPrivacyStream;
 }
 
@@ -669,15 +673,10 @@ function drawCanvas() {
     context.quadraticCurveTo(x, y, x + r, y);
   };
 
-  context.fillStyle = "#101715";
-  context.fillRect(0, 0, width, height);
-  if (cameraStream && elements.video.readyState >= 2) {
-    context.save();
-    context.translate(width, 0);
-    context.scale(-1, 1);
-    context.drawImage(elements.video, 0, 0, width, height);
-    context.restore();
-  } else {
+  context.clearRect(0, 0, width, height);
+  if (!cameraStream || elements.video.readyState < 2) {
+    context.fillStyle = "#eaf0ee";
+    context.fillRect(0, 0, width, height);
     context.fillStyle = "#d9e4e0";
     context.font = "600 18px Satoshi, sans-serif";
     context.textAlign = "left";
@@ -765,8 +764,7 @@ async function loadPoseLandmarker() {
   const vision = await visionBundle.FilesetResolver.forVisionTasks(
     "../../vendor/mediapipe/wasm",
   );
-  const appleTouch = /iPad|iPhone|iPod/.test(navigator.userAgent)
-    || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const appleTouch = isAppleTouchDevice();
   const options = {
     baseOptions: {
       // Tasks Vision equivalent of the legacy Pose solution's modelComplexity: 0.
@@ -802,7 +800,8 @@ function cameraLoop(now) {
     return;
   }
   inferenceFrameCount += 1;
-  if (inferenceFrameCount % 2 !== 0 || now - lastInferenceAt < 66) {
+  const inferenceIntervalMs = isAppleTouchDevice() ? 50 : 40;
+  if (now - lastInferenceAt < inferenceIntervalMs) {
     animationFrameId = requestAnimationFrame(cameraLoop);
     return;
   }
@@ -896,11 +895,19 @@ function showCameraError(error) {
     : "技術代碼：UNKNOWN";
   elements.cameraErrorBox.classList.add("show");
   elements.cameraStatus.textContent = "相機未啟動；可重新嘗試或返回主頁。";
-  elements.startCamera.disabled = false;
+  elements.startCamera.disabled = !elements.affectedSides.some((input) => input.checked);
 }
 
 async function startCameraFlow() {
   if (!requireSafetyAck("啟動相機")) return false;
+  const selectedSide = elements.affectedSides.find((input) => input.checked)?.value;
+  if (!selectedSide) {
+    elements.affectedSideHint.textContent = "請先選擇左手或右手患側。";
+    elements.affectedSideHint.classList.add("is-error");
+    elements.affectedSideFieldset?.scrollIntoView({ block: "center" });
+    return false;
+  }
+  if (!dashboard.sessionActive && dashboard.start() !== true) return false;
   hideCameraError();
   elements.startCamera.disabled = true;
   elements.cameraStatus.textContent = "正在啟動相機…";
@@ -911,18 +918,19 @@ async function startCameraFlow() {
       throw unsupported;
     }
     await loadPoseLandmarker();
+    const appleTouch = isAppleTouchDevice();
     cameraStream = await navigator.mediaDevices.getUserMedia({
       video: {
         facingMode: "user",
-        width: { ideal: 960, max: 1280 },
-        height: { ideal: 720, max: 720 },
+        width: { ideal: appleTouch ? 640 : 960, max: appleTouch ? 960 : 1280 },
+        height: { ideal: appleTouch ? 480 : 720, max: 720 },
         frameRate: { ideal: 24, max: 30 },
       },
       audio: false,
     });
     elements.video.srcObject = cameraStream;
     await elements.video.play();
-    elements.cameraStatus.textContent = "鏡頭對準";
+    elements.cameraStatus.textContent = "本機偵測已啟動 · 正在校準";
     startTrainingRecordingIfPossible();
     if (animationFrameId) cancelAnimationFrame(animationFrameId);
     animationFrameId = requestAnimationFrame(cameraLoop);
@@ -943,6 +951,29 @@ if (launchParams.get("safetyAck") === "1") {
   elements.safetyGateContinue.disabled = false;
   closeSafetyGate();
 }
+
+const requestedAffectedSide = String(launchParams.get("affectedSide") || "").toUpperCase();
+if (requestedAffectedSide === "LEFT" || requestedAffectedSide === "RIGHT") {
+  const requestedRadio = elements.affectedSides.find((input) => input.value === requestedAffectedSide);
+  if (requestedRadio) requestedRadio.checked = true;
+}
+
+function syncAffectedSideChoice() {
+  const selected = elements.affectedSides.find((input) => input.checked)?.value;
+  elements.startCamera.disabled = !selected;
+  elements.startCamera.textContent = selected ? "開始 Level 3 遊戲" : "先選患手";
+  elements.affectedSideHint.textContent = selected
+    ? `已選${selected === "LEFT" ? "左手" : "右手"}患側；首次請向患側外滑。`
+    : "必須先選患側，系統才會判斷外滑方向。";
+  elements.affectedSideHint.classList.remove("is-error");
+  if (selected && !dashboard.sessionActive) {
+    engine = new Level3BilateralSandbox(currentConfig());
+    lastOutput = engine.output();
+    drawCanvas();
+  }
+}
+elements.affectedSides.forEach((input) => input.addEventListener("change", syncAffectedSideChoice));
+syncAffectedSideChoice();
 
 elements.startCamera.addEventListener("click", () => { startCameraFlow(); });
 elements.cameraRetry.addEventListener("click", () => { startCameraFlow(); });
@@ -1025,6 +1056,9 @@ window.render_game_to_text = () => JSON.stringify({
   targetElevationMetadataDeg: PROTOCOL_VARIANT_LEGACY_DEG[elements.protocolVariant.value] ?? 45,
   protocolVariant: elements.protocolVariant.value,
   cameraActive: Boolean(cameraStream),
+  affectedSide: elements.affectedSides.find((input) => input.checked)?.value || null,
+  localInference: true,
+  inferenceIntervalMs: isAppleTouchDevice() ? 50 : 40,
   mode: sessionMode,
   recording: {
     state: recordingState,

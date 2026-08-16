@@ -81,7 +81,9 @@ export class Level3BilateralSandbox {
     this.patientLeftXSign = therapistConfig.patientLeftXSign === -1 ? -1 : 1;
 
     this.debounceTimeMs = 800;
-    this.trackingStabilizeDelayMs = 2500;
+    // A brief fresh-evidence window prevents a stale frame from advancing the
+    // game, without making a bedside user wait 2.5 seconds after each occlusion.
+    this.trackingStabilizeDelayMs = 900;
     this.minCalibrationMs = 2000;
     this.maxCalibrationMs = 5000;
     this.minCalibrationFrames = 30;
@@ -572,12 +574,15 @@ export class Level3BilateralSandbox {
               });
             }
             this.score += 1;
-            this.targetDirection = this.targetDirection === "LEFT" ? "RIGHT" : "LEFT";
+            // Level 3 repeats the same affected-side shoulder-abduction path:
+            // midline -> affected side -> midline. Never alternate to the
+            // unaffected side after a successful repetition.
+            this.targetDirection = this.affectedSide;
             this.scaledTargetRangeX = this.calculateScaledTargetRange();
             this.currentState = LEVEL3_STATES.MIDLINE_READY;
             this.resetTimer();
             return this.output({
-              message: "已安全回到中央，下一次將改為另一方向",
+              message: `已回中央，下一次再向患側${this.affectedSide === "LEFT" ? "左" : "右"}方外滑`,
               action: "SUCCESS_SCORE",
               nowMs,
               metrics,
