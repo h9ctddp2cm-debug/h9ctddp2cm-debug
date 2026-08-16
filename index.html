@@ -3385,11 +3385,9 @@ document.getElementById('btnLevel4').addEventListener('click', ()=> selectLevel(
 document.getElementById('btnLevel5').addEventListener('click', ()=> selectLevel('5'));
 document.getElementById('btnLevel67').addEventListener('click', ()=> selectLevel('67'));
 document.getElementById('btnLevel3').addEventListener('click', ()=>{
-  // Mandatory safety acknowledgement before the Level 3 module (which also carries
-  // its own gate when opened directly).
-  openSafetyGate('3',
-    ()=>{ window.location.href = 'sandbox/level3-bilateral/index.html?safetyAck=1'; },
-    ()=> showScreen('level'));
+  // Participant flow skips the standalone safety interstitial. In-game rest,
+  // stop and movement-quality warnings remain active.
+  window.location.href = 'sandbox/level3-bilateral/index.html?safetyAck=1';
 });
 /* Research Mode now routes to the separate role hub (research/index.html) so that
    the blinded assessor bundle never shares a page with allocation or training data.
@@ -3742,10 +3740,9 @@ document.getElementById('btnGoCalib').addEventListener('click', async ()=>{
     if(card) card.classList.remove('collapsed');
     return;
   }
-  // P0 clinical safety: mandatory acknowledgement before any camera / game start.
-  openSafetyGate(state.level || '4',
-    ()=>{ enterCalibrationFlow(); },
-    ()=> showScreen('start'));
+  // Participant flow proceeds directly to calibration; safety controls remain
+  // available throughout calibration and gameplay.
+  await enterCalibrationFlow();
 });
 
 document.getElementById('btnBackFromCalib').addEventListener('click', ()=>{
@@ -4162,10 +4159,8 @@ document.getElementById('btnRetry').addEventListener('click', async ()=>{
     showScreen('research');
     return;
   }
-  // Repeat session: the safety acknowledgement is required again for every session.
-  openSafetyGate(state.level || '4',
-    ()=> enterCalibrationFlow(),
-    ()=>{ renderActivityLibrary(); showScreen('library'); });
+  // Repeat session proceeds directly to calibration.
+  await enterCalibrationFlow();
 });
 // Home：返回級別選擇畫面
 document.getElementById('btnHome').addEventListener('click', ()=>{

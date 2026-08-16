@@ -19,11 +19,13 @@
  */
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PAGE_URL = pathToFileURL(path.join(ROOT, 'index.html')).href;
+const PAGE_SOURCE = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 
 const VIEWPORTS = [
   { name: 'iphone-portrait', width: 390, height: 844 },
@@ -175,6 +177,28 @@ test('critical test IDs and safety hooks preserved', async (t) => {
     });
     assert.deepEqual(found, [], `missing test IDs: ${found.join(', ')}`);
   });
+});
+
+test('participant flows skip the standalone safety interstitial for every level', () => {
+  const level3Flow = PAGE_SOURCE.slice(
+    PAGE_SOURCE.indexOf("document.getElementById('btnLevel3')"),
+    PAGE_SOURCE.indexOf('/* Research Mode now routes')
+  );
+  const calibrationFlow = PAGE_SOURCE.slice(
+    PAGE_SOURCE.indexOf("document.getElementById('btnGoCalib')"),
+    PAGE_SOURCE.indexOf("document.getElementById('btnBackFromCalib')")
+  );
+  const retryFlow = PAGE_SOURCE.slice(
+    PAGE_SOURCE.indexOf("document.getElementById('btnRetry')"),
+    PAGE_SOURCE.indexOf("// Home：返回級別選擇畫面")
+  );
+
+  assert.doesNotMatch(level3Flow, /openSafetyGate/);
+  assert.match(level3Flow, /level3-bilateral\/index\.html\?safetyAck=1/);
+  assert.doesNotMatch(calibrationFlow, /openSafetyGate/);
+  assert.match(calibrationFlow, /await enterCalibrationFlow\(\)/);
+  assert.doesNotMatch(retryFlow, /openSafetyGate/);
+  assert.match(retryFlow, /await enterCalibrationFlow\(\)/);
 });
 
 test('Level 4 safety gate uses the approved three-item wording', async (t) => {
