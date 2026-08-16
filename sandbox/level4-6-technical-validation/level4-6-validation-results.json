@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-16T16:46:11.797Z",
+  "generated_at": "2026-08-16T17:14:42.389Z",
   "base_url": "http://127.0.0.1:4173",
   "scope": "Independent technical verification for FTHUE Levels 4, 5, and 6",
   "limitation": "Not clinical validation; Level 6 aperture detection does not measure pinch force.",
@@ -326,9 +326,11 @@
       "details": {
         "calibrated": true,
         "progress": 0,
+        "engaged": false,
         "shoulderFlexProgress": 0,
         "elbowExtensionProgress": 0,
         "elbowAngle": 90,
+        "elbowMode": "active-extension",
         "shoulderHike": false,
         "warning": "",
         "cursorY": 672.4
@@ -342,9 +344,11 @@
       "details": {
         "calibrated": true,
         "progress": 0,
-        "shoulderFlexProgress": 0.27661064425770243,
+        "engaged": false,
+        "shoulderFlexProgress": 0.5382352941176459,
         "elbowExtensionProgress": 0,
         "elbowAngle": 90,
+        "elbowMode": "active-extension",
         "shoulderHike": true,
         "warning": "患側聳肩 · 請治療師即時糾正",
         "cursorY": 672.4
@@ -357,13 +361,15 @@
       "passed": true,
       "details": {
         "calibrated": true,
-        "progress": 0.9931683245467526,
+        "progress": 0.9896489765859888,
+        "engaged": true,
         "shoulderFlexProgress": 1,
         "elbowExtensionProgress": 1,
-        "elbowAngle": 153.80780112703462,
+        "elbowAngle": 161.403384267591,
+        "elbowMode": "active-extension",
         "shoulderHike": false,
         "warning": "",
-        "cursorY": 388.698700443509
+        "cursorY": 398.4873393120394
       }
     },
     {
@@ -373,13 +379,15 @@
       "passed": true,
       "details": {
         "calibrated": true,
-        "progress": 0.004478102418074288,
+        "progress": 0.004462234009644796,
+        "engaged": false,
         "shoulderFlexProgress": 0,
         "elbowExtensionProgress": 0,
         "elbowAngle": 90,
+        "elbowMode": "active-extension",
         "shoulderHike": false,
         "warning": "",
-        "cursorY": 637.6775997082029
+        "cursorY": 638.0538692174326
       }
     },
     {
@@ -454,8 +462,8 @@
         },
         "items": [
           {
-            "label": "叉燒包",
-            "type": "charsiu",
+            "label": "糯米雞",
+            "type": "lotusrice",
             "x": 472,
             "y": 656,
             "r": 104
@@ -526,8 +534,8 @@
         },
         "items": [
           {
-            "label": "叉燒包",
-            "type": "charsiu",
+            "label": "糯米雞",
+            "type": "lotusrice",
             "x": 472,
             "y": 656,
             "r": 104
@@ -632,8 +640,8 @@
         },
         "items": [
           {
-            "label": "叉燒包",
-            "type": "charsiu",
+            "label": "糯米雞",
+            "type": "lotusrice",
             "x": 259.6,
             "y": 442.8,
             "r": 118
@@ -711,8 +719,8 @@
         },
         "items": [
           {
-            "label": "叉燒包",
-            "type": "charsiu",
+            "label": "糯米雞",
+            "type": "lotusrice",
             "x": 259.6,
             "y": 442.8,
             "r": 118
@@ -824,18 +832,18 @@
         },
         "items": [
           {
-            "label": "燒賣",
-            "type": "siumai",
+            "label": "蝦餃",
+            "type": "hargau",
             "x": 259.6,
             "y": 442.8,
-            "r": 100
+            "r": 145
           },
           {
-            "label": "燒賣",
-            "type": "siumai",
+            "label": "蝦餃",
+            "type": "hargau",
             "x": 590,
             "y": 442.8,
-            "r": 100
+            "r": 145
           },
           {
             "label": "蝦餃",
@@ -903,18 +911,18 @@
         },
         "items": [
           {
-            "label": "燒賣",
-            "type": "siumai",
+            "label": "蝦餃",
+            "type": "hargau",
             "x": 259.6,
             "y": 442.8,
-            "r": 100
+            "r": 145
           },
           {
-            "label": "燒賣",
-            "type": "siumai",
+            "label": "蝦餃",
+            "type": "hargau",
             "x": 590,
             "y": 442.8,
-            "r": 100
+            "r": 145
           },
           {
             "label": "蝦餃",

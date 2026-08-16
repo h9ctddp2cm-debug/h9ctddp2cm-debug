@@ -6320,9 +6320,13 @@ const level4Reach = {
   baseline:null,
   samples:[],
   progress:0,
+  engaged:false,
+  peakElbowAngle:null,
+  peakShoulderFlexProgress:0,
   shoulderFlexProgress:0,
   elbowExtensionProgress:0,
   elbowAngle:null,
+  elbowMode:'waiting',
   shoulderHike:false,
   warning:'',
   calibrated:false,
@@ -6330,9 +6334,13 @@ const level4Reach = {
     this.baseline = null;
     this.samples = [];
     this.progress = 0;
+    this.engaged = false;
+    this.peakElbowAngle = null;
+    this.peakShoulderFlexProgress = 0;
     this.shoulderFlexProgress = 0;
     this.elbowExtensionProgress = 0;
     this.elbowAngle = null;
+    this.elbowMode = 'waiting';
     this.shoulderHike = false;
     this.warning = '';
     this.calibrated = false;
@@ -6404,14 +6412,14 @@ function updateLevel4ReachController(lm){
   level4Reach.elbowAngle = elbowAngle;
 
   if(!level4Reach.baseline){
-    // Level 4 begins side-on with the affected elbow around 90 degrees.
-    if(elbowAngle >= 50 && elbowAngle <= 135){
+    // Bedside starting posture varies. In particular, some patients already
+    // present with the elbow mostly extended. Reject only implausible/unstable
+    // joint solutions instead of repeatedly deleting valid calibration frames.
+    if(elbowAngle >= 25 && elbowAngle <= 178){
       level4Reach.samples.push(sample);
       if(level4Reach.samples.length > 24) level4Reach.samples.shift();
-    }else{
-      level4Reach.samples = [];
     }
-    if(level4Reach.samples.length >= 12){
+    if(level4Reach.samples.length >= 10){
       level4Reach.baseline = {
         elbowAngle:level4Median(level4Reach.samples.map(v=>v.elbowAngle)),
         wristRelativeY:level4Median(level4Reach.samples.map(v=>v.wristRelativeY)),
@@ -6420,6 +6428,9 @@ function updateLevel4ReachController(lm){
         shoulderBalance:level4Median(level4Reach.samples.map(v=>v.shoulderBalance)),
       };
       level4Reach.calibrated = true;
+      level4Reach.elbowMode = level4Reach.baseline.elbowAngle >= 138
+        ? 'maintained-extension'
+        : 'active-extension';
     }
     level4Reach.progress = 0;
     level4Reach.warning = '';
@@ -6437,18 +6448,53 @@ function updateLevel4ReachController(lm){
     baseline.wristRelativeZ-sample.wristRelativeZ,
     sample.wristReachRadius-baseline.wristReachRadius
   );
-  const extensionProgress = clamp01((elbowGain-4)/42);
-  const shoulderFlexProgress = clamp01((forwardReachGain-0.025)/0.42);
+  const availableExtension = Math.max(12, 165-baseline.elbowAngle);
+  const extensionProgress = clamp01((elbowGain-1.5)/(availableExtension*0.70));
+  const shoulderFlexProgress = clamp01((forwardReachGain-0.012)/0.24);
   const shoulderHike = (baseline.shoulderBalance-sample.shoulderBalance) > 0.035;
+  const startsExtended = baseline.elbowAngle >= 138;
+  const maintainedExtension = startsExtended
+    && elbowAngle >= Math.max(132, baseline.elbowAngle-8);
+  const activeExtension = elbowGain >= 1.5;
+  const elbowConfirmed = activeExtension || maintainedExtension;
 
   level4Reach.elbowExtensionProgress = extensionProgress;
   level4Reach.shoulderFlexProgress = shoulderFlexProgress;
   level4Reach.shoulderHike = shoulderHike;
+  level4Reach.elbowMode = maintainedExtension ? 'maintained-extension' : 'active-extension';
 
-  // Both components are mandatory. Shoulder elevation alone has no cursor gain.
-  let compoundProgress = (extensionProgress >= 0.10 && shoulderFlexProgress >= 0.10)
-    ? Math.min(extensionProgress,shoulderFlexProgress)
-    : 0;
+  // Outward transport starts only after forward shoulder motion is paired with
+  // either active elbow extension or a safely maintained already-extended arm.
+  // Once engaged, return transport follows the forward-reach signal only when
+  // elbow flexion is also evident, so shoulder elevation alone never drives it.
+  if(!level4Reach.engaged && shoulderFlexProgress >= 0.08 && elbowConfirmed){
+    level4Reach.engaged = true;
+    level4Reach.peakElbowAngle = elbowAngle;
+    level4Reach.peakShoulderFlexProgress = shoulderFlexProgress;
+  }
+  if(level4Reach.engaged){
+    level4Reach.peakElbowAngle = Math.max(level4Reach.peakElbowAngle || elbowAngle, elbowAngle);
+    level4Reach.peakShoulderFlexProgress = Math.max(
+      level4Reach.peakShoulderFlexProgress,
+      shoulderFlexProgress
+    );
+  }
+  const returning = level4Reach.engaged
+    && shoulderFlexProgress < level4Reach.peakShoulderFlexProgress-0.025;
+  const returnElbowFlexion = level4Reach.engaged
+    && (level4Reach.peakElbowAngle-elbowAngle) >= 1.5;
+  let compoundProgress = level4Reach.progress;
+  if(level4Reach.engaged && !returning){
+    compoundProgress = shoulderFlexProgress;
+  }else if(returning && (returnElbowFlexion || shoulderFlexProgress <= 0.04)){
+    compoundProgress = shoulderFlexProgress;
+  }
+  if(shoulderFlexProgress <= 0.025 && level4Reach.progress <= 0.06){
+    level4Reach.engaged = false;
+    level4Reach.peakElbowAngle = null;
+    level4Reach.peakShoulderFlexProgress = 0;
+    compoundProgress = 0;
+  }
   if(shoulderHike){
     compoundProgress = level4Reach.progress;
     level4Reach.warning = '患側聳肩 · 請治療師即時糾正';
@@ -6598,7 +6644,7 @@ function updateGameLogic(){
       return;
     }
     if(!level4Reach.calibrated){
-      setActionPrompt('回到起點', '患側肘約 90°');
+      setActionPrompt('保持起點', '慢慢向前伸手');
       return;
     }
   }
@@ -10711,8 +10757,10 @@ window.render_game_to_text = function(){
     if(isLevel4Tabletop()){
       lines.push('level4Reach=calibrated:' + level4Reach.calibrated +
         ' progress:' + level4Reach.progress.toFixed(3) +
+        ' engaged:' + level4Reach.engaged +
         ' shoulderFlex:' + level4Reach.shoulderFlexProgress.toFixed(3) +
         ' elbowExtension:' + level4Reach.elbowExtensionProgress.toFixed(3) +
+        ' elbowMode:' + level4Reach.elbowMode +
         ' shoulderHike:' + level4Reach.shoulderHike +
         ' warning:' + (level4Reach.warning || 'none'));
     }
@@ -10898,7 +10946,7 @@ window.__qa = {
     const point = (value, fallback)=>({
       x:Number.isFinite(value?.x) ? value.x : fallback.x,
       y:Number.isFinite(value?.y) ? value.y : fallback.y,
-      z:0,
+      z:Number.isFinite(value?.z) ? value.z : (fallback.z || 0),
       visibility:1,
     });
     lm[shoulderIndex] = point(spec.shoulder, {x:0.45,y:0.30});
@@ -10913,9 +10961,11 @@ window.__qa = {
     return {
       calibrated:level4Reach.calibrated,
       progress:level4Reach.progress,
+      engaged:level4Reach.engaged,
       shoulderFlexProgress:level4Reach.shoulderFlexProgress,
       elbowExtensionProgress:level4Reach.elbowExtensionProgress,
       elbowAngle:level4Reach.elbowAngle,
+      elbowMode:level4Reach.elbowMode,
       shoulderHike:level4Reach.shoulderHike,
       warning:level4Reach.warning,
       cursorY,

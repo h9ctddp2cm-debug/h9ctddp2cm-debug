@@ -45,13 +45,21 @@ test("Level 3 bilateral controller follows the selected affected side only", () 
   assert.ok(publicSource.includes("level3LateralState()"));
 });
 
-test("Level 4 vertical transport requires shoulder flexion and elbow extension together", () => {
-  assert.ok(publicSource.includes("let compoundProgress = (extensionProgress >= 0.10 && shoulderFlexProgress >= 0.10)"));
-  assert.ok(publicSource.includes("Math.min(extensionProgress,shoulderFlexProgress)"));
+test("Level 4 vertical transport requires forward reach with active or maintained elbow extension", () => {
+  assert.ok(publicSource.includes("const elbowConfirmed = activeExtension || maintainedExtension"));
+  assert.ok(publicSource.includes("shoulderFlexProgress >= 0.08 && elbowConfirmed"));
+  assert.ok(publicSource.includes("returnElbowFlexion || shoulderFlexProgress <= 0.04"));
   assert.ok(publicSource.includes("mapped.y = ch * 0.82 - level4Motion.progress * ch * 0.40"));
   assert.ok(publicSource.includes("baseline.wristRelativeZ-sample.wristRelativeZ"));
   assert.ok(publicSource.includes("baseline.wristRelativeY-sample.wristRelativeY"));
   assert.ok(publicSource.includes("sample.wristReachRadius-baseline.wristReachRadius"));
+});
+
+test("Level 4 calibration accepts an already-extended bedside starting posture", () => {
+  assert.ok(publicSource.includes("elbowAngle >= 25 && elbowAngle <= 178"));
+  assert.ok(publicSource.includes("level4Reach.samples.length >= 10"));
+  assert.ok(publicSource.includes("baseline.elbowAngle >= 138"));
+  assert.ok(publicSource.includes("'maintained-extension'"));
 });
 
 test("Level 3 visual themes share the standard lateral pickup and drop engine", () => {
