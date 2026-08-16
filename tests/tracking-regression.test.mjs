@@ -22,15 +22,34 @@ test("iPad tracking uses CPU-compatible MediaPipe creation with a CPU retry", ()
   assert.match(publicSource, /baseOptions:\{\.\.\.options\.baseOptions,\s*delegate:"CPU"\}/);
 });
 
-test("Level 4 can fall back from an occluded hand to the affected-side Pose wrist", () => {
+test("Levels 3 and 4 can use Pose when tabletop hands occlude the finger model", () => {
+  assert.match(publicSource, /source:'pose-bilateral-wrist'/);
   assert.match(publicSource, /source:'pose-wrist'/);
   assert.match(publicSource, /activeAffectedSide\(\)\s*===\s*'left'\s*\?\s*15\s*:\s*16/);
+});
+
+test("Level 3 opens the shared activity library instead of the diagnostic redirect", () => {
+  assert.match(publicSource, /'3':\s*\{\s*id:'3'/);
+  assert.match(publicSource, /beginSessionMode\('3',\s*'training'\)/);
+  assert.doesNotMatch(publicSource, /window\.location\.href\s*=\s*'sandbox\/level3-bilateral/);
+  assert.match(publicSource, /const THEME_ORDER = \['flowers','dimsum','laundry','cards','mahjong','cooking'\]/);
+});
+
+test("Level 3 bilateral controller follows the selected affected side only", () => {
+  assert.match(publicSource, /function updateLevel3LateralController\(lm,\s*cw,\s*ch\)/);
+  assert.match(publicSource, /interactionX\(\(leftWrist\.x\+rightWrist\.x\)\/2\)/);
+  assert.match(publicSource, /const outwardPixels = affectedSideSign\(\) \* \(midpoint\.x-level3Lateral\.baselineX\)/);
+  assert.match(publicSource, /mapped\.x = cw \* 0\.50 \+ affectedSideSign\(\) \* level3Motion\.progress/);
+  assert.ok(publicSource.includes("setLevel3Pose(spec)"));
+  assert.ok(publicSource.includes("level3LateralState()"));
 });
 
 test("Level 4 vertical transport requires shoulder flexion and elbow extension together", () => {
   assert.ok(publicSource.includes("let compoundProgress = (extensionProgress >= 0.10 && shoulderFlexProgress >= 0.10)"));
   assert.ok(publicSource.includes("Math.min(extensionProgress,shoulderFlexProgress)"));
   assert.ok(publicSource.includes("mapped.y = ch * 0.82 - level4Motion.progress * ch * 0.40"));
+  assert.ok(publicSource.includes("baseline.wristRelativeZ-sample.wristRelativeZ"));
+  assert.ok(publicSource.includes("baseline.wristRelativeY-sample.wristRelativeY"));
 });
 
 test("Level 4 shoulder hiking freezes transport and alerts the therapist", () => {

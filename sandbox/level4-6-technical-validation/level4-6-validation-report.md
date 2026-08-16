@@ -1,14 +1,14 @@
 # Level 4–6 Technical Validation Report
 
-Generated: 2026-08-16T15:50:10.376Z
+Generated: 2026-08-16T16:27:03.010Z
 
-Result: **PASS** (120/120 checks passed)
+Result: **PASS** (121/121 checks passed)
 
 | FTHUE level | Passed | Failed |
 |---|---:|---:|
-| 4 | 41 | 0 |
-| 5 | 41 | 0 |
-| 6 | 31 | 0 |
+| 4 | 44 | 0 |
+| 5 | 40 | 0 |
+| 6 | 30 | 0 |
 
 ## Verified scope
 
@@ -33,19 +33,16 @@ This is reproducible software technical verification only. It does not establish
 - PASS | Level 4 | launch matrix | laundry launches with the correct engine
 - PASS | Level 4 | launch matrix | cards launches with the correct engine
 - PASS | Level 4 | launch matrix | mahjong launches with the correct engine
-- PASS | Level 4 | launch matrix | cooking launches with the correct engine
 - PASS | Level 5 | launch matrix | flowers launches with the correct engine
 - PASS | Level 5 | launch matrix | dimsum launches with the correct engine
 - PASS | Level 5 | launch matrix | laundry launches with the correct engine
 - PASS | Level 5 | launch matrix | cards launches with the correct engine
 - PASS | Level 5 | launch matrix | mahjong launches with the correct engine
-- PASS | Level 5 | launch matrix | cooking launches with the correct engine
 - PASS | Level 6 | launch matrix | flowers launches with the correct engine
 - PASS | Level 6 | launch matrix | dimsum launches with the correct engine
 - PASS | Level 6 | launch matrix | laundry launches with the correct engine
 - PASS | Level 6 | launch matrix | cards launches with the correct engine
 - PASS | Level 6 | launch matrix | mahjong launches with the correct engine
-- PASS | Level 6 | launch matrix | cooking launches with the correct engine
 - PASS | Level 5 | gesture | one curled finger cannot trigger grasp
 - PASS | Level 5 | gesture | two curled fingers trigger configured grasp
 - PASS | Level 5 | gesture | one reopened finger does not release held item
@@ -57,6 +54,10 @@ This is reproducible software technical verification only. It does not establish
 - PASS | Level 5 | safety | malformed grasp landmarks fail safely
 - PASS | Level 6 | safety | malformed pinch landmarks fail safely
 - PASS | Level 4 | layout | targets remain forward of tabletop source items
+- PASS | Level 4 | compound movement | 90-degree supported start calibrates the reach controller
+- PASS | Level 4 | compound movement | shoulder elevation alone cannot lift the game object
+- PASS | Level 4 | compound movement | shoulder flexion plus elbow extension moves the object upward
+- PASS | Level 4 | compound movement | shoulder extension plus elbow flexion returns the object downward
 - PASS | Level 4 | flow | dwell pickup acquires an item
 - PASS | Level 4 | flow | correct placement increments the correct count
 - PASS | Level 4 | flow | dwell pickup acquires an item

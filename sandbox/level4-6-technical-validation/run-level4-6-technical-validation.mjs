@@ -58,15 +58,30 @@ async function advance(page, milliseconds) {
 }
 
 async function performPlacement(page, level, correct) {
-  const before = await state(page);
+  let before = await state(page);
   const item = before.items[0];
   const target = before.targets.find(t => correct ? t.type === item.type : t.type !== item.type);
   if (!item || !target) throw new Error(`Missing ${correct ? "matching" : "mismatching"} item/target`);
 
   if (level === "4") {
+    const startPose = {
+      shoulder:{x:.45,y:.30,z:0}, elbow:{x:.45,y:.48,z:0},
+      wrist:{x:.58,y:.48,z:0}, otherShoulder:{x:.60,y:.30,z:0},
+    };
+    const reachPose = {
+      shoulder:{x:.45,y:.30,z:0}, elbow:{x:.54,y:.35,z:-.10},
+      wrist:{x:.74,y:.36,z:-.30}, otherShoulder:{x:.60,y:.30,z:0},
+    };
+    for (let index = 0; index < 14; index += 1) {
+      await page.evaluate(pose => window.__qa.setLevel4Pose(pose), startPose);
+    }
+    before = await state(page);
     await position(page, item, false, true);
     await advance(page, 900);
     check("4", "flow", "dwell pickup acquires an item", (await state(page)).held !== null);
+    for (let index = 0; index < 10; index += 1) {
+      await page.evaluate(pose => window.__qa.setLevel4Pose(pose), reachPose);
+    }
     await position(page, target, false, true);
     await advance(page, 900);
   } else {
@@ -140,6 +155,52 @@ try {
   const itemY = Math.min(...l4Layout.items.map(item => item.y));
   const targetY = Math.max(...l4Layout.targets.map(target => target.y));
   check("4", "layout", "targets remain forward of tabletop source items", targetY < itemY, { targetY, itemY });
+
+  const level4StartPose = {
+    shoulder:{x:.45,y:.30,z:0}, elbow:{x:.45,y:.48,z:0},
+    wrist:{x:.58,y:.48,z:0}, otherShoulder:{x:.60,y:.30,z:0},
+  };
+  const level4ReachPose = {
+    shoulder:{x:.45,y:.30,z:0}, elbow:{x:.54,y:.35,z:-.10},
+    wrist:{x:.74,y:.36,z:-.30}, otherShoulder:{x:.60,y:.30,z:0},
+  };
+  const level4HikePose = {
+    shoulder:{x:.45,y:.22,z:0}, elbow:{x:.45,y:.40,z:0},
+    wrist:{x:.58,y:.40,z:0}, otherShoulder:{x:.60,y:.30,z:0},
+  };
+  await start(page, "4");
+  for (let index = 0; index < 14; index += 1) {
+    await page.evaluate(pose => window.__qa.setLevel4Pose(pose), level4StartPose);
+  }
+  const level4Baseline = await page.evaluate(() => window.__qa.level4ReachState());
+  check("4", "compound movement", "90-degree supported start calibrates the reach controller",
+    level4Baseline.calibrated && level4Baseline.progress === 0, level4Baseline);
+  for (let index = 0; index < 3; index += 1) {
+    await page.evaluate(pose => window.__qa.setLevel4Pose(pose), level4HikePose);
+  }
+  const level4Hike = await page.evaluate(() => window.__qa.level4ReachState());
+  check("4", "compound movement", "shoulder elevation alone cannot lift the game object",
+    level4Hike.progress < 0.02 && level4Hike.elbowExtensionProgress === 0
+    && level4Hike.shoulderHike && level4Hike.warning.includes("聳肩"), level4Hike);
+
+  await start(page, "4");
+  for (let index = 0; index < 14; index += 1) {
+    await page.evaluate(pose => window.__qa.setLevel4Pose(pose), level4StartPose);
+  }
+  for (let index = 0; index < 10; index += 1) {
+    await page.evaluate(pose => window.__qa.setLevel4Pose(pose), level4ReachPose);
+  }
+  const level4Forward = await page.evaluate(() => window.__qa.level4ReachState());
+  check("4", "compound movement", "shoulder flexion plus elbow extension moves the object upward",
+    level4Forward.progress > 0.90 && level4Forward.shoulderFlexProgress > 0.90
+    && level4Forward.elbowExtensionProgress > 0.90, level4Forward);
+  for (let index = 0; index < 12; index += 1) {
+    await page.evaluate(pose => window.__qa.setLevel4Pose(pose), level4StartPose);
+  }
+  const level4Return = await page.evaluate(() => window.__qa.level4ReachState());
+  check("4", "compound movement", "shoulder extension plus elbow flexion returns the object downward",
+    level4Return.progress < 0.02 && level4Return.shoulderFlexProgress === 0
+    && level4Return.elbowExtensionProgress === 0, level4Return);
 
   for (const level of ["4", "5", "67"]) {
     const label = displayLevel[level];

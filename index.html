@@ -2073,8 +2073,15 @@ function affectedSideSign(){
 function isLevel4Tabletop(){
   return !research.active && state.level === '4';
 }
+function isLevel3Tabletop(){
+  return !research.active && state.level === '3';
+}
+function isGrossTabletop(){
+  return isLevel3Tabletop() || isLevel4Tabletop();
+}
 function affectedDirectionLabel(){
   if(isLevel4Tabletop()) return '沿桌面中線向前放置';
+  if(isLevel3Tabletop()) return activeAffectedSide() === 'right' ? '向右患側外滑' : '向左患側外滑';
   return activeAffectedSide() === 'right' ? '向畫面右外下方放置' : '向畫面左外下方放置';
 }
 function affectedSelectionZone(){
@@ -3509,6 +3516,8 @@ function renderPilotLanguage(){
 
 /* ==================== 級別資料 ==================== */
 const LEVELS = {
+  '3': { id:'3', tag:'FTHUE Level 3', name:'雙手患側外滑', gameType:'dwell',
+         actionLabel:'好手帶患手，由中央向患側外滑' },
   '4': { id:'4', tag:'FTHUE Level 4', name:'患手向前滑動', gameType:'dwell',
          actionLabel:'患手放在檯面滑板上，向前滑動' },
   '5': { id:'5', tag:'FTHUE Level 5', name:'患手握放練習', gameType:'grasp',
@@ -3539,14 +3548,6 @@ function isTrialMode(){ return state.sessionMode === 'trial'; }
 function beginSessionMode(levelId, mode){
   state.sessionMode = mode === 'trial' ? 'trial' : 'training';
   research.active = false;
-  if(levelId === '3'){
-    const params = new URLSearchParams({
-      safetyAck:'1',
-      mode:state.sessionMode
-    });
-    window.location.href = 'sandbox/level3-bilateral/index.html?' + params.toString();
-    return;
-  }
   selectLevel(levelId);
   document.getElementById('libraryLevelLabel').textContent += isTrialMode()
     ? ' · 試玩 · 不錄影／不提示'
@@ -3894,9 +3895,9 @@ async function enterCalibrationFlow(){
     await ensureHandLandmarker();
     trackingModelReady = true;
   }catch(err){
-    // Level 4 may still work through the Pose wrist fallback below.
+    // Levels 3–4 may still work through the Pose wrist fallback below.
   }
-  if(state.theme === 'cooking' || isLevel4Tabletop()){
+  if(state.theme === 'cooking' || isGrossTabletop()){
     const pose = await ensurePoseLandmarker().catch(()=>null);
     trackingModelReady = trackingModelReady || Boolean(pose);
   }
@@ -4825,7 +4826,7 @@ function detectWrist(videoEl){
     const lm = results.landmarks[0]; // 第一隻手
     const required = state.gameType === 'pinch'
       ? [0,4,5,8,9,17]
-      : isLevel4Tabletop()
+      : isGrossTabletop()
         ? [0,5,9,13,17]
         : [0,2,4,5,8,9,12,13,16,17,20];
     if(!hasFiniteHandLandmarks(lm, required)){
@@ -4845,7 +4846,7 @@ function detectWrist(videoEl){
         isGrasping:stabiliseDetectedGesture(pinch.isPinching, 'pinch'),
         graspScore:pinch.score, isOpenPrep:pinch.isSeparated, pinchRatio:pinch.ratio, lm };
     }
-    const usePalmCursor = state.gameType === 'grasp' || isLevel4Tabletop();
+    const usePalmCursor = state.gameType === 'grasp' || isGrossTabletop();
     const nx = interactionX(usePalmCursor ? palmX : tip.x);
     const ny = usePalmCursor ? palmY : tip.y;
     const grasp = computeGraspScore(lm, isGrasping);  // 傳入目前 state 以計算 hysteresis threshold
@@ -4855,10 +4856,24 @@ function detectWrist(videoEl){
       isOpenPrep: !grasp.isGrasping, lm };
     }
   }
-  // Tabletop hands are often partly hidden by the table edge. For Level 4,
-  // retain playability by following the visible wrist from Pose Landmarker.
-  if(isLevel4Tabletop()){
+  // Tabletop hands are often partly hidden by the table edge. Pose landmarks
+  // keep Levels 3–4 playable even when the hand model loses the fingers.
+  if(isGrossTabletop()){
     const pose = (lastPoseLm && nowMs()-lastPoseTs < 250) ? lastPoseLm : detectPose(videoEl);
+    if(isLevel3Tabletop()){
+      const leftWrist = pose?.[15], rightWrist = pose?.[16];
+      if(level4PosePointUsable(leftWrist) && level4PosePointUsable(rightWrist)){
+        return {
+          detected:true,
+          nx:interactionX((leftWrist.x+rightWrist.x)/2),
+          ny:(leftWrist.y+rightWrist.y)/2,
+          isGrasping:false,
+          isOpenPrep:true,
+          graspScore:0,
+          source:'pose-bilateral-wrist'
+        };
+      }
+    }
     const wristIndex = activeAffectedSide() === 'left' ? 15 : 16;
     const wrist = pose?.[wristIndex];
     if(wrist && Number.isFinite(wrist.x) && Number.isFinite(wrist.y)
@@ -5596,7 +5611,12 @@ function availableThemeOrder(level = state.level){
 }
 
 function getTheme(){ return THEMES[state.theme] || THEMES.dimsum; }
-function getCategories(){ return getTheme().categoriesFor(state.level); }
+function getCategories(){
+  const categories = getTheme().categoriesFor(state.level);
+  // Level 3 keeps one central object and one affected-side destination so the
+  // bilateral outward slide remains the only required movement.
+  return isLevel3Tabletop() ? categories.slice(0,1) : categories;
+}
 
 
 // 追蹤 / 夾取變數
@@ -5781,8 +5801,9 @@ function initGame(){
   handDetected = false;
   posHistory = [];
   trackingPointHistory = [];
+  level3Lateral.reset();
   level4Reach.reset();
-  if(isLevel4Tabletop()) ensurePoseLandmarker().catch(()=>null);
+  if(isGrossTabletop()) ensurePoseLandmarker().catch(()=>null);
 
   timeLeft = state.duration; // 由用家選擇
   updateHUD();
@@ -5894,6 +5915,19 @@ function setupTargets(){
   const portrait = isPortrait();
   const style = getTheme().targetStyle || 'panel';
   const cats = getCategories();
+  if(isLevel3Tabletop()){
+    const tw = Math.min(cw * 0.30, 250);
+    const th = tw * (style === 'steamer' ? 0.74 : 0.62);
+    const category = cats[0];
+    targets = [{
+      type:category.type, label:category.targetLabel, img:category.targetImg || category.img || null,
+      drawIcon:category.drawIcon || null, style,
+      x:affectedSideSign() > 0 ? cw * 0.79 : cw * 0.21,
+      y:ch * 0.72, w:tw, h:th,
+      color:category.color || '#1A6B5A',
+    }];
+    return;
+  }
   if(isLevel4Tabletop()){
     const tw = Math.min(cw * 0.31, 240);
     const th = tw * (style === 'steamer' ? 0.74 : 0.62);
@@ -6025,6 +6059,9 @@ function makeFoodAt(def, existingFoods){
     drawScale: def.drawScale || 0.92, labelGap: def.labelGap || 1.04,
     x, y, r, baseX: x, baseY: y, held: false, removed: false,
   });
+  if(isLevel3Tabletop()){
+    return createFood(cw * 0.50, ch * 0.72);
+  }
   const positionIsClear = (x, y) => {
     if(circleOverlapsRect(x, y, r, instructionExclusion)) return false;
     for(const f of existingFoods){
@@ -6077,7 +6114,10 @@ function spawnDistractor(existingFoods){
 
 // 目標：畫面上保持 3 個活動配對物件 + N 個 distractor 動物（N = getDistractorCount()）
 const DIM_SUM_TARGET = 3;
-function dimSumTargetCount(){ return isLevel4Tabletop() ? 2 : DIM_SUM_TARGET; }
+function dimSumTargetCount(){
+  if(isLevel3Tabletop()) return 1;
+  return isLevel4Tabletop() ? 2 : DIM_SUM_TARGET;
+}
 
 function countActive(pred){
   return foods.filter(f=>!f.removed && pred(f)).length;
@@ -6183,6 +6223,50 @@ function readHand(){
   return detectWrist(gameVideo);
 }
 
+/* ---------- Level 3 bilateral affected-side slide controller ----------
+   The cursor follows the midpoint of both wrists, not either hand alone.
+   Camera coordinates are mapped once into the mirrored display coordinate
+   system, then compared with a neutral midline baseline. */
+const level3Lateral = {
+  baselineX:null,
+  samples:[],
+  progress:0,
+  calibrated:false,
+  reset(){
+    this.baselineX = null;
+    this.samples = [];
+    this.progress = 0;
+    this.calibrated = false;
+  }
+};
+function updateLevel3LateralController(lm, cw, ch){
+  if(!isLevel3Tabletop()) return level3Lateral;
+  const leftWrist = lm?.[15], rightWrist = lm?.[16];
+  if(!level4PosePointUsable(leftWrist) || !level4PosePointUsable(rightWrist)){
+    return level3Lateral;
+  }
+  const midpoint = cameraPointToCanvas(
+    interactionX((leftWrist.x+rightWrist.x)/2),
+    (leftWrist.y+rightWrist.y)/2,
+    cw,
+    ch
+  );
+  if(!Number.isFinite(level3Lateral.baselineX)){
+    level3Lateral.samples.push(midpoint.x);
+    if(level3Lateral.samples.length > 20) level3Lateral.samples.shift();
+    if(level3Lateral.samples.length >= 10){
+      level3Lateral.baselineX = level4Median(level3Lateral.samples);
+      level3Lateral.calibrated = true;
+    }
+    level3Lateral.progress = 0;
+    return level3Lateral;
+  }
+  const outwardPixels = affectedSideSign() * (midpoint.x-level3Lateral.baselineX);
+  const targetProgress = clamp01((outwardPixels-cw*0.012)/(cw*0.22));
+  level3Lateral.progress += 0.38 * (targetProgress-level3Lateral.progress);
+  return level3Lateral;
+}
+
 /* ---------- Level 4 compound reach controller ----------
    A single wrist/palm Y coordinate cannot distinguish true forward reach from
    shoulder hiking. The Level 4 cursor therefore advances only when the
@@ -6226,11 +6310,13 @@ function affectedPoseArm(lm){
   return Object.values(arm).every(level4PosePointUsable) ? arm : null;
 }
 function level4JointAngle(a,b,c){
-  const ab = {x:a.x-b.x, y:a.y-b.y};
-  const cb = {x:c.x-b.x, y:c.y-b.y};
-  const abn = Math.hypot(ab.x,ab.y), cbn = Math.hypot(cb.x,cb.y);
+  const ab = {x:a.x-b.x, y:a.y-b.y, z:(a.z||0)-(b.z||0)};
+  const cb = {x:c.x-b.x, y:c.y-b.y, z:(c.z||0)-(b.z||0)};
+  const abn = Math.hypot(ab.x,ab.y,ab.z), cbn = Math.hypot(cb.x,cb.y,cb.z);
   if(abn < 1e-4 || cbn < 1e-4) return null;
-  return Math.acos(Math.max(-1,Math.min(1,(ab.x*cb.x+ab.y*cb.y)/(abn*cbn)))) * 180 / Math.PI;
+  return Math.acos(Math.max(-1,Math.min(1,
+    (ab.x*cb.x+ab.y*cb.y+ab.z*cb.z)/(abn*cbn)
+  ))) * 180 / Math.PI;
 }
 function level4Median(values){
   const sorted = values.filter(Number.isFinite).slice().sort((a,b)=>a-b);
@@ -6253,9 +6339,17 @@ function updateLevel4ReachController(lm){
   }
   const elbowAngle = level4JointAngle(arm.shoulder,arm.elbow,arm.wrist);
   if(!Number.isFinite(elbowAngle)) return level4Reach;
+  const shoulderSpan = Math.max(
+    0.05,
+    Math.hypot(arm.shoulder.x-arm.otherShoulder.x, arm.shoulder.y-arm.otherShoulder.y)
+  );
   const sample = {
     elbowAngle,
-    upperArmVertical:arm.elbow.y-arm.shoulder.y,
+    // Screen-space forward-reach proxy. Because the wrist is measured
+    // relative to the affected shoulder, shoulder hiking alone cannot create
+    // the gain that lifts the game object.
+    wristRelativeY:(arm.wrist.y-arm.shoulder.y)/shoulderSpan,
+    wristRelativeZ:((arm.wrist.z||0)-(arm.shoulder.z||0))/shoulderSpan,
     shoulderBalance:arm.shoulder.y-arm.otherShoulder.y,
   };
   level4Reach.elbowAngle = elbowAngle;
@@ -6271,7 +6365,8 @@ function updateLevel4ReachController(lm){
     if(level4Reach.samples.length >= 12){
       level4Reach.baseline = {
         elbowAngle:level4Median(level4Reach.samples.map(v=>v.elbowAngle)),
-        upperArmVertical:level4Median(level4Reach.samples.map(v=>v.upperArmVertical)),
+        wristRelativeY:level4Median(level4Reach.samples.map(v=>v.wristRelativeY)),
+        wristRelativeZ:level4Median(level4Reach.samples.map(v=>v.wristRelativeZ)),
         shoulderBalance:level4Median(level4Reach.samples.map(v=>v.shoulderBalance)),
       };
       level4Reach.calibrated = true;
@@ -6284,9 +6379,15 @@ function updateLevel4ReachController(lm){
 
   const baseline = level4Reach.baseline;
   const elbowGain = elbowAngle-baseline.elbowAngle;
-  const shoulderFlexGain = baseline.upperArmVertical-sample.upperArmVertical;
-  const extensionProgress = clamp01((elbowGain-6)/52);
-  const shoulderFlexProgress = clamp01((shoulderFlexGain-0.015)/0.115);
+  // MediaPipe Z becomes more negative as the hand reaches toward the camera.
+  // Use the stronger of screen-height and depth change so the side-on
+  // tabletop setup remains responsive without accepting shoulder elevation.
+  const forwardReachGain = Math.max(
+    baseline.wristRelativeY-sample.wristRelativeY,
+    baseline.wristRelativeZ-sample.wristRelativeZ
+  );
+  const extensionProgress = clamp01((elbowGain-4)/42);
+  const shoulderFlexProgress = clamp01((forwardReachGain-0.04)/0.55);
   const shoulderHike = (baseline.shoulderBalance-sample.shoulderBalance) > 0.035;
 
   level4Reach.elbowExtensionProgress = extensionProgress;
@@ -6302,7 +6403,7 @@ function updateLevel4ReachController(lm){
     level4Reach.warning = '患側聳肩 · 請治療師即時糾正';
   }else{
     level4Reach.warning = '';
-    level4Reach.progress += 0.24 * (compoundProgress-level4Reach.progress);
+    level4Reach.progress += 0.34 * (compoundProgress-level4Reach.progress);
   }
   stage?.classList.toggle('level4-movement-alert', shoulderHike && !isTrialMode());
   return level4Reach;
@@ -6311,11 +6412,12 @@ function updateLevel4ReachController(lm){
 function updateTracking(){
   const cw = gameCanvas.width, ch = gameCanvas.height;
   const now = nowMs();
-  let level4Pose = null;
-  if(isLevel4Tabletop()){
-    level4Pose = state.qaMode ? qaHand?.poseLm : (detectPose(gameVideo) || lastPoseLm);
+  let grossPose = null;
+  if(isGrossTabletop()){
+    grossPose = state.qaMode ? qaHand?.poseLm : (detectPose(gameVideo) || lastPoseLm);
   }
-  const level4Motion = updateLevel4ReachController(level4Pose);
+  const level3Motion = updateLevel3LateralController(grossPose, cw, ch);
+  const level4Motion = updateLevel4ReachController(grossPose);
   const res = readHand();
 
   if(res.detected){
@@ -6339,6 +6441,10 @@ function updateTracking(){
     const mapped = (res.lm && !state.qaMode)
       ? cameraPointToCanvas(res.nx, res.ny, cw, ch)
       : {x:clamp01(res.nx) * cw, y:clamp01(res.ny) * ch};
+    if(isLevel3Tabletop()){
+      mapped.x = cw * 0.50 + affectedSideSign() * level3Motion.progress * cw * 0.32;
+      mapped.y = ch * 0.72;
+    }
     if(isLevel4Tabletop()){
       // The palm can select the left/right item lane, but vertical transport is
       // controlled only by the compound shoulder-flexion + elbow-extension pattern.
@@ -6426,6 +6532,11 @@ function updateGameLogic(){
     setActionPrompt(PILOT_TEXT[pilotLang][research.interactionBlocked ? 'restTitle' : 'cogOnlyPrompt'] || '', '');
     return;
   }
+  if(isLevel3Tabletop() && !level3Lateral.calibrated){
+    dwellTarget = null;
+    setActionPrompt('雙手置中', '準備向患側外滑');
+    return;
+  }
   if(isLevel4Tabletop()){
     if(level4Reach.warning && !isTrialMode()){
       dwellTarget = null;
@@ -6485,6 +6596,8 @@ function updateGameLogic(){
       } else {
         dwellTarget = null;
         if(!handDetected) setActionPrompt('等待偵測手部', '手放鏡頭前');
+        else if(isLevel3Tabletop()) setActionPrompt('雙手置中', '停在' + getTheme().itemWord + '上');
+        else if(isLevel4Tabletop()) setActionPrompt('患手對準', '停在' + getTheme().itemWord + '上');
         else setActionPrompt('移動食指', '移到' + getTheme().itemWord + '上');
       }
     }
@@ -10529,6 +10642,11 @@ window.render_game_to_text = function(){
       (cursorX >= 0 ? Math.round(cursorX) + ',' + Math.round(cursorY) : 'none'));
     lines.push('status=' + document.getElementById('statusBar').textContent);
     lines.push('hint=' + document.getElementById('persistentRules').textContent.trim());
+    if(isLevel3Tabletop()){
+      lines.push('level3Lateral=calibrated:' + level3Lateral.calibrated +
+        ' progress:' + level3Lateral.progress.toFixed(3) +
+        ' affectedSide:' + activeAffectedSide());
+    }
     if(isLevel4Tabletop()){
       lines.push('level4Reach=calibrated:' + level4Reach.calibrated +
         ' progress:' + level4Reach.progress.toFixed(3) +
@@ -10673,10 +10791,40 @@ window.__qa = {
     return window.render_game_to_text();
   },
   setHand(nx, ny, grasping, openPrep){
+    const poseLm = qaHand?.poseLm;
     qaHand = { nx, ny, isGrasping: !!grasping };
     if(openPrep !== undefined) qaHand.isOpenPrep = !!openPrep;
+    if(poseLm) qaHand.poseLm = poseLm;
     return true;
   },
+  setLevel3Pose(spec){
+    spec = spec || {};
+    qaHand = qaHand || { nx:0.5, ny:0.72, isGrasping:false, isOpenPrep:true };
+    const lm = Array.from({length:33}, ()=>({x:0.5,y:0.5,z:0,visibility:0.05}));
+    const point = (value, fallback)=>({
+      x:Number.isFinite(value?.x) ? value.x : fallback.x,
+      y:Number.isFinite(value?.y) ? value.y : fallback.y,
+      z:Number.isFinite(value?.z) ? value.z : 0,
+      visibility:1,
+    });
+    lm[15] = point(spec.leftWrist, {x:0.46,y:0.68});
+    lm[16] = point(spec.rightWrist, {x:0.54,y:0.68});
+    qaHand.poseLm = lm;
+    updateTracking();
+    return this.level3LateralState();
+  },
+  level3LateralState(){
+    return {
+      calibrated:level3Lateral.calibrated,
+      progress:level3Lateral.progress,
+      affectedSide:activeAffectedSide(),
+      cursorX,
+      cursorY,
+      targetX:targets[0]?.x ?? null,
+      itemX:foods[0]?.x ?? null,
+    };
+  },
+  resetLevel3Lateral(){ level3Lateral.reset(); return this.level3LateralState(); },
   setLevel4Pose(spec){
     spec = spec || {};
     qaHand = qaHand || { nx:0.5, ny:0.82, isGrasping:false, isOpenPrep:true };
@@ -10715,8 +10863,10 @@ window.__qa = {
   resetLevel4Reach(){ level4Reach.reset(); return this.level4ReachState(); },
   // 以 canvas 坐標直接定位（方便測試拿取物件 / 目標）
   setHandAt(px, py, grasping, openPrep){
+    const poseLm = qaHand?.poseLm;
     qaHand = { nx: px / gameCanvas.width, ny: py / gameCanvas.height, isGrasping: !!grasping };
     if(openPrep !== undefined) qaHand.isOpenPrep = !!openPrep;
+    if(poseLm) qaHand.poseLm = poseLm;
     return true;
   },
   clearHand(){ qaHand = null; return true; },

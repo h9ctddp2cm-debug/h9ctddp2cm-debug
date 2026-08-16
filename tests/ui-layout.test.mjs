@@ -228,7 +228,7 @@ test('every FTHUE level offers trial and training modes with accessible controls
 test('trial entry is visibly identified and bypasses recording/review code paths', async (t) => {
   assert.match(PAGE_SOURCE, /function beginSessionMode\(levelId, mode\)/);
   assert.match(PAGE_SOURCE, /state\.sessionMode\s*=\s*mode === 'trial' \? 'trial' : 'training'/);
-  assert.match(PAGE_SOURCE, /mode:state\.sessionMode/);
+  assert.match(PAGE_SOURCE, /selectLevel\(levelId\)/);
   assert.match(PAGE_SOURCE, /試玩[\s\S]*?不錄影[\s\S]*?訓練[\s\S]*?錄影及姿勢提示/);
   assert.match(PAGE_SOURCE, /if\(isTrialMode\(\)\)\{[\s\S]*?clearMovementRecording\(\);[\s\S]*?trialModeIndicator[\s\S]*?classList\.add\('show'\)/);
   assert.match(PAGE_SOURCE, /if\(isTrialMode\(\)\)\{[\s\S]*?clearMovementRecording\(\);[\s\S]*?stopCamera\(\);[\s\S]*?\}else\{[\s\S]*?stopMovementRecording\(true\)/);
@@ -277,8 +277,8 @@ test('participant flows skip the standalone safety interstitial for every level'
   );
 
   assert.doesNotMatch(level3Flow, /openSafetyGate/);
-  assert.match(PAGE_SOURCE, /new URLSearchParams\(\{[\s\S]*?safetyAck:'1',[\s\S]*?mode:state\.sessionMode/);
-  assert.match(PAGE_SOURCE, /level3-bilateral\/index\.html\?' \+ params\.toString\(\)/);
+  assert.match(level3Flow, /beginSessionMode\('3', 'training'\)/);
+  assert.doesNotMatch(level3Flow, /level3-bilateral\/index\.html/);
   assert.doesNotMatch(calibrationFlow, /openSafetyGate/);
   assert.match(calibrationFlow, /await enterCalibrationFlow\(\)/);
   assert.doesNotMatch(retryFlow, /openSafetyGate/);
