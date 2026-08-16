@@ -652,6 +652,22 @@ elements.clearLog.addEventListener("click", () => {
 function drawCanvas() {
   const context = elements.canvas.getContext("2d");
   const { width, height } = elements.canvas;
+  const roundedRect = (x, y, w, h, radius) => {
+    const r = Math.max(0, Math.min(radius, Math.abs(w) / 2, Math.abs(h) / 2));
+    if (typeof context.roundRect === "function") {
+      context.roundRect(x, y, w, h, r);
+      return;
+    }
+    context.moveTo(x + r, y);
+    context.lineTo(x + w - r, y);
+    context.quadraticCurveTo(x + w, y, x + w, y + r);
+    context.lineTo(x + w, y + h - r);
+    context.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    context.lineTo(x + r, y + h);
+    context.quadraticCurveTo(x, y + h, x, y + h - r);
+    context.lineTo(x, y + r);
+    context.quadraticCurveTo(x, y, x + r, y);
+  };
 
   context.fillStyle = "#101715";
   context.fillRect(0, 0, width, height);
@@ -671,6 +687,17 @@ function drawCanvas() {
   const centerX = engine.calibrationVcpXMedian * width;
   const toleranceWidth = engine.dynamicVcpTolerance * width;
   const targetX = (engine.calibrationVcpXMedian + engine.directionSign() * engine.scaledTargetRangeX) * width;
+  const targetY = height * 0.72;
+
+  // A visible game lane replaces the former engineering-only target marker.
+  // The live camera remains bright so the therapist can still observe posture.
+  context.fillStyle = "rgba(255, 252, 240, 0.72)";
+  context.strokeStyle = "rgba(108, 77, 45, 0.75)";
+  context.lineWidth = 4;
+  context.beginPath();
+  roundedRect(Math.min(centerX, targetX) - 70, targetY - 72, Math.abs(targetX - centerX) + 140, 144, 30);
+  context.fill();
+  context.stroke();
 
   context.fillStyle = "rgba(88, 194, 166, 0.2)";
   context.fillRect(centerX - toleranceWidth, height * 0.5, toleranceWidth * 2, height * 0.42);
@@ -680,32 +707,44 @@ function drawCanvas() {
   context.moveTo(centerX, height * 0.08);
   context.lineTo(centerX, height * 0.94);
   context.stroke();
-  const targetY = height * 0.72;
-  context.fillStyle = "rgba(242, 139, 130, 0.28)";
-  context.strokeStyle = "#ff8d83";
+  // Bamboo steamer target.
+  context.fillStyle = "#d7903f";
+  context.strokeStyle = "#70451f";
   context.lineWidth = 5;
   context.beginPath();
-  context.arc(targetX, targetY, 42, 0, Math.PI * 2);
+  context.ellipse(targetX, targetY + 22, 60, 34, 0, 0, Math.PI * 2);
+  context.fill();
+  context.stroke();
+  context.fillStyle = "#f4bf70";
+  context.beginPath();
+  context.ellipse(targetX, targetY + 5, 57, 27, 0, 0, Math.PI * 2);
   context.fill();
   context.stroke();
 
   const vcpX = lastOutput.metrics?.vcpX;
   const vcpY = lastOutput.metrics?.vcpY;
-  if (Number.isFinite(vcpX) && Number.isFinite(vcpY)) {
-    context.fillStyle = "#00ffcc";
-    context.strokeStyle = "#10211d";
-    context.lineWidth = 4;
-    context.beginPath();
-    context.arc(vcpX * width, vcpY * height, 15, 0, Math.PI * 2);
-    context.fill();
-    context.stroke();
-  }
+  const gameX = Number.isFinite(vcpX)
+    ? Math.max(Math.min(vcpX * width, Math.max(centerX, targetX) + 30), Math.min(centerX, targetX) - 30)
+    : centerX;
+  // Large siu-mai token follows the bilateral wrist centroid.
+  context.fillStyle = "#f3c455";
+  context.strokeStyle = "#773d23";
+  context.lineWidth = 5;
+  context.beginPath();
+  roundedRect(gameX - 36, targetY - 48, 72, 78, 19);
+  context.fill();
+  context.stroke();
+  context.fillStyle = "#ea6b45";
+  context.beginPath();
+  context.arc(gameX, targetY - 42, 17, 0, Math.PI * 2);
+  context.fill();
 
   context.fillStyle = "#ffffff";
   context.font = "800 20px Satoshi, sans-serif";
   context.textAlign = "center";
   context.fillText("中央", centerX, 34);
-  context.fillText(lastOutput.targetDirection === "LEFT" ? "向左" : "向右", targetX, targetY + 7);
+  context.fillText(lastOutput.state === "STATE_DIRECTION_CHECK" ? "向患側滑" : "目標", targetX, targetY - 58);
+  context.fillText(`完成 ${lastOutput.score || 0}`, width - 78, 34);
 }
 
 function updateFps(now) {

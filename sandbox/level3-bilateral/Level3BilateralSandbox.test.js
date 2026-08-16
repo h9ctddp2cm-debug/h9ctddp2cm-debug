@@ -72,6 +72,13 @@ function calibratedEngine(config = {}) {
     updateWithPose(engine, pose, false, clock.value);
     clock.value += 50;
   }
+  assert.equal(engine.currentState, LEVEL3_STATES.DIRECTION_CHECK);
+  const directionPose = makePose({ vcpX: 0.54 });
+  const directionOutput = updateWithPose(engine, directionPose, false, clock.value);
+  clock.value += 50;
+  assert.equal(directionOutput.action, "DIRECTION_AUTO_BOUND");
+  assert.equal(engine.directionBoundThisSession, true);
+  engine.abortCurrentRepetition();
   assert.equal(engine.currentState, LEVEL3_STATES.MIDLINE_READY);
   return { engine, clock };
 }
@@ -90,7 +97,7 @@ test("robust calibration derives a clamped MAD tolerance and shoulder-scaled tar
     clock.value += 50;
   }
 
-  assert.equal(engine.currentState, LEVEL3_STATES.MIDLINE_READY);
+  assert.equal(engine.currentState, LEVEL3_STATES.DIRECTION_CHECK);
   assert.ok(Math.abs(engine.calibrationVcpXMedian - 0.5) < 0.005);
   assert.ok(Math.abs(engine.calibrationVcpYMedian - 0.7) < 0.005);
   assert.ok(Number.isFinite(engine.calibrationVcpMad));
@@ -132,13 +139,14 @@ test("a completed lateral cycle alternates direction and increments score", () =
   assert.equal(engine.score, 1);
 });
 
-test("wrist separation or unequal paired displacement pauses progression", () => {
+test("wrist separation remains telemetry and never blocks Level 3 gameplay", () => {
   const { engine, clock } = calibratedEngine();
   const pose = makePose({ wristSeparation: 0.14 });
   const output = updateWithPose(engine, pose, false, clock.value);
-  assert.equal(output.action, "BILATERAL_ASYMMETRY_WARNING");
+  assert.notEqual(output.action, "BILATERAL_ASYMMETRY_WARNING");
   assert.equal(output.state, LEVEL3_STATES.MIDLINE_READY);
-  assert.equal(engine.timerStartedAt, null);
+  assert.equal(output.metrics.handAction, "NOT_APPLICABLE");
+  assert.equal(typeof output.metrics.bilateralAsymmetryFlag, "boolean");
 });
 
 test("shoulder translation is reported as a warning rather than a diagnosis", () => {
@@ -224,7 +232,7 @@ test("NaN, Infinity, extreme coordinates, and low visibility fail safely", () =>
     makePose({ anomaly: "NAN" }),
     makePose({ anomaly: "INFINITY" }),
     makePose({ anomaly: "EXTREME" }),
-    makePose({ visibility: 0.4 }),
+    makePose({ visibility: 0.1 }),
   ];
   for (const pose of cases) {
     const engine = new Level3BilateralSandbox({ affectedSide: "LEFT" });
@@ -246,6 +254,25 @@ test("reach profiles are ordered and empirical direction mapping overrides x sig
   assert.equal(standardEngine.directionSign("RIGHT"), 1);
 });
 
+test("first affected-side slide auto-binds a mirrored camera direction", () => {
+  const engine = new Level3BilateralSandbox({
+    affectedSide: "LEFT",
+    patientLeftXSign: -1,
+  });
+  const clock = { value: 0 };
+  while (engine.currentState === LEVEL3_STATES.CALIBRATION && clock.value <= 5000) {
+    updateWithPose(engine, makePose(), false, clock.value);
+    clock.value += 50;
+  }
+  assert.equal(engine.currentState, LEVEL3_STATES.DIRECTION_CHECK);
+
+  const output = updateWithPose(engine, makePose({ vcpX: 0.55 }), false, clock.value);
+  assert.equal(output.action, "DIRECTION_AUTO_BOUND");
+  assert.equal(engine.directionSign("LEFT"), 1);
+  assert.equal(engine.directionSign("RIGHT"), -1);
+  assert.equal(engine.currentState, LEVEL3_STATES.WIPING_LATERAL);
+});
+
 test("heavy center tremor cannot falsely trigger the lateral target", () => {
   const { engine, clock } = calibratedEngine();
   advance(engine, {}, clock, 900, 100);
@@ -261,19 +288,16 @@ test("heavy center tremor cannot falsely trigger the lateral target", () => {
   assert.equal(engine.currentState, LEVEL3_STATES.WIPING_LATERAL);
 });
 
-test("screen-space wrist release hides the object and returns without awarding score", () => {
+test("wide wrist separation does not fade or drop the Level 3 game object", () => {
   const { engine, clock } = calibratedEngine();
   advance(engine, {}, clock, 900, 100);
   assert.equal(engine.currentState, LEVEL3_STATES.WIPING_LATERAL);
 
   const releasedPose = makePose({ wristSeparation: 0.12 });
   const released = updateWithPose(engine, releasedPose, false, clock.value, null);
-  assert.equal(released.action, "OBJECT_FADE_OUT");
-  assert.equal(released.state, LEVEL3_STATES.RETURN_CENTER);
-  assert.equal(released.objectVisible, false);
-
-  advance(engine, {}, clock, 900, 100);
-  assert.equal(engine.currentState, LEVEL3_STATES.MIDLINE_READY);
+  assert.notEqual(released.action, "OBJECT_FADE_OUT");
+  assert.equal(released.state, LEVEL3_STATES.WIPING_LATERAL);
+  assert.equal(released.objectVisible, true);
   assert.equal(engine.score, 0);
 });
 

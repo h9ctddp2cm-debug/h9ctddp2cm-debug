@@ -3,6 +3,7 @@
 
 export const LEVEL3_STATES = Object.freeze({
   CALIBRATION: "STATE_CALIBRATION",
+  DIRECTION_CHECK: "STATE_DIRECTION_CHECK",
   MIDLINE_READY: "STATE_MIDLINE_READY",
   WIPING_LATERAL: "STATE_WIPING_LATERAL",
   RETURN_CENTER: "STATE_RETURN_CENTER",
@@ -39,7 +40,9 @@ function pointIsSafe(point) {
     Number.isFinite(point.visibility) ? point.visibility : 0,
     Number.isFinite(point.presence) ? point.presence : 0,
   );
-  return confidence >= 0.5;
+  // Tabletop wrists are commonly partly occluded by the table edge on an iPad.
+  // Keep the point only when MediaPipe still provides usable low-confidence data.
+  return confidence >= 0.2;
 }
 
 function planarDistance(first, second) {
@@ -123,6 +126,7 @@ export class Level3BilateralSandbox {
 
     this.isObjectVisible = false;
     this.returnTriggeredByRelease = false;
+    this.directionBoundThisSession = false;
     this.score = 0;
     this.lastMetrics = null;
     this.lastMessage = "前臂承托，不需互扣；肩外展向患側外滑，手肘按能力保持或逐步伸直；毛巾跟手側滑，軀幹保持正中。";
@@ -370,11 +374,11 @@ export class Level3BilateralSandbox {
           this.dynamicVcpTolerance = clamp((vcpMad || 0.01) * toleranceMultiplier, 0.025, 0.08);
           this.scaledTargetRangeX = this.calculateScaledTargetRange();
 
-          this.currentState = LEVEL3_STATES.MIDLINE_READY;
+          this.currentState = LEVEL3_STATES.DIRECTION_CHECK;
           this.isObjectVisible = true;
           this.resetTimer();
           return this.output({
-            message: "校準成功；肩外展向患側外滑，手肘按能力保持或逐步伸直",
+            message: `校準成功；請向患側${this.affectedSide === "LEFT" ? "左" : "右"}方開始外滑`,
             action: "CALIBRATION_SUCCESS",
             nowMs,
             metrics,
@@ -403,8 +407,6 @@ export class Level3BilateralSandbox {
     const {
       trunkTranslationLimit,
       shoulderWidthChangeLimit,
-      wristClosedThreshold,
-      wristOpenThreshold,
       pairedWristAsymmetryLimit,
       elbowExtensionMinimum,
       medialWristShiftLimit,
@@ -438,58 +440,77 @@ export class Level3BilateralSandbox {
       });
     }
 
-    const outwardSign = this.directionSign(this.affectedSide);
-    const outwardWristShift = Number.isFinite(this.baselineAffectedWristElbowOffsetX)
-      && Number.isFinite(affectedWristElbowOffsetX)
-      ? (affectedWristElbowOffsetX - this.baselineAffectedWristElbowOffsetX) * outwardSign
-      : null;
-    metrics.affectedWristOutwardShift = outwardWristShift;
-    const medialPatternObserved = Number.isFinite(outwardWristShift)
-      && outwardWristShift < -medialWristShiftLimit;
-    if (this.movementQualityWarningReady(
-      "MEDIAL_ARM_PATTERN_WARNING",
-      medialPatternObserved,
-      nowMs,
-    )) {
-      this.resetTimer();
-      return this.output({
-        message: "治療師請即時檢查：手腕向內偏移，留意是否偏離外滑路徑或出現軀幹代償",
-        action: "MEDIAL_ARM_PATTERN_WARNING",
+    // The first purposeful movement establishes the observed camera direction.
+    // Do not classify it as medial before mirror/hemi binding is complete.
+    if (this.currentState === LEVEL3_STATES.DIRECTION_CHECK) {
+      metrics.affectedWristOutwardShift = null;
+    } else {
+      const outwardSign = this.directionSign(this.affectedSide);
+      const outwardWristShift = Number.isFinite(this.baselineAffectedWristElbowOffsetX)
+        && Number.isFinite(affectedWristElbowOffsetX)
+        ? (affectedWristElbowOffsetX - this.baselineAffectedWristElbowOffsetX) * outwardSign
+        : null;
+      metrics.affectedWristOutwardShift = outwardWristShift;
+      const medialPatternObserved = Number.isFinite(outwardWristShift)
+        && outwardWristShift < -medialWristShiftLimit;
+      if (this.movementQualityWarningReady(
+        "MEDIAL_ARM_PATTERN_WARNING",
+        medialPatternObserved,
         nowMs,
-        metrics,
-      });
+      )) {
+        this.resetTimer();
+        return this.output({
+          message: "治療師請即時檢查：手腕向內偏移，留意是否偏離外滑路徑或出現軀幹代償",
+          action: "MEDIAL_ARM_PATTERN_WARNING",
+          nowMs,
+          metrics,
+        });
+      }
     }
 
-    const handAction = wristSeparation <= wristClosedThreshold
-      ? "CLOSED"
-      : wristSeparation >= wristOpenThreshold
-        ? "OPEN"
-        : "TRANSITION";
-    metrics.handAction = handAction;
+    // Level 3 is a supported bilateral slide, not a grasp/release task. Wrist
+    // separation is retained as telemetry only and must never block gameplay.
+    metrics.handAction = "NOT_APPLICABLE";
 
     const leftWristDisplacement = leftWrist.x - this.baselineLeftWristX;
     const rightWristDisplacement = rightWrist.x - this.baselineRightWristX;
-    if (
-      !(this.currentState === LEVEL3_STATES.WIPING_LATERAL && handAction === "OPEN")
-      && Math.abs(leftWristDisplacement - rightWristDisplacement) > pairedWristAsymmetryLimit
-    ) {
-      this.resetTimer();
-      return this.output({
-        message: "雙手同步位移改變，請重新放好雙手並由治療師確認",
-        action: "BILATERAL_ASYMMETRY_WARNING",
-        nowMs,
-        metrics,
-      });
-    }
+    metrics.bilateralAsymmetry = Math.abs(leftWristDisplacement - rightWristDisplacement);
+    metrics.bilateralAsymmetryFlag = metrics.bilateralAsymmetry > pairedWristAsymmetryLimit;
 
     const isAtCenter = Math.abs(vcpX - this.calibrationVcpXMedian) <= this.dynamicVcpTolerance;
     const directedDisplacement = (vcpX - this.calibrationVcpXMedian) * this.directionSign();
     const targetReached = directedDisplacement >= this.scaledTargetRangeX;
 
     switch (this.currentState) {
+      case LEVEL3_STATES.DIRECTION_CHECK: {
+        this.isObjectVisible = true;
+        const rawDisplacement = vcpX - this.calibrationVcpXMedian;
+        const checkThreshold = Math.max(0.025, this.baselineShoulderWidth * 0.1);
+        if (Math.abs(rawDisplacement) >= checkThreshold) {
+          this.bindEmpiricalDirection(this.affectedSide, rawDisplacement);
+          this.directionBoundThisSession = true;
+          this.targetDirection = this.affectedSide;
+          this.scaledTargetRangeX = this.calculateScaledTargetRange();
+          this.currentState = LEVEL3_STATES.WIPING_LATERAL;
+          this.resetTimer();
+          return this.output({
+            message: "方向已確認，繼續慢慢向外滑",
+            action: "DIRECTION_AUTO_BOUND",
+            nowMs,
+            metrics,
+          });
+        }
+        return this.output({
+          message: `請向患側${this.affectedSide === "LEFT" ? "左" : "右"}方輕滑一次`,
+          action: "WAITING_DIRECTION_CHECK",
+          nowMs,
+          metrics,
+        });
+      }
+
       case LEVEL3_STATES.MIDLINE_READY: {
         this.isObjectVisible = true;
-        if (isAtCenter && handAction === "CLOSED") {
+        if (isAtCenter) {
           if (this.startDebounce(nowMs)) {
             this.currentState = LEVEL3_STATES.WIPING_LATERAL;
             this.resetTimer();
@@ -504,9 +525,7 @@ export class Level3BilateralSandbox {
           this.resetTimer();
         }
         return this.output({
-          message: handAction === "CLOSED"
-            ? "中央準備：肩外展向患側外滑，手肘按能力保持或逐步伸直"
-            : "重新承托患手，保持手肘伸直",
+          message: "中央準備：慢慢向目標方向外滑",
           action: "WAITING_AT_CENTER",
           nowMs,
           metrics,
@@ -514,27 +533,6 @@ export class Level3BilateralSandbox {
       }
 
       case LEVEL3_STATES.WIPING_LATERAL: {
-        if (handAction === "OPEN") {
-          this.isObjectVisible = false;
-          this.returnTriggeredByRelease = true;
-          this.currentState = LEVEL3_STATES.RETURN_CENTER;
-          this.resetTimer();
-          return this.output({
-            message: "雙手已鬆開，請慢慢移回中央原點",
-            action: "OBJECT_FADE_OUT",
-            nowMs,
-            metrics,
-          });
-        }
-        if (handAction === "TRANSITION") {
-          this.resetTimer();
-          return this.output({
-            message: "雙手快要分開，請重新把雙手輕輕靠攏後繼續",
-            action: "HAND_TRANSITION",
-            nowMs,
-            metrics,
-          });
-        }
         if (targetReached) {
           if (this.startDebounce(nowMs)) {
             this.returnTriggeredByRelease = false;

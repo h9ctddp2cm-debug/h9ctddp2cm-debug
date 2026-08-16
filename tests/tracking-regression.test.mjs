@@ -26,6 +26,25 @@ test("Level 4 can fall back from an occluded hand to the affected-side Pose wris
   assert.match(publicSource, /activeAffectedSide\(\)\s*===\s*'left'\s*\?\s*15\s*:\s*16/);
 });
 
+test("Level 4 vertical transport requires shoulder flexion and elbow extension together", () => {
+  assert.ok(publicSource.includes("let compoundProgress = (extensionProgress >= 0.10 && shoulderFlexProgress >= 0.10)"));
+  assert.ok(publicSource.includes("Math.min(extensionProgress,shoulderFlexProgress)"));
+  assert.ok(publicSource.includes("mapped.y = ch * 0.82 - level4Motion.progress * ch * 0.40"));
+});
+
+test("Level 4 shoulder hiking freezes transport and alerts the therapist", () => {
+  assert.ok(publicSource.includes("const shoulderHike = (baseline.shoulderBalance-sample.shoulderBalance) > 0.035"));
+  assert.ok(publicSource.includes("compoundProgress = level4Reach.progress"));
+  assert.match(publicSource, /患側聳肩 · 請治療師即時糾正/);
+  assert.ok(publicSource.includes("classList.toggle('level4-movement-alert'"));
+});
+
+test("Level 4 exposes deterministic compound-movement QA hooks", () => {
+  assert.ok(publicSource.includes("setLevel4Pose(spec)"));
+  assert.ok(publicSource.includes("level4ReachState()"));
+  assert.ok(publicSource.includes("resetLevel4Reach()"));
+});
+
 test("Level 5 grasp requires two curled fingers and releases after two visibly reopen", () => {
   assert.match(publicSource, /curledCount\s*>=\s*2/);
   assert.match(publicSource, /openCount\s*<\s*2/);

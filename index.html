@@ -139,6 +139,30 @@ html,body{
 .game-stage canvas#gameCanvas{
   position:absolute; inset:0; width:100%; height:100%; background:transparent;
 }
+.game-stage.level4-movement-alert{
+  box-shadow:inset 0 0 0 10px rgba(181,44,37,.92);
+  animation:level4AlertPulse .72s ease-in-out infinite alternate;
+}
+.cook-motion-guide{
+  position:absolute; top:248px; right:14px; z-index:23;
+  display:none; width:clamp(118px,18vw,188px); aspect-ratio:4/3;
+  overflow:hidden; border-radius:14px; border:2px solid rgba(255,255,255,.92);
+  background:rgba(255,255,255,.94); box-shadow:0 3px 12px rgba(0,0,0,.24);
+  pointer-events:none;
+}
+.cook-motion-guide.show{ display:block; }
+.cook-motion-guide img{ display:block; width:100%; height:100%; object-fit:contain; }
+.cook-motion-guide span{
+  position:absolute; right:6px; bottom:6px; padding:3px 7px; border-radius:999px;
+  background:rgba(255,255,255,.9); color:#372f2a; font-size:11px; font-weight:850;
+}
+@keyframes level4AlertPulse{
+  from{ box-shadow:inset 0 0 0 8px rgba(181,44,37,.62); }
+  to{ box-shadow:inset 0 0 0 15px rgba(181,44,37,.98); }
+}
+@media (prefers-reduced-motion:reduce){
+  .game-stage.level4-movement-alert{ animation:none; }
+}
 .recording-indicator{
   position:absolute; left:12px; bottom:12px; z-index:24;
   display:none; align-items:center; gap:7px;
@@ -1339,6 +1363,11 @@ html,body{
       <div id="feedbackOverlay" style="display:none;position:absolute;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;pointer-events:none;font-size:180px;opacity:0;transition:opacity 0.15s;"></div>
       <video id="gameVideo" playsinline autoplay muted></video>
       <canvas id="gameCanvas"></canvas>
+      <div class="cook-motion-guide" id="cookMotionGuide" aria-hidden="true"
+        data-testid="panel-cooking-motion-guide">
+        <img id="cookMotionGif" alt="">
+        <span>動作示範</span>
+      </div>
       <div class="recording-indicator" id="recordingIndicator" role="status" aria-live="polite"
         data-testid="indicator-silent-recording">無聲錄影中 · 不錄頭部</div>
       <div class="trial-mode-indicator" id="trialModeIndicator" role="status" aria-live="polite"
@@ -3733,6 +3762,12 @@ document.getElementById('btnBackToLibrary').addEventListener('click', ()=>{
 });
 
 function selectActivity(themeId){
+  if(!themeAvailableForLevel(themeId)){
+    state.theme = 'dimsum';
+    renderActivityLibrary();
+    showScreen('library');
+    return;
+  }
   state.theme = themeId;
   const th = getTheme();
   document.getElementById('settingsTitle').textContent = th.title;
@@ -3744,7 +3779,7 @@ function selectActivity(themeId){
 function renderActivityLibrary(){
   const grid = document.getElementById('activityGrid');
   grid.innerHTML = '';
-  THEME_ORDER.forEach(id=>{
+  availableThemeOrder().forEach(id=>{
     const th = THEMES[id];
     const btn = document.createElement('button');
     btn.className = 'activity-card';
@@ -4823,7 +4858,7 @@ function detectWrist(videoEl){
   // Tabletop hands are often partly hidden by the table edge. For Level 4,
   // retain playability by following the visible wrist from Pose Landmarker.
   if(isLevel4Tabletop()){
-    const pose = detectPose(videoEl);
+    const pose = (lastPoseLm && nowMs()-lastPoseTs < 250) ? lastPoseLm : detectPose(videoEl);
     const wristIndex = activeAffectedSide() === 'left' ? 15 : 16;
     const wrist = pose?.[wristIndex];
     if(wrist && Number.isFinite(wrist.x) && Number.isFinite(wrist.y)
@@ -5553,6 +5588,12 @@ const THEMES = {
   }),
 };
 const THEME_ORDER = ['flowers','dimsum','laundry','cards','mahjong','cooking'];
+function themeAvailableForLevel(themeId, level = state.level){
+  return themeId !== 'cooking' || level === '67';
+}
+function availableThemeOrder(level = state.level){
+  return THEME_ORDER.filter(id=>themeAvailableForLevel(id, level));
+}
 
 function getTheme(){ return THEMES[state.theme] || THEMES.dimsum; }
 function getCategories(){ return getTheme().categoriesFor(state.level); }
@@ -5740,6 +5781,8 @@ function initGame(){
   handDetected = false;
   posHistory = [];
   trackingPointHistory = [];
+  level4Reach.reset();
+  if(isLevel4Tabletop()) ensurePoseLandmarker().catch(()=>null);
 
   timeLeft = state.duration; // 由用家選擇
   updateHUD();
@@ -6140,11 +6183,140 @@ function readHand(){
   return detectWrist(gameVideo);
 }
 
-function updateTracking(){
-  const res = readHand();
-  const cw = gameCanvas.width, ch = gameCanvas.height;
+/* ---------- Level 4 compound reach controller ----------
+   A single wrist/palm Y coordinate cannot distinguish true forward reach from
+   shoulder hiking. The Level 4 cursor therefore advances only when the
+   affected arm shows BOTH shoulder flexion and elbow extension relative to
+   the participant's supported starting posture. */
+const level4Reach = {
+  baseline:null,
+  samples:[],
+  progress:0,
+  shoulderFlexProgress:0,
+  elbowExtensionProgress:0,
+  elbowAngle:null,
+  shoulderHike:false,
+  warning:'',
+  calibrated:false,
+  reset(){
+    this.baseline = null;
+    this.samples = [];
+    this.progress = 0;
+    this.shoulderFlexProgress = 0;
+    this.elbowExtensionProgress = 0;
+    this.elbowAngle = null;
+    this.shoulderHike = false;
+    this.warning = '';
+    this.calibrated = false;
+  }
+};
+function level4PosePointUsable(point){
+  return !!point && Number.isFinite(point.x) && Number.isFinite(point.y)
+    && (point.visibility == null || point.visibility >= 0.20);
+}
+function affectedPoseArm(lm){
+  if(!Array.isArray(lm)) return null;
+  const left = activeAffectedSide() === 'left';
+  const arm = {
+    shoulder:lm[left ? 11 : 12],
+    elbow:lm[left ? 13 : 14],
+    wrist:lm[left ? 15 : 16],
+    otherShoulder:lm[left ? 12 : 11],
+  };
+  return Object.values(arm).every(level4PosePointUsable) ? arm : null;
+}
+function level4JointAngle(a,b,c){
+  const ab = {x:a.x-b.x, y:a.y-b.y};
+  const cb = {x:c.x-b.x, y:c.y-b.y};
+  const abn = Math.hypot(ab.x,ab.y), cbn = Math.hypot(cb.x,cb.y);
+  if(abn < 1e-4 || cbn < 1e-4) return null;
+  return Math.acos(Math.max(-1,Math.min(1,(ab.x*cb.x+ab.y*cb.y)/(abn*cbn)))) * 180 / Math.PI;
+}
+function level4Median(values){
+  const sorted = values.filter(Number.isFinite).slice().sort((a,b)=>a-b);
+  if(!sorted.length) return null;
+  const mid = Math.floor(sorted.length/2);
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid-1]+sorted[mid])/2;
+}
+function updateLevel4ReachController(lm){
+  const stage = document.querySelector('.game-stage');
+  if(!isLevel4Tabletop()){
+    stage?.classList.remove('level4-movement-alert');
+    return level4Reach;
+  }
+  const arm = affectedPoseArm(lm);
+  if(!arm){
+    level4Reach.warning = '';
+    level4Reach.shoulderHike = false;
+    stage?.classList.remove('level4-movement-alert');
+    return level4Reach;
+  }
+  const elbowAngle = level4JointAngle(arm.shoulder,arm.elbow,arm.wrist);
+  if(!Number.isFinite(elbowAngle)) return level4Reach;
+  const sample = {
+    elbowAngle,
+    upperArmVertical:arm.elbow.y-arm.shoulder.y,
+    shoulderBalance:arm.shoulder.y-arm.otherShoulder.y,
+  };
+  level4Reach.elbowAngle = elbowAngle;
 
+  if(!level4Reach.baseline){
+    // Level 4 begins side-on with the affected elbow around 90 degrees.
+    if(elbowAngle >= 50 && elbowAngle <= 135){
+      level4Reach.samples.push(sample);
+      if(level4Reach.samples.length > 24) level4Reach.samples.shift();
+    }else{
+      level4Reach.samples = [];
+    }
+    if(level4Reach.samples.length >= 12){
+      level4Reach.baseline = {
+        elbowAngle:level4Median(level4Reach.samples.map(v=>v.elbowAngle)),
+        upperArmVertical:level4Median(level4Reach.samples.map(v=>v.upperArmVertical)),
+        shoulderBalance:level4Median(level4Reach.samples.map(v=>v.shoulderBalance)),
+      };
+      level4Reach.calibrated = true;
+    }
+    level4Reach.progress = 0;
+    level4Reach.warning = '';
+    stage?.classList.remove('level4-movement-alert');
+    return level4Reach;
+  }
+
+  const baseline = level4Reach.baseline;
+  const elbowGain = elbowAngle-baseline.elbowAngle;
+  const shoulderFlexGain = baseline.upperArmVertical-sample.upperArmVertical;
+  const extensionProgress = clamp01((elbowGain-6)/52);
+  const shoulderFlexProgress = clamp01((shoulderFlexGain-0.015)/0.115);
+  const shoulderHike = (baseline.shoulderBalance-sample.shoulderBalance) > 0.035;
+
+  level4Reach.elbowExtensionProgress = extensionProgress;
+  level4Reach.shoulderFlexProgress = shoulderFlexProgress;
+  level4Reach.shoulderHike = shoulderHike;
+
+  // Both components are mandatory. Shoulder elevation alone has no cursor gain.
+  let compoundProgress = (extensionProgress >= 0.10 && shoulderFlexProgress >= 0.10)
+    ? Math.min(extensionProgress,shoulderFlexProgress)
+    : 0;
+  if(shoulderHike){
+    compoundProgress = level4Reach.progress;
+    level4Reach.warning = '患側聳肩 · 請治療師即時糾正';
+  }else{
+    level4Reach.warning = '';
+    level4Reach.progress += 0.24 * (compoundProgress-level4Reach.progress);
+  }
+  stage?.classList.toggle('level4-movement-alert', shoulderHike && !isTrialMode());
+  return level4Reach;
+}
+
+function updateTracking(){
+  const cw = gameCanvas.width, ch = gameCanvas.height;
   const now = nowMs();
+  let level4Pose = null;
+  if(isLevel4Tabletop()){
+    level4Pose = state.qaMode ? qaHand?.poseLm : (detectPose(gameVideo) || lastPoseLm);
+  }
+  const level4Motion = updateLevel4ReachController(level4Pose);
+  const res = readHand();
 
   if(res.detected){
     // Real detection
@@ -6167,6 +6339,11 @@ function updateTracking(){
     const mapped = (res.lm && !state.qaMode)
       ? cameraPointToCanvas(res.nx, res.ny, cw, ch)
       : {x:clamp01(res.nx) * cw, y:clamp01(res.ny) * ch};
+    if(isLevel4Tabletop()){
+      // The palm can select the left/right item lane, but vertical transport is
+      // controlled only by the compound shoulder-flexion + elbow-extension pattern.
+      mapped.y = ch * 0.82 - level4Motion.progress * ch * 0.40;
+    }
     const stablePoint = stabiliseTrackingPoint(mapped.x, mapped.y);
     const px = stablePoint.x;
     const py = stablePoint.y;
@@ -6248,6 +6425,17 @@ function updateGameLogic(){
   if(research.active && (research.interactionBlocked || !research.motorEnabled)){
     setActionPrompt(PILOT_TEXT[pilotLang][research.interactionBlocked ? 'restTitle' : 'cogOnlyPrompt'] || '', '');
     return;
+  }
+  if(isLevel4Tabletop()){
+    if(level4Reach.warning && !isTrialMode()){
+      dwellTarget = null;
+      setActionPrompt('患側聳肩', '請治療師即時糾正');
+      return;
+    }
+    if(!level4Reach.calibrated){
+      setActionPrompt('回到起點', '患側肘約 90°');
+      return;
+    }
   }
   if(isGraspStyleMode()){
     updateGraspLogic();
@@ -7781,39 +7969,51 @@ function detectPose(videoEl){
 
 const COOK_STEPS = [
   { id:'loosen', text:'準備食材：現在將隔夜冷飯完全抓鬆', prop:'rice_bowl',
+    motionGif:'img/advanced/cook_motion/loosen.gif',
     kind:'grasp',      need:3, goal:'輕輕合手 → 張開，重複 3 次',
     tts:'準備食材。現在將隔夜冷飯輕輕抓鬆。輕輕合手，然後張開，做三次，不用大力。' },
   { id:'beat', text:'將雞蛋打散', prop:'eggs',
+    motionGif:'img/advanced/cook_motion/beat.gif',
     kind:'circle',     need:3, goal:'手腕畫圈 3 次',
     tts:'將雞蛋打散。手腕畫圈，做三次。' },
   { id:'mix', text:'將雞蛋液拌入白飯中（讓每一粒米飯都裹上蛋液）', prop:'egg_beaten',
+    motionGif:'img/advanced/cook_motion/mix.gif',
     kind:'pronate',    need:4, goal:'手掌向上 ↔ 向下 交替 4 次',
     tts:'將雞蛋液拌入白飯中，讓每一粒米飯都裹上蛋液。手掌向上，再向下，交替四次。' },
   { id:'wash', text:'現在洗青蔥', prop:'spring_onion',
+    motionGif:'img/advanced/cook_motion/wash.gif',
     kind:'elbow',      need:3, goal:'手肘屈曲 → 伸直，3 次',
     tts:'現在洗青蔥。手肘屈曲，然後伸直，做三次。' },
   { id:'chop', text:'切蔥變成蔥花', prop:'board_knife',
+    motionGif:'img/advanced/cook_motion/chop.gif',
     kind:'chop',       need:5, goal:'手腕上下切 5 下',
     tts:'切蔥，變成蔥花。手腕控制住，上下切五下。' },
   { id:'heat', text:'現在開火熱鍋', prop:'wok',
+    motionGif:'img/advanced/cook_motion/heat.gif',
     kind:'reachHold',  need:1, holdMs:1500, goal:'肩膀向前伸，停住 1.5 秒',
     tts:'現在開火熱鍋。肩膀向前伸出，停住一秒半。' },
   { id:'oil', text:'落油', prop:'oil_bottle',
+    motionGif:'img/advanced/cook_motion/oil.gif',
     kind:'tiltHold',   need:1, holdMs:1200, goal:'手腕側傾／旋轉，停住',
     tts:'落油。手腕側傾，慢慢倒，停住。' },
   { id:'pour', text:'倒入有蛋液的白飯', prop:'rice_bowl',
+    motionGif:'img/advanced/cook_motion/pour.gif',
     kind:'tiltReturn', need:1, goal:'前臂傾倒，再轉回原位',
     tts:'倒入有蛋液的白飯。前臂慢慢傾倒，再轉回原位。' },
   { id:'salt', text:'落鹽', prop:'salt_dish',
+    motionGif:'img/advanced/cook_motion/salt.gif',
     kind:'shake',      need:4, goal:'手腕輕抖 4 下',
     tts:'落鹽。手腕輕輕抖四下。' },
   { id:'onion', text:'落蔥花', prop:'onion_chopped',
+    motionGif:'img/advanced/cook_motion/onion.gif',
     kind:'pinchDrop',  need:1, goal:'捏起蔥花，放入鍋中',
     tts:'落蔥花。捏起蔥花，放入鍋中。' },
   { id:'off', text:'熄火', prop:'stove_knob',
+    motionGif:'img/advanced/cook_motion/off.gif',
     kind:'knobDwell',  need:1, holdMs:1200, goal:'伸手去爐頭旋鈕，停住',
     tts:'熄火。伸手去爐頭旋鈕，停住一陣。' },
   { id:'plate', text:'上碟', prop:'friedrice',
+    motionGif:'img/advanced/cook_motion/plate.gif',
     kind:'scoop',      need:3, goal:'由鍋舀到碟，3 次',
     tts:'上碟。由鍋舀到碟，做三次。' },
 ];
@@ -8280,6 +8480,14 @@ function cookAnnounce(){
 
 function cookRenderPanel(){
   const st = cook.step();
+  const motionGuide = document.getElementById('cookMotionGuide');
+  const motionGif = document.getElementById('cookMotionGif');
+  if(motionGuide && motionGif){
+    motionGif.src = st.motionGif;
+    motionGif.alt = st.goal;
+    motionGuide.classList.add('show');
+    motionGuide.setAttribute('aria-hidden', 'false');
+  }
   const total = COOK_STEPS.length;
   const stepGoal = isLevel4Tabletop() && st.kind === 'pinchDrop'
     ? '沿中線向前滑，在鍋上停住'
@@ -8445,7 +8653,7 @@ function cookRender(ctx){
   ctx.restore();
 
   // 肩–肘–腕 小骨架 overlay
-  drawPoseMini(ctx, cw - 132, 96, 120, 96);
+  drawPoseMini(ctx, 12, 96, 120, 96);
 
   advDrawCursor(ctx, 0);
 }
@@ -9987,6 +10195,11 @@ function advInit(){
   document.getElementById('statusBar').textContent = '';
 
   if(advCurrent === 'cooking'){
+    if(!themeAvailableForLevel('cooking')){
+      state.theme = 'dimsum';
+      advCurrent = 'dimsum';
+      return;
+    }
     cook.active = true; cook.reset();
     cook.layout = cookLayout();
     cook.poseOn = false;
@@ -10023,6 +10236,11 @@ function advTeardown(){
   d.reward.classList.remove('show');
   d.keep.classList.remove('show');
   cook.active = cards.active = laundry.active = flowers.active = mj.active = false;
+  const motionGuide = document.getElementById('cookMotionGuide');
+  if(motionGuide){
+    motionGuide.classList.remove('show');
+    motionGuide.setAttribute('aria-hidden', 'true');
+  }
   advCurrent = null;
   promptRulesEnabled = true;
   setPromptSlot('rules');
@@ -10297,7 +10515,7 @@ window.render_game_to_text = function(){
     if(research.dtc) lines.push('dtc=' + JSON.stringify(research.dtc));
   }
   if(currentScreen === 'library'){
-    lines.push('activities=' + THEME_ORDER.map(id=>THEMES[id].title).join(','));
+    lines.push('activities=' + availableThemeOrder().map(id=>THEMES[id].title).join(','));
   }
   if(currentScreen === 'game' || currentScreen === 'result'){
     lines.push('running=' + state.running + ' paused=' + state.paused);
@@ -10311,6 +10529,14 @@ window.render_game_to_text = function(){
       (cursorX >= 0 ? Math.round(cursorX) + ',' + Math.round(cursorY) : 'none'));
     lines.push('status=' + document.getElementById('statusBar').textContent);
     lines.push('hint=' + document.getElementById('persistentRules').textContent.trim());
+    if(isLevel4Tabletop()){
+      lines.push('level4Reach=calibrated:' + level4Reach.calibrated +
+        ' progress:' + level4Reach.progress.toFixed(3) +
+        ' shoulderFlex:' + level4Reach.shoulderFlexProgress.toFixed(3) +
+        ' elbowExtension:' + level4Reach.elbowExtensionProgress.toFixed(3) +
+        ' shoulderHike:' + level4Reach.shoulderHike +
+        ' warning:' + (level4Reach.warning || 'none'));
+    }
   }
   if((currentScreen === 'game' || currentScreen === 'result') && isAdvTheme() && advCurrent){
     lines.push.apply(lines, advTextState());
@@ -10451,6 +10677,42 @@ window.__qa = {
     if(openPrep !== undefined) qaHand.isOpenPrep = !!openPrep;
     return true;
   },
+  setLevel4Pose(spec){
+    spec = spec || {};
+    qaHand = qaHand || { nx:0.5, ny:0.82, isGrasping:false, isOpenPrep:true };
+    const lm = Array.from({length:33}, ()=>({x:0.5,y:0.5,z:0,visibility:0.05}));
+    const left = activeAffectedSide() === 'left';
+    const shoulderIndex = left ? 11 : 12;
+    const elbowIndex = left ? 13 : 14;
+    const wristIndex = left ? 15 : 16;
+    const otherShoulderIndex = left ? 12 : 11;
+    const point = (value, fallback)=>({
+      x:Number.isFinite(value?.x) ? value.x : fallback.x,
+      y:Number.isFinite(value?.y) ? value.y : fallback.y,
+      z:0,
+      visibility:1,
+    });
+    lm[shoulderIndex] = point(spec.shoulder, {x:0.45,y:0.30});
+    lm[elbowIndex] = point(spec.elbow, {x:0.45,y:0.48});
+    lm[wristIndex] = point(spec.wrist, {x:0.58,y:0.48});
+    lm[otherShoulderIndex] = point(spec.otherShoulder, {x:0.60,y:0.30});
+    qaHand.poseLm = lm;
+    updateTracking();
+    return this.level4ReachState();
+  },
+  level4ReachState(){
+    return {
+      calibrated:level4Reach.calibrated,
+      progress:level4Reach.progress,
+      shoulderFlexProgress:level4Reach.shoulderFlexProgress,
+      elbowExtensionProgress:level4Reach.elbowExtensionProgress,
+      elbowAngle:level4Reach.elbowAngle,
+      shoulderHike:level4Reach.shoulderHike,
+      warning:level4Reach.warning,
+      cursorY,
+    };
+  },
+  resetLevel4Reach(){ level4Reach.reset(); return this.level4ReachState(); },
   // 以 canvas 坐標直接定位（方便測試拿取物件 / 目標）
   setHandAt(px, py, grasping, openPrep){
     qaHand = { nx: px / gameCanvas.width, ny: py / gameCanvas.height, isGrasping: !!grasping };
@@ -10595,7 +10857,7 @@ window.__qa = {
     constants(){ return { maxHoldMs:MAX_HOLD_MS, releaseDifficultyLimit:RELEASE_DIFFICULTY_LIMIT,
       levelNotes:{...SAFETY_LEVEL_NOTES} }; },
   },
-  themes(){ return THEME_ORDER.map(id=>({ id, title:THEMES[id].title,
+  themes(){ return availableThemeOrder().map(id=>({ id, title:THEMES[id].title,
     categories: THEMES[id].categoriesFor(state.level).map(c=>({type:c.type, item:c.itemLabel, target:c.targetLabel})) })); },
 
   /* ---------- 進階活動 QA hooks（無需相機） ---------- */
