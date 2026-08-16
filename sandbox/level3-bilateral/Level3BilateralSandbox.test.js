@@ -315,10 +315,9 @@ test("Level 3 page shows a prominent red stop warning before use", () => {
   assert.ok(pageSource.includes("影子測試"), "supervised shadow-testing warning must be kept");
 });
 
-test("Level 3 instructions prioritise extension, ER direction and body-on-arm control", () => {
+test("Level 3 instructions prioritise extension, ER direction and midline trunk control", () => {
   assert.match(pageSource, /伸肘承重/);
   assert.match(pageSource, /肩向後及外旋方向/);
-  assert.match(pageSource, /body-on-arm/);
   assert.match(pageSource, /肩屈曲、內旋、左右不對稱/);
   const engine = new Level3BilateralSandbox();
   assert.match(engine.lastMessage, /毛巾跟手側滑/);
@@ -337,10 +336,12 @@ test("Level 3 page gates camera and session behind an explicit acknowledgement",
   assert.match(pageSource, /data-testid="panel-level3-safety-gate"/);
   assert.match(pageSource, /data-testid="checkbox-l3-safety-ack"/);
   assert.match(pageSource, /id="safetyGateContinue"[\s\S]*?disabled/);
-  for (const item of ["safety-stable", "safety-support", "safety-baseline",
-    "safety-practice", "safety-rest", "safety-quality"]) {
+  for (const item of ["safety-stop", "safety-movement", "safety-practice"]) {
     assert.ok(pageSource.includes(`data-testid="text-l3-${item}"`), `missing gate item: ${item}`);
   }
+  assert.match(pageSource, /開始前安全確認（FTHUE Level 3）/);
+  assert.match(pageSource, /好手帶動患手向外滑，毛巾跟著移動/);
+  assert.match(pageSource, /動作慢、穩，不追求次數/);
   assert.match(appSource, /function requireSafetyAck/);
   assert.match(appSource, /requireSafetyAck\("啟動相機"\)/);
   assert.match(appSource, /requireSafetyAck\("開始 Session"\)/);

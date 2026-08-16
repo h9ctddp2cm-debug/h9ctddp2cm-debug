@@ -665,3 +665,8 @@
 - 保留真機限制：單鏡頭不可直接判定真正 glenohumeral external rotation、承重質素、tone 或 spasticity；上述提示必須由治療師觀察確認。
 - 最終 iPad 1180×820 視覺驗收：警示同步顯示於首屏頂部安全列，安全列及相機邊框短暫閃動；不覆蓋相機畫面，亦無水平 overflow。
 - 最終回歸：Level 3 **23/23**、tracking/layout **14/14**、Level 4–6 **120/120**；全部 inline script 語法檢查通過。
+
+## 2026-08-16 — Level 3 安全確認三項精簡
+- 開始前安全確認改為用戶核定的三項內容：監督與立即停止、毛巾承托側滑與軀幹正中、三次無痛試做與慢穩休息。
+- 保留治療師確認勾選及原有即時停止／動作品質警示；刪除重複清單文字。
+- 回歸結果：Level 3 **23/23**、iPad／iPhone layout **8/8**、inline script 語法及 diff check 通過。
