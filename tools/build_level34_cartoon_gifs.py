@@ -19,18 +19,24 @@ def cover(image: Image.Image) -> Image.Image:
     return resized.crop((left, top, left + SIZE[0], top + SIZE[1]))
 
 
-def arrow(frame: Image.Image, start, end, opacity: int, both_ends: bool = False) -> Image.Image:
+def arrow(
+    frame: Image.Image,
+    start,
+    end,
+    opacity: int,
+    both_ends: bool = False,
+    width: int = 14,
+    head: int = 30,
+    wing: int = 18,
+) -> Image.Image:
     layer = Image.new("RGBA", SIZE, (0, 0, 0, 0))
     draw = ImageDraw.Draw(layer)
     color = (196, 42, 48, opacity)
-    width = 14
     draw.line((start, end), fill=color, width=width)
     dx, dy = end[0] - start[0], end[1] - start[1]
     length = max((dx * dx + dy * dy) ** 0.5, 1)
     ux, uy = dx / length, dy / length
     px, py = -uy, ux
-    head = 30
-    wing = 18
     p1 = (end[0] - ux * head + px * wing, end[1] - uy * head + py * wing)
     p2 = (end[0] - ux * head - px * wing, end[1] - uy * head - py * wing)
     draw.polygon((end, p1, p2), fill=color)
@@ -91,13 +97,29 @@ def level4():
     frames = []
     for index in range(28):
         phase = (index % 14) / 13
-        opacity = 90 + int(130 * (1 - abs(phase - 0.5) * 2))
+        opacity = 150 + int(105 * (1 - abs(phase - 0.5) * 2))
         if index < 14:
-            # Forward reach along the table positioned beside the affected side.
-            frame = arrow(base, (375, 216), (515, 216), opacity)
+            # Follow the skateboard/table perspective while staying above the desk.
+            frame = arrow(
+                base,
+                (385, 128),
+                (525, 158),
+                opacity,
+                width=18,
+                head=36,
+                wing=22,
+            )
         else:
             # Return toward the approximately 90-degree elbow start position.
-            frame = arrow(base, (515, 216), (375, 216), opacity)
+            frame = arrow(
+                base,
+                (525, 158),
+                (385, 128),
+                opacity,
+                width=18,
+                head=36,
+                wing=22,
+            )
         frames.append(frame)
     save_gif(frames, OUT / "level4_lateral_forward_slide_v2.gif")
 
