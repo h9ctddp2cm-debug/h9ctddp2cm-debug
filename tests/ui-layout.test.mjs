@@ -176,3 +176,31 @@ test('critical test IDs and safety hooks preserved', async (t) => {
     assert.deepEqual(found, [], `missing test IDs: ${found.join(', ')}`);
   });
 });
+
+test('final FTHUE Level 3–7 movement wording is consistent', async (t) => {
+  if (!browser) return t.skip('playwright unavailable');
+  await withPage(VIEWPORTS[1], async (page) => {
+    const copy = await page.evaluate(() => ({
+      headings: [...document.querySelectorAll('.level-card h3')].map(el => el.textContent.trim()),
+      level3: window.SAFETY_LEVEL_NOTES?.['3'] || '',
+      level4: window.SAFETY_LEVEL_NOTES?.['4'] || '',
+      level5: window.SAFETY_LEVEL_NOTES?.['5'] || '',
+      level67: window.SAFETY_LEVEL_NOTES?.['67'] || '',
+    }));
+
+    assert.deepEqual(copy.headings, [
+      '雙手外側滑動',
+      '患手向前滑動',
+      '患手握放練習',
+      '患手捏放練習',
+    ]);
+    assert.match(copy.level3, /好手帶動患手向患側/);
+    assert.match(copy.level3, /軀幹保持正中/);
+    assert.match(copy.level4, /患手放在.*滑板/);
+    assert.match(copy.level4, /避免聳肩/);
+    assert.match(copy.level5, /伸出患手、輕輕合手、張開手/);
+    assert.match(copy.level5, /避免過度側彎/);
+    assert.match(copy.level67, /伸出患手、手指輕捏、張開手指/);
+    assert.match(copy.level67, /避免過度側彎/);
+  });
+});
