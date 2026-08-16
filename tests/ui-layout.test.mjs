@@ -177,6 +177,31 @@ test('critical test IDs and safety hooks preserved', async (t) => {
   });
 });
 
+test('Level 4 safety gate uses the approved three-item wording', async (t) => {
+  if (!browser) return t.skip('playwright unavailable');
+  await withPage(VIEWPORTS[1], async (page) => {
+    const copy = await page.evaluate(() => {
+      openSafetyGate('4', () => {}, () => {});
+      return {
+        title: document.getElementById('safetyTitle')?.textContent.trim(),
+        items: [...document.querySelectorAll('#safetyChecklist > li')]
+          .filter(el => !el.hidden)
+          .map(el => el.textContent.trim()),
+        supervisionHidden: document.getElementById('safetySupervision')?.hidden,
+        noteHidden: document.getElementById('safetyLevelNote')?.hidden,
+      };
+    });
+    assert.equal(copy.title, '開始前安全確認（FTHUE Level 4）');
+    assert.deepEqual(copy.items, [
+      '治療師全程監督，疼痛／手緊／代償 → 立即停止。',
+      '坐穩，患手放在滑板上（離身 10–15 cm，不貼腹），身體保持正中，不聳肩，緩慢向前滑。',
+      '先試 3 次，無痛才正式做；動作慢、穩，不追次數，隨時可休息或停止。',
+    ]);
+    assert.equal(copy.supervisionHidden, true, 'duplicate supervision line is hidden');
+    assert.equal(copy.noteHidden, true, 'duplicate Level 4 note is hidden');
+  });
+});
+
 test('final FTHUE Level 3–7 movement wording is consistent', async (t) => {
   if (!browser) return t.skip('playwright unavailable');
   await withPage(VIEWPORTS[1], async (page) => {

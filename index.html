@@ -1163,10 +1163,10 @@ html,body{
     <div class="safety-card" data-testid="panel-safety-screen">
       <h1 id="safetyTitle" data-testid="text-safety-title">開始前安全確認</h1>
       <p class="safety-sub" id="safetyContext">FTHUE Level 4 · 桌面中線訓練</p>
-      <p class="safety-red" data-testid="text-safety-supervision">
+      <p class="safety-red" id="safetySupervision" data-testid="text-safety-supervision">
         治療師全程監督。疼痛、手緊或代償：立即停止。
       </p>
-      <ul class="safety-list">
+      <ul class="safety-list" id="safetyChecklist">
         <li data-testid="text-safety-item-stable">坐姿穩定｜<span data-testid="text-safety-item-support">Level 3–4 桌面承托｜Level 5–6 離桌</span></li>
         <li data-testid="text-safety-item-baseline">開始前評估疼痛、疲勞、手緊</li>
         <li data-testid="text-safety-item-practice">先試 3 次，無痛才開始</li>
@@ -2098,6 +2098,18 @@ const SAFETY_LEVEL_TITLES = {
   '5': 'FTHUE Level 5 · 患手握放練習',
   '67': 'FTHUE Level 6–7 · 患手捏放練習',
 };
+const SAFETY_DEFAULT_ITEMS = [
+  '坐姿穩定｜Level 3–4 桌面承托｜Level 5–6 離桌',
+  '開始前評估疼痛、疲勞、手緊',
+  '先試 3 次，無痛才開始',
+  '隨時休息／停止',
+  '慢、穩、不追求次數',
+];
+const SAFETY_LEVEL_4_ITEMS = [
+  '治療師全程監督，疼痛／手緊／代償 → 立即停止。',
+  '坐穩，患手放在滑板上（離身 10–15 cm，不貼腹），身體保持正中，不聳肩，緩慢向前滑。',
+  '先試 3 次，無痛才正式做；動作慢、穩，不追次數，隨時可休息或停止。',
+];
 
 let safetyGatePending = null;   // { levelKey, onContinue, onBack }
 
@@ -2106,12 +2118,27 @@ function openSafetyGate(levelKey, onContinue, onBack){
   const title = document.getElementById('safetyTitle');
   const note = document.getElementById('safetyLevelNote');
   const context = document.getElementById('safetyContext');
+  const supervision = document.getElementById('safetySupervision');
+  const checklist = document.getElementById('safetyChecklist');
   const ack = document.getElementById('safetyAckCheck');
   const go = document.getElementById('btnSafetyContinue');
   if(title) title.textContent = levelKey === '3'
     ? '開始前安全確認（FTHUE Level 3）'
-    : '開始前安全確認';
-  if(note) note.textContent = SAFETY_LEVEL_NOTES[levelKey] || SAFETY_LEVEL_NOTES['4'];
+    : levelKey === '4'
+      ? '開始前安全確認（FTHUE Level 4）'
+      : '開始前安全確認';
+  if(supervision) supervision.hidden = levelKey === '4';
+  if(note){
+    note.hidden = levelKey === '4';
+    note.textContent = SAFETY_LEVEL_NOTES[levelKey] || SAFETY_LEVEL_NOTES['4'];
+  }
+  if(checklist){
+    const items = levelKey === '4' ? SAFETY_LEVEL_4_ITEMS : SAFETY_DEFAULT_ITEMS;
+    [...checklist.children].forEach((item, index)=>{
+      item.hidden = index >= items.length;
+      if(index < items.length) item.textContent = items[index];
+    });
+  }
   if(context) context.textContent = SAFETY_LEVEL_TITLES[levelKey] || '';
   if(ack) ack.checked = false;
   if(go) go.disabled = true;
