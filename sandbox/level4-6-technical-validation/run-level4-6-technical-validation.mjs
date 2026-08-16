@@ -210,8 +210,8 @@ try {
 
   const notes = safetyConstants.levelNotes;
   check("3", "safety copy", "Level 3 note requires towel movement and prohibits trunk compensation",
-    notes["3"].includes("毛巾必須跟手") && notes["3"].includes("軀幹保持正中")
-    && notes["3"].includes("不可側彎") && notes["3"].includes("肩外展")
+    notes["3"].includes("毛巾須隨手移動") && notes["3"].includes("軀幹保持正中")
+    && notes["3"].includes("不側彎") && notes["3"].includes("肩外展")
     && !notes["3"].includes("互扣合攏"), { note: notes["3"] });
   check("4", "safety copy", "Level 4 note requires a clear environment and safe board distance",
     notes["4"].includes("清空桌面") && notes["4"].includes("10–15 cm")
