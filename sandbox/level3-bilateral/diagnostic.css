@@ -527,6 +527,24 @@ legend,
   background: #111;
 }
 
+@keyframes movement-quality-edge-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(181, 72, 24, 0); }
+  35%, 70% { box-shadow: 0 0 0 7px rgba(181, 72, 24, 0.9); }
+}
+
+.canvas-wrap.movement-quality-flash {
+  animation: movement-quality-edge-pulse 1.1s ease-in-out;
+}
+
+@keyframes movement-alert-pulse {
+  0%, 100% { background: var(--danger-soft); }
+  50% { background: rgba(181, 72, 24, 0.24); }
+}
+
+.safety-note.critical.movement-alert-active {
+  animation: movement-alert-pulse 1.1s ease-in-out;
+}
+
 #diagnosticCanvas {
   display: block;
   width: 100%;
@@ -660,6 +678,24 @@ legend,
   font-size: 18px;
   font-weight: 700;
   text-align: center;
+}
+
+.guidance.movement-warning {
+  color: var(--danger);
+  border: 1px solid rgba(181, 72, 24, 0.55);
+  background: rgba(181, 72, 24, 0.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .canvas-wrap.movement-quality-flash {
+    animation: none;
+    box-shadow: 0 0 0 7px rgba(181, 72, 24, 0.9);
+  }
+
+  .safety-note.critical.movement-alert-active {
+    animation: none;
+    background: rgba(181, 72, 24, 0.24);
+  }
 }
 
 .section-intro {

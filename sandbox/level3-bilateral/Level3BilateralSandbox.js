@@ -46,6 +46,22 @@ function planarDistance(first, second) {
   return Math.hypot(first.x - second.x, first.y - second.y);
 }
 
+function planarAngleDegrees(first, vertex, third) {
+  if (![first, vertex, third].every(pointIsSafe)) return Number.NaN;
+  const firstVector = { x: first.x - vertex.x, y: first.y - vertex.y };
+  const secondVector = { x: third.x - vertex.x, y: third.y - vertex.y };
+  const firstLength = Math.hypot(firstVector.x, firstVector.y);
+  const secondLength = Math.hypot(secondVector.x, secondVector.y);
+  if (firstLength < 0.001 || secondLength < 0.001) return Number.NaN;
+  const cosine = clamp(
+    (firstVector.x * secondVector.x + firstVector.y * secondVector.y)
+      / (firstLength * secondLength),
+    -1,
+    1,
+  );
+  return Math.acos(cosine) * (180 / Math.PI);
+}
+
 export class Level3BilateralSandbox {
   constructor(therapistConfig = {}) {
     const side = String(therapistConfig.affectedSide || "LEFT").toUpperCase();
@@ -83,6 +99,8 @@ export class Level3BilateralSandbox {
       shoulderCenterX: [],
       leftWristX: [],
       rightWristX: [],
+      affectedElbowAngle: [],
+      affectedWristElbowOffsetX: [],
     };
 
     this.calibrationVcpXMedian = 0.5;
@@ -94,6 +112,8 @@ export class Level3BilateralSandbox {
     this.baselineLeftWristX = 0.475;
     this.baselineRightWristX = 0.525;
     this.calibrationShoulderCenter = 0.5;
+    this.baselineAffectedElbowAngle = null;
+    this.baselineAffectedWristElbowOffsetX = null;
     this.scaledTargetRangeX = 0.16;
 
     this.timerStartedAt = null;
@@ -105,8 +125,9 @@ export class Level3BilateralSandbox {
     this.returnTriggeredByRelease = false;
     this.score = 0;
     this.lastMetrics = null;
-    this.lastMessage = "患手輕放承托；毛巾跟手側滑；軀幹保持正中；不需互扣。";
+    this.lastMessage = "前臂承托，不需互扣；伸肘承重，肩向後及外旋；毛巾跟手側滑，軀幹保持正中。";
     this.lastAction = "RESET";
+    this.movementQualitySince = new Map();
   }
 
   configure({ affectedSide, reachRangeProfile, toleranceMode } = {}) {
@@ -207,7 +228,23 @@ export class Level3BilateralSandbox {
       wristOpenThreshold: this.baselineWristSeparation * 2,
       wristSeparationLimit: this.baselineWristSeparation * 2,
       pairedWristAsymmetryLimit: Math.max(0.03, this.baselineShoulderWidth * 0.18),
+      elbowExtensionMinimum: Number.isFinite(this.baselineAffectedElbowAngle)
+        ? Math.max(115, this.baselineAffectedElbowAngle - 25)
+        : null,
+      medialWristShiftLimit: Math.max(0.03, this.baselineShoulderWidth * 0.12),
     };
+  }
+
+  movementQualityWarningReady(action, isTriggered, nowMs, confirmationMs = 350) {
+    if (!isTriggered) {
+      this.movementQualitySince.delete(action);
+      return false;
+    }
+    if (!this.movementQualitySince.has(action)) {
+      this.movementQualitySince.set(action, nowMs);
+      return false;
+    }
+    return nowMs - this.movementQualitySince.get(action) >= confirmationMs;
   }
 
   update(
@@ -222,6 +259,8 @@ export class Level3BilateralSandbox {
 
     const leftShoulder = poseLandmarks[11];
     const rightShoulder = poseLandmarks[12];
+    const leftElbow = poseLandmarks[13];
+    const rightElbow = poseLandmarks[14];
     const leftWrist = poseLandmarks[15];
     const rightWrist = poseLandmarks[16];
     if (![leftShoulder, rightShoulder, leftWrist, rightWrist].every(pointIsSafe)) {
@@ -237,6 +276,13 @@ export class Level3BilateralSandbox {
     const wristSeparation = planarDistance(leftWrist, rightWrist)
       / Math.max(shoulderWidth, 0.001);
     const shoulderCenterX = (leftShoulder.x + rightShoulder.x) / 2;
+    const affectedShoulder = this.affectedSide === "LEFT" ? leftShoulder : rightShoulder;
+    const affectedElbow = this.affectedSide === "LEFT" ? leftElbow : rightElbow;
+    const affectedWrist = this.affectedSide === "LEFT" ? leftWrist : rightWrist;
+    const affectedElbowAngle = planarAngleDegrees(affectedShoulder, affectedElbow, affectedWrist);
+    const affectedWristElbowOffsetX = pointIsSafe(affectedElbow)
+      ? affectedWrist.x - affectedElbow.x
+      : Number.NaN;
     const metrics = {
       vcpX,
       vcpY,
@@ -246,6 +292,8 @@ export class Level3BilateralSandbox {
       shoulderCenterX,
       leftWristX: leftWrist.x,
       rightWristX: rightWrist.x,
+      affectedElbowAngle,
+      affectedWristElbowOffsetX,
     };
 
     if (this.trackingNeedsRecovery) {
@@ -279,6 +327,12 @@ export class Level3BilateralSandbox {
       this.calibrationSamples.shoulderCenterX.push(shoulderCenterX);
       this.calibrationSamples.leftWristX.push(leftWrist.x);
       this.calibrationSamples.rightWristX.push(rightWrist.x);
+      if (Number.isFinite(affectedElbowAngle)) {
+        this.calibrationSamples.affectedElbowAngle.push(affectedElbowAngle);
+      }
+      if (Number.isFinite(affectedWristElbowOffsetX)) {
+        this.calibrationSamples.affectedWristElbowOffsetX.push(affectedWristElbowOffsetX);
+      }
 
       const elapsed = nowMs - this.calibrationStartedAt;
       const enoughEvidence = elapsed >= this.minCalibrationMs
@@ -303,6 +357,10 @@ export class Level3BilateralSandbox {
           this.calibrationShoulderCenter = shoulderCenterMedian;
           this.baselineLeftWristX = median(this.calibrationSamples.leftWristX);
           this.baselineRightWristX = median(this.calibrationSamples.rightWristX);
+          this.baselineAffectedElbowAngle = median(this.calibrationSamples.affectedElbowAngle);
+          this.baselineAffectedWristElbowOffsetX = median(
+            this.calibrationSamples.affectedWristElbowOffsetX,
+          );
 
           const toleranceMultiplier = {
             NARROW: 2,
@@ -316,7 +374,7 @@ export class Level3BilateralSandbox {
           this.isObjectVisible = true;
           this.resetTimer();
           return this.output({
-            message: "中央基準校準成功；患手繼續由健手輕輕承托，不需用力",
+            message: "校準成功；保持伸肘承重、肩向後及外旋方向",
             action: "CALIBRATION_SUCCESS",
             nowMs,
             metrics,
@@ -348,6 +406,8 @@ export class Level3BilateralSandbox {
       wristClosedThreshold,
       wristOpenThreshold,
       pairedWristAsymmetryLimit,
+      elbowExtensionMinimum,
+      medialWristShiftLimit,
     } = this.getDiagnosticThresholds();
 
     if (Math.abs(shoulderCenterX - this.calibrationShoulderCenter) > trunkTranslationLimit
@@ -356,6 +416,45 @@ export class Level3BilateralSandbox {
       return this.output({
         message: "軀幹位置改變，請由治療師確認坐姿後繼續",
         action: "TRUNK_TRANSLATION_WARNING",
+        nowMs,
+        metrics,
+      });
+    }
+
+    const elbowFlexionObserved = Number.isFinite(elbowExtensionMinimum)
+      && Number.isFinite(affectedElbowAngle)
+      && affectedElbowAngle < elbowExtensionMinimum;
+    if (this.movementQualityWarningReady(
+      "ELBOW_FLEXION_WARNING",
+      elbowFlexionObserved,
+      nowMs,
+    )) {
+      this.resetTimer();
+      return this.output({
+        message: "治療師請即時檢查：伸肘承重及上肢對線可能改變",
+        action: "ELBOW_FLEXION_WARNING",
+        nowMs,
+        metrics,
+      });
+    }
+
+    const outwardSign = this.directionSign(this.affectedSide);
+    const outwardWristShift = Number.isFinite(this.baselineAffectedWristElbowOffsetX)
+      && Number.isFinite(affectedWristElbowOffsetX)
+      ? (affectedWristElbowOffsetX - this.baselineAffectedWristElbowOffsetX) * outwardSign
+      : null;
+    metrics.affectedWristOutwardShift = outwardWristShift;
+    const medialPatternObserved = Number.isFinite(outwardWristShift)
+      && outwardWristShift < -medialWristShiftLimit;
+    if (this.movementQualityWarningReady(
+      "MEDIAL_ARM_PATTERN_WARNING",
+      medialPatternObserved,
+      nowMs,
+    )) {
+      this.resetTimer();
+      return this.output({
+        message: "治療師請即時檢查：手腕向內偏移，留意肩屈曲／內旋代償",
+        action: "MEDIAL_ARM_PATTERN_WARNING",
         nowMs,
         metrics,
       });
@@ -395,7 +494,7 @@ export class Level3BilateralSandbox {
             this.currentState = LEVEL3_STATES.WIPING_LATERAL;
             this.resetTimer();
             return this.output({
-              message: `雙手就位，請慢慢向${this.targetDirection === "LEFT" ? "左" : "右"}滑動`,
+              message: `伸肘承重，慢慢向${this.targetDirection === "LEFT" ? "左" : "右"}側滑`,
               action: "CENTER_READY",
               nowMs,
               metrics,
@@ -406,8 +505,8 @@ export class Level3BilateralSandbox {
         }
         return this.output({
           message: handAction === "CLOSED"
-            ? "雙手一起輕輕放在中央起點，肩膊放鬆"
-            : "請先把患手重新輕輕放好，由健手承托",
+            ? "中央準備：伸肘承重，肩向後及外旋方向"
+            : "重新承托患手，保持手肘伸直",
           action: "WAITING_AT_CENTER",
           nowMs,
           metrics,
@@ -452,7 +551,7 @@ export class Level3BilateralSandbox {
           this.resetTimer();
         }
         return this.output({
-          message: `請慢慢向${this.targetDirection === "LEFT" ? "左" : "右"}滑動`,
+          message: `保持伸肘承重，慢慢向${this.targetDirection === "LEFT" ? "左" : "右"}側滑`,
           action: "WIPING_LATERAL",
           nowMs,
           metrics,

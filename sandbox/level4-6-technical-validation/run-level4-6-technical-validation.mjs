@@ -116,8 +116,8 @@ try {
   const gestures = await page.evaluate(() => ({
     graspOneFinger: window.__qa.gestureProbe.grasp([0.6, 1, 1, 1, 1], false, "any"),
     graspTwoFingers: window.__qa.gestureProbe.grasp([0.6, 0.6, 1, 1, 1], false, "any"),
-    graspJitterHold: window.__qa.gestureProbe.grasp([1, 0.82, 0.82, 1, 1], true, "any"),
-    graspRelease: window.__qa.gestureProbe.grasp([0.8, 1, 1, 1, 0.8], true, "any"),
+    graspOneFingerReopen: window.__qa.gestureProbe.grasp([0.82, 0.82, 0.82, 1, 0.82], true, "any"),
+    graspTwoFingerRelease: window.__qa.gestureProbe.grasp([0.82, 1, 1, 0.82, 0.82], true, "any"),
     pinchEnter: window.__qa.gestureProbe.pinch(0.30, false),
     pinchHysteresisHold: window.__qa.gestureProbe.pinch(0.45, true),
     pinchExit: window.__qa.gestureProbe.pinch(0.58, true),
@@ -127,8 +127,8 @@ try {
   }));
   check("5", "gesture", "one curled finger cannot trigger grasp", !gestures.graspOneFinger.isGrasping, gestures.graspOneFinger);
   check("5", "gesture", "two curled fingers trigger configured grasp", gestures.graspTwoFingers.isGrasping, gestures.graspTwoFingers);
-  check("5", "gesture", "partial reopening does not release held item", gestures.graspJitterHold.isGrasping, gestures.graspJitterHold);
-  check("5", "gesture", "three open major fingers release held item", !gestures.graspRelease.isGrasping, gestures.graspRelease);
+  check("5", "gesture", "one reopened finger does not release held item", gestures.graspOneFingerReopen.isGrasping, gestures.graspOneFingerReopen);
+  check("5", "gesture", "two reopened major fingers release held item", !gestures.graspTwoFingerRelease.isGrasping, gestures.graspTwoFingerRelease);
   check("6", "gesture", "pinch enters below normalized aperture threshold", gestures.pinchEnter.isPinching, gestures.pinchEnter);
   check("6", "gesture", "pinch hysteresis retains hold between enter and exit thresholds", gestures.pinchHysteresisHold.isPinching, gestures.pinchHysteresisHold);
   check("6", "gesture", "pinch exits above normalized release threshold", !gestures.pinchExit.isPinching, gestures.pinchExit);

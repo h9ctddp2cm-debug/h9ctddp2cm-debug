@@ -15,6 +15,8 @@ function makePose({
   shoulderWidth = 0.3,
   wristSeparation = 0.04,
   wristY = 0.7,
+  affectedElbowAngle = 180,
+  affectedWristInwardShift = 0,
   visibility = 0.99,
   anomaly = null,
 } = {}) {
@@ -23,6 +25,20 @@ function makePose({
   pose[12] = point(shoulderCenterX + shoulderWidth / 2, 0.35, 0, visibility);
   pose[15] = point(vcpX - wristSeparation / 2, wristY, 0, visibility);
   pose[16] = point(vcpX + wristSeparation / 2, wristY, 0, visibility);
+  const setElbow = (shoulderIndex, elbowIndex, wristIndex, angleDeg, inwardShift = 0) => {
+    const shoulder = pose[shoulderIndex];
+    const wrist = pose[wristIndex];
+    const midX = (shoulder.x + wrist.x) / 2 + inwardShift;
+    const midY = (shoulder.y + wrist.y) / 2;
+    if (angleDeg >= 175) {
+      pose[elbowIndex] = point(midX, midY, 0, visibility);
+      return;
+    }
+    const bend = Math.max(0.025, (175 - angleDeg) / 350);
+    pose[elbowIndex] = point(midX + bend, midY - bend, 0, visibility);
+  };
+  setElbow(11, 13, 15, affectedElbowAngle, affectedWristInwardShift);
+  setElbow(12, 14, 16, 180, 0);
   if (anomaly === "NAN") pose[15].x = Number.NaN;
   if (anomaly === "INFINITY") pose[16].z = Number.POSITIVE_INFINITY;
   if (anomaly === "EXTREME") pose[12].x = 999;
@@ -131,6 +147,51 @@ test("shoulder translation is reported as a warning rather than a diagnosis", ()
   const output = updateWithPose(engine, pose, false, clock.value);
   assert.equal(output.action, "TRUNK_TRANSLATION_WARNING");
   assert.equal(output.state, LEVEL3_STATES.MIDLINE_READY);
+});
+
+test("sustained elbow flexion pauses progression and asks for therapist review", () => {
+  const { engine, clock } = calibratedEngine();
+  let output = null;
+  for (let index = 0; index < 10; index += 1) {
+    output = updateWithPose(
+      engine,
+      makePose({ affectedElbowAngle: 95 }),
+      false,
+      clock.value,
+    );
+    clock.value += 50;
+  }
+  assert.equal(output.action, "ELBOW_FLEXION_WARNING");
+  assert.match(output.message, /治療師請即時檢查/);
+});
+
+test("sustained inward wrist drift asks the therapist to check flexion and internal-rotation compensation", () => {
+  const { engine, clock } = calibratedEngine();
+  let output = null;
+  for (let i = 0; i < 12; i += 1) {
+    output = updateWithPose(
+      engine,
+      makePose({
+        vcpX: 0.46,
+        affectedWristInwardShift: 0.04,
+      }),
+      false,
+      clock.value,
+    );
+    clock.value += 50;
+  }
+  assert.equal(output.action, "MEDIAL_ARM_PATTERN_WARNING");
+  assert.match(output.message, /肩屈曲／內旋代償/);
+});
+
+test("missing elbow landmarks do not break the existing tabletop tracking path", () => {
+  const { engine, clock } = calibratedEngine();
+  const pose = makePose();
+  pose[13].visibility = 0.1;
+  pose[14].visibility = 0.1;
+  const output = updateWithPose(engine, pose, false, clock.value);
+  assert.notEqual(output.action, "UNKNOWN");
+  assert.equal(output.trackingStable, true);
 });
 
 test("tracking interruption clears debounce and requires 2.5 seconds plus fresh evidence", () => {
@@ -254,13 +315,22 @@ test("Level 3 page shows a prominent red stop warning before use", () => {
   assert.ok(pageSource.includes("影子測試"), "supervised shadow-testing warning must be kept");
 });
 
-test("Level 3 instructions require the towel to move with the hands and prohibit trunk compensation", () => {
-  assert.match(pageSource, /毛巾必須跟手一同側滑/);
-  assert.match(pageSource, /軀幹保持正中/);
-  assert.match(pageSource, /不可側彎、旋轉或向前傾/);
+test("Level 3 instructions prioritise extension, ER direction and body-on-arm control", () => {
+  assert.match(pageSource, /伸肘承重/);
+  assert.match(pageSource, /肩向後及外旋方向/);
+  assert.match(pageSource, /body-on-arm/);
+  assert.match(pageSource, /肩屈曲、內旋、左右不對稱/);
   const engine = new Level3BilateralSandbox();
   assert.match(engine.lastMessage, /毛巾跟手側滑/);
   assert.match(engine.lastMessage, /軀幹保持正中/);
+});
+
+test("movement-quality warnings flash only the camera edge and request therapist review", () => {
+  assert.match(appSource, /MOVEMENT_QUALITY_WARNING_ACTIONS/);
+  assert.match(appSource, /movement-quality-flash/);
+  assert.match(pageSource, /data-testid="text-level3-live-warning"/);
+  assert.match(appSource, /movementAlertText\.textContent = output\.message/);
+  assert.match(pageSource, /影像只作動作品質提示；治療師作最終判斷/);
 });
 
 test("Level 3 page gates camera and session behind an explicit acknowledgement", () => {

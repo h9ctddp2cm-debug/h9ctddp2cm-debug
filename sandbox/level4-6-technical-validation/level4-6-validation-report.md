@@ -1,6 +1,6 @@
 # Level 4–6 Technical Validation Report
 
-Generated: 2026-08-12T15:05:50.915Z
+Generated: 2026-08-16T11:51:51.324Z
 
 Result: **PASS** (120/120 checks passed)
 
@@ -48,8 +48,8 @@ This is reproducible software technical verification only. It does not establish
 - PASS | Level 6 | launch matrix | cooking launches with the correct engine
 - PASS | Level 5 | gesture | one curled finger cannot trigger grasp
 - PASS | Level 5 | gesture | two curled fingers trigger configured grasp
-- PASS | Level 5 | gesture | partial reopening does not release held item
-- PASS | Level 5 | gesture | three open major fingers release held item
+- PASS | Level 5 | gesture | one reopened finger does not release held item
+- PASS | Level 5 | gesture | two reopened major fingers release held item
 - PASS | Level 6 | gesture | pinch enters below normalized aperture threshold
 - PASS | Level 6 | gesture | pinch hysteresis retains hold between enter and exit thresholds
 - PASS | Level 6 | gesture | pinch exits above normalized release threshold

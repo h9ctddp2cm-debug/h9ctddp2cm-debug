@@ -28,9 +28,9 @@
       <p class="gate-red">治療師全程監督。痛、手緊或軀幹代償：立即停止。</p>
       <ul class="gate-list">
         <li data-testid="text-l3-safety-stable">坐姿穩定</li>
-        <li data-testid="text-l3-safety-support">毛巾必須跟手一同側滑；不互扣、不用力</li>
+        <li data-testid="text-l3-safety-support">伸肘承重；肩向後及外旋方向；毛巾跟手</li>
         <li data-testid="text-l3-camera-angle">鏡頭見到肩、肘、手及路徑</li>
-        <li data-testid="text-l3-safety-trunk">軀幹保持正中；不可側彎、旋轉或向前傾</li>
+        <li data-testid="text-l3-safety-trunk">受控 body-on-arm；軀幹不側彎／旋轉</li>
         <li data-testid="text-l3-safety-baseline">先檢查痛、攰、手緊</li>
         <li data-testid="text-l3-safety-practice">先試 3 次</li>
         <li data-testid="text-l3-safety-rest">隨時休息／停止</li>
@@ -50,14 +50,15 @@
   </div>
 
   <main id="main">
-    <section class="safety-note critical" aria-labelledby="safety-red-title" data-testid="panel-level3-red-warning">
-      <h2 id="safety-red-title">肩膊被拉扯／疼痛、患手愈來愈繃緊、軀幹向側傾斜：停止</h2>
-      <p><b>毛巾跟手側滑；軀幹正中。</b></p>
+    <section id="movementAlertBar" class="safety-note critical" aria-labelledby="safety-red-title"
+      data-testid="panel-level3-red-warning">
+      <h2 id="safety-red-title" data-testid="text-level3-live-warning">肩膊被拉扯／疼痛、患手愈來愈繃緊、軀幹向側傾斜：停止</h2>
+      <p><b>伸肘承重；避免肩屈曲、內旋、左右不對稱。</b></p>
     </section>
 
     <details class="safety-note" aria-labelledby="safety-title">
       <summary id="safety-title"><b>影子測試限制</b></summary>
-      <p>只供監督測試；不診斷代償、肌張力或痙攣。</p>
+      <p>影像只作動作品質提示；治療師作最終判斷。</p>
     </details>
 
     <div class="diagnostic-grid">
@@ -310,7 +311,7 @@
         </article>
       </div>
 
-      <p id="guidance" class="guidance" data-testid="text-guidance" aria-live="polite">雙手放在同一張毛巾上；毛巾跟手側滑，軀幹保持正中</p>
+      <p id="guidance" class="guidance" data-testid="text-guidance" aria-live="assertive">伸肘承重；肩向後及外旋方向；軀幹正中</p>
     </section>
 
     <section class="log-section" aria-labelledby="cognitive-title">

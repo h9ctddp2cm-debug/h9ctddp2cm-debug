@@ -4419,9 +4419,9 @@ function computeGraspScore(lm, isGraspingPrev){
     distance(lm[tip], lm[0]) / Math.max(distance(lm[mcp], lm[0]), 0.001)
   ).filter(value => value <= 1.45).length;
   const openCount = fingerExtensionRatios.filter(value => value >= 1.72).length;
-  // Enter only when at least two main fingers curl. Once holding, release when
-  // at least three visibly reopen; this tolerates one poorly tracked finger.
-  let isGrasping = isGraspingPrev ? openCount < 3 : curledCount >= 2;
+  // Enter only when at least two fingers curl. Once holding, two visibly
+  // reopened fingers are enough for a limited-extension stroke hand.
+  let isGrasping = isGraspingPrev ? openCount < 2 : curledCount >= 2;
   const graspThresholds = research.active ? research : state;
   const usePersonalGrasp = (!research.active || research.stratum === '5') &&
     Number.isFinite(graspThresholds.personalGraspEnter) &&
@@ -4474,7 +4474,7 @@ function computePinchState(lm, isPinchingPrev){
     valid:true,
   };
 }
-const GESTURE_CONFIRM_MS = 120;
+const GESTURE_CONFIRM_MS = 90;
 let detectedGestureState = { mode:'', stable:false, candidate:false, candidateAt:0 };
 function stabiliseDetectedGesture(rawValue, mode){
   const now = performance.now();
@@ -4599,23 +4599,22 @@ function startCalibLoop(){
           if(!c.openDone){
             if(Number.isFinite(value)) c.openScores.push(value);
             if(!c.openStart) c.openStart = now;
-            if(now - c.openStart >= 1000){
+            if(now - c.openStart >= 750){
               c.openDone = true;
               c.closedStart = 0;
               hint.textContent = isPinchMode() ? '而家輕捏。' : '而家輕合手。';
             }
           }else if(!c.closedDone && Number.isFinite(value)){
-            const openMean = c.openScores.reduce((a,b)=>a+b,0) / Math.max(1,c.openScores.length);
+            const openMean = medianValue(c.openScores);
             const changedEnough = isPinchMode()
               ? value <= openMean - 0.10
-              : value >= openMean + 0.08;
+              : value >= openMean + 0.035;
             if(changedEnough){
               c.closedScores.push(value);
               if(!c.closedStart) c.closedStart = now;
-              if(now - c.closedStart >= 900) c.closedDone = true;
+              if(now - c.closedStart >= 550) c.closedDone = true;
             }else{
               c.closedStart = 0;
-              c.closedScores = [];
             }
           }
         } else {
@@ -4627,13 +4626,13 @@ function startCalibLoop(){
         c.ready = c.detectedDone && c.openDone && c.closedDone;
         if(c.ready && state.gameType === 'grasp' && thresholds.personalGraspEnter == null &&
             c.openScores.length && c.closedScores.length){
-          const openMean = c.openScores.reduce((a,b)=>a+b,0) / c.openScores.length;
-          const closedMean = c.closedScores.reduce((a,b)=>a+b,0) / c.closedScores.length;
-          const gap = Math.max(0.08, closedMean - openMean);
-          thresholds.personalGraspEnter = openMean + gap * 0.58;
+          const openMean = medianValue(c.openScores);
+          const closedMean = medianValue(c.closedScores);
+          const gap = Math.max(0.04, closedMean - openMean);
+          thresholds.personalGraspEnter = openMean + gap * 0.48;
           thresholds.personalGraspExit = Math.min(
-            thresholds.personalGraspEnter - 0.05,
-            openMean + gap * 0.22,
+            thresholds.personalGraspEnter - 0.015,
+            openMean + gap * 0.38,
           );
         }
         if(c.ready && state.gameType === 'pinch' &&
@@ -5933,7 +5932,7 @@ function graspPrompt(key){
   return '張開手放下';
 }
 function updateGraspLogic(){
-  const PREP_OPEN_MS = 280, GRASP_HOLD_MS = 480, DROP_DWELL_MS = 1000;
+  const PREP_OPEN_MS = 220, GRASP_HOLD_MS = 360, DROP_DWELL_MS = 650;
   const CONTACT_GRACE_MS = 450;
   // Preparation requirement: FTHUE 5 needs a truly open hand, FTHUE 6/7 needs the
   // thumb and index finger clearly separated before a new pinch is accepted.
@@ -6103,7 +6102,7 @@ function updateGraspLogic(){
       releaseDwellStart = 0;
       releaseDwellPlate = null;
       setActionPrompt(onPlate ? graspPrompt('release') : graspPrompt('carry'),
-        onPlate ? (isPinchMode() ? PILOT_TEXT[pilotLang].pinchReleasePrompt : '完全張開手指') : affectedDirectionLabel());
+        onPlate ? (isPinchMode() ? PILOT_TEXT[pilotLang].pinchReleasePrompt : '張到今日可達幅度') : affectedDirectionLabel());
     }
   }
 }

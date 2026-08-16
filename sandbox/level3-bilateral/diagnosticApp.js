@@ -15,6 +15,8 @@ const elements = {
   cameraErrorDetail: document.querySelector("#cameraErrorDetail"),
   cameraRetry: document.querySelector("#cameraRetry"),
   cameraReturn: document.querySelector("#cameraReturn"),
+  movementAlertBar: document.querySelector("#movementAlertBar"),
+  movementAlertText: document.querySelector("#safety-red-title"),
   reachProfile: document.querySelector("#reachProfile"),
   toleranceMode: document.querySelector("#toleranceMode"),
   directionMapping: document.querySelector("#directionMapping"),
@@ -22,6 +24,7 @@ const elements = {
   beginCalibration: document.querySelector("#beginCalibration"),
   runSynthetic: document.querySelector("#runSynthetic"),
   cameraStatus: document.querySelector("#cameraStatus"),
+  canvasWrap: document.querySelector(".canvas-wrap"),
   canvas: document.querySelector("#diagnosticCanvas"),
   video: document.querySelector("#cameraVideo"),
   fpsValue: document.querySelector("#fpsValue"),
@@ -66,6 +69,14 @@ const AUTO_LOG_ACTIONS = new Set([
   "RETURN_AFTER_RELEASE",
   "TRUNK_TRANSLATION_WARNING",
   "BILATERAL_ASYMMETRY_WARNING",
+  "ELBOW_FLEXION_WARNING",
+  "MEDIAL_ARM_PATTERN_WARNING",
+]);
+const MOVEMENT_QUALITY_WARNING_ACTIONS = new Set([
+  "TRUNK_TRANSLATION_WARNING",
+  "BILATERAL_ASYMMETRY_WARNING",
+  "ELBOW_FLEXION_WARNING",
+  "MEDIAL_ARM_PATTERN_WARNING",
 ]);
 
 function currentConfig() {
@@ -99,6 +110,9 @@ let lastLoggedAt = -Infinity;
 const dataCollector = new Level3BilateralDataCollector();
 let dashboard = null;
 let latestDatasetPayload = null;
+let warningFlashTimer = null;
+let lastWarningFlashAt = -Infinity;
+const DEFAULT_MOVEMENT_ALERT = "肩膊被拉扯／疼痛、患手愈來愈繃緊、軀幹向側傾斜：停止";
 
 elements.sessionId.textContent = sessionId;
 
@@ -158,6 +172,10 @@ function updateMetrics(output) {
   elements.stateValue.textContent = output.state;
   elements.actionValue.textContent = output.action;
   elements.guidance.textContent = output.message;
+  elements.guidance.classList.toggle(
+    "movement-warning",
+    MOVEMENT_QUALITY_WARNING_ACTIONS.has(output.action),
+  );
   elements.scoreValue.textContent = String(output.score);
   elements.directionValue.textContent = `目前向${output.targetDirection === "LEFT" ? "左" : "右"}；首次患側 ${engine.affectedSide}`;
   elements.vcpValue.textContent = `${format(metrics?.vcpX)} / ${format(engine.calibrationVcpXMedian)} / ±${format(engine.dynamicVcpTolerance)}`;
@@ -188,6 +206,25 @@ function updateMetrics(output) {
 
   elements.trackingBadge.textContent = output.trackingStable ? "追蹤穩定" : "追蹤鎖定中";
   elements.trackingBadge.classList.toggle("stable", output.trackingStable);
+}
+
+function flashMovementQualityWarning(output) {
+  if (!MOVEMENT_QUALITY_WARNING_ACTIONS.has(output.action)) return;
+  const now = output.timestampMs || performance.now();
+  if (now - lastWarningFlashAt < 1800) return;
+  lastWarningFlashAt = now;
+  elements.canvasWrap.classList.remove("movement-quality-flash");
+  elements.movementAlertBar.classList.remove("movement-alert-active");
+  void elements.canvasWrap.offsetWidth;
+  elements.canvasWrap.classList.add("movement-quality-flash");
+  elements.movementAlertBar.classList.add("movement-alert-active");
+  elements.movementAlertText.textContent = output.message;
+  clearTimeout(warningFlashTimer);
+  warningFlashTimer = setTimeout(() => {
+    elements.canvasWrap.classList.remove("movement-quality-flash");
+    elements.movementAlertBar.classList.remove("movement-alert-active");
+    elements.movementAlertText.textContent = DEFAULT_MOVEMENT_ALERT;
+  }, 1150);
 }
 
 function eventRecord(output, reason = output.action) {
@@ -257,6 +294,7 @@ function maybeLog(output, forceReason = null) {
 
 function handleOutput(output) {
   updateMetrics(output);
+  flashMovementQualityWarning(output);
   dataCollector.observe(output, engine, output.timestampMs);
   maybeLog(output);
   if (AUTO_LOG_ACTIONS.has(output.action) || output.action === "CENTER_READY") {

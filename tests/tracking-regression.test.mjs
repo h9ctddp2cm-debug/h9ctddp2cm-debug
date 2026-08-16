@@ -26,9 +26,20 @@ test("Level 4 can fall back from an occluded hand to the affected-side Pose wris
   assert.match(publicSource, /activeAffectedSide\(\)\s*===\s*'left'\s*\?\s*15\s*:\s*16/);
 });
 
-test("Level 5 grasp requires two curled fingers and releases after three reopen", () => {
+test("Level 5 grasp requires two curled fingers and releases after two visibly reopen", () => {
   assert.match(publicSource, /curledCount\s*>=\s*2/);
-  assert.match(publicSource, /openCount\s*<\s*3/);
+  assert.match(publicSource, /openCount\s*<\s*2/);
+});
+
+test("Level 5 calibration accepts the participant's available opening range without long holds", () => {
+  assert.match(publicSource, /now\s*-\s*c\.openStart\s*>=\s*750/);
+  assert.match(publicSource, /openMean\s*\+\s*0\.035/);
+  assert.match(publicSource, /now\s*-\s*c\.closedStart\s*>=\s*550/);
+  assert.match(publicSource, /openMean\s*\+\s*gap\s*\*\s*0\.48/);
+  assert.match(
+    publicSource,
+    /const PREP_OPEN_MS\s*=\s*220,\s*GRASP_HOLD_MS\s*=\s*360,\s*DROP_DWELL_MS\s*=\s*650/
+  );
 });
 
 test("Level 3 display and target coordinates share the same mirrored direction", () => {

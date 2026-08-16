@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-12T15:05:50.915Z",
+  "generated_at": "2026-08-16T11:51:51.324Z",
   "base_url": "http://127.0.0.1:4173",
   "scope": "Independent technical verification for FTHUE Levels 4, 5, and 6",
   "limitation": "Not clinical validation; Level 6 aperture detection does not measure pinch force.",
@@ -246,22 +246,22 @@
     {
       "level": "5",
       "category": "gesture",
-      "name": "partial reopening does not release held item",
+      "name": "one reopened finger does not release held item",
       "passed": true,
       "details": {
         "isGrasping": true,
-        "score": 0.9041798295337653,
+        "score": 0.9419637862610499,
         "valid": true
       }
     },
     {
       "level": "5",
       "category": "gesture",
-      "name": "three open major fingers release held item",
+      "name": "two reopened major fingers release held item",
       "passed": true,
       "details": {
         "isGrasping": false,
-        "score": 0.8699939344633849,
+        "score": 0.9041798295337653,
         "valid": true
       }
     },
@@ -601,22 +601,22 @@
         },
         "items": [
           {
-            "label": "糯米雞",
-            "type": "lotusrice",
+            "label": "叉燒包",
+            "type": "charsiu",
             "x": 259.6,
             "y": 442.8,
             "r": 118
           },
           {
-            "label": "糯米雞",
-            "type": "lotusrice",
+            "label": "叉燒包",
+            "type": "charsiu",
             "x": 590,
             "y": 442.8,
             "r": 118
           },
           {
-            "label": "糯米雞",
-            "type": "lotusrice",
+            "label": "叉燒包",
+            "type": "charsiu",
             "x": 920.4,
             "y": 442.8,
             "r": 118
@@ -680,22 +680,22 @@
         },
         "items": [
           {
-            "label": "糯米雞",
-            "type": "lotusrice",
+            "label": "叉燒包",
+            "type": "charsiu",
             "x": 259.6,
             "y": 442.8,
             "r": 118
           },
           {
-            "label": "糯米雞",
-            "type": "lotusrice",
+            "label": "叉燒包",
+            "type": "charsiu",
             "x": 590,
             "y": 442.8,
             "r": 118
           },
           {
-            "label": "糯米雞",
-            "type": "lotusrice",
+            "label": "叉燒包",
+            "type": "charsiu",
             "x": 920.4,
             "y": 442.8,
             "r": 118
@@ -793,11 +793,11 @@
         },
         "items": [
           {
-            "label": "蝦餃",
-            "type": "hargau",
+            "label": "燒賣",
+            "type": "siumai",
             "x": 259.6,
             "y": 442.8,
-            "r": 145
+            "r": 100
           },
           {
             "label": "蝦餃",
@@ -807,11 +807,11 @@
             "r": 145
           },
           {
-            "label": "蝦餃",
-            "type": "hargau",
+            "label": "燒賣",
+            "type": "siumai",
             "x": 920.4,
             "y": 442.8,
-            "r": 145
+            "r": 100
           }
         ],
         "targets": [
@@ -872,11 +872,11 @@
         },
         "items": [
           {
-            "label": "蝦餃",
-            "type": "hargau",
+            "label": "燒賣",
+            "type": "siumai",
             "x": 259.6,
             "y": 442.8,
-            "r": 145
+            "r": 100
           },
           {
             "label": "蝦餃",
@@ -886,11 +886,11 @@
             "r": 145
           },
           {
-            "label": "蝦餃",
-            "type": "hargau",
+            "label": "燒賣",
+            "type": "siumai",
             "x": 920.4,
             "y": 442.8,
-            "r": 145
+            "r": 100
           }
         ],
         "targets": [
@@ -922,10 +922,10 @@
         "maxHoldMs": 5000,
         "releaseDifficultyLimit": 3,
         "levelNotes": {
-          "3": "Level 3：肩外展側滑；毛巾必須跟手。iPad 稍向下傾，肩、肘、手及路徑入鏡。軀幹保持正中，不可側彎或旋轉。",
-          "4": "Level 4：清空桌面。滑板離身 10–15 cm，不可貼近腹部。iPad 稍向下傾；前臂承托，慢慢向前滑。",
-          "5": "Level 5：手臂全程離開桌面並保持可見空隙。空手模擬、輕握放；按患者當日張手幅度校準。",
-          "67": "Level 6：手臂全程離開桌面，在空中完成伸手、輕捏、移動及張開。只用空手模擬，不拿實物或工具；拇指與食指只需輕輕靠近，不要用盡力。"
+          "3": "動作要點：坐於椅子或輪椅，雙前臂置於桌面毛巾上。好手帶動患手，向患側做肩外展及外側滑動，毛巾須隨手移動。軀幹保持正中，不側彎或旋轉。",
+          "4": "Level 4：坐在椅子或輪椅，清空桌面。患手放在離身 10–15 cm 的滑板上，不可貼近腹部；身體保持正中，避免聳肩，慢慢向前滑。",
+          "5": "Level 5：坐在椅子或輪椅，手臂全程離開桌面並保持可見空隙。空手模擬：伸出患手、輕輕合手、張開手；身體保持正中，避免過度側彎。按患者當日張手幅度校準。",
+          "67": "Level 6–7：坐在椅子或輪椅，手臂全程離開桌面。只用空手模擬：伸出患手、手指輕捏、張開手指；不拿實物或工具，不要用盡力。身體保持正中，避免過度側彎。"
         }
       }
     },
@@ -956,7 +956,7 @@
         "screen": "safety",
         "ackChecked": false,
         "continueDisabled": true,
-        "levelNote": "Level 3：肩外展側滑；毛巾必須跟手。iPad 稍向下傾，肩、肘、手及路徑入鏡。軀幹保持正中，不可側彎或旋轉。",
+        "levelNote": "動作要點：坐於椅子或輪椅，雙前臂置於桌面毛巾上。好手帶動患手，向患側做肩外展及外側滑動，毛巾須隨手移動。軀幹保持正中，不側彎或旋轉。",
         "continued": false
       }
     },
@@ -969,7 +969,7 @@
         "screen": "safety",
         "ackChecked": false,
         "continueDisabled": true,
-        "levelNote": "Level 3：肩外展側滑；毛巾必須跟手。iPad 稍向下傾，肩、肘、手及路徑入鏡。軀幹保持正中，不可側彎或旋轉。",
+        "levelNote": "動作要點：坐於椅子或輪椅，雙前臂置於桌面毛巾上。好手帶動患手，向患側做肩外展及外側滑動，毛巾須隨手移動。軀幹保持正中，不側彎或旋轉。",
         "continued": false
       }
     },
@@ -982,7 +982,7 @@
         "screen": "safety",
         "ackChecked": true,
         "continueDisabled": false,
-        "levelNote": "Level 3：肩外展側滑；毛巾必須跟手。iPad 稍向下傾，肩、肘、手及路徑入鏡。軀幹保持正中，不可側彎或旋轉。",
+        "levelNote": "動作要點：坐於椅子或輪椅，雙前臂置於桌面毛巾上。好手帶動患手，向患側做肩外展及外側滑動，毛巾須隨手移動。軀幹保持正中，不側彎或旋轉。",
         "continued": false
       }
     },
@@ -995,7 +995,7 @@
         "screen": "safety",
         "ackChecked": true,
         "continueDisabled": false,
-        "levelNote": "Level 3：肩外展側滑；毛巾必須跟手。iPad 稍向下傾，肩、肘、手及路徑入鏡。軀幹保持正中，不可側彎或旋轉。",
+        "levelNote": "動作要點：坐於椅子或輪椅，雙前臂置於桌面毛巾上。好手帶動患手，向患側做肩外展及外側滑動，毛巾須隨手移動。軀幹保持正中，不側彎或旋轉。",
         "continued": true
       }
     },
@@ -1005,7 +1005,7 @@
       "name": "level-specific safety note is visible on the screen",
       "passed": true,
       "details": {
-        "length": 57
+        "length": 66
       }
     },
     {
@@ -1026,7 +1026,7 @@
         "screen": "safety",
         "ackChecked": false,
         "continueDisabled": true,
-        "levelNote": "Level 4：清空桌面。滑板離身 10–15 cm，不可貼近腹部。iPad 稍向下傾；前臂承托，慢慢向前滑。",
+        "levelNote": "Level 4：坐在椅子或輪椅，清空桌面。患手放在離身 10–15 cm 的滑板上，不可貼近腹部；身體保持正中，避免聳肩，慢慢向前滑。",
         "continued": false
       }
     },
@@ -1039,7 +1039,7 @@
         "screen": "safety",
         "ackChecked": false,
         "continueDisabled": true,
-        "levelNote": "Level 4：清空桌面。滑板離身 10–15 cm，不可貼近腹部。iPad 稍向下傾；前臂承托，慢慢向前滑。",
+        "levelNote": "Level 4：坐在椅子或輪椅，清空桌面。患手放在離身 10–15 cm 的滑板上，不可貼近腹部；身體保持正中，避免聳肩，慢慢向前滑。",
         "continued": false
       }
     },
@@ -1052,7 +1052,7 @@
         "screen": "safety",
         "ackChecked": true,
         "continueDisabled": false,
-        "levelNote": "Level 4：清空桌面。滑板離身 10–15 cm，不可貼近腹部。iPad 稍向下傾；前臂承托，慢慢向前滑。",
+        "levelNote": "Level 4：坐在椅子或輪椅，清空桌面。患手放在離身 10–15 cm 的滑板上，不可貼近腹部；身體保持正中，避免聳肩，慢慢向前滑。",
         "continued": false
       }
     },
@@ -1065,152 +1065,12 @@
         "screen": "safety",
         "ackChecked": true,
         "continueDisabled": false,
-        "levelNote": "Level 4：清空桌面。滑板離身 10–15 cm，不可貼近腹部。iPad 稍向下傾；前臂承托，慢慢向前滑。",
+        "levelNote": "Level 4：坐在椅子或輪椅，清空桌面。患手放在離身 10–15 cm 的滑板上，不可貼近腹部；身體保持正中，避免聳肩，慢慢向前滑。",
         "continued": true
       }
     },
     {
       "level": "4",
-      "category": "safety gate",
-      "name": "level-specific safety note is visible on the screen",
-      "passed": true,
-      "details": {
-        "length": 55
-      }
-    },
-    {
-      "level": "5",
-      "category": "safety gate",
-      "name": "safety screen is shown before camera or game",
-      "passed": true,
-      "details": {
-        "screen": "safety"
-      }
-    },
-    {
-      "level": "5",
-      "category": "safety gate",
-      "name": "continue is blocked until the checklist is acknowledged",
-      "passed": true,
-      "details": {
-        "screen": "safety",
-        "ackChecked": false,
-        "continueDisabled": true,
-        "levelNote": "Level 5：手臂全程離開桌面並保持可見空隙。空手模擬、輕握放；按患者當日張手幅度校準。",
-        "continued": false
-      }
-    },
-    {
-      "level": "5",
-      "category": "safety gate",
-      "name": "clicking continue without acknowledgement does not proceed",
-      "passed": true,
-      "details": {
-        "screen": "safety",
-        "ackChecked": false,
-        "continueDisabled": true,
-        "levelNote": "Level 5：手臂全程離開桌面並保持可見空隙。空手模擬、輕握放；按患者當日張手幅度校準。",
-        "continued": false
-      }
-    },
-    {
-      "level": "5",
-      "category": "safety gate",
-      "name": "acknowledgement enables the continue action",
-      "passed": true,
-      "details": {
-        "screen": "safety",
-        "ackChecked": true,
-        "continueDisabled": false,
-        "levelNote": "Level 5：手臂全程離開桌面並保持可見空隙。空手模擬、輕握放；按患者當日張手幅度校準。",
-        "continued": false
-      }
-    },
-    {
-      "level": "5",
-      "category": "safety gate",
-      "name": "explicit acknowledgement is required and then proceeds",
-      "passed": true,
-      "details": {
-        "screen": "safety",
-        "ackChecked": true,
-        "continueDisabled": false,
-        "levelNote": "Level 5：手臂全程離開桌面並保持可見空隙。空手模擬、輕握放；按患者當日張手幅度校準。",
-        "continued": true
-      }
-    },
-    {
-      "level": "5",
-      "category": "safety gate",
-      "name": "level-specific safety note is visible on the screen",
-      "passed": true,
-      "details": {
-        "length": 45
-      }
-    },
-    {
-      "level": "6",
-      "category": "safety gate",
-      "name": "safety screen is shown before camera or game",
-      "passed": true,
-      "details": {
-        "screen": "safety"
-      }
-    },
-    {
-      "level": "6",
-      "category": "safety gate",
-      "name": "continue is blocked until the checklist is acknowledged",
-      "passed": true,
-      "details": {
-        "screen": "safety",
-        "ackChecked": false,
-        "continueDisabled": true,
-        "levelNote": "Level 6：手臂全程離開桌面，在空中完成伸手、輕捏、移動及張開。只用空手模擬，不拿實物或工具；拇指與食指只需輕輕靠近，不要用盡力。",
-        "continued": false
-      }
-    },
-    {
-      "level": "6",
-      "category": "safety gate",
-      "name": "clicking continue without acknowledgement does not proceed",
-      "passed": true,
-      "details": {
-        "screen": "safety",
-        "ackChecked": false,
-        "continueDisabled": true,
-        "levelNote": "Level 6：手臂全程離開桌面，在空中完成伸手、輕捏、移動及張開。只用空手模擬，不拿實物或工具；拇指與食指只需輕輕靠近，不要用盡力。",
-        "continued": false
-      }
-    },
-    {
-      "level": "6",
-      "category": "safety gate",
-      "name": "acknowledgement enables the continue action",
-      "passed": true,
-      "details": {
-        "screen": "safety",
-        "ackChecked": true,
-        "continueDisabled": false,
-        "levelNote": "Level 6：手臂全程離開桌面，在空中完成伸手、輕捏、移動及張開。只用空手模擬，不拿實物或工具；拇指與食指只需輕輕靠近，不要用盡力。",
-        "continued": false
-      }
-    },
-    {
-      "level": "6",
-      "category": "safety gate",
-      "name": "explicit acknowledgement is required and then proceeds",
-      "passed": true,
-      "details": {
-        "screen": "safety",
-        "ackChecked": true,
-        "continueDisabled": false,
-        "levelNote": "Level 6：手臂全程離開桌面，在空中完成伸手、輕捏、移動及張開。只用空手模擬，不拿實物或工具；拇指與食指只需輕輕靠近，不要用盡力。",
-        "continued": true
-      }
-    },
-    {
-      "level": "6",
       "category": "safety gate",
       "name": "level-specific safety note is visible on the screen",
       "passed": true,
@@ -1219,12 +1079,152 @@
       }
     },
     {
+      "level": "5",
+      "category": "safety gate",
+      "name": "safety screen is shown before camera or game",
+      "passed": true,
+      "details": {
+        "screen": "safety"
+      }
+    },
+    {
+      "level": "5",
+      "category": "safety gate",
+      "name": "continue is blocked until the checklist is acknowledged",
+      "passed": true,
+      "details": {
+        "screen": "safety",
+        "ackChecked": false,
+        "continueDisabled": true,
+        "levelNote": "Level 5：坐在椅子或輪椅，手臂全程離開桌面並保持可見空隙。空手模擬：伸出患手、輕輕合手、張開手；身體保持正中，避免過度側彎。按患者當日張手幅度校準。",
+        "continued": false
+      }
+    },
+    {
+      "level": "5",
+      "category": "safety gate",
+      "name": "clicking continue without acknowledgement does not proceed",
+      "passed": true,
+      "details": {
+        "screen": "safety",
+        "ackChecked": false,
+        "continueDisabled": true,
+        "levelNote": "Level 5：坐在椅子或輪椅，手臂全程離開桌面並保持可見空隙。空手模擬：伸出患手、輕輕合手、張開手；身體保持正中，避免過度側彎。按患者當日張手幅度校準。",
+        "continued": false
+      }
+    },
+    {
+      "level": "5",
+      "category": "safety gate",
+      "name": "acknowledgement enables the continue action",
+      "passed": true,
+      "details": {
+        "screen": "safety",
+        "ackChecked": true,
+        "continueDisabled": false,
+        "levelNote": "Level 5：坐在椅子或輪椅，手臂全程離開桌面並保持可見空隙。空手模擬：伸出患手、輕輕合手、張開手；身體保持正中，避免過度側彎。按患者當日張手幅度校準。",
+        "continued": false
+      }
+    },
+    {
+      "level": "5",
+      "category": "safety gate",
+      "name": "explicit acknowledgement is required and then proceeds",
+      "passed": true,
+      "details": {
+        "screen": "safety",
+        "ackChecked": true,
+        "continueDisabled": false,
+        "levelNote": "Level 5：坐在椅子或輪椅，手臂全程離開桌面並保持可見空隙。空手模擬：伸出患手、輕輕合手、張開手；身體保持正中，避免過度側彎。按患者當日張手幅度校準。",
+        "continued": true
+      }
+    },
+    {
+      "level": "5",
+      "category": "safety gate",
+      "name": "level-specific safety note is visible on the screen",
+      "passed": true,
+      "details": {
+        "length": 77
+      }
+    },
+    {
+      "level": "6",
+      "category": "safety gate",
+      "name": "safety screen is shown before camera or game",
+      "passed": true,
+      "details": {
+        "screen": "safety"
+      }
+    },
+    {
+      "level": "6",
+      "category": "safety gate",
+      "name": "continue is blocked until the checklist is acknowledged",
+      "passed": true,
+      "details": {
+        "screen": "safety",
+        "ackChecked": false,
+        "continueDisabled": true,
+        "levelNote": "Level 6–7：坐在椅子或輪椅，手臂全程離開桌面。只用空手模擬：伸出患手、手指輕捏、張開手指；不拿實物或工具，不要用盡力。身體保持正中，避免過度側彎。",
+        "continued": false
+      }
+    },
+    {
+      "level": "6",
+      "category": "safety gate",
+      "name": "clicking continue without acknowledgement does not proceed",
+      "passed": true,
+      "details": {
+        "screen": "safety",
+        "ackChecked": false,
+        "continueDisabled": true,
+        "levelNote": "Level 6–7：坐在椅子或輪椅，手臂全程離開桌面。只用空手模擬：伸出患手、手指輕捏、張開手指；不拿實物或工具，不要用盡力。身體保持正中，避免過度側彎。",
+        "continued": false
+      }
+    },
+    {
+      "level": "6",
+      "category": "safety gate",
+      "name": "acknowledgement enables the continue action",
+      "passed": true,
+      "details": {
+        "screen": "safety",
+        "ackChecked": true,
+        "continueDisabled": false,
+        "levelNote": "Level 6–7：坐在椅子或輪椅，手臂全程離開桌面。只用空手模擬：伸出患手、手指輕捏、張開手指；不拿實物或工具，不要用盡力。身體保持正中，避免過度側彎。",
+        "continued": false
+      }
+    },
+    {
+      "level": "6",
+      "category": "safety gate",
+      "name": "explicit acknowledgement is required and then proceeds",
+      "passed": true,
+      "details": {
+        "screen": "safety",
+        "ackChecked": true,
+        "continueDisabled": false,
+        "levelNote": "Level 6–7：坐在椅子或輪椅，手臂全程離開桌面。只用空手模擬：伸出患手、手指輕捏、張開手指；不拿實物或工具，不要用盡力。身體保持正中，避免過度側彎。",
+        "continued": true
+      }
+    },
+    {
+      "level": "6",
+      "category": "safety gate",
+      "name": "level-specific safety note is visible on the screen",
+      "passed": true,
+      "details": {
+        "length": 77
+      }
+    },
+    {
       "level": "3",
       "category": "safety copy",
       "name": "Level 3 note requires towel movement and prohibits trunk compensation",
       "passed": true,
       "details": {
-        "note": "Level 3：肩外展側滑；毛巾必須跟手。iPad 稍向下傾，肩、肘、手及路徑入鏡。軀幹保持正中，不可側彎或旋轉。"
+        "note": "動作要點：坐於椅子或輪椅，雙前臂置於桌面毛巾上。好手帶動患手，向患側做肩外展及外側滑動，毛巾須隨手移動。軀幹保持正中，不側彎或旋轉。"
       }
     },
     {
@@ -1233,7 +1233,7 @@
       "name": "Level 4 note requires a clear environment and safe board distance",
       "passed": true,
       "details": {
-        "note": "Level 4：清空桌面。滑板離身 10–15 cm，不可貼近腹部。iPad 稍向下傾；前臂承托，慢慢向前滑。"
+        "note": "Level 4：坐在椅子或輪椅，清空桌面。患手放在離身 10–15 cm 的滑板上，不可貼近腹部；身體保持正中，避免聳肩，慢慢向前滑。"
       }
     },
     {
@@ -1242,7 +1242,7 @@
       "name": "Level 5 note specifies off-table functional reach and loose simulated grasp",
       "passed": true,
       "details": {
-        "note": "Level 5：手臂全程離開桌面並保持可見空隙。空手模擬、輕握放；按患者當日張手幅度校準。"
+        "note": "Level 5：坐在椅子或輪椅，手臂全程離開桌面並保持可見空隙。空手模擬：伸出患手、輕輕合手、張開手；身體保持正中，避免過度側彎。按患者當日張手幅度校準。"
       }
     },
     {
@@ -1251,7 +1251,7 @@
       "name": "Level 6 note specifies off-table functional reach and empty-hand pinch",
       "passed": true,
       "details": {
-        "note": "Level 6：手臂全程離開桌面，在空中完成伸手、輕捏、移動及張開。只用空手模擬，不拿實物或工具；拇指與食指只需輕輕靠近，不要用盡力。"
+        "note": "Level 6–7：坐在椅子或輪椅，手臂全程離開桌面。只用空手模擬：伸出患手、手指輕捏、張開手指；不拿實物或工具，不要用盡力。身體保持正中，避免過度側彎。"
       }
     },
     {
