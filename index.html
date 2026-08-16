@@ -4016,7 +4016,7 @@ function updateRulesForActivity(){
         '由中線向患側外下方移動。' + (advanced ? '只拿目標物件，不要拿動物。' : '');
     return;
   }
-  if(isAdvTheme()){
+  if(usesAdvancedThemeModule()){
     const r = ADV_RULES[state.theme];
     const rulesEl0 = document.getElementById('rulesContent');
     if(rulesEl0){
@@ -4360,7 +4360,7 @@ function leaveCurrentGame(){
   state.running = false;
   state.paused = false;
   resetSafetyRuntime();
-  if(isAdvTheme()) advTeardown();
+  if(usesAdvancedThemeModule()) advTeardown();
   if(gameTimerId){ clearInterval(gameTimerId); gameTimerId = null; }
   if(cogTimerId){ clearInterval(cogTimerId); cogTimerId = null; }
   if(gameRAF){ cancelAnimationFrame(gameRAF); gameRAF = null; }
@@ -5811,7 +5811,7 @@ function initGame(){
   resizeGameCanvas();
   // 先顯示提示，讓第一局生成物件時已可量度右上角提示禁區
   setActionPrompt('等待偵測手部', '手放鏡頭前');
-  if(isAdvTheme()){
+  if(usesAdvancedThemeModule()){
     // 進階活動（麻雀 / 啤牌 / 煮飯 / 插花 / 收衫）有各自的玩法模組
     advInit();
   } else {
@@ -5861,7 +5861,7 @@ function initGame(){
   }
 
   // 遊戲開始：顯示 tier 0 規則 banner（進階活動有自己的引導面板）
-  if(!isAdvTheme()){
+  if(!usesAdvancedThemeModule()){
     showLevelUpBanner();
     // Banner 顯示後再檢查一次，避免第一局因提示框剛載入而遮住點心
     ensureFoodsClearOfInstructions();
@@ -6200,7 +6200,7 @@ function gameLoop(){
   }
   if(!state.paused){
     updateTracking();
-    if(isAdvTheme()){ advUpdate(); advRender(); }
+    if(usesAdvancedThemeModule()){ advUpdate(); advRender(); }
     else { updateGameLogic(); renderGame(); }
   }
   gameRAF = requestAnimationFrame(gameLoop);
@@ -6221,6 +6221,50 @@ function readHand(){
       isOpenPrep: qaHand.isOpenPrep === undefined ? !qaHand.isGrasping : !!qaHand.isOpenPrep };
   }
   return detectWrist(gameVideo);
+}
+
+function readGrossPoseHand(lm){
+  // Deterministic QA can provide a cursor independently of the injected pose;
+  // production never enters this branch.
+  if(state.qaMode && qaHand && !Array.isArray(lm)){
+    return {
+      detected:true,
+      nx:qaHand.nx,
+      ny:qaHand.ny,
+      isGrasping:false,
+      isOpenPrep:true,
+      source:'qa-gross-cursor'
+    };
+  }
+  if(!Array.isArray(lm)) return {detected:false};
+  if(isLevel3Tabletop()){
+    const leftWrist = lm[15], rightWrist = lm[16];
+    if(!level4PosePointUsable(leftWrist) || !level4PosePointUsable(rightWrist)){
+      return {detected:false};
+    }
+    return {
+      detected:true,
+      nx:state.qaMode && Number.isFinite(qaHand?.nx)
+        ? qaHand.nx
+        : interactionX((leftWrist.x+rightWrist.x)/2),
+      ny:state.qaMode && Number.isFinite(qaHand?.ny)
+        ? qaHand.ny
+        : (leftWrist.y+rightWrist.y)/2,
+      isGrasping:false,
+      isOpenPrep:true,
+      source:'pose-bilateral-wrist-live'
+    };
+  }
+  const wrist = lm[activeAffectedSide() === 'left' ? 15 : 16];
+  if(!level4PosePointUsable(wrist)) return {detected:false};
+  return {
+    detected:true,
+    nx:state.qaMode && Number.isFinite(qaHand?.nx) ? qaHand.nx : interactionX(wrist.x),
+    ny:state.qaMode && Number.isFinite(qaHand?.ny) ? qaHand.ny : wrist.y,
+    isGrasping:false,
+    isOpenPrep:true,
+    source:'pose-wrist-live'
+  };
 }
 
 /* ---------- Level 3 bilateral affected-side slide controller ----------
@@ -6350,6 +6394,11 @@ function updateLevel4ReachController(lm){
     // the gain that lifts the game object.
     wristRelativeY:(arm.wrist.y-arm.shoulder.y)/shoulderSpan,
     wristRelativeZ:((arm.wrist.z||0)-(arm.shoulder.z||0))/shoulderSpan,
+    wristReachRadius:Math.hypot(
+      arm.wrist.x-arm.shoulder.x,
+      arm.wrist.y-arm.shoulder.y,
+      (arm.wrist.z||0)-(arm.shoulder.z||0)
+    )/shoulderSpan,
     shoulderBalance:arm.shoulder.y-arm.otherShoulder.y,
   };
   level4Reach.elbowAngle = elbowAngle;
@@ -6367,6 +6416,7 @@ function updateLevel4ReachController(lm){
         elbowAngle:level4Median(level4Reach.samples.map(v=>v.elbowAngle)),
         wristRelativeY:level4Median(level4Reach.samples.map(v=>v.wristRelativeY)),
         wristRelativeZ:level4Median(level4Reach.samples.map(v=>v.wristRelativeZ)),
+        wristReachRadius:level4Median(level4Reach.samples.map(v=>v.wristReachRadius)),
         shoulderBalance:level4Median(level4Reach.samples.map(v=>v.shoulderBalance)),
       };
       level4Reach.calibrated = true;
@@ -6384,10 +6434,11 @@ function updateLevel4ReachController(lm){
   // tabletop setup remains responsive without accepting shoulder elevation.
   const forwardReachGain = Math.max(
     baseline.wristRelativeY-sample.wristRelativeY,
-    baseline.wristRelativeZ-sample.wristRelativeZ
+    baseline.wristRelativeZ-sample.wristRelativeZ,
+    sample.wristReachRadius-baseline.wristReachRadius
   );
   const extensionProgress = clamp01((elbowGain-4)/42);
-  const shoulderFlexProgress = clamp01((forwardReachGain-0.04)/0.55);
+  const shoulderFlexProgress = clamp01((forwardReachGain-0.025)/0.42);
   const shoulderHike = (baseline.shoulderBalance-sample.shoulderBalance) > 0.035;
 
   level4Reach.elbowExtensionProgress = extensionProgress;
@@ -6418,7 +6469,10 @@ function updateTracking(){
   }
   const level3Motion = updateLevel3LateralController(grossPose, cw, ch);
   const level4Motion = updateLevel4ReachController(grossPose);
-  const res = readHand();
+  // Levels 3–4 are driven by shoulder/elbow/wrist Pose only. Running the hand
+  // model as well on every iPad frame halved the effective frame rate and made
+  // the live game behave differently from the movement test.
+  const res = isGrossTabletop() ? readGrossPoseHand(grossPose) : readHand();
 
   if(res.detected){
     // Real detection
@@ -6479,7 +6533,7 @@ function updateTracking(){
     handOpenPrep = res.isOpenPrep === undefined ? !res.isGrasping : !!res.isOpenPrep;
     if(isGraspStyleMode()){
       isGrasping = res.isGrasping || false;
-    } else if(isAdvTheme() && res.isGrasping !== undefined){
+    } else if(usesAdvancedThemeModule() && res.isGrasping !== undefined){
       // 進階活動（例如煮飯抓鬆冷飯）在 Level 6–7 亦需要知道手掌開／合
       isGrasping = !!res.isGrasping;
     }
@@ -7199,7 +7253,7 @@ function endGame(endReason){
   state.running = false;
   state.paused = false;
   resetSafetyRuntime();
-  if(isAdvTheme()) advTeardown();
+  if(usesAdvancedThemeModule()) advTeardown();
   if(gameTimerId){ clearInterval(gameTimerId); gameTimerId = null; }
   if(cogTimerId){ clearInterval(cogTimerId); cogTimerId = null; }
   if(gameRAF){ cancelAnimationFrame(gameRAF); gameRAF = null; }
@@ -7333,6 +7387,13 @@ function endGame(endReason){
 
 const ADV_THEMES = ['mahjong','cards','cooking','flowers','laundry'];
 function isAdvTheme(id){ return ADV_THEMES.indexOf(id || state.theme) >= 0; }
+function usesAdvancedThemeModule(id){
+  // Level 3 must preserve one standardised movement for every visual theme:
+  // centre pickup, affected-side lateral slide, destination dwell. The original
+  // advanced modules require free 2-D cursor movement and are therefore reserved
+  // for Levels 4–7.
+  return !isLevel3Tabletop() && isAdvTheme(id);
+}
 /* 窄螢幕（手機直度）：引導面板較高，遊戲元素要向下讓位 */
 function advNarrow(){ return gameCanvas.width < 700; }
 function advPhone(){ return gameCanvas.width < 520; }
@@ -10656,7 +10717,7 @@ window.render_game_to_text = function(){
         ' warning:' + (level4Reach.warning || 'none'));
     }
   }
-  if((currentScreen === 'game' || currentScreen === 'result') && isAdvTheme() && advCurrent){
+  if((currentScreen === 'game' || currentScreen === 'result') && usesAdvancedThemeModule() && advCurrent){
     lines.push.apply(lines, advTextState());
   }
   if(currentScreen === 'rules'){
@@ -10685,7 +10746,7 @@ window.advanceTime = function(ms, steps){
     }
     if(state.running && !state.paused && currentScreen === 'game'){
       updateTracking();
-      if(isAdvTheme()){ advUpdate(); advRender(); }
+      if(usesAdvancedThemeModule()){ advUpdate(); advRender(); }
       else { updateGameLogic(); renderGame(); }
     }
   }

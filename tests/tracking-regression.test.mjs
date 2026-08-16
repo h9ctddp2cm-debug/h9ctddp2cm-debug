@@ -25,6 +25,7 @@ test("iPad tracking uses CPU-compatible MediaPipe creation with a CPU retry", ()
 test("Levels 3 and 4 can use Pose when tabletop hands occlude the finger model", () => {
   assert.match(publicSource, /source:'pose-bilateral-wrist'/);
   assert.match(publicSource, /source:'pose-wrist'/);
+  assert.match(publicSource, /const res = isGrossTabletop\(\) \? readGrossPoseHand\(grossPose\) : readHand\(\)/);
   assert.match(publicSource, /activeAffectedSide\(\)\s*===\s*'left'\s*\?\s*15\s*:\s*16/);
 });
 
@@ -50,6 +51,13 @@ test("Level 4 vertical transport requires shoulder flexion and elbow extension t
   assert.ok(publicSource.includes("mapped.y = ch * 0.82 - level4Motion.progress * ch * 0.40"));
   assert.ok(publicSource.includes("baseline.wristRelativeZ-sample.wristRelativeZ"));
   assert.ok(publicSource.includes("baseline.wristRelativeY-sample.wristRelativeY"));
+  assert.ok(publicSource.includes("sample.wristReachRadius-baseline.wristReachRadius"));
+});
+
+test("Level 3 visual themes share the standard lateral pickup and drop engine", () => {
+  assert.match(publicSource, /function usesAdvancedThemeModule\(id\)/);
+  assert.match(publicSource, /return !isLevel3Tabletop\(\) && isAdvTheme\(id\)/);
+  assert.match(publicSource, /if\(usesAdvancedThemeModule\(\)\)\{ advUpdate\(\); advRender\(\); \}/);
 });
 
 test("Level 4 shoulder hiking freezes transport and alerts the therapist", () => {
