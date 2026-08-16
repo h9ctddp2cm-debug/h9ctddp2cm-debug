@@ -87,14 +87,19 @@ def level3():
 
 
 def level4():
-    base = cover(Image.open(OUT / "level4_cartoon_side_forward.png"))
+    base = cover(Image.open(OUT / "level4_lateral_table_start.png"))
     frames = []
     for index in range(28):
         phase = (index % 14) / 13
         opacity = 90 + int(130 * (1 - abs(phase - 0.5) * 2))
-        frame = arrow(base, (300, 274), (520, 274), opacity, both_ends=True)
+        if index < 14:
+            # Forward reach along the table positioned beside the affected side.
+            frame = arrow(base, (375, 216), (515, 216), opacity)
+        else:
+            # Return toward the approximately 90-degree elbow start position.
+            frame = arrow(base, (515, 216), (375, 216), opacity)
         frames.append(frame)
-    save_gif(frames, OUT / "level4_side_forward_slide.gif")
+    save_gif(frames, OUT / "level4_lateral_forward_slide_v2.gif")
 
 
 if __name__ == "__main__":
