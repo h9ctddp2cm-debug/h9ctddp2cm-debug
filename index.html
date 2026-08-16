@@ -2117,6 +2117,13 @@ const SAFETY_LEVEL_5_ITEMS = [
   '動作慢、穩，不追次數，隨時可休息或停止。',
   '治療師全程監督，疼痛／手緊／代償 → 立即停止。',
 ];
+const SAFETY_LEVEL_67_ITEMS = [
+  '坐穩，伸出患手、手指輕捏、張開手指',
+  '身體保持正中，避免過度側彎。',
+  '先試 3 次，無痛才正式做。',
+  '動作慢、穩，不追次數，隨時可休息或停止。',
+  '治療師全程監督，疼痛／手緊／代償 → 立即停止。',
+];
 
 let safetyGatePending = null;   // { levelKey, onContinue, onBack }
 
@@ -2135,8 +2142,10 @@ function openSafetyGate(levelKey, onContinue, onBack){
       ? '開始前安全確認（FTHUE Level 4）'
       : levelKey === '5'
         ? '開始前安全確認（FTHUE Level 5）'
+        : levelKey === '67'
+          ? '開始前安全確認（FTHUE Level 6–7）'
       : '開始前安全確認';
-  const usesApprovedChecklist = levelKey === '4' || levelKey === '5';
+  const usesApprovedChecklist = levelKey === '4' || levelKey === '5' || levelKey === '67';
   if(supervision) supervision.hidden = usesApprovedChecklist;
   if(note){
     note.hidden = usesApprovedChecklist;
@@ -2147,6 +2156,8 @@ function openSafetyGate(levelKey, onContinue, onBack){
       ? SAFETY_LEVEL_4_ITEMS
       : levelKey === '5'
         ? SAFETY_LEVEL_5_ITEMS
+        : levelKey === '67'
+          ? SAFETY_LEVEL_67_ITEMS
         : SAFETY_DEFAULT_ITEMS;
     [...checklist.children].forEach((item, index)=>{
       item.hidden = index >= items.length;

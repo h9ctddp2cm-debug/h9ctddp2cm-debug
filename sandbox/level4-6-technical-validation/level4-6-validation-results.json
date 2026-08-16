@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-16T13:18:19.377Z",
+  "generated_at": "2026-08-16T13:20:46.760Z",
   "base_url": "http://127.0.0.1:4173",
   "scope": "Independent technical verification for FTHUE Levels 4, 5, and 6",
   "limitation": "Not clinical validation; Level 6 aperture detection does not measure pinch force.",
@@ -430,8 +430,8 @@
             "r": 104
           },
           {
-            "label": "糯米雞",
-            "type": "lotusrice",
+            "label": "叉燒包",
+            "type": "charsiu",
             "x": 708,
             "y": 656,
             "r": 104
@@ -502,8 +502,8 @@
             "r": 104
           },
           {
-            "label": "糯米雞",
-            "type": "lotusrice",
+            "label": "叉燒包",
+            "type": "charsiu",
             "x": 708,
             "y": 656,
             "r": 104
@@ -615,8 +615,8 @@
             "r": 118
           },
           {
-            "label": "糯米雞",
-            "type": "lotusrice",
+            "label": "叉燒包",
+            "type": "charsiu",
             "x": 920.4,
             "y": 442.8,
             "r": 118
@@ -694,8 +694,8 @@
             "r": 118
           },
           {
-            "label": "糯米雞",
-            "type": "lotusrice",
+            "label": "叉燒包",
+            "type": "charsiu",
             "x": 920.4,
             "y": 442.8,
             "r": 118
@@ -793,11 +793,11 @@
         },
         "items": [
           {
-            "label": "蝦餃",
-            "type": "hargau",
+            "label": "燒賣",
+            "type": "siumai",
             "x": 259.6,
             "y": 442.8,
-            "r": 145
+            "r": 100
           },
           {
             "label": "蝦餃",
@@ -807,11 +807,11 @@
             "r": 145
           },
           {
-            "label": "燒賣",
-            "type": "siumai",
+            "label": "蝦餃",
+            "type": "hargau",
             "x": 920.4,
             "y": 442.8,
-            "r": 100
+            "r": 145
           }
         ],
         "targets": [
@@ -872,11 +872,11 @@
         },
         "items": [
           {
-            "label": "蝦餃",
-            "type": "hargau",
+            "label": "燒賣",
+            "type": "siumai",
             "x": 259.6,
             "y": 442.8,
-            "r": 145
+            "r": 100
           },
           {
             "label": "蝦餃",
@@ -886,11 +886,11 @@
             "r": 145
           },
           {
-            "label": "燒賣",
-            "type": "siumai",
+            "label": "蝦餃",
+            "type": "hargau",
             "x": 920.4,
             "y": 442.8,
-            "r": 100
+            "r": 145
           }
         ],
         "targets": [
