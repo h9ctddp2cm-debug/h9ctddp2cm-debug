@@ -135,8 +135,8 @@ try {
     graspTwoFingerRelease: window.__qa.gestureProbe.grasp([0.82, 1, 1, 0.82, 0.82], true, "any"),
     pinchEnter: window.__qa.gestureProbe.pinch(0.30, false),
     pinchHysteresisHold: window.__qa.gestureProbe.pinch(0.45, true),
-    pinchExit: window.__qa.gestureProbe.pinch(0.58, true),
-    pinchOpen: window.__qa.gestureProbe.pinch(0.70, false),
+    pinchExit: window.__qa.gestureProbe.pinch(0.70, true),
+    pinchOpen: window.__qa.gestureProbe.pinch(0.76, false),
     invalidGrasp: window.__qa.gestureProbe.invalid("grasp"),
     invalidPinch: window.__qa.gestureProbe.invalid("pinch"),
   }));

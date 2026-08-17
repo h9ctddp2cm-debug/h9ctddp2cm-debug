@@ -4941,9 +4941,9 @@ function computeGraspScore(lm, isGraspingPrev){
    Hysteresis prevents flicker: a closed pinch must cross PINCH_ENTER, and it is only
    released once the fingers reopen past PINCH_EXIT. This detects the pinch aperture only;
    it is not a force measurement. */
-const PINCH_ENTER = 0.38;   // normalised aperture below which a pinch is registered
-const PINCH_EXIT  = 0.56;   // normalised aperture above which the pinch is released
-const PINCH_OPEN  = 0.66;   // fingers clearly separated: valid preparation for a new pinch
+const PINCH_ENTER = 0.52;   // tolerant fallback; personal calibration is preferred
+const PINCH_EXIT  = 0.66;   // reopen beyond this point to release
+const PINCH_OPEN  = 0.72;   // fingers clearly separated: valid preparation for a new pinch
 function computePinchState(lm, isPinchingPrev){
   if(!hasFiniteHandLandmarks(lm, [0,4,5,8,9,17])){
     return { isPinching:false, ratio:null, isSeparated:false, score:0, valid:false };
@@ -5109,7 +5109,9 @@ function startCalibLoop(){
           }else if(!c.closedDone && Number.isFinite(value)){
             const openMean = medianValue(c.openScores);
             const changedEnough = isPinchMode()
-              ? value <= openMean - 0.10
+              // A clinically appropriate light pinch may use only part of the
+              // available aperture. Do not require a near-tip-to-tip closure.
+              ? value <= openMean - Math.max(0.035, openMean * 0.055)
               : value >= openMean + 0.035;
             if(changedEnough){
               c.closedScores.push(value);
@@ -5139,12 +5141,18 @@ function startCalibLoop(){
         }
         if(c.ready && state.gameType === 'pinch' &&
             thresholds.personalPinchEnter == null && c.openScores.length && c.closedScores.length){
-          const openMean = c.openScores.reduce((a,b)=>a+b,0) / c.openScores.length;
-          const closedMean = c.closedScores.reduce((a,b)=>a+b,0) / c.closedScores.length;
-          const gap = Math.max(0.12, openMean - closedMean);
-          thresholds.personalPinchEnter = closedMean + gap * 0.35;
-          thresholds.personalPinchExit = closedMean + gap * 0.65;
-          thresholds.personalPinchOpen = closedMean + gap * 0.82;
+          const openMean = medianValue(c.openScores);
+          const closedMean = medianValue(c.closedScores);
+          // Use the participant's measured light-pinch range exactly. The old
+          // forced 0.12 minimum could place the "open" threshold above the
+          // participant's real opening, permanently blocking pickup.
+          const gap = Math.max(0.025, openMean - closedMean);
+          thresholds.personalPinchEnter = closedMean + gap * 0.60;
+          thresholds.personalPinchExit = closedMean + gap * 0.76;
+          thresholds.personalPinchOpen = Math.min(
+            openMean - gap * 0.06,
+            closedMean + gap * 0.88
+          );
         }
         document.getElementById('btnStartGame').disabled = !c.ready;
         if(c.ready && !calibDetectedOnce){
@@ -6327,6 +6335,10 @@ const level4Reach = {
   elbowExtensionProgress:0,
   elbowAngle:null,
   elbowMode:'waiting',
+  forwardAxis:null,
+  forwardAxisPeak:0,
+  forwardScale:0.12,
+  directionMode:'waiting',
   shoulderHike:false,
   warning:'',
   calibrated:false,
@@ -6341,6 +6353,10 @@ const level4Reach = {
     this.elbowExtensionProgress = 0;
     this.elbowAngle = null;
     this.elbowMode = 'waiting';
+    this.forwardAxis = null;
+    this.forwardAxisPeak = 0;
+    this.forwardScale = 0.12;
+    this.directionMode = 'waiting';
     this.shoulderHike = false;
     this.warning = '';
     this.calibrated = false;
@@ -6401,6 +6417,7 @@ function updateLevel4ReachController(lm){
     // relative to the affected shoulder, shoulder hiking alone cannot create
     // the gain that lifts the game object.
     wristRelativeY:(arm.wrist.y-arm.shoulder.y)/shoulderSpan,
+    wristRelativeX:(arm.wrist.x-arm.shoulder.x)/shoulderSpan,
     wristRelativeZ:((arm.wrist.z||0)-(arm.shoulder.z||0))/shoulderSpan,
     wristReachRadius:Math.hypot(
       arm.wrist.x-arm.shoulder.x,
@@ -6422,6 +6439,7 @@ function updateLevel4ReachController(lm){
     if(level4Reach.samples.length >= 10){
       level4Reach.baseline = {
         elbowAngle:level4Median(level4Reach.samples.map(v=>v.elbowAngle)),
+        wristRelativeX:level4Median(level4Reach.samples.map(v=>v.wristRelativeX)),
         wristRelativeY:level4Median(level4Reach.samples.map(v=>v.wristRelativeY)),
         wristRelativeZ:level4Median(level4Reach.samples.map(v=>v.wristRelativeZ)),
         wristReachRadius:level4Median(level4Reach.samples.map(v=>v.wristReachRadius)),
@@ -6440,6 +6458,17 @@ function updateLevel4ReachController(lm){
 
   const baseline = level4Reach.baseline;
   const elbowGain = elbowAngle-baseline.elbowAngle;
+  // A side-seated patient can reach forward along screen X, screen Y, camera Z,
+  // or a mixture of all three depending on where the iPad is placed. Learn that
+  // participant/device-specific vector from the first deliberate extension
+  // instead of assuming one fixed camera direction.
+  const reachVector = [
+    (sample.wristRelativeX-baseline.wristRelativeX) * 0.65,
+    sample.wristRelativeY-baseline.wristRelativeY,
+    sample.wristRelativeZ-baseline.wristRelativeZ,
+    sample.wristReachRadius-baseline.wristReachRadius,
+  ];
+  const reachMagnitude = Math.hypot(...reachVector);
   // MediaPipe Z becomes more negative as the hand reaches toward the camera.
   // Use the stronger of screen-height and depth change so the side-on
   // tabletop setup remains responsive without accepting shoulder elevation.
@@ -6458,8 +6487,39 @@ function updateLevel4ReachController(lm){
   const activeExtension = elbowGain >= 1.5;
   const elbowConfirmed = activeExtension || maintainedExtension;
 
+  // Learn/update the forward axis only while the elbow is extending or safely
+  // maintained in extension. Shoulder hiking is explicitly excluded, so it
+  // cannot teach the system a false "forward" direction.
+  const directionLearningEligible = !shoulderHike
+    && reachMagnitude >= 0.018
+    && (elbowGain >= 2 || maintainedExtension);
+  if(directionLearningEligible && reachMagnitude > level4Reach.forwardAxisPeak){
+    level4Reach.forwardAxis = reachVector.map(v=>v/reachMagnitude);
+    level4Reach.forwardAxisPeak = reachMagnitude;
+    level4Reach.forwardScale = Math.max(0.055, Math.min(0.26, reachMagnitude * 1.35));
+    level4Reach.directionMode = 'individualized';
+  }
+  const individualizedGain = level4Reach.forwardAxis
+    ? reachVector.reduce((sum,value,index)=>
+        sum + value * level4Reach.forwardAxis[index], 0)
+    : 0;
+  const individualizedProgress = level4Reach.forwardAxis
+    ? clamp01((individualizedGain-0.006) / Math.max(0.045, level4Reach.forwardScale-0.006))
+    : 0;
+  // Before the first reach has fully established an axis, show immediate
+  // provisional movement when elbow extension and real wrist displacement
+  // occur together. This prevents the first trial from appearing unresponsive.
+  const provisionalProgress = elbowConfirmed
+    ? clamp01((reachMagnitude-0.012) / 0.10)
+    : 0;
+  const cameraDirectionProgress = Math.max(
+    individualizedProgress,
+    provisionalProgress,
+    shoulderFlexProgress
+  );
+
   level4Reach.elbowExtensionProgress = extensionProgress;
-  level4Reach.shoulderFlexProgress = shoulderFlexProgress;
+  level4Reach.shoulderFlexProgress = cameraDirectionProgress;
   level4Reach.shoulderHike = shoulderHike;
   level4Reach.elbowMode = maintainedExtension ? 'maintained-extension' : 'active-extension';
 
@@ -6467,29 +6527,29 @@ function updateLevel4ReachController(lm){
   // either active elbow extension or a safely maintained already-extended arm.
   // Once engaged, return transport follows the forward-reach signal only when
   // elbow flexion is also evident, so shoulder elevation alone never drives it.
-  if(!level4Reach.engaged && shoulderFlexProgress >= 0.08 && elbowConfirmed){
+  if(!level4Reach.engaged && cameraDirectionProgress >= 0.06 && elbowConfirmed){
     level4Reach.engaged = true;
     level4Reach.peakElbowAngle = elbowAngle;
-    level4Reach.peakShoulderFlexProgress = shoulderFlexProgress;
+    level4Reach.peakShoulderFlexProgress = cameraDirectionProgress;
   }
   if(level4Reach.engaged){
     level4Reach.peakElbowAngle = Math.max(level4Reach.peakElbowAngle || elbowAngle, elbowAngle);
     level4Reach.peakShoulderFlexProgress = Math.max(
       level4Reach.peakShoulderFlexProgress,
-      shoulderFlexProgress
+      cameraDirectionProgress
     );
   }
   const returning = level4Reach.engaged
-    && shoulderFlexProgress < level4Reach.peakShoulderFlexProgress-0.025;
+    && cameraDirectionProgress < level4Reach.peakShoulderFlexProgress-0.025;
   const returnElbowFlexion = level4Reach.engaged
     && (level4Reach.peakElbowAngle-elbowAngle) >= 1.5;
   let compoundProgress = level4Reach.progress;
   if(level4Reach.engaged && !returning){
-    compoundProgress = shoulderFlexProgress;
-  }else if(returning && (returnElbowFlexion || shoulderFlexProgress <= 0.04)){
-    compoundProgress = shoulderFlexProgress;
+    compoundProgress = cameraDirectionProgress;
+  }else if(returning && (returnElbowFlexion || cameraDirectionProgress <= 0.04)){
+    compoundProgress = cameraDirectionProgress;
   }
-  if(shoulderFlexProgress <= 0.025 && level4Reach.progress <= 0.06){
+  if(cameraDirectionProgress <= 0.025 && level4Reach.progress <= 0.06){
     level4Reach.engaged = false;
     level4Reach.peakElbowAngle = null;
     level4Reach.peakShoulderFlexProgress = 0;
@@ -10761,6 +10821,8 @@ window.render_game_to_text = function(){
         ' shoulderFlex:' + level4Reach.shoulderFlexProgress.toFixed(3) +
         ' elbowExtension:' + level4Reach.elbowExtensionProgress.toFixed(3) +
         ' elbowMode:' + level4Reach.elbowMode +
+        ' directionMode:' + level4Reach.directionMode +
+        ' directionPeak:' + level4Reach.forwardAxisPeak.toFixed(3) +
         ' shoulderHike:' + level4Reach.shoulderHike +
         ' warning:' + (level4Reach.warning || 'none'));
     }
@@ -10966,6 +11028,9 @@ window.__qa = {
       elbowExtensionProgress:level4Reach.elbowExtensionProgress,
       elbowAngle:level4Reach.elbowAngle,
       elbowMode:level4Reach.elbowMode,
+      directionMode:level4Reach.directionMode,
+      directionPeak:level4Reach.forwardAxisPeak,
+      forwardScale:level4Reach.forwardScale,
       shoulderHike:level4Reach.shoulderHike,
       warning:level4Reach.warning,
       cursorY,

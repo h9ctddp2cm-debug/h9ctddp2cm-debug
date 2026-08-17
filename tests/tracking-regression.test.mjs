@@ -45,10 +45,12 @@ test("Level 3 bilateral controller follows the selected affected side only", () 
   assert.ok(publicSource.includes("level3LateralState()"));
 });
 
-test("Level 4 vertical transport requires forward reach with active or maintained elbow extension", () => {
+test("Level 4 learns the real iPad reach direction and still requires elbow confirmation", () => {
   assert.ok(publicSource.includes("const elbowConfirmed = activeExtension || maintainedExtension"));
-  assert.ok(publicSource.includes("shoulderFlexProgress >= 0.08 && elbowConfirmed"));
-  assert.ok(publicSource.includes("returnElbowFlexion || shoulderFlexProgress <= 0.04"));
+  assert.ok(publicSource.includes("directionLearningEligible"));
+  assert.ok(publicSource.includes("level4Reach.forwardAxis = reachVector.map"));
+  assert.ok(publicSource.includes("cameraDirectionProgress >= 0.06 && elbowConfirmed"));
+  assert.ok(publicSource.includes("returnElbowFlexion || cameraDirectionProgress <= 0.04"));
   assert.ok(publicSource.includes("mapped.y = ch * 0.82 - level4Motion.progress * ch * 0.40"));
   assert.ok(publicSource.includes("baseline.wristRelativeZ-sample.wristRelativeZ"));
   assert.ok(publicSource.includes("baseline.wristRelativeY-sample.wristRelativeY"));
@@ -95,6 +97,14 @@ test("Level 5 calibration accepts the participant's available opening range with
     publicSource,
     /const PREP_OPEN_MS\s*=\s*220,\s*GRASP_HOLD_MS\s*=\s*360,\s*DROP_DWELL_MS\s*=\s*650/
   );
+});
+
+test("Level 6–7 calibration accepts a light pinch without inventing a larger aperture range", () => {
+  assert.match(publicSource, /openMean\s*-\s*Math\.max\(0\.035,\s*openMean\s*\*\s*0\.055\)/);
+  assert.match(publicSource, /const gap = Math\.max\(0\.025, openMean - closedMean\)/);
+  assert.match(publicSource, /personalPinchEnter = closedMean \+ gap \* 0\.60/);
+  assert.ok(publicSource.includes("personalPinchOpen = Math.min("));
+  assert.doesNotMatch(publicSource, /Math\.max\(0\.12, openMean - closedMean\)/);
 });
 
 test("Level 3 display and target coordinates share the same mirrored direction", () => {
