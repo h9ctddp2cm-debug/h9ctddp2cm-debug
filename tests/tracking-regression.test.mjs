@@ -22,6 +22,13 @@ test("iPad tracking uses CPU-compatible MediaPipe creation with a CPU retry", ()
   assert.match(publicSource, /baseOptions:\{\.\.\.options\.baseOptions,\s*delegate:"CPU"\}/);
 });
 
+test("camera capture follows portrait or landscape orientation instead of forcing a cropped landscape frame", () => {
+  assert.match(publicSource, /const portraitCamera = window\.innerHeight > window\.innerWidth/);
+  assert.match(publicSource, /width:\{ideal:720\},\s*height:\{ideal:1280\}/);
+  assert.match(publicSource, /aspectRatio:\{ideal:9\/16\}/);
+  assert.match(publicSource, /video: cameraVideoConstraints/);
+});
+
 test("Levels 3 and 4 can use Pose when tabletop hands occlude the finger model", () => {
   assert.match(publicSource, /source:'pose-bilateral-wrist'/);
   assert.match(publicSource, /source:'pose-wrist'/);
@@ -81,6 +88,7 @@ test("Level 4 exposes deterministic compound-movement QA hooks", () => {
   assert.ok(publicSource.includes("setLevel4Pose(spec)"));
   assert.ok(publicSource.includes("level4ReachState()"));
   assert.ok(publicSource.includes("resetLevel4Reach()"));
+  assert.ok(publicSource.includes("setActionPrompt('鏡頭向下／拉遠', '肩・手肘・手腕全部入鏡')"));
 });
 
 test("Level 5 grasp requires two curled fingers and releases after two visibly reopen", () => {
@@ -105,6 +113,32 @@ test("Level 6–7 calibration accepts a light pinch without inventing a larger a
   assert.match(publicSource, /personalPinchEnter = closedMean \+ gap \* 0\.60/);
   assert.ok(publicSource.includes("personalPinchOpen = Math.min("));
   assert.doesNotMatch(publicSource, /Math\.max\(0\.12, openMean - closedMean\)/);
+});
+
+test("Level 6–7 exposes three independent interaction modes", () => {
+  assert.match(publicSource, /id="level67ToolCard"/);
+  assert.match(publicSource, /data-tool-mode="bare">空手（三指）/);
+  assert.match(publicSource, /data-tool-mode="peg">夾仔/);
+  assert.match(publicSource, /data-tool-mode="chopsticks">筷子/);
+  assert.match(publicSource, /bare:\{\s*gameType:'pinch'/);
+  assert.match(publicSource, /peg:\{\s*gameType:'grasp'/);
+  assert.match(publicSource, /chopsticks:\{\s*gameType:'dwell'/);
+});
+
+test("bare, peg and chopsticks modes use different observable tracking signals", () => {
+  assert.match(publicSource, /const required = state\.gameType === 'pinch'\s*\?\s*\[0,4,5,8,9,12,17\]/);
+  assert.match(publicSource, /const gap = \(distance\(lm\[4\], lm\[8\]\) \+ distance\(lm\[4\], lm\[12\]\)\) \/ 2/);
+  assert.match(publicSource, /isPegMode\(\).*personalGraspEnter/s);
+  assert.match(publicSource, /source:'index-dwell'/);
+  assert.match(publicSource, /method:isChopsticksMode\(\) \? 'chopsticks_index_dwell' : 'dwell'/);
+});
+
+test("research and QA flows preserve the selected Level 6–7 tool mode", () => {
+  assert.match(publicSource, /research\.toolUsed === 'cloth_peg'\s*\?\s*'peg'/);
+  assert.match(publicSource, /research\.toolUsed === 'chopsticks' \? 'chopsticks' : 'bare'/);
+  assert.match(publicSource, /selectToolMode\(mode\)/);
+  assert.match(publicSource, /toolModeState\(\)/);
+  assert.match(publicSource, /toolMode=' \+ state\.toolMode/);
 });
 
 test("Level 3 display and target coordinates share the same mirrored direction", () => {

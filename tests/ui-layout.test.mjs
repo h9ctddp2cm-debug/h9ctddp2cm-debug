@@ -389,7 +389,8 @@ test('final FTHUE Level 3–7 movement wording is consistent', async (t) => {
     assert.match(copy.level4, /避免聳肩/);
     assert.match(copy.level5, /伸出患手、輕輕合手、張開手/);
     assert.match(copy.level5, /避免過度側彎/);
-    assert.match(copy.level67, /伸出患手、手指輕捏、張開手指/);
-    assert.match(copy.level67, /避免過度側彎/);
+    assert.match(copy.level67, /三指輕捏、夾仔或筷子/);
+    assert.match(copy.level67, /手臂離桌/);
+    assert.match(copy.level67, /身體保持正中/);
   });
 });
