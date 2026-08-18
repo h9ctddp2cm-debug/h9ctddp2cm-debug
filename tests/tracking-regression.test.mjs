@@ -38,7 +38,7 @@ test("portrait phones keep the camera inline in a compact preview instead of ful
   assert.match(publicSource, /height:min\(25dvh,210px\)/);
   assert.ok(publicSource.includes("videoEl.setAttribute('webkit-playsinline', '')"));
   assert.ok(publicSource.includes("videoEl.controls = false"));
-  assert.match(serviceWorkerSource, /fthue-rehab-v8-20260818/);
+  assert.match(serviceWorkerSource, /fthue-rehab-v9-20260818/);
 });
 
 test("Levels 3 and 4 can use Pose when tabletop hands occlude the finger model", () => {
@@ -109,6 +109,23 @@ test("Level 3 visual themes share the standard lateral pickup and drop engine", 
   assert.match(publicSource, /if\(usesAdvancedThemeModule\(\)\)\{ advUpdate\(\); advRender\(\); \}/);
 });
 
+test("Level 3 changes dim sum, mahjong and playing-card artwork after each completed round", () => {
+  assert.ok(publicSource.includes("const LEVEL3_THEME_VARIANTS ="));
+  assert.match(publicSource, /dimsum:\[/);
+  assert.match(publicSource, /type:'siumai'/);
+  assert.match(publicSource, /type:'hargau'/);
+  assert.match(publicSource, /type:'charsiu'/);
+  assert.match(publicSource, /type:'lotusrice'/);
+  assert.match(publicSource, /mahjong:\[1,2,3,4,5,6\]/);
+  assert.match(publicSource, /\['heart','紅心'/);
+  assert.match(publicSource, /\['diamond','階磚'/);
+  assert.match(publicSource, /\['club','梅花'/);
+  assert.match(publicSource, /\['spade','黑桃'/);
+  assert.ok(publicSource.includes("variant.type !== level3PreviousVariantType"));
+  assert.ok(publicSource.includes("advanceLevel3RoundVariant();"));
+  assert.ok(publicSource.includes("setupTargets();"));
+});
+
 test("Level 4 shoulder hiking freezes transport and alerts the therapist", () => {
   assert.ok(publicSource.includes("const shoulderHike = Number.isFinite(baseline.shoulderBalance)"));
   assert.ok(publicSource.includes("(baseline.shoulderBalance-sample.shoulderBalance) > 0.035"));
@@ -135,7 +152,7 @@ test("all items stay clear of targets and can be parked in blank space", () => {
 
 test("offline worker forces the current build instead of serving the stale game", () => {
   assert.ok(publicSource.includes('updateViaCache:"none"'));
-  assert.match(serviceWorkerSource, /fthue-rehab-v8-20260818/);
+  assert.match(serviceWorkerSource, /fthue-rehab-v9-20260818/);
 });
 
 test("Level 4 exposes deterministic compound-movement QA hooks", () => {

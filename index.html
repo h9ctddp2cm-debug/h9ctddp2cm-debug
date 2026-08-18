@@ -5392,13 +5392,21 @@ function drawMahjongTile(ctx, x, y, r, dots){
   ctx.lineWidth = Math.max(3, r*0.09);
   ctx.strokeStyle = '#2E2A24';
   rrPath(ctx, x-w/2, y-h/2, w, h, r*0.22); ctx.stroke();
-  const cr = r*0.34;
-  const ys = dots === 1 ? [y] : [y - cr*1.25, y + cr*1.25];
-  ys.forEach(cy=>{
-    ctx.beginPath(); ctx.arc(x, cy, cr, 0, Math.PI*2);
-    ctx.fillStyle = '#1F8A4C'; ctx.fill();
-    ctx.lineWidth = Math.max(2, r*0.07); ctx.strokeStyle = '#0B4F2E'; ctx.stroke();
-    ctx.beginPath(); ctx.arc(x, cy, cr*0.34, 0, Math.PI*2);
+  const pipLayouts = {
+    1:[[0,0]],
+    2:[[0,-0.52],[0,0.52]],
+    3:[[0,-0.62],[0,0],[0,0.62]],
+    4:[[-0.34,-0.48],[0.34,-0.48],[-0.34,0.48],[0.34,0.48]],
+    5:[[-0.34,-0.52],[0.34,-0.52],[0,0],[-0.34,0.52],[0.34,0.52]],
+    6:[[-0.34,-0.58],[0.34,-0.58],[-0.34,0],[0.34,0],[-0.34,0.58],[0.34,0.58]],
+  };
+  const layout = pipLayouts[Math.max(1, Math.min(6, dots))] || pipLayouts[1];
+  const cr = r*(dots >= 4 ? 0.18 : 0.25);
+  layout.forEach(([px,py], index)=>{
+    ctx.beginPath(); ctx.arc(x + px*r, y + py*r, cr, 0, Math.PI*2);
+    ctx.fillStyle = index % 2 ? '#C0392B' : '#1F8A4C'; ctx.fill();
+    ctx.lineWidth = Math.max(2, r*0.055); ctx.strokeStyle = '#0B4F2E'; ctx.stroke();
+    ctx.beginPath(); ctx.arc(x + px*r, y + py*r, cr*0.30, 0, Math.PI*2);
     ctx.fillStyle = '#FAF7EE'; ctx.fill();
   });
 }
@@ -5424,6 +5432,23 @@ function drawSpadeShape(ctx, x, y, s, color){
   ctx.lineTo(x + s*0.1, y + s*0.15); ctx.lineTo(x - s*0.1, y + s*0.15);
   ctx.closePath(); ctx.fill();
 }
+function drawDiamondShape(ctx, x, y, s, color){
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(x, y-s); ctx.lineTo(x+s*0.72, y);
+  ctx.lineTo(x, y+s); ctx.lineTo(x-s*0.72, y);
+  ctx.closePath(); ctx.fill();
+}
+function drawClubShape(ctx, x, y, s, color){
+  ctx.fillStyle = color;
+  [[0,-0.42],[-0.42,0.05],[0.42,0.05]].forEach(([dx,dy])=>{
+    ctx.beginPath(); ctx.arc(x+dx*s, y+dy*s, s*0.48, 0, Math.PI*2); ctx.fill();
+  });
+  ctx.beginPath();
+  ctx.moveTo(x-s*0.26, y+s*0.9); ctx.lineTo(x+s*0.26, y+s*0.9);
+  ctx.lineTo(x+s*0.11, y+s*0.18); ctx.lineTo(x-s*0.11, y+s*0.18);
+  ctx.closePath(); ctx.fill();
+}
 function drawCard(ctx, x, y, r, suit){
   const w = r*1.55, h = r*2.1;
   shapeShadow(ctx, ()=>{
@@ -5435,11 +5460,15 @@ function drawCard(ctx, x, y, r, suit){
   rrPath(ctx, x-w/2, y-h/2, w, h, r*0.18); ctx.stroke();
   const s = r*0.62;
   if(suit === 'heart') drawHeartShape(ctx, x, y - r*0.05, s, '#C0392B');
+  else if(suit === 'diamond') drawDiamondShape(ctx, x, y-r*0.05, s, '#C0392B');
+  else if(suit === 'club') drawClubShape(ctx, x, y-r*0.05, s, '#1A1A1A');
   else drawSpadeShape(ctx, x, y - r*0.05, s, '#1A1A1A');
-  ctx.fillStyle = suit === 'heart' ? '#C0392B' : '#1A1A1A';
+  const redSuit = suit === 'heart' || suit === 'diamond';
+  const suitGlyph = {heart:'♥', diamond:'♦', club:'♣', spade:'♠'}[suit] || '♠';
+  ctx.fillStyle = redSuit ? '#C0392B' : '#1A1A1A';
   ctx.font = `bold ${Math.round(r*0.5)}px "PingFang TC","Noto Sans TC",sans-serif`;
   ctx.textAlign = 'left'; ctx.textBaseline = 'top';
-  ctx.fillText(suit === 'heart' ? '♥' : '♠', x - w/2 + r*0.12, y - h/2 + r*0.08);
+  ctx.fillText(suitGlyph, x - w/2 + r*0.12, y - h/2 + r*0.08);
 }
 
 /* ---- 煮飯 ---- */
@@ -5738,6 +5767,50 @@ const THEMES = {
   }),
 };
 const THEME_ORDER = ['flowers','dimsum','laundry','cards','mahjong','cooking'];
+const LEVEL3_THEME_VARIANTS = {
+  dimsum:[
+    { type:'siumai', itemLabel:'燒賣', targetLabel:'燒賣', img:imgSiumai, targetImg:imgSteamerSiumai, scale:0.66, color:'#1A6B5A' },
+    { type:'hargau', itemLabel:'蝦餃', targetLabel:'蝦餃', img:imgHargau, targetImg:imgSteamerHargau, scale:0.76, color:'#E07B39' },
+    { type:'charsiu', itemLabel:'叉燒包', targetLabel:'叉燒包', img:imgCharsiu, targetImg:imgSteamerCharsiu, scale:0.66, color:'#8E4B35' },
+    { type:'lotusrice', itemLabel:'糯米雞', targetLabel:'糯米雞', img:imgLotusrice, targetImg:imgSteamerLotusrice, scale:0.66, color:'#557A38' },
+  ],
+  mahjong:[1,2,3,4,5,6].map(number=>({
+    type:'tong'+number, itemLabel:'一二三四五六'[number-1]+'筒',
+    targetLabel:'一二三四五六'[number-1]+'筒牌位', color:'#1A6B5A',
+    drawScale:0.80, labelGap:1.02,
+    drawItem:(ctx,x,y,r)=>drawMahjongTile(ctx,x,y,r,number),
+    drawIcon:(ctx,x,y,s)=>drawMahjongTile(ctx,x,y,s*0.9,number),
+  })),
+  cards:[
+    ['heart','紅心','#C0392B'], ['diamond','階磚','#C0392B'],
+    ['club','梅花','#2C3E50'], ['spade','黑桃','#2C3E50'],
+  ].map(([suit,label,color])=>({
+    type:suit, itemLabel:label, targetLabel:label+'牌位', color,
+    drawScale:0.78, labelGap:1.06,
+    drawItem:(ctx,x,y,r)=>drawCard(ctx,x,y,r,suit),
+    drawIcon:(ctx,x,y,s)=>drawCard(ctx,x,y,s*0.85,suit),
+  })),
+};
+let level3RoundVariant = null;
+let level3PreviousVariantType = '';
+function level3VariantPool(themeId = state.theme){
+  return LEVEL3_THEME_VARIANTS[themeId] || THEMES[themeId]?.categoriesFor('3') || [];
+}
+function chooseLevel3RoundVariant(){
+  const pool = level3VariantPool();
+  if(!pool.length) return null;
+  const alternatives = pool.filter(variant=>variant.type !== level3PreviousVariantType);
+  const candidates = alternatives.length ? alternatives : pool;
+  const selected = candidates[Math.floor(Math.random()*candidates.length)];
+  level3RoundVariant = selected;
+  level3PreviousVariantType = selected.type;
+  return selected;
+}
+function advanceLevel3RoundVariant(){
+  if(!isLevel3Tabletop()) return;
+  chooseLevel3RoundVariant();
+  setupTargets();
+}
 function themeAvailableForLevel(themeId, level = state.level){
   return themeId !== 'cooking' || level === '67';
 }
@@ -5749,8 +5822,12 @@ function getTheme(){ return THEMES[state.theme] || THEMES.dimsum; }
 function getCategories(){
   const categories = getTheme().categoriesFor(state.level);
   // Level 3 keeps one central object and one affected-side destination so the
-  // bilateral outward slide remains the only required movement.
-  return isLevel3Tabletop() ? categories.slice(0,1) : categories;
+  // bilateral outward slide remains the only required movement. The visual
+  // item changes after each completed round, without repeating immediately.
+  if(isLevel3Tabletop()){
+    return [level3RoundVariant || chooseLevel3RoundVariant() || categories[0]];
+  }
+  return categories;
 }
 
 
@@ -5938,6 +6015,9 @@ function initGame(){
   trackingPointHistory = [];
   level3Lateral.reset();
   level4Reach.reset();
+  level3RoundVariant = null;
+  level3PreviousVariantType = '';
+  if(isLevel3Tabletop()) chooseLevel3RoundVariant();
   if(isGrossTabletop()) ensurePoseLandmarker().catch(()=>null);
 
   timeLeft = state.duration; // 由用家選擇
@@ -7097,6 +7177,7 @@ function updateGameLogic(){
           heldItem = null;
           gripActive = false;
           dwellTarget = null;
+          advanceLevel3RoundVariant();
           ensureFoodCount();
           setActionPrompt('已放下', '完成');
         } else {
@@ -11111,6 +11192,9 @@ window.render_game_to_text = function(){
       lines.push('level3Lateral=calibrated:' + level3Lateral.calibrated +
         ' progress:' + level3Lateral.progress.toFixed(3) +
         ' affectedSide:' + activeAffectedSide());
+      if(level3RoundVariant){
+        lines.push('level3RoundVariant=' + level3RoundVariant.type + ' (' + level3RoundVariant.itemLabel + ')');
+      }
     }
     if(isLevel4Tabletop()){
       lines.push('level4Reach=calibrated:' + level4Reach.calibrated +
@@ -11281,6 +11365,32 @@ window.__qa = {
     resizeGameCanvas();
     initGame();
     return window.render_game_to_text();
+  },
+  level3RoundState(){
+    return {
+      theme:state.theme,
+      variant:level3RoundVariant ? {
+        type:level3RoundVariant.type,
+        itemLabel:level3RoundVariant.itemLabel,
+        targetLabel:level3RoundVariant.targetLabel,
+      } : null,
+      target:targets[0] ? {
+        type:targets[0].type,
+        label:targets[0].label,
+      } : null,
+      item:foods.find(food=>!food.removed) ? {
+        type:foods.find(food=>!food.removed).targetType,
+        label:foods.find(food=>!food.removed).label,
+      } : null,
+    };
+  },
+  advanceLevel3Round(){
+    if(!isLevel3Tabletop()) throw new Error('Level 3 round advance requires Level 3');
+    foods.length = 0;
+    advanceLevel3RoundVariant();
+    ensureFoodCount();
+    renderGame();
+    return this.level3RoundState();
   },
   parkFirstItemAt(px, py){
     const item = foods.find(food=>!food.removed);
