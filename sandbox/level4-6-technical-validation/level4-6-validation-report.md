@@ -1,12 +1,12 @@
 # Level 4–6 Technical Validation Report
 
-Generated: 2026-08-17T05:20:26.691Z
+Generated: 2026-08-18T12:14:31.231Z
 
-Result: **PASS** (121/121 checks passed)
+Result: **PASS** (122/122 checks passed)
 
 | FTHUE level | Passed | Failed |
 |---|---:|---:|
-| 4 | 44 | 0 |
+| 4 | 45 | 0 |
 | 5 | 40 | 0 |
 | 6 | 30 | 0 |
 
@@ -57,6 +57,7 @@ This is reproducible software technical verification only. It does not establish
 - PASS | Level 4 | compound movement | 90-degree supported start calibrates the reach controller
 - PASS | Level 4 | compound movement | shoulder elevation alone cannot lift the game object
 - PASS | Level 4 | compound movement | shoulder flexion plus elbow extension moves the object upward
+- PASS | Level 4 | compound movement | elbow flexion lowers the object while the wrist remains forward
 - PASS | Level 4 | compound movement | shoulder extension plus elbow flexion returns the object downward
 - PASS | Level 4 | flow | dwell pickup acquires an item
 - PASS | Level 4 | flow | correct placement increments the correct count
@@ -105,7 +106,7 @@ This is reproducible software technical verification only. It does not establish
 - PASS | Level 3 | safety copy | Level 3 note requires towel movement and prohibits trunk compensation
 - PASS | Level 4 | safety copy | Level 4 note requires a clear environment and safe board distance
 - PASS | Level 5 | safety copy | Level 5 note specifies off-table functional reach and loose simulated grasp
-- PASS | Level 6 | safety copy | Level 6 note specifies off-table functional reach and empty-hand pinch
+- PASS | Level 6 | safety copy | Level 6 note specifies off-table reach and all three light-operation modes
 - PASS | Level 5 | safety copy | no patient-facing 握拳/握緊 wording remains in the interface
 - PASS | Level 4 | rest/stop | large 休息 and 停止 controls are always visible during play
 - PASS | Level 4 | rest/stop | rest pauses active game timing

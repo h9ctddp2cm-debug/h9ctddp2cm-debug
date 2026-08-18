@@ -57,7 +57,9 @@ test("Level 4 learns the real iPad reach direction and still requires elbow conf
   assert.ok(publicSource.includes("directionLearningEligible"));
   assert.ok(publicSource.includes("level4Reach.forwardAxis = reachVector.map"));
   assert.ok(publicSource.includes("cameraDirectionProgress >= 0.06 && elbowConfirmed"));
-  assert.ok(publicSource.includes("returnElbowFlexion || cameraDirectionProgress <= 0.04"));
+  assert.ok(publicSource.includes("level4Reach.engaged && returnElbowFlexion"));
+  assert.ok(publicSource.includes("Math.min(cameraDirectionProgress, elbowCycleProgress)"));
+  assert.ok(publicSource.includes("Elbow flexion is the authoritative return signal"));
   assert.ok(publicSource.includes("mapped.y = ch * 0.82 - level4Motion.progress * ch * 0.40"));
   assert.ok(publicSource.includes("baseline.wristRelativeZ-sample.wristRelativeZ"));
   assert.ok(publicSource.includes("baseline.wristRelativeY-sample.wristRelativeY"));

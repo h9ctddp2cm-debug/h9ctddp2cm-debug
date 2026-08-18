@@ -6570,6 +6570,12 @@ function updateLevel4ReachController(lm){
   const shoulderFlexProgress = clamp01((forwardReachGain-0.012)/0.24);
   const shoulderHike = (baseline.shoulderBalance-sample.shoulderBalance) > 0.035;
   const startsExtended = baseline.elbowAngle >= 138;
+  // Front-facing iPads estimate depth less reliably than joint angles. Keep a
+  // dedicated elbow signal so flexing the elbow can always bring the object
+  // down even when the wrist still appears "forward" in screen/depth space.
+  const elbowCycleProgress = startsExtended
+    ? clamp01((elbowAngle-(baseline.elbowAngle-38))/38)
+    : extensionProgress;
   const maintainedExtension = startsExtended
     && elbowAngle >= Math.max(132, baseline.elbowAngle-8);
   const activeExtension = elbowGain >= 1.5;
@@ -6632,10 +6638,16 @@ function updateLevel4ReachController(lm){
   const returnElbowFlexion = level4Reach.engaged
     && (level4Reach.peakElbowAngle-elbowAngle) >= 1.5;
   let compoundProgress = level4Reach.progress;
-  if(level4Reach.engaged && !returning){
-    compoundProgress = cameraDirectionProgress;
-  }else if(returning && (returnElbowFlexion || cameraDirectionProgress <= 0.04)){
-    compoundProgress = cameraDirectionProgress;
+  if(level4Reach.engaged && !returning && !returnElbowFlexion){
+    // Forward transport still needs both real reach displacement and elbow
+    // extension; shoulder elevation alone cannot lift the object.
+    compoundProgress = Math.min(cameraDirectionProgress, elbowCycleProgress);
+  }else if(level4Reach.engaged && returnElbowFlexion){
+    // Elbow flexion is the authoritative return signal. This intentionally
+    // does not wait for noisy camera-Z or wrist-direction estimates to fall.
+    compoundProgress = Math.min(cameraDirectionProgress, elbowCycleProgress);
+  }else if(returning && cameraDirectionProgress <= 0.04){
+    compoundProgress = 0;
   }
   if(cameraDirectionProgress <= 0.025 && level4Reach.progress <= 0.06){
     level4Reach.engaged = false;
@@ -11199,6 +11211,7 @@ window.__qa = {
       lm[9] = {x:1,y:0,z:0};
       lm[4] = {x:0,y:0,z:0};
       lm[8] = {x:Number(ratio),y:0,z:0};
+      lm[12] = {x:Number(ratio),y:0,z:0};
       return computePinchState(lm, !!previous);
     },
     grasp(curls, previous=false, graspType='any'){

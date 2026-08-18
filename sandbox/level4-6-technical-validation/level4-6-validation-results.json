@@ -1,15 +1,15 @@
 {
-  "generated_at": "2026-08-17T05:20:26.691Z",
+  "generated_at": "2026-08-18T12:14:31.231Z",
   "base_url": "http://127.0.0.1:4173",
   "scope": "Independent technical verification for FTHUE Levels 4, 5, and 6",
   "limitation": "Not clinical validation; Level 6 aperture detection does not measure pinch force.",
   "summary": {
-    "total": 121,
-    "passed": 121,
+    "total": 122,
+    "passed": 122,
     "failed": 0,
     "by_level": {
       "4": {
-        "passed": 44,
+        "passed": 45,
         "failed": 0
       },
       "5": {
@@ -335,6 +335,7 @@
         "directionPeak": 0,
         "forwardScale": 0.12,
         "shoulderHike": false,
+        "framingReady": true,
         "warning": "",
         "cursorY": 672.4
       }
@@ -356,6 +357,7 @@
         "directionPeak": 0,
         "forwardScale": 0.12,
         "shoulderHike": true,
+        "framingReady": true,
         "warning": "患側聳肩 · 請治療師即時糾正",
         "cursorY": 672.4
       }
@@ -377,8 +379,31 @@
         "directionPeak": 2.624836412710845,
         "forwardScale": 0.26,
         "shoulderHike": false,
+        "framingReady": true,
         "warning": "",
         "cursorY": 398.4873393120394
+      }
+    },
+    {
+      "level": "4",
+      "category": "compound movement",
+      "name": "elbow flexion lowers the object while the wrist remains forward",
+      "passed": true,
+      "details": {
+        "calibrated": true,
+        "progress": 0.048121146936618474,
+        "engaged": true,
+        "shoulderFlexProgress": 1,
+        "elbowExtensionProgress": 0.0453109122292969,
+        "elbowAngle": 93.87882289203809,
+        "elbowMode": "active-extension",
+        "directionMode": "individualized",
+        "directionPeak": 2.624836412710845,
+        "forwardScale": 0.26,
+        "shoulderHike": false,
+        "framingReady": true,
+        "warning": "",
+        "cursorY": 630.9471347586077
       }
     },
     {
@@ -388,7 +413,7 @@
       "passed": true,
       "details": {
         "calibrated": true,
-        "progress": 0.0029450744463655654,
+        "progress": 0.00021697371848394587,
         "engaged": false,
         "shoulderFlexProgress": 0,
         "elbowExtensionProgress": 0,
@@ -398,8 +423,9 @@
         "directionPeak": 2.624836412710845,
         "forwardScale": 0.26,
         "shoulderHike": false,
+        "framingReady": true,
         "warning": "",
-        "cursorY": 644.4795763572299
+        "cursorY": 662.3707506792991
       }
     },
     {
@@ -481,8 +507,8 @@
             "r": 104
           },
           {
-            "label": "糯米雞",
-            "type": "lotusrice",
+            "label": "叉燒包",
+            "type": "charsiu",
             "x": 708,
             "y": 656,
             "r": 104
@@ -553,8 +579,8 @@
             "r": 104
           },
           {
-            "label": "糯米雞",
-            "type": "lotusrice",
+            "label": "叉燒包",
+            "type": "charsiu",
             "x": 708,
             "y": 656,
             "r": 104
@@ -652,22 +678,22 @@
         },
         "items": [
           {
-            "label": "叉燒包",
-            "type": "charsiu",
+            "label": "糯米雞",
+            "type": "lotusrice",
             "x": 259.6,
             "y": 442.8,
             "r": 118
           },
           {
-            "label": "叉燒包",
-            "type": "charsiu",
+            "label": "糯米雞",
+            "type": "lotusrice",
             "x": 590,
             "y": 442.8,
             "r": 118
           },
           {
-            "label": "叉燒包",
-            "type": "charsiu",
+            "label": "糯米雞",
+            "type": "lotusrice",
             "x": 920.4,
             "y": 442.8,
             "r": 118
@@ -731,22 +757,22 @@
         },
         "items": [
           {
-            "label": "叉燒包",
-            "type": "charsiu",
+            "label": "糯米雞",
+            "type": "lotusrice",
             "x": 259.6,
             "y": 442.8,
             "r": 118
           },
           {
-            "label": "叉燒包",
-            "type": "charsiu",
+            "label": "糯米雞",
+            "type": "lotusrice",
             "x": 590,
             "y": 442.8,
             "r": 118
           },
           {
-            "label": "叉燒包",
-            "type": "charsiu",
+            "label": "糯米雞",
+            "type": "lotusrice",
             "x": 920.4,
             "y": 442.8,
             "r": 118
@@ -976,7 +1002,7 @@
           "3": "動作要點：坐於椅子或輪椅，雙前臂置於桌面毛巾上。好手帶動患手，向患側做肩外展及外側滑動，毛巾須隨手移動。軀幹保持正中，不側彎或旋轉。",
           "4": "Level 4：坐在椅子或輪椅，清空桌面。患手放在離身 10–15 cm 的滑板上，不可貼近腹部；身體保持正中，避免聳肩，慢慢向前滑。",
           "5": "Level 5：坐在椅子或輪椅，手臂全程離開桌面並保持可見空隙。空手模擬：伸出患手、輕輕合手、張開手；身體保持正中，避免過度側彎。按患者當日張手幅度校準。",
-          "67": "Level 6–7：坐在椅子或輪椅，手臂全程離開桌面。只用空手模擬：伸出患手、手指輕捏、張開手指；不拿實物或工具，不要用盡力。身體保持正中，避免過度側彎。"
+          "67": "Level 6–7：坐穩，手臂離桌。按所選玩法使用三指輕捏、夾仔或筷子；只需輕力，身體保持正中。"
         }
       }
     },
@@ -1217,7 +1243,7 @@
         "screen": "safety",
         "ackChecked": false,
         "continueDisabled": true,
-        "levelNote": "Level 6–7：坐在椅子或輪椅，手臂全程離開桌面。只用空手模擬：伸出患手、手指輕捏、張開手指；不拿實物或工具，不要用盡力。身體保持正中，避免過度側彎。",
+        "levelNote": "Level 6–7：坐穩，手臂離桌。按所選玩法使用三指輕捏、夾仔或筷子；只需輕力，身體保持正中。",
         "continued": false
       }
     },
@@ -1230,7 +1256,7 @@
         "screen": "safety",
         "ackChecked": false,
         "continueDisabled": true,
-        "levelNote": "Level 6–7：坐在椅子或輪椅，手臂全程離開桌面。只用空手模擬：伸出患手、手指輕捏、張開手指；不拿實物或工具，不要用盡力。身體保持正中，避免過度側彎。",
+        "levelNote": "Level 6–7：坐穩，手臂離桌。按所選玩法使用三指輕捏、夾仔或筷子；只需輕力，身體保持正中。",
         "continued": false
       }
     },
@@ -1243,7 +1269,7 @@
         "screen": "safety",
         "ackChecked": true,
         "continueDisabled": false,
-        "levelNote": "Level 6–7：坐在椅子或輪椅，手臂全程離開桌面。只用空手模擬：伸出患手、手指輕捏、張開手指；不拿實物或工具，不要用盡力。身體保持正中，避免過度側彎。",
+        "levelNote": "Level 6–7：坐穩，手臂離桌。按所選玩法使用三指輕捏、夾仔或筷子；只需輕力，身體保持正中。",
         "continued": false
       }
     },
@@ -1256,7 +1282,7 @@
         "screen": "safety",
         "ackChecked": true,
         "continueDisabled": false,
-        "levelNote": "Level 6–7：坐在椅子或輪椅，手臂全程離開桌面。只用空手模擬：伸出患手、手指輕捏、張開手指；不拿實物或工具，不要用盡力。身體保持正中，避免過度側彎。",
+        "levelNote": "Level 6–7：坐穩，手臂離桌。按所選玩法使用三指輕捏、夾仔或筷子；只需輕力，身體保持正中。",
         "continued": true
       }
     },
@@ -1266,7 +1292,7 @@
       "name": "level-specific safety note is visible on the screen",
       "passed": true,
       "details": {
-        "length": 77
+        "length": 48
       }
     },
     {
@@ -1299,10 +1325,10 @@
     {
       "level": "6",
       "category": "safety copy",
-      "name": "Level 6 note specifies off-table functional reach and empty-hand pinch",
+      "name": "Level 6 note specifies off-table reach and all three light-operation modes",
       "passed": true,
       "details": {
-        "note": "Level 6–7：坐在椅子或輪椅，手臂全程離開桌面。只用空手模擬：伸出患手、手指輕捏、張開手指；不拿實物或工具，不要用盡力。身體保持正中，避免過度側彎。"
+        "note": "Level 6–7：坐穩，手臂離桌。按所選玩法使用三指輕捏、夾仔或筷子；只需輕力，身體保持正中。"
       }
     },
     {

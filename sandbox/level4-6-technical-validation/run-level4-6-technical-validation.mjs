@@ -164,6 +164,12 @@ try {
     shoulder:{x:.45,y:.30,z:0}, elbow:{x:.54,y:.35,z:-.10},
     wrist:{x:.74,y:.36,z:-.30}, otherShoulder:{x:.60,y:.30,z:0},
   };
+  const level4ForwardFlexedPose = {
+    // Keep the wrist forward in camera space while the elbow clearly flexes.
+    // This reproduces the difficult front-facing iPad return case.
+    shoulder:{x:.45,y:.30,z:0}, elbow:{x:.60,y:.50,z:-.05},
+    wrist:{x:.74,y:.36,z:-.30}, otherShoulder:{x:.60,y:.30,z:0},
+  };
   const level4HikePose = {
     shoulder:{x:.45,y:.22,z:0}, elbow:{x:.45,y:.40,z:0},
     wrist:{x:.58,y:.40,z:0}, otherShoulder:{x:.60,y:.30,z:0},
@@ -194,6 +200,13 @@ try {
   check("4", "compound movement", "shoulder flexion plus elbow extension moves the object upward",
     level4Forward.progress > 0.90 && level4Forward.shoulderFlexProgress > 0.90
     && level4Forward.elbowExtensionProgress > 0.90, level4Forward);
+  for (let index = 0; index < 12; index += 1) {
+    await page.evaluate(pose => window.__qa.setLevel4Pose(pose), level4ForwardFlexedPose);
+  }
+  const level4ElbowReturn = await page.evaluate(() => window.__qa.level4ReachState());
+  check("4", "compound movement", "elbow flexion lowers the object while the wrist remains forward",
+    level4ElbowReturn.progress < 0.08 && level4ElbowReturn.elbowAngle < 100,
+    level4ElbowReturn);
   for (let index = 0; index < 12; index += 1) {
     await page.evaluate(pose => window.__qa.setLevel4Pose(pose), level4StartPose);
   }
@@ -283,9 +296,10 @@ try {
     && notes["5"].includes("空手模擬") && !notes["5"].includes("握拳")
     && !notes["5"].includes("握緊")
     && notes["5"].includes("按患者當日張手幅度校準"), { note: notes["5"] });
-  check("6", "safety copy", "Level 6 note specifies off-table functional reach and empty-hand pinch",
-    notes["67"].includes("手臂全程離開桌面") && notes["67"].includes("只用空手")
-    && notes["67"].includes("不拿實物") && notes["67"].includes("不要用盡力"),
+  check("6", "safety copy", "Level 6 note specifies off-table reach and all three light-operation modes",
+    notes["67"].includes("手臂離桌") && notes["67"].includes("三指輕捏")
+    && notes["67"].includes("夾仔") && notes["67"].includes("筷子")
+    && notes["67"].includes("只需輕力"),
     { note: notes["67"] });
 
   const bodyText = await page.evaluate(() => document.body.innerText);
