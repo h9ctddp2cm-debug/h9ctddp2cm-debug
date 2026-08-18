@@ -2104,6 +2104,9 @@ function affectedSideSign(){
 function isLevel4Tabletop(){
   return !research.active && state.level === '4';
 }
+function isLevel4WipeGame(){
+  return isLevel4Tabletop() && state.theme === 'wipewindow';
+}
 function isLevel3Tabletop(){
   return !research.active && state.level === '3';
 }
@@ -2111,6 +2114,7 @@ function isGrossTabletop(){
   return isLevel3Tabletop() || isLevel4Tabletop();
 }
 function affectedDirectionLabel(){
+  if(isLevel4WipeGame()) return '伸肘向外畫弧';
   if(isLevel4Tabletop()) return '沿桌面中線向前放置';
   if(isLevel3Tabletop()) return activeAffectedSide() === 'right' ? '向右患側外滑' : '向左患側外滑';
   return activeAffectedSide() === 'right' ? '向畫面右外下方放置' : '向畫面左外下方放置';
@@ -5643,6 +5647,16 @@ const BASE_THEME = {
 function mkTheme(def){ return Object.assign(Object.create(BASE_THEME), def); }
 
 const THEMES = {
+  wipewindow: mkTheme({
+    id:'wipewindow', title:'抹窗擦霧',
+    goal:'伸直手肘，向外畫大弧擦走霧氣',
+    itemWord:'霧氣', difficulty:'容易至中等', targetStyle:'panel',
+    thumbnail:'img/advanced/level4_cartoon_side_forward.png',
+    thumbnailAlt:'患手伸肘向外畫弧的 Level 4 練習',
+    verbFor(){ return '伸肘向外畫弧'; },
+    actionLabelFor(){ return '伸直手肘，向外畫大弧擦走霧氣'; },
+    categoriesFor(){ return []; },
+  }),
   dimsum: mkTheme({
     id:'dimsum', title:'茶樓飲茶', goal:'將點心放到相同款式的蒸籠',
     itemWord:'點心', difficulty:'容易', targetStyle:'steamer',
@@ -5766,7 +5780,7 @@ const THEMES = {
     },
   }),
 };
-const THEME_ORDER = ['flowers','dimsum','laundry','cards','mahjong','cooking'];
+const THEME_ORDER = ['wipewindow','flowers','dimsum','laundry','cards','mahjong','cooking'];
 const LEVEL3_THEME_VARIANTS = {
   dimsum:[
     { type:'siumai', itemLabel:'燒賣', targetLabel:'燒賣', img:imgSiumai, targetImg:imgSteamerSiumai, scale:0.66, color:'#1A6B5A' },
@@ -5812,6 +5826,7 @@ function advanceLevel3RoundVariant(){
   setupTargets();
 }
 function themeAvailableForLevel(themeId, level = state.level){
+  if(themeId === 'wipewindow') return level === '4';
   return themeId !== 'cooking' || level === '67';
 }
 function availableThemeOrder(level = state.level){
@@ -6015,6 +6030,7 @@ function initGame(){
   trackingPointHistory = [];
   level3Lateral.reset();
   level4Reach.reset();
+  level4Wipe.reset();
   level3RoundVariant = null;
   level3PreviousVariantType = '';
   if(isLevel3Tabletop()) chooseLevel3RoundVariant();
@@ -6026,7 +6042,14 @@ function initGame(){
   resizeGameCanvas();
   // 先顯示提示，讓第一局生成物件時已可量度右上角提示禁區
   setActionPrompt('等待偵測手部', '手放鏡頭前');
-  if(usesAdvancedThemeModule()){
+  if(isLevel4WipeGame()){
+    const persistBar = document.getElementById('persistentRules');
+    if(persistBar) persistBar.textContent = '伸肘 → 向外畫大弧';
+    setPromptSlot('rules');
+  }
+  if(isLevel4WipeGame()){
+    if(advCurrent) advTeardown();
+  } else if(usesAdvancedThemeModule()){
     // 進階活動（麻雀 / 啤牌 / 煮飯 / 插花 / 收衫）有各自的玩法模組
     advInit();
   } else {
@@ -6076,7 +6099,7 @@ function initGame(){
   }
 
   // 遊戲開始：顯示 tier 0 規則 banner（進階活動有自己的引導面板）
-  if(!usesAdvancedThemeModule()){
+  if(!usesAdvancedThemeModule() && !isLevel4WipeGame()){
     showLevelUpBanner();
     // Banner 顯示後再檢查一次，避免第一局因提示框剛載入而遮住點心
     ensureFoodsClearOfInstructions();
@@ -6668,6 +6691,98 @@ const level4Reach = {
     this.calibrated = false;
   }
 };
+
+/* ---------- Level 4 wipe-window game ----------
+   Progress is stored as a small logical grid. This avoids reading every canvas
+   pixel on every camera frame, which was too expensive on older iPads. */
+const level4Wipe = {
+  cols:18,
+  rows:12,
+  cells:[],
+  cleaned:0,
+  cleanPercent:0,
+  lastPoint:null,
+  validMovement:false,
+  completed:false,
+  nextPaneAt:0,
+  reset(){
+    this.cells = new Uint8Array(this.cols * this.rows);
+    this.cleaned = 0;
+    this.cleanPercent = 0;
+    this.lastPoint = null;
+    this.validMovement = false;
+    this.completed = false;
+    this.nextPaneAt = 0;
+  }
+};
+const LEVEL4_WIPE_BOUNDS = {left:0.12, top:0.24, right:0.88, bottom:0.86};
+function level4MarkFogPoint(nx, ny){
+  if(!isLevel4WipeGame() || level4Wipe.completed) return;
+  const b = LEVEL4_WIPE_BOUNDS;
+  if(nx < b.left || nx > b.right || ny < b.top || ny > b.bottom) return;
+  const gx = (nx-b.left)/(b.right-b.left) * level4Wipe.cols;
+  const gy = (ny-b.top)/(b.bottom-b.top) * level4Wipe.rows;
+  const radius = 1.45;
+  for(let row=0; row<level4Wipe.rows; row++){
+    for(let col=0; col<level4Wipe.cols; col++){
+      if(Math.hypot(col+0.5-gx, row+0.5-gy) > radius) continue;
+      const index = row*level4Wipe.cols+col;
+      if(level4Wipe.cells[index]) continue;
+      level4Wipe.cells[index] = 1;
+      level4Wipe.cleaned++;
+    }
+  }
+  level4Wipe.cleanPercent = Math.round(
+    level4Wipe.cleaned / level4Wipe.cells.length * 100
+  );
+  if(level4Wipe.cleanPercent >= 88){
+    level4Wipe.completed = true;
+    level4Wipe.nextPaneAt = nowMs()+1300;
+    score += 10;
+    correctCount++;
+    grabCount++;
+    updateHUD();
+    triggerFeedback(true);
+    researchLog('level4_wipe_complete', {clean_percent:level4Wipe.cleanPercent});
+  }
+}
+function updateLevel4Wipe(cursorNx, cursorNy, motion){
+  if(!isLevel4WipeGame()) return;
+  if(level4Wipe.completed){
+    if(nowMs() >= level4Wipe.nextPaneAt) level4Wipe.reset();
+    return;
+  }
+  const valid = !!(
+    motion?.calibrated
+    && motion.engaged
+    && motion.elbowExtensionProgress >= 0.35
+    && !motion.shoulderHike
+  );
+  level4Wipe.validMovement = valid;
+  if(!valid){
+    level4Wipe.lastPoint = null;
+    return;
+  }
+  const point = {x:clamp01(cursorNx), y:clamp01(cursorNy)};
+  if(!level4Wipe.lastPoint){
+    level4Wipe.lastPoint = point;
+    return;
+  }
+  const dx = point.x-level4Wipe.lastPoint.x;
+  const dy = point.y-level4Wipe.lastPoint.y;
+  const distance = Math.hypot(dx,dy);
+  // A stationary wrist must not clear the window. Ignore tracking noise, and
+  // interpolate intentional arcs so faster movements do not leave large gaps.
+  if(distance < 0.006 || distance > 0.18) return;
+  const steps = Math.max(1, Math.ceil(distance/0.018));
+  for(let i=1; i<=steps; i++){
+    level4MarkFogPoint(
+      level4Wipe.lastPoint.x+dx*i/steps,
+      level4Wipe.lastPoint.y+dy*i/steps
+    );
+  }
+  level4Wipe.lastPoint = point;
+}
 function level4PosePointUsable(point){
   return !!point && Number.isFinite(point.x) && Number.isFinite(point.y)
     // A forearm resting on a table is frequently assigned low visibility even
@@ -6961,9 +7076,8 @@ function updateTracking(){
       mapped.y = ch * 0.72;
     }
     if(isLevel4Tabletop()){
-      // The palm can select the left/right item lane, but vertical transport is
-      // controlled only by the compound shoulder-flexion + elbow-extension pattern.
-      mapped.y = ch * 0.82 - level4Motion.progress * ch * 0.40;
+      // The wipe cursor follows the real affected wrist. Elbow extension gates
+      // cleaning, but it does not fabricate vertical movement on the screen.
     }
     const stablePoint = stabiliseTrackingPoint(mapped.x, mapped.y);
     const px = stablePoint.x;
@@ -6981,6 +7095,9 @@ function updateTracking(){
     }
     cursorX = dotEmaX;
     cursorY = dotEmaY;
+    if(isLevel4WipeGame()){
+      updateLevel4Wipe(cursorX/cw, cursorY/ch, level4Motion);
+    }
     posHistory.push({ t: now, x: cursorX, y: cursorY });
     // Phase-specific cursor path length (research metrics)
     if(research.active && research.phaseMetrics && lastPathX >= 0 && cursorX >= 0){
@@ -7064,7 +7181,20 @@ function updateGameLogic(){
       return;
     }
     if(!level4Reach.calibrated){
-      setActionPrompt('保持起點', '慢慢向前伸手');
+      setActionPrompt('保持屈肘起點', '準備伸肘');
+      return;
+    }
+    if(isLevel4WipeGame()){
+      dwellTarget = null;
+      if(level4Wipe.completed){
+        setActionPrompt('完成', '準備下一塊窗');
+      }else if(!level4Reach.engaged || level4Reach.elbowExtensionProgress < 0.35){
+        setActionPrompt('慢慢伸直手肘', '再向外畫大弧');
+      }else if(level4Wipe.validMovement){
+        setActionPrompt('向外畫大弧', '已清潔 ' + level4Wipe.cleanPercent + '%');
+      }else{
+        setActionPrompt('伸肘向外畫弧', '手腕保持移動');
+      }
       return;
     }
   }
@@ -7493,10 +7623,66 @@ function drawSteamerTarget(ctx, t, LBL_SIZE){
   ctx.restore();
 }
 
+function renderLevel4WipeGame(ctx, cw, ch){
+  const b = LEVEL4_WIPE_BOUNDS;
+  const x = b.left*cw, y = b.top*ch;
+  const w = (b.right-b.left)*cw, h = (b.bottom-b.top)*ch;
+  const cellW = w/level4Wipe.cols, cellH = h/level4Wipe.rows;
+  ctx.save();
+
+  // A light window scene keeps the live patient image visible. The fog is
+  // intentionally translucent rather than a full-screen opaque mask.
+  const scene = ctx.createLinearGradient(x,y,x,y+h);
+  scene.addColorStop(0,'rgba(202,235,247,0.30)');
+  scene.addColorStop(1,'rgba(243,231,190,0.18)');
+  ctx.fillStyle = scene;
+  rrPath(ctx,x,y,w,h,24);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.90)';
+  ctx.lineWidth = 6;
+  ctx.stroke();
+
+  for(let row=0; row<level4Wipe.rows; row++){
+    for(let col=0; col<level4Wipe.cols; col++){
+      if(level4Wipe.cells[row*level4Wipe.cols+col]) continue;
+      const mist = 0.32 + ((row+col)%3)*0.035;
+      ctx.fillStyle = `rgba(220,225,228,${mist})`;
+      ctx.fillRect(
+        x+col*cellW-0.5,
+        y+row*cellH-0.5,
+        cellW+1,
+        cellH+1
+      );
+    }
+  }
+
+  ctx.fillStyle = 'rgba(255,255,255,0.92)';
+  rrPath(ctx,x+w/2-78,y+h-54,156,40,20);
+  ctx.fill();
+  ctx.fillStyle = '#155f53';
+  ctx.font = 'bold 21px "PingFang TC","Noto Sans TC",sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('清潔 '+level4Wipe.cleanPercent+'%',x+w/2,y+h-34);
+
+  if(handDetected && cursorX >= 0 && cursorY >= 0){
+    ctx.beginPath();
+    ctx.arc(cursorX,cursorY,34,0,Math.PI*2);
+    ctx.strokeStyle = level4Wipe.validMovement ? '#E63946' : 'rgba(255,255,255,0.95)';
+    ctx.lineWidth = 7;
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
 function renderGame(){
   const ctx = gameCtx;
   const cw = gameCanvas.width, ch = gameCanvas.height;
   ctx.clearRect(0,0,cw,ch);
+  if(isLevel4WipeGame()){
+    renderLevel4WipeGame(ctx, cw, ch);
+    return;
+  }
   drawLevel4MidlineGuide(ctx);
 
   // 目標盤（真實單白圓隱磁盤：徑向漸變 + 隱隱影支支、圓形 rim）
@@ -7869,9 +8055,9 @@ function isAdvTheme(id){ return ADV_THEMES.indexOf(id || state.theme) >= 0; }
 function usesAdvancedThemeModule(id){
   // Level 3 must preserve one standardised movement for every visual theme:
   // centre pickup, affected-side lateral slide, destination dwell. The original
-  // advanced modules require free 2-D cursor movement and are therefore reserved
-  // for Levels 4–7.
-  return !isLevel3Tabletop() && isAdvTheme(id);
+  // advanced modules require object pickup. Levels 3–4 use standardised gross
+  // motor engines, so the free 2-D modules are reserved for Levels 5–7.
+  return !isGrossTabletop() && isAdvTheme(id);
 }
 /* 窄螢幕（手機直度）：引導面板較高，遊戲元素要向下讓位 */
 function advNarrow(){ return gameCanvas.width < 700; }
@@ -11207,6 +11393,11 @@ window.render_game_to_text = function(){
         ' directionPeak:' + level4Reach.forwardAxisPeak.toFixed(3) +
         ' shoulderHike:' + level4Reach.shoulderHike +
         ' warning:' + (level4Reach.warning || 'none'));
+      if(isLevel4WipeGame()){
+        lines.push('level4Wipe=clean:' + level4Wipe.cleanPercent +
+          ' validMovement:' + level4Wipe.validMovement +
+          ' completed:' + level4Wipe.completed);
+      }
     }
   }
   if((currentScreen === 'game' || currentScreen === 'result') && usesAdvancedThemeModule() && advCurrent){
@@ -11488,10 +11679,23 @@ window.__qa = {
       shoulderHike:level4Reach.shoulderHike,
       framingReady:level4Reach.framingReady,
       warning:level4Reach.warning,
+      wipeCleanPercent:level4Wipe.cleanPercent,
+      wipeValidMovement:level4Wipe.validMovement,
+      wipeCompleted:level4Wipe.completed,
       cursorY,
     };
   },
-  resetLevel4Reach(){ level4Reach.reset(); return this.level4ReachState(); },
+  resetLevel4Reach(){
+    level4Reach.reset();
+    level4Wipe.reset();
+    return this.level4ReachState();
+  },
+  wipeLevel4At(nx, ny, valid){
+    level4Wipe.validMovement = valid !== false;
+    level4MarkFogPoint(Number(nx), Number(ny));
+    renderGame();
+    return this.level4ReachState();
+  },
   // 以 canvas 坐標直接定位（方便測試拿取物件 / 目標）
   setHandAt(px, py, grasping, openPrep){
     const poseLm = qaHand?.poseLm;
