@@ -5593,10 +5593,10 @@ const THEMES = {
     thumbnail:'img/siumai.png', thumbnailAlt:'燒賣點心',
     categoriesFor(level){
       return level === '4' || level === '5'
-        ? [ { type:'charsiu',   itemLabel:'叉燒包', targetLabel:'叉燒包', img:imgCharsiu, targetImg:imgSteamerCharsiu, scale:1.0,  color:'#1A6B5A' },
-            { type:'lotusrice', itemLabel:'糯米雞', targetLabel:'糯米雞', img:imgLotusrice, targetImg:imgSteamerLotusrice, scale:1.0,  color:'#E07B39' } ]
-        : [ { type:'siumai', itemLabel:'燒賣', targetLabel:'燒賣', img:imgSiumai, targetImg:imgSteamerSiumai, scale:1.0,  color:'#1A6B5A' },
-            { type:'hargau', itemLabel:'蝦餃', targetLabel:'蝦餃', img:imgHargau, targetImg:imgSteamerHargau, scale:1.45, color:'#E07B39' } ];
+        ? [ { type:'charsiu',   itemLabel:'叉燒包', targetLabel:'叉燒包', img:imgCharsiu, targetImg:imgSteamerCharsiu, scale:0.78, color:'#1A6B5A' },
+            { type:'lotusrice', itemLabel:'糯米雞', targetLabel:'糯米雞', img:imgLotusrice, targetImg:imgSteamerLotusrice, scale:0.78, color:'#E07B39' } ]
+        : [ { type:'siumai', itemLabel:'燒賣', targetLabel:'燒賣', img:imgSiumai, targetImg:imgSteamerSiumai, scale:0.78, color:'#1A6B5A' },
+            { type:'hargau', itemLabel:'蝦餃', targetLabel:'蝦餃', img:imgHargau, targetImg:imgSteamerHargau, scale:0.95, color:'#E07B39' } ];
     },
   }),
   pilot_laundry: mkTheme({
@@ -6135,6 +6135,7 @@ function getDimSumDefs(){
 function makeFoodAt(def, existingFoods){
   const cw = gameCanvas.width, ch = gameCanvas.height;
   const portrait = isPortrait();
+  const dimSumTheme = getTheme().targetStyle === 'steamer';
   const advancedPilot = research.active && research.dualTaskLevel === 'advanced_sort_motor';
   // Safety default for public Level 5: larger objects are easier to pick up with a
   // light, non-forceful grasp and easier to release.
@@ -6170,18 +6171,22 @@ function makeFoodAt(def, existingFoods){
   if(isLevel3Tabletop()){
     return createFood(cw * 0.50, ch * 0.72);
   }
-  const positionIsClear = (x, y) => {
+  const clearsProtectedZones = (x, y) => {
     if(circleOverlapsRect(x, y, r, instructionExclusion)) return false;
-    // Animal distractors must never spawn over a destination. They remain
-    // movable, but the participant should not have to uncover a hidden target.
-    if(def.targetType === 'distractor' && targets.some(target =>
-      circleOverlapsRect(x, y, r + 14, {
+    // No starting item may cover a destination. Previously this protection was
+    // limited to animal distractors, allowing large dim sum to hide its target.
+    if(targets.some(target =>
+      circleOverlapsRect(x, y, r + Math.max(20, r * 0.20), {
         left:target.x-target.w/2,
         right:target.x+target.w/2,
         top:target.y-target.h/2,
         bottom:target.y+target.h/2,
       })
     )) return false;
+    return true;
+  };
+  const positionIsClear = (x, y) => {
+    if(!clearsProtectedZones(x, y)) return false;
     for(const f of existingFoods){
       if(f.removed) continue;
       const visibleGap = Math.max(16, Math.min(r, f.r || baseR) * 0.12);
@@ -6195,8 +6200,12 @@ function makeFoodAt(def, existingFoods){
   const slotRatios = isLevel4Tabletop()
     ? [[0.40,0.80],[0.60,0.80]]
     : (portrait
-      ? [[0.22,0.45],[0.50,0.45],[0.78,0.45]]
-      : [[0.22,0.54],[0.50,0.54],[0.78,0.54]]);
+      ? (dimSumTheme
+        ? [[0.22,0.34],[0.50,0.45],[0.78,0.34]]
+        : [[0.22,0.45],[0.50,0.45],[0.78,0.45]])
+      : (dimSumTheme
+        ? [[0.22,0.42],[0.50,0.54],[0.78,0.42]]
+        : [[0.22,0.54],[0.50,0.54],[0.78,0.54]]));
   const activeCount = existingFoods.filter(food => !food.removed).length;
   for(let offset=0; offset<slotRatios.length; offset++){
     const slot = slotRatios[(activeCount + offset) % slotRatios.length];
@@ -6211,14 +6220,20 @@ function makeFoodAt(def, existingFoods){
     const y = randRange(spawnYmin, spawnYmax);
     if(positionIsClear(x, y)) return createFood(x, y);
   }
-  // Fallback：強行放置（到這裡代表畫面真係太擠 — 但不才會發生）
-  let x = randRange(centerMin, centerMax);
-  let y = randRange(spawnYmin, spawnYmax);
-  if(circleOverlapsRect(x, y, r, instructionExclusion)){
-    x = Math.max(centerMin, Math.min(centerMax, cw * 0.50));
-    y = Math.max(spawnYmin, Math.min(spawnYmax, ch * 0.43));
+  // Crowded-screen fallback: item-to-item spacing may be reduced, but prompt
+  // and target protection remains mandatory.
+  for(let row=0; row<7; row++){
+    for(let column=0; column<7; column++){
+      const x = centerMin + (centerMax-centerMin) * (column/6);
+      const y = spawnYmin + (spawnYmax-spawnYmin) * (row/6);
+      if(clearsProtectedZones(x, y)) return createFood(x, y);
+    }
   }
-  return createFood(x, y);
+  // Extremely small viewport: keep the item at the highest central safe bound.
+  return createFood(
+    Math.max(centerMin, Math.min(centerMax, cw * 0.50)),
+    spawnYmin
+  );
 }
 
 function spawnDimSum(existingFoods){

@@ -105,8 +105,11 @@ test("Level 4 shoulder hiking freezes transport and alerts the therapist", () =>
   assert.ok(publicSource.includes("classList.toggle('level4-movement-alert'"));
 });
 
-test("animal distractors remain movable but cannot spawn over a target", () => {
-  assert.ok(publicSource.includes("def.targetType === 'distractor' && targets.some"));
+test("all starting items stay clear of targets and animal distractors remain movable", () => {
+  assert.match(publicSource, /if\(targets\.some\(target =>\s*circleOverlapsRect/);
+  assert.ok(publicSource.includes("clearsProtectedZones(x, y)"));
+  assert.match(publicSource, /scale:0\.78/);
+  assert.ok(publicSource.includes("[[0.22,0.34],[0.50,0.45],[0.78,0.34]]"));
   assert.ok(publicSource.includes("動物阻路：搬到空白位"));
   assert.ok(publicSource.includes("動物已移開"));
   assert.ok(publicSource.includes("heldItem.baseX = heldItem.x"));

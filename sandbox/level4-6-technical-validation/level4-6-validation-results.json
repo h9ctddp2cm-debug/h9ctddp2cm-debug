@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-18T13:03:23.360Z",
+  "generated_at": "2026-08-18T13:08:13.422Z",
   "base_url": "http://127.0.0.1:4173",
   "scope": "Independent technical verification for FTHUE Levels 4, 5, and 6",
   "limitation": "Not clinical validation; Level 6 aperture detection does not measure pinch force.",
@@ -31,7 +31,8 @@
       "details": {
         "screen": "game",
         "engine": "dwell",
-        "non_overlapping_items": true
+        "non_overlapping_items": true,
+        "targets_visible": true
       }
     },
     {
@@ -42,7 +43,8 @@
       "details": {
         "screen": "game",
         "engine": "dwell",
-        "non_overlapping_items": true
+        "non_overlapping_items": true,
+        "targets_visible": true
       }
     },
     {
@@ -53,7 +55,8 @@
       "details": {
         "screen": "game",
         "engine": "dwell",
-        "non_overlapping_items": true
+        "non_overlapping_items": true,
+        "targets_visible": true
       }
     },
     {
@@ -64,7 +67,8 @@
       "details": {
         "screen": "game",
         "engine": "dwell",
-        "non_overlapping_items": true
+        "non_overlapping_items": true,
+        "targets_visible": true
       }
     },
     {
@@ -75,7 +79,8 @@
       "details": {
         "screen": "game",
         "engine": "dwell",
-        "non_overlapping_items": true
+        "non_overlapping_items": true,
+        "targets_visible": true
       }
     },
     {
@@ -86,7 +91,8 @@
       "details": {
         "screen": "game",
         "engine": "grasp",
-        "non_overlapping_items": true
+        "non_overlapping_items": true,
+        "targets_visible": true
       }
     },
     {
@@ -97,7 +103,8 @@
       "details": {
         "screen": "game",
         "engine": "grasp",
-        "non_overlapping_items": true
+        "non_overlapping_items": true,
+        "targets_visible": true
       }
     },
     {
@@ -108,7 +115,8 @@
       "details": {
         "screen": "game",
         "engine": "grasp",
-        "non_overlapping_items": true
+        "non_overlapping_items": true,
+        "targets_visible": true
       }
     },
     {
@@ -119,7 +127,8 @@
       "details": {
         "screen": "game",
         "engine": "grasp",
-        "non_overlapping_items": true
+        "non_overlapping_items": true,
+        "targets_visible": true
       }
     },
     {
@@ -130,7 +139,8 @@
       "details": {
         "screen": "game",
         "engine": "grasp",
-        "non_overlapping_items": true
+        "non_overlapping_items": true,
+        "targets_visible": true
       }
     },
     {
@@ -141,7 +151,8 @@
       "details": {
         "screen": "game",
         "engine": "pinch",
-        "non_overlapping_items": true
+        "non_overlapping_items": true,
+        "targets_visible": true
       }
     },
     {
@@ -152,7 +163,8 @@
       "details": {
         "screen": "game",
         "engine": "pinch",
-        "non_overlapping_items": true
+        "non_overlapping_items": true,
+        "targets_visible": true
       }
     },
     {
@@ -163,7 +175,8 @@
       "details": {
         "screen": "game",
         "engine": "pinch",
-        "non_overlapping_items": true
+        "non_overlapping_items": true,
+        "targets_visible": true
       }
     },
     {
@@ -174,7 +187,8 @@
       "details": {
         "screen": "game",
         "engine": "pinch",
-        "non_overlapping_items": true
+        "non_overlapping_items": true,
+        "targets_visible": true
       }
     },
     {
@@ -185,7 +199,8 @@
       "details": {
         "screen": "game",
         "engine": "pinch",
-        "non_overlapping_items": true
+        "non_overlapping_items": true,
+        "targets_visible": true
       }
     },
     {
@@ -375,7 +390,7 @@
       "passed": true,
       "details": {
         "calibrated": true,
-        "progress": 0.4015390376057631,
+        "progress": 0.41072781697276667,
         "engaged": true,
         "shoulderFlexProgress": 1,
         "elbowExtensionProgress": 0.4257200359399831,
@@ -390,7 +405,7 @@
         "shoulderHike": false,
         "framingReady": true,
         "warning": "",
-        "cursorY": 606.5106414732014
+        "cursorY": 594.3197844510996
       }
     },
     {
@@ -425,7 +440,7 @@
       "passed": true,
       "details": {
         "calibrated": true,
-        "progress": 0.96478385393792,
+        "progress": 0.943199764416,
         "engaged": true,
         "shoulderFlexProgress": 1,
         "elbowExtensionProgress": 1,
@@ -440,7 +455,7 @@
         "shoulderHike": false,
         "framingReady": true,
         "warning": "",
-        "cursorY": 465.87571986943993
+        "cursorY": 501.4304943615999
       }
     },
     {
@@ -450,7 +465,7 @@
       "passed": true,
       "details": {
         "calibrated": true,
-        "progress": 0.005133213725829009,
+        "progress": 0.0050900393868438705,
         "engaged": true,
         "shoulderFlexProgress": 1,
         "elbowExtensionProgress": 0,
@@ -465,7 +480,7 @@
         "shoulderHike": false,
         "framingReady": true,
         "warning": "",
-        "cursorY": 629.0797367922778
+        "cursorY": 629.6024956106448
       }
     },
     {
@@ -475,7 +490,7 @@
       "passed": true,
       "details": {
         "calibrated": true,
-        "progress": 0.000010267892433314629,
+        "progress": 0.000010181531433703748,
         "engaged": false,
         "shoulderFlexProgress": 0,
         "elbowExtensionProgress": 0,
@@ -490,7 +505,7 @@
         "shoulderHike": false,
         "framingReady": true,
         "warning": "",
-        "cursorY": 665.1464063667661
+        "cursorY": 665.2327036296772
       }
     },
     {
@@ -590,18 +605,18 @@
         },
         "items": [
           {
-            "label": "叉燒包",
-            "type": "charsiu",
+            "label": "糯米雞",
+            "type": "lotusrice",
             "x": 472,
             "y": 656,
-            "r": 104
+            "r": 81.12
           },
           {
             "label": "叉燒包",
             "type": "charsiu",
             "x": 708,
             "y": 656,
-            "r": 104
+            "r": 81.12
           }
         ],
         "targets": [
@@ -662,18 +677,18 @@
         },
         "items": [
           {
-            "label": "叉燒包",
-            "type": "charsiu",
+            "label": "糯米雞",
+            "type": "lotusrice",
             "x": 472,
             "y": 656,
-            "r": 104
+            "r": 81.12
           },
           {
             "label": "叉燒包",
             "type": "charsiu",
             "x": 708,
             "y": 656,
-            "r": 104
+            "r": 81.12
           }
         ],
         "targets": [
@@ -771,22 +786,22 @@
             "label": "糯米雞",
             "type": "lotusrice",
             "x": 259.6,
-            "y": 442.8,
-            "r": 118
+            "y": 344.4,
+            "r": 92.04
           },
           {
             "label": "糯米雞",
             "type": "lotusrice",
             "x": 590,
             "y": 442.8,
-            "r": 118
+            "r": 92.04
           },
           {
-            "label": "糯米雞",
-            "type": "lotusrice",
+            "label": "叉燒包",
+            "type": "charsiu",
             "x": 920.4,
-            "y": 442.8,
-            "r": 118
+            "y": 344.4,
+            "r": 92.04
           }
         ],
         "targets": [
@@ -850,22 +865,22 @@
             "label": "糯米雞",
             "type": "lotusrice",
             "x": 259.6,
-            "y": 442.8,
-            "r": 118
+            "y": 344.4,
+            "r": 92.04
           },
           {
             "label": "糯米雞",
             "type": "lotusrice",
             "x": 590,
             "y": 442.8,
-            "r": 118
+            "r": 92.04
           },
           {
-            "label": "糯米雞",
-            "type": "lotusrice",
+            "label": "叉燒包",
+            "type": "charsiu",
             "x": 920.4,
-            "y": 442.8,
-            "r": 118
+            "y": 344.4,
+            "r": 92.04
           }
         ],
         "targets": [
@@ -960,25 +975,25 @@
         },
         "items": [
           {
-            "label": "蝦餃",
-            "type": "hargau",
-            "x": 259.6,
-            "y": 442.8,
-            "r": 145
-          },
-          {
             "label": "燒賣",
             "type": "siumai",
+            "x": 259.6,
+            "y": 344.4,
+            "r": 78
+          },
+          {
+            "label": "蝦餃",
+            "type": "hargau",
             "x": 590,
             "y": 442.8,
-            "r": 100
+            "r": 95
           },
           {
             "label": "燒賣",
             "type": "siumai",
             "x": 920.4,
-            "y": 442.8,
-            "r": 100
+            "y": 344.4,
+            "r": 78
           }
         ],
         "targets": [
@@ -1039,25 +1054,25 @@
         },
         "items": [
           {
-            "label": "蝦餃",
-            "type": "hargau",
-            "x": 259.6,
-            "y": 442.8,
-            "r": 145
-          },
-          {
             "label": "燒賣",
             "type": "siumai",
+            "x": 259.6,
+            "y": 344.4,
+            "r": 78
+          },
+          {
+            "label": "蝦餃",
+            "type": "hargau",
             "x": 590,
             "y": 442.8,
-            "r": 100
+            "r": 95
           },
           {
             "label": "燒賣",
             "type": "siumai",
             "x": 920.4,
-            "y": 442.8,
-            "r": 100
+            "y": 344.4,
+            "r": 78
           }
         ],
         "targets": [

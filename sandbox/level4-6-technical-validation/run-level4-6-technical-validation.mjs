@@ -30,6 +30,18 @@ function itemsDoNotOverlap(items) {
   return true;
 }
 
+function itemsDoNotCoverTargets(items, targets) {
+  return items.every(item => targets.every(target => {
+    const left = target.x - target.w / 2;
+    const right = target.x + target.w / 2;
+    const top = target.y - target.h / 2;
+    const bottom = target.y + target.h / 2;
+    const nearestX = Math.max(left, Math.min(item.x, right));
+    const nearestY = Math.max(top, Math.min(item.y, bottom));
+    return Math.hypot(item.x - nearestX, item.y - nearestY) >= item.r;
+  }));
+}
+
 async function state(page) {
   return page.evaluate(() => window.__qa.state());
 }
@@ -123,8 +135,14 @@ try {
         launch.screen === "game" &&
         launch.level === level &&
         launch.gameType === expectedTypes[level] &&
-        itemsDoNotOverlap(launch.items),
-        { screen: launch.screen, engine: launch.gameType, non_overlapping_items: itemsDoNotOverlap(launch.items) });
+        itemsDoNotOverlap(launch.items) &&
+        itemsDoNotCoverTargets(launch.items, launch.targets),
+        {
+          screen: launch.screen,
+          engine: launch.gameType,
+          non_overlapping_items: itemsDoNotOverlap(launch.items),
+          targets_visible: itemsDoNotCoverTargets(launch.items, launch.targets),
+        });
     }
   }
 
