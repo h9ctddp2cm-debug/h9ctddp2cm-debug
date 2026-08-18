@@ -38,7 +38,7 @@ test("portrait phones keep the camera inline in a compact preview instead of ful
   assert.match(publicSource, /height:min\(25dvh,210px\)/);
   assert.ok(publicSource.includes("videoEl.setAttribute('webkit-playsinline', '')"));
   assert.ok(publicSource.includes("videoEl.controls = false"));
-  assert.match(serviceWorkerSource, /fthue-rehab-v11-20260818-level4-wipe-card/);
+  assert.match(serviceWorkerSource, /fthue-rehab-v12-20260818-level4-diagnostics/);
 });
 
 test("Levels 3 and 4 can use Pose when tabletop hands occlude the finger model", () => {
@@ -90,6 +90,17 @@ test("Level 4 calibration accepts an already-extended bedside starting posture",
   assert.ok(publicSource.includes("level4Reach.samples.length >= 10"));
   assert.ok(publicSource.includes("baseline.elbowAngle >= 138"));
   assert.ok(publicSource.includes("'maintained-extension'"));
+});
+
+test("Level 4 debug mode exposes bedside calibration and movement diagnostics without changing tracking", () => {
+  assert.ok(publicSource.includes('get("debug") === "1"'));
+  assert.ok(publicSource.includes('window.render_game_to_text === "function"'));
+  assert.ok(publicSource.includes('panel.id = "level4DebugPanel"'));
+  assert.ok(publicSource.includes('toast.id = "level4CalibToast"'));
+  assert.ok(publicSource.includes("const timeoutMs = 8000"));
+  assert.ok(publicSource.includes("' framingReady:' + level4Reach.framingReady"));
+  assert.ok(publicSource.includes("' elbowAngle:' + (Number.isFinite(level4Reach.elbowAngle)"));
+  assert.ok(publicSource.includes("window.__level4Diagnostics = { update, panel, toast }"));
 });
 
 test("Level 4 accepts a table-occluded arm and does not require the opposite shoulder", () => {
@@ -151,7 +162,7 @@ test("all items stay clear of targets and can be parked in blank space", () => {
 
 test("offline worker forces the current build instead of serving the stale game", () => {
   assert.ok(publicSource.includes('updateViaCache:"none"'));
-  assert.match(serviceWorkerSource, /fthue-rehab-v11-20260818-level4-wipe-card/);
+  assert.match(serviceWorkerSource, /fthue-rehab-v12-20260818-level4-diagnostics/);
 });
 
 test("Level 4 exposes deterministic compound-movement QA hooks", () => {

@@ -11384,8 +11384,10 @@ window.render_game_to_text = function(){
     }
     if(isLevel4Tabletop()){
       lines.push('level4Reach=calibrated:' + level4Reach.calibrated +
+        ' framingReady:' + level4Reach.framingReady +
         ' progress:' + level4Reach.progress.toFixed(3) +
         ' engaged:' + level4Reach.engaged +
+        ' elbowAngle:' + (Number.isFinite(level4Reach.elbowAngle) ? level4Reach.elbowAngle.toFixed(1) : 'none') +
         ' shoulderFlex:' + level4Reach.shoulderFlexProgress.toFixed(3) +
         ' elbowExtension:' + level4Reach.elbowExtensionProgress.toFixed(3) +
         ' elbowMode:' + level4Reach.elbowMode +
@@ -12411,6 +12413,142 @@ window.__qa = {
   });
 })();
 
+</script>
+<script>
+/* Level 4 on-device diagnostics.
+   Add ?debug=1 to the URL. This reads the existing text-state hook only and
+   does not change the movement thresholds or scoring logic. */
+(function () {
+  const enabled = new URLSearchParams(window.location.search).get("debug") === "1";
+  if (!enabled) return;
+
+  const panel = document.createElement("aside");
+  panel.id = "level4DebugPanel";
+  panel.setAttribute("aria-live", "polite");
+  panel.style.cssText = [
+    "position:fixed",
+    "top:max(88px,calc(76px + env(safe-area-inset-top)))",
+    "right:max(12px,env(safe-area-inset-right))",
+    "z-index:99999",
+    "background:rgba(10,20,18,.86)",
+    "color:#e8fff6",
+    "font-family:-apple-system,'PingFang TC',sans-serif",
+    "font-size:12px",
+    "line-height:1.35",
+    "padding:8px 10px",
+    "border-radius:12px",
+    "width:min(300px,calc(100vw - 24px))",
+    "pointer-events:none",
+    "white-space:pre-wrap",
+    "box-shadow:0 4px 18px rgba(0,0,0,.24)",
+    "display:none"
+  ].join(";");
+  document.body.appendChild(panel);
+
+  const toast = document.createElement("div");
+  toast.id = "level4CalibToast";
+  toast.setAttribute("role", "status");
+  toast.style.cssText = [
+    "position:fixed",
+    "bottom:max(88px,calc(18px + env(safe-area-inset-bottom)))",
+    "left:50%",
+    "transform:translateX(-50%)",
+    "z-index:99999",
+    "background:#fff3cd",
+    "color:#7d1a12",
+    "font-family:-apple-system,'PingFang TC',sans-serif",
+    "font-size:15px",
+    "font-weight:700",
+    "line-height:1.4",
+    "padding:12px 16px",
+    "border-radius:14px",
+    "box-shadow:0 4px 14px rgba(0,0,0,.25)",
+    "display:none",
+    "width:min(520px,calc(100vw - 32px))",
+    "text-align:center"
+  ].join(";");
+  toast.textContent = "重新校準：保持患側肩、手肘及手腕完整入鏡，手臂先穩定不動。";
+  document.body.appendChild(toast);
+
+  let calibrationStartedAt = 0;
+  let toastHiddenAt = 0;
+  const timeoutMs = 8000;
+
+  function snapshot() {
+    try {
+      return typeof window.render_game_to_text === "function"
+        ? String(window.render_game_to_text())
+        : "";
+    } catch (error) {
+      return "diagnosticError=" + error.message;
+    }
+  }
+
+  function line(text, prefix) {
+    return text.split("\n").find((entry) => entry.startsWith(prefix)) || "";
+  }
+
+  function field(text, name) {
+    const match = text.match(new RegExp("(?:^|[\\s=])" + name + ":([^\\s]+)"));
+    return match ? match[1] : "—";
+  }
+
+  function diagnosis(reach) {
+    if (!reach) return "尚未收到 Level 4 動作資料";
+    if (field(reach, "calibrated") === "false") {
+      if (field(reach, "framingReady") === "false") {
+        return "未完整入鏡：檢查患側肩、手肘、手腕";
+      }
+      return "校準中：手臂保持穩定";
+    }
+    if (field(reach, "shoulderHike") === "true") return "患側聳肩：請治療師即時糾正";
+    if (field(reach, "engaged") === "false") return "已校準：等待前伸配合伸肘";
+    return "追蹤中";
+  }
+
+  function update() {
+    const text = snapshot();
+    const isLevel4Game = line(text, "screen=") === "screen=game"
+      && line(text, "level=").startsWith("level=4 ");
+    panel.style.display = isLevel4Game ? "block" : "none";
+    if (!isLevel4Game) {
+      toast.style.display = "none";
+      calibrationStartedAt = 0;
+      return;
+    }
+
+    const reach = line(text, "level4Reach=");
+    const wipe = line(text, "level4Wipe=");
+    const calibrated = field(reach, "calibrated") === "true";
+    panel.textContent = [
+      "Level 4 即時診斷",
+      "校準 " + field(reach, "calibrated") + "　入鏡 " + field(reach, "framingReady"),
+      "肘角 " + field(reach, "elbowAngle") + "°　啟動 " + field(reach, "engaged"),
+      "前伸 " + field(reach, "shoulderFlex") + "　伸肘 " + field(reach, "elbowExtension"),
+      "進度 " + field(reach, "progress") + "　聳肩 " + field(reach, "shoulderHike"),
+      wipe ? "抹窗 " + field(wipe, "clean") + "%　有效 " + field(wipe, "validMovement") : "",
+      "判斷：" + diagnosis(reach)
+    ].filter(Boolean).join("\n");
+
+    if (!calibrated) {
+      if (!calibrationStartedAt) calibrationStartedAt = Date.now();
+      if (Date.now() - calibrationStartedAt >= timeoutMs && Date.now() >= toastHiddenAt) {
+        toast.style.display = "block";
+        toastHiddenAt = Date.now() + 14000;
+        window.setTimeout(() => {
+          toast.style.display = "none";
+        }, 6000);
+      }
+    } else {
+      calibrationStartedAt = 0;
+      toast.style.display = "none";
+    }
+  }
+
+  window.__level4Diagnostics = { update, panel, toast };
+  window.setInterval(update, 500);
+  update();
+})();
 </script>
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {

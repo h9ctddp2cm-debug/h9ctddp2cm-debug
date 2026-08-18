@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v11-20260818-level4-wipe-card";
+const CACHE_VERSION = "fthue-rehab-v12-20260818-level4-diagnostics";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");
