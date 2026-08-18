@@ -95,6 +95,7 @@ self.__OFFLINE_ASSETS = [
   "./img/lotusrice.png",
   "./img/siumai.png",
   "./index.html",
+  "./level4-three-games-module.js",
   "./manifest.webmanifest",
   "./offline.html",
   "./sandbox/level3-bilateral/Level3BilateralDataCollector.js",
