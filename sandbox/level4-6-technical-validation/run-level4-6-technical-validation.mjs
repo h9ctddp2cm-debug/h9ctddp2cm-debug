@@ -164,6 +164,14 @@ try {
     shoulder:{x:.45,y:.30,z:0}, elbow:{x:.54,y:.35,z:-.10},
     wrist:{x:.74,y:.36,z:-.30}, otherShoulder:{x:.60,y:.30,z:0},
   };
+  const level4JitterPose = {
+    ...level4StartPose,
+    wrist:{x:.58,y:.49,z:0},
+  };
+  const level4PartialExtensionPose = {
+    shoulder:{x:.45,y:.30,z:0}, elbow:{x:.45,y:.48,z:0},
+    wrist:{x:.58,y:.56,z:0}, otherShoulder:{x:.60,y:.30,z:0},
+  };
   const level4ForwardFlexedPose = {
     // Keep the wrist forward in camera space while the elbow clearly flexes.
     // This reproduces the difficult front-facing iPad return case.
@@ -189,6 +197,26 @@ try {
   const level4Baseline = await page.evaluate(() => window.__qa.level4ReachState());
   check("4", "compound movement", "90-degree supported start calibrates the reach controller",
     level4Baseline.calibrated && level4Baseline.progress === 0, level4Baseline);
+  for (let index = 0; index < 10; index += 1) {
+    await page.evaluate(pose => window.__qa.setLevel4Pose(pose), level4JitterPose);
+  }
+  const level4Jitter = await page.evaluate(() => window.__qa.level4ReachState());
+  check("4", "drift guard", "small elbow-angle jitter cannot move the object by itself",
+    !level4Jitter.engaged && level4Jitter.progress < 0.02
+    && !level4Jitter.completionReady, level4Jitter);
+  for (let index = 0; index < 10; index += 1) {
+    await page.evaluate(pose => window.__qa.setLevel4Pose(pose), level4PartialExtensionPose);
+  }
+  const level4Partial = await page.evaluate(() => window.__qa.level4ReachState());
+  check("4", "completion gate", "partial elbow extension moves upward but cannot complete placement",
+    level4Partial.engaged && level4Partial.progress > 0.20
+    && level4Partial.progress < 0.90 && !level4Partial.completionReady,
+    level4Partial);
+
+  await start(page, "4");
+  for (let index = 0; index < 14; index += 1) {
+    await page.evaluate(pose => window.__qa.setLevel4Pose(pose), level4StartPose);
+  }
   for (let index = 0; index < 3; index += 1) {
     await page.evaluate(pose => window.__qa.setLevel4Pose(pose), level4HikePose);
   }

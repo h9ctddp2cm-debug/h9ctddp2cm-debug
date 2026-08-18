@@ -6444,6 +6444,10 @@ const level4Reach = {
   shoulderFlexProgress:0,
   elbowExtensionProgress:0,
   elbowAngle:null,
+  elbowAngleHistory:[],
+  movementConfirmFrames:0,
+  fullExtensionAngle:null,
+  completionReady:false,
   elbowMode:'waiting',
   forwardAxis:null,
   forwardAxisPeak:0,
@@ -6463,6 +6467,10 @@ const level4Reach = {
     this.shoulderFlexProgress = 0;
     this.elbowExtensionProgress = 0;
     this.elbowAngle = null;
+    this.elbowAngleHistory = [];
+    this.movementConfirmFrames = 0;
+    this.fullExtensionAngle = null;
+    this.completionReady = false;
     this.elbowMode = 'waiting';
     this.forwardAxis = null;
     this.forwardAxisPeak = 0;
@@ -6522,8 +6530,11 @@ function updateLevel4ReachController(lm){
     return level4Reach;
   }
   level4Reach.framingReady = true;
-  const elbowAngle = level4JointAngle(arm.shoulder,arm.elbow,arm.wrist);
-  if(!Number.isFinite(elbowAngle)) return level4Reach;
+  const measuredElbowAngle = level4JointAngle(arm.shoulder,arm.elbow,arm.wrist);
+  if(!Number.isFinite(measuredElbowAngle)) return level4Reach;
+  level4Reach.elbowAngleHistory.push(measuredElbowAngle);
+  if(level4Reach.elbowAngleHistory.length > 5) level4Reach.elbowAngleHistory.shift();
+  const elbowAngle = level4Median(level4Reach.elbowAngleHistory);
   const otherShoulderVisible = level4PosePointUsable(arm.otherShoulder);
   const upperArmLength = Math.hypot(
     arm.shoulder.x-arm.elbow.x,
@@ -6576,6 +6587,13 @@ function updateLevel4ReachController(lm){
       level4Reach.elbowMode = level4Reach.baseline.elbowAngle >= 138
         ? 'maintained-extension'
         : 'active-extension';
+      const baselineAngle = level4Reach.baseline.elbowAngle;
+      level4Reach.fullExtensionAngle = baselineAngle >= 138
+        ? Math.min(165, Math.max(150, baselineAngle + 8))
+        : Math.min(160, Math.max(
+            baselineAngle + 32,
+            baselineAngle + (165-baselineAngle) * 0.90
+          ));
     }
     level4Reach.progress = 0;
     level4Reach.warning = '';
@@ -6604,8 +6622,14 @@ function updateLevel4ReachController(lm){
     baseline.wristRelativeZ-sample.wristRelativeZ,
     sample.wristReachRadius-baseline.wristReachRadius
   );
-  const availableExtension = Math.max(12, 165-baseline.elbowAngle);
-  const extensionProgress = clamp01((elbowGain-1.5)/(availableExtension*0.70));
+  const fullExtensionAngle = Number.isFinite(level4Reach.fullExtensionAngle)
+    ? level4Reach.fullExtensionAngle
+    : Math.min(160, Math.max(baseline.elbowAngle + 32, 155));
+  const fullExtensionGain = Math.max(8, fullExtensionAngle-baseline.elbowAngle);
+  const extensionDeadZone = Math.min(5, fullExtensionGain * 0.20);
+  const extensionProgress = clamp01(
+    (elbowGain-extensionDeadZone) / Math.max(5, fullExtensionGain-extensionDeadZone)
+  );
   const shoulderFlexProgress = clamp01((forwardReachGain-0.012)/0.24);
   const shoulderHike = Number.isFinite(baseline.shoulderBalance)
     && Number.isFinite(sample.shoulderBalance)
@@ -6619,7 +6643,7 @@ function updateLevel4ReachController(lm){
     : extensionProgress;
   const maintainedExtension = startsExtended
     && elbowAngle >= Math.max(132, baseline.elbowAngle-8);
-  const activeExtension = elbowGain >= 1.5;
+  const activeExtension = elbowGain >= 6;
   const elbowConfirmed = activeExtension || maintainedExtension;
 
   // Learn/update the forward axis only while the elbow is extending or safely
@@ -6627,7 +6651,7 @@ function updateLevel4ReachController(lm){
   // cannot teach the system a false "forward" direction.
   const directionLearningEligible = !shoulderHike
     && reachMagnitude >= 0.018
-    && (elbowGain >= 2 || maintainedExtension);
+    && (elbowGain >= 6 || maintainedExtension);
   if(directionLearningEligible && reachMagnitude > level4Reach.forwardAxisPeak){
     level4Reach.forwardAxis = reachVector.map(v=>v/reachMagnitude);
     level4Reach.forwardAxisPeak = reachMagnitude;
@@ -6662,12 +6686,16 @@ function updateLevel4ReachController(lm){
   // either active elbow extension or a safely maintained already-extended arm.
   // Once engaged, return transport follows the forward-reach signal only when
   // elbow flexion is also evident, so shoulder elevation alone never drives it.
-  const frontCameraElbowReach = !startsExtended
-    && elbowCycleProgress >= 0.05
-    && elbowGain >= 2.5;
+  if(!shoulderHike && (elbowGain >= 6 || maintainedExtension)){
+    level4Reach.movementConfirmFrames = Math.min(6, level4Reach.movementConfirmFrames + 1);
+  }else if(elbowGain <= 3){
+    level4Reach.movementConfirmFrames = 0;
+  }else{
+    level4Reach.movementConfirmFrames = Math.max(0, level4Reach.movementConfirmFrames - 1);
+  }
   if(!level4Reach.engaged
       && elbowConfirmed
-      && (cameraDirectionProgress >= 0.035 || frontCameraElbowReach)){
+      && level4Reach.movementConfirmFrames >= 3){
     level4Reach.engaged = true;
     level4Reach.peakElbowAngle = elbowAngle;
     level4Reach.peakShoulderFlexProgress = cameraDirectionProgress;
@@ -6679,37 +6707,29 @@ function updateLevel4ReachController(lm){
       cameraDirectionProgress
     );
   }
-  const returning = level4Reach.engaged
-    && cameraDirectionProgress < level4Reach.peakShoulderFlexProgress-0.025;
   const returnElbowFlexion = level4Reach.engaged
-    && (level4Reach.peakElbowAngle-elbowAngle) >= 1.5;
-  let compoundProgress = level4Reach.progress;
-  if(level4Reach.engaged && !returning && !returnElbowFlexion){
-    // With the iPad directly in front, supported forward reach can be almost
-    // invisible in camera Z/Y. Elbow extension is therefore the primary live
-    // transport signal; shoulder hiking remains a separate stop condition.
-    compoundProgress = startsExtended
-      ? Math.min(cameraDirectionProgress, elbowCycleProgress)
-      : elbowCycleProgress;
-  }else if(level4Reach.engaged && returnElbowFlexion){
-    // Elbow flexion is the authoritative return signal. This intentionally
-    // does not wait for noisy camera-Z or wrist-direction estimates to fall.
-    compoundProgress = elbowCycleProgress;
-  }else if(returning && cameraDirectionProgress <= 0.04){
-    compoundProgress = 0;
-  }
-  if(elbowCycleProgress <= 0.025 && level4Reach.progress <= 0.06){
+    && (level4Reach.peakElbowAngle-elbowAngle) >= 3;
+  // With the iPad directly in front on the same table, depth is too noisy to
+  // control transport reliably. The smoothed elbow angle is authoritative:
+  // extension lifts the object and flexion lowers it along the same scale.
+  let compoundProgress = level4Reach.engaged ? extensionProgress : 0;
+  if(returnElbowFlexion) compoundProgress = extensionProgress;
+  if(elbowGain <= 3 && level4Reach.progress <= 0.08){
     level4Reach.engaged = false;
     level4Reach.peakElbowAngle = null;
     level4Reach.peakShoulderFlexProgress = 0;
+    level4Reach.movementConfirmFrames = 0;
     compoundProgress = 0;
   }
+  level4Reach.completionReady = level4Reach.engaged
+    && elbowAngle >= fullExtensionAngle-2
+    && extensionProgress >= 0.95;
   if(shoulderHike){
     compoundProgress = level4Reach.progress;
     level4Reach.warning = '患側聳肩 · 請治療師即時糾正';
   }else{
     level4Reach.warning = '';
-    level4Reach.progress += 0.48 * (compoundProgress-level4Reach.progress);
+    level4Reach.progress += 0.38 * (compoundProgress-level4Reach.progress);
   }
   stage?.classList.toggle('level4-movement-alert', shoulderHike && !isTrialMode());
   return level4Reach;
@@ -6884,7 +6904,9 @@ function updateGameLogic(){
       }
       // Pickup zone: 食物實際 radius + 80px tolerance（原本固定 120 → 現在對食物 size 自適應）
       // 對於顫抖病人：碰到食物邊邊也算抓到
-      const overFood = nearest && nearestDist <= (nearest.r + 80);
+      const level4AtStart = !isLevel4Tabletop()
+        || (!level4Reach.engaged && level4Reach.progress <= 0.04);
+      const overFood = nearest && level4AtStart && nearestDist <= (nearest.r + 80);
       if(overFood && still){
         if(dwellTarget !== 'food'){
           dwellTarget = 'food';
@@ -6939,7 +6961,9 @@ function updateGameLogic(){
           }
         }
       }
-      if(onPlate && still){
+      const level4CanPlace = !isLevel4Tabletop()
+        || (level4Reach.completionReady && level4Reach.progress >= 0.94);
+      if(onPlate && level4CanPlace && still){
         if(dwellTarget !== 'plate'){
           dwellTarget = 'plate';
           dwellStartTime = now;
@@ -6977,7 +7001,11 @@ function updateGameLogic(){
         }
       } else {
         dwellTarget = null;
-        setActionPrompt(isChopsticksMode() ? '筷子尖移到目標' : '移到目標', '停在同款目標');
+        if(isLevel4Tabletop() && onPlate && !level4CanPlace){
+          setActionPrompt('繼續伸直手肘', '接近伸直先放下');
+        }else{
+          setActionPrompt(isChopsticksMode() ? '筷子尖移到目標' : '移到目標', '停在同款目標');
+        }
       }
     }
   } else {
@@ -11219,6 +11247,9 @@ window.__qa = {
       shoulderFlexProgress:level4Reach.shoulderFlexProgress,
       elbowExtensionProgress:level4Reach.elbowExtensionProgress,
       elbowAngle:level4Reach.elbowAngle,
+      fullExtensionAngle:level4Reach.fullExtensionAngle,
+      completionReady:level4Reach.completionReady,
+      movementConfirmFrames:level4Reach.movementConfirmFrames,
       elbowMode:level4Reach.elbowMode,
       directionMode:level4Reach.directionMode,
       directionPeak:level4Reach.forwardAxisPeak,

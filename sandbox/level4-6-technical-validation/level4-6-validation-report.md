@@ -1,12 +1,12 @@
 # Level 4–6 Technical Validation Report
 
-Generated: 2026-08-18T12:22:58.082Z
+Generated: 2026-08-18T13:03:23.360Z
 
-Result: **PASS** (123/123 checks passed)
+Result: **PASS** (125/125 checks passed)
 
 | FTHUE level | Passed | Failed |
 |---|---:|---:|
-| 4 | 46 | 0 |
+| 4 | 48 | 0 |
 | 5 | 40 | 0 |
 | 6 | 30 | 0 |
 
@@ -55,6 +55,8 @@ This is reproducible software technical verification only. It does not establish
 - PASS | Level 6 | safety | malformed pinch landmarks fail safely
 - PASS | Level 4 | layout | targets remain forward of tabletop source items
 - PASS | Level 4 | compound movement | 90-degree supported start calibrates the reach controller
+- PASS | Level 4 | drift guard | small elbow-angle jitter cannot move the object by itself
+- PASS | Level 4 | completion gate | partial elbow extension moves upward but cannot complete placement
 - PASS | Level 4 | compound movement | shoulder elevation alone cannot lift the game object
 - PASS | Level 4 | compound movement | shoulder flexion plus elbow extension moves the object upward
 - PASS | Level 4 | compound movement | elbow flexion lowers the object while the wrist remains forward

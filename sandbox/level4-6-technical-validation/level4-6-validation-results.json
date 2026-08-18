@@ -1,15 +1,15 @@
 {
-  "generated_at": "2026-08-18T12:22:58.082Z",
+  "generated_at": "2026-08-18T13:03:23.360Z",
   "base_url": "http://127.0.0.1:4173",
   "scope": "Independent technical verification for FTHUE Levels 4, 5, and 6",
   "limitation": "Not clinical validation; Level 6 aperture detection does not measure pinch force.",
   "summary": {
-    "total": 123,
-    "passed": 123,
+    "total": 125,
+    "passed": 125,
     "failed": 0,
     "by_level": {
       "4": {
-        "passed": 46,
+        "passed": 48,
         "failed": 0
       },
       "5": {
@@ -330,6 +330,9 @@
         "shoulderFlexProgress": 0,
         "elbowExtensionProgress": 0,
         "elbowAngle": 90,
+        "fullExtensionAngle": 157.5,
+        "completionReady": false,
+        "movementConfirmFrames": 0,
         "elbowMode": "active-extension",
         "directionMode": "waiting",
         "directionPeak": 0,
@@ -338,6 +341,56 @@
         "framingReady": true,
         "warning": "",
         "cursorY": 672.4
+      }
+    },
+    {
+      "level": "4",
+      "category": "drift guard",
+      "name": "small elbow-angle jitter cannot move the object by itself",
+      "passed": true,
+      "details": {
+        "calibrated": true,
+        "progress": 0,
+        "engaged": false,
+        "shoulderFlexProgress": 0.1772570986855997,
+        "elbowExtensionProgress": 0,
+        "elbowAngle": 94.39870535499553,
+        "fullExtensionAngle": 157.5,
+        "completionReady": false,
+        "movementConfirmFrames": 0,
+        "elbowMode": "active-extension",
+        "directionMode": "waiting",
+        "directionPeak": 0,
+        "forwardScale": 0.12,
+        "shoulderHike": false,
+        "framingReady": true,
+        "warning": "",
+        "cursorY": 672.4
+      }
+    },
+    {
+      "level": "4",
+      "category": "completion gate",
+      "name": "partial elbow extension moves upward but cannot complete placement",
+      "passed": true,
+      "details": {
+        "calibrated": true,
+        "progress": 0.4015390376057631,
+        "engaged": true,
+        "shoulderFlexProgress": 1,
+        "elbowExtensionProgress": 0.4257200359399831,
+        "elbowAngle": 121.60750224624894,
+        "fullExtensionAngle": 157.5,
+        "completionReady": false,
+        "movementConfirmFrames": 6,
+        "elbowMode": "active-extension",
+        "directionMode": "individualized",
+        "directionPeak": 0.7027946591845814,
+        "forwardScale": 0.26,
+        "shoulderHike": false,
+        "framingReady": true,
+        "warning": "",
+        "cursorY": 606.5106414732014
       }
     },
     {
@@ -352,6 +405,9 @@
         "shoulderFlexProgress": 0.5382352941176459,
         "elbowExtensionProgress": 0,
         "elbowAngle": 90,
+        "fullExtensionAngle": 157.5,
+        "completionReady": false,
+        "movementConfirmFrames": 0,
         "elbowMode": "active-extension",
         "directionMode": "waiting",
         "directionPeak": 0,
@@ -369,11 +425,14 @@
       "passed": true,
       "details": {
         "calibrated": true,
-        "progress": 0.9992483134490648,
+        "progress": 0.96478385393792,
         "engaged": true,
         "shoulderFlexProgress": 1,
         "elbowExtensionProgress": 1,
         "elbowAngle": 161.403384267591,
+        "fullExtensionAngle": 157.5,
+        "completionReady": true,
+        "movementConfirmFrames": 6,
         "elbowMode": "active-extension",
         "directionMode": "individualized",
         "directionPeak": 2.624836412710845,
@@ -381,7 +440,7 @@
         "shoulderHike": false,
         "framingReady": true,
         "warning": "",
-        "cursorY": 379.67702336197743
+        "cursorY": 465.87571986943993
       }
     },
     {
@@ -391,11 +450,14 @@
       "passed": true,
       "details": {
         "calibrated": true,
-        "progress": 0.045411736871031505,
+        "progress": 0.005133213725829009,
         "engaged": true,
         "shoulderFlexProgress": 1,
-        "elbowExtensionProgress": 0.0453109122292969,
+        "elbowExtensionProgress": 0,
         "elbowAngle": 93.87882289203809,
+        "fullExtensionAngle": 157.5,
+        "completionReady": false,
+        "movementConfirmFrames": 0,
         "elbowMode": "active-extension",
         "directionMode": "individualized",
         "directionPeak": 2.624836412710845,
@@ -403,7 +465,7 @@
         "shoulderHike": false,
         "framingReady": true,
         "warning": "",
-        "cursorY": 637.1991243394235
+        "cursorY": 629.0797367922778
       }
     },
     {
@@ -413,11 +475,14 @@
       "passed": true,
       "details": {
         "calibrated": true,
-        "progress": 0.000009230209959094844,
+        "progress": 0.000010267892433314629,
         "engaged": false,
         "shoulderFlexProgress": 0,
         "elbowExtensionProgress": 0,
         "elbowAngle": 90,
+        "fullExtensionAngle": 157.5,
+        "completionReady": false,
+        "movementConfirmFrames": 0,
         "elbowMode": "active-extension",
         "directionMode": "individualized",
         "directionPeak": 2.624836412710845,
@@ -425,7 +490,7 @@
         "shoulderHike": false,
         "framingReady": true,
         "warning": "",
-        "cursorY": 663.9339124122463
+        "cursorY": 665.1464063667661
       }
     },
     {
@@ -435,11 +500,14 @@
       "passed": true,
       "details": {
         "calibrated": true,
-        "progress": 0.9985544489405094,
+        "progress": 0.96478385393792,
         "engaged": true,
         "shoulderFlexProgress": 1,
         "elbowExtensionProgress": 1,
         "elbowAngle": 161.403384267591,
+        "fullExtensionAngle": 157.5,
+        "completionReady": true,
+        "movementConfirmFrames": 6,
         "elbowMode": "active-extension",
         "directionMode": "individualized",
         "directionPeak": 2.1368428254479963,
@@ -447,7 +515,7 @@
         "shoulderHike": false,
         "framingReady": true,
         "warning": "",
-        "cursorY": 388.2683269200137
+        "cursorY": 465.87571986943993
       }
     },
     {
@@ -700,8 +768,8 @@
         },
         "items": [
           {
-            "label": "叉燒包",
-            "type": "charsiu",
+            "label": "糯米雞",
+            "type": "lotusrice",
             "x": 259.6,
             "y": 442.8,
             "r": 118
@@ -714,8 +782,8 @@
             "r": 118
           },
           {
-            "label": "叉燒包",
-            "type": "charsiu",
+            "label": "糯米雞",
+            "type": "lotusrice",
             "x": 920.4,
             "y": 442.8,
             "r": 118
@@ -779,8 +847,8 @@
         },
         "items": [
           {
-            "label": "叉燒包",
-            "type": "charsiu",
+            "label": "糯米雞",
+            "type": "lotusrice",
             "x": 259.6,
             "y": 442.8,
             "r": 118
@@ -793,8 +861,8 @@
             "r": 118
           },
           {
-            "label": "叉燒包",
-            "type": "charsiu",
+            "label": "糯米雞",
+            "type": "lotusrice",
             "x": 920.4,
             "y": 442.8,
             "r": 118
@@ -892,11 +960,11 @@
         },
         "items": [
           {
-            "label": "燒賣",
-            "type": "siumai",
+            "label": "蝦餃",
+            "type": "hargau",
             "x": 259.6,
             "y": 442.8,
-            "r": 100
+            "r": 145
           },
           {
             "label": "燒賣",
@@ -906,11 +974,11 @@
             "r": 100
           },
           {
-            "label": "蝦餃",
-            "type": "hargau",
+            "label": "燒賣",
+            "type": "siumai",
             "x": 920.4,
             "y": 442.8,
-            "r": 145
+            "r": 100
           }
         ],
         "targets": [
@@ -971,11 +1039,11 @@
         },
         "items": [
           {
-            "label": "燒賣",
-            "type": "siumai",
+            "label": "蝦餃",
+            "type": "hargau",
             "x": 259.6,
             "y": 442.8,
-            "r": 100
+            "r": 145
           },
           {
             "label": "燒賣",
@@ -985,11 +1053,11 @@
             "r": 100
           },
           {
-            "label": "蝦餃",
-            "type": "hargau",
+            "label": "燒賣",
+            "type": "siumai",
             "x": 920.4,
             "y": 442.8,
-            "r": 145
+            "r": 100
           }
         ],
         "targets": [

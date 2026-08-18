@@ -52,19 +52,26 @@ test("Level 3 bilateral controller follows the selected affected side only", () 
   assert.ok(publicSource.includes("level3LateralState()"));
 });
 
-test("Level 4 learns the real iPad reach direction and still requires elbow confirmation", () => {
+test("Level 4 records camera direction but uses elbow angle as the authoritative transport signal", () => {
   assert.ok(publicSource.includes("const elbowConfirmed = activeExtension || maintainedExtension"));
   assert.ok(publicSource.includes("directionLearningEligible"));
   assert.ok(publicSource.includes("level4Reach.forwardAxis = reachVector.map"));
-  assert.ok(publicSource.includes("const frontCameraElbowReach = !startsExtended"));
-  assert.ok(publicSource.includes("cameraDirectionProgress >= 0.035 || frontCameraElbowReach"));
-  assert.ok(publicSource.includes("level4Reach.engaged && returnElbowFlexion"));
-  assert.ok(publicSource.includes(": elbowCycleProgress"));
-  assert.ok(publicSource.includes("Elbow flexion is the authoritative return signal"));
+  assert.ok(publicSource.includes("let compoundProgress = level4Reach.engaged ? extensionProgress : 0"));
+  assert.ok(publicSource.includes("if(returnElbowFlexion) compoundProgress = extensionProgress"));
+  assert.ok(publicSource.includes("The smoothed elbow angle is authoritative"));
   assert.ok(publicSource.includes("mapped.y = ch * 0.82 - level4Motion.progress * ch * 0.40"));
   assert.ok(publicSource.includes("baseline.wristRelativeZ-sample.wristRelativeZ"));
   assert.ok(publicSource.includes("baseline.wristRelativeY-sample.wristRelativeY"));
   assert.ok(publicSource.includes("sample.wristReachRadius-baseline.wristReachRadius"));
+});
+
+test("Level 4 ignores elbow jitter and only permits placement near full extension", () => {
+  assert.ok(publicSource.includes("level4Reach.elbowAngleHistory.length > 5"));
+  assert.ok(publicSource.includes("elbowGain >= 6"));
+  assert.ok(publicSource.includes("level4Reach.movementConfirmFrames >= 3"));
+  assert.ok(publicSource.includes("level4Reach.completionReady"));
+  assert.ok(publicSource.includes("level4Reach.progress >= 0.94"));
+  assert.match(publicSource, /繼續伸直手肘/);
 });
 
 test("Level 4 calibration accepts an already-extended bedside starting posture", () => {
