@@ -1,12 +1,12 @@
 # Level 4–6 Technical Validation Report
 
-Generated: 2026-08-18T12:14:31.231Z
+Generated: 2026-08-18T12:22:58.082Z
 
-Result: **PASS** (122/122 checks passed)
+Result: **PASS** (123/123 checks passed)
 
 | FTHUE level | Passed | Failed |
 |---|---:|---:|
-| 4 | 45 | 0 |
+| 4 | 46 | 0 |
 | 5 | 40 | 0 |
 | 6 | 30 | 0 |
 
@@ -59,6 +59,7 @@ This is reproducible software technical verification only. It does not establish
 - PASS | Level 4 | compound movement | shoulder flexion plus elbow extension moves the object upward
 - PASS | Level 4 | compound movement | elbow flexion lowers the object while the wrist remains forward
 - PASS | Level 4 | compound movement | shoulder extension plus elbow flexion returns the object downward
+- PASS | Level 4 | table occlusion | affected elbow extension remains playable when the opposite shoulder is hidden
 - PASS | Level 4 | flow | dwell pickup acquires an item
 - PASS | Level 4 | flow | correct placement increments the correct count
 - PASS | Level 4 | flow | dwell pickup acquires an item

@@ -4259,7 +4259,9 @@ function showLevelUpBanner(){
   const th0 = getTheme();
   const itemWord0 = th0.itemWord;
   const okTag = `<span style="color:#0a7d75;">中線拿取 → ${affectedDirectionLabel()}</span>`;
-  const noTag = '<span style="color:#c8391a;">不要拿動物</span>';
+  const animalTag = research.active
+    ? '<span style="color:#c8391a;">不要拿動物</span>'
+    : '<span>動物阻路：搬到空白位</span>';
 
   if(tier === 0){
     msg = `<div style="font-size:20px;font-weight:900;">中線拿取 → ${affectedDirectionLabel()}</div>`;
@@ -4270,13 +4272,21 @@ function showLevelUpBanner(){
         : `遊戲開始。張開手，輕輕合手拿起${itemWord0}。移到同款目標，再張開手放下。`);
     persistText = okTag;
   } else if(tier === 1){
-    msg = `<div style="font-size:20px;font-weight:900;">只拿${itemWord0} · 不拿動物</div>`;
-    cantoneseMsg = `好耶。而家會有動物出現。唔好拿動物。只拿${itemWord0}。`;
-    persistText = okTag + '<br>' + noTag;
+    msg = research.active
+      ? `<div style="font-size:20px;font-weight:900;">只拿${itemWord0} · 不拿動物</div>`
+      : `<div style="font-size:20px;font-weight:900;">動物阻路可搬開</div>`;
+    cantoneseMsg = research.active
+      ? `好耶。而家會有動物出現。唔好拿動物。只拿${itemWord0}。`
+      : `有動物阻路，可以拿起，搬到空白位置再放手。`;
+    persistText = okTag + '<br>' + animalTag;
   } else {
-    msg = `<div style="font-size:20px;font-weight:900;">升級：避開 ${tier} 隻動物</div>`;
-    cantoneseMsg = `好耶。而家有${tier}隻動物。記住：拿${itemWord0}，唔好拿動物。`;
-    persistText = okTag + '<br>' + noTag;
+    msg = research.active
+      ? `<div style="font-size:20px;font-weight:900;">升級：避開 ${tier} 隻動物</div>`
+      : `<div style="font-size:20px;font-weight:900;">${tier} 隻動物 · 阻路可搬開</div>`;
+    cantoneseMsg = research.active
+      ? `好耶。而家有${tier}隻動物。記住：拿${itemWord0}，唔好拿動物。`
+      : `有${tier}隻動物。阻住目標時，可以搬到空白位置再放手。`;
+    persistText = okTag + '<br>' + animalTag;
   }
 
   banner.innerHTML = msg;
@@ -6164,6 +6174,16 @@ function makeFoodAt(def, existingFoods){
   }
   const positionIsClear = (x, y) => {
     if(circleOverlapsRect(x, y, r, instructionExclusion)) return false;
+    // Animal distractors must never spawn over a destination. They remain
+    // movable, but the participant should not have to uncover a hidden target.
+    if(def.targetType === 'distractor' && targets.some(target =>
+      circleOverlapsRect(x, y, r + 14, {
+        left:target.x-target.w/2,
+        right:target.x+target.w/2,
+        top:target.y-target.h/2,
+        bottom:target.y+target.h/2,
+      })
+    )) return false;
     for(const f of existingFoods){
       if(f.removed) continue;
       const visibleGap = Math.max(16, Math.min(r, f.r || baseR) * 0.12);
@@ -6458,7 +6478,9 @@ const level4Reach = {
 };
 function level4PosePointUsable(point){
   return !!point && Number.isFinite(point.x) && Number.isFinite(point.y)
-    && (point.visibility == null || point.visibility >= 0.20);
+    // A forearm resting on a table is frequently assigned low visibility even
+    // when the elbow/wrist coordinates remain stable enough for joint control.
+    && (point.visibility == null || point.visibility >= 0.05);
 }
 function affectedPoseArm(lm){
   if(!Array.isArray(lm)) return null;
@@ -6469,7 +6491,8 @@ function affectedPoseArm(lm){
     wrist:lm[left ? 15 : 16],
     otherShoulder:lm[left ? 12 : 11],
   };
-  return Object.values(arm).every(level4PosePointUsable) ? arm : null;
+  return [arm.shoulder, arm.elbow, arm.wrist].every(level4PosePointUsable)
+    ? arm : null;
 }
 function level4JointAngle(a,b,c){
   const ab = {x:a.x-b.x, y:a.y-b.y, z:(a.z||0)-(b.z||0)};
@@ -6503,10 +6526,18 @@ function updateLevel4ReachController(lm){
   level4Reach.framingReady = true;
   const elbowAngle = level4JointAngle(arm.shoulder,arm.elbow,arm.wrist);
   if(!Number.isFinite(elbowAngle)) return level4Reach;
-  const shoulderSpan = Math.max(
-    0.05,
-    Math.hypot(arm.shoulder.x-arm.otherShoulder.x, arm.shoulder.y-arm.otherShoulder.y)
+  const otherShoulderVisible = level4PosePointUsable(arm.otherShoulder);
+  const upperArmLength = Math.hypot(
+    arm.shoulder.x-arm.elbow.x,
+    arm.shoulder.y-arm.elbow.y,
+    (arm.shoulder.z||0)-(arm.elbow.z||0)
   );
+  const shoulderSpan = Math.max(0.05, otherShoulderVisible
+    ? Math.hypot(
+        arm.shoulder.x-arm.otherShoulder.x,
+        arm.shoulder.y-arm.otherShoulder.y
+      )
+    : upperArmLength * 1.35);
   const sample = {
     elbowAngle,
     // Screen-space forward-reach proxy. Because the wrist is measured
@@ -6520,7 +6551,9 @@ function updateLevel4ReachController(lm){
       arm.wrist.y-arm.shoulder.y,
       (arm.wrist.z||0)-(arm.shoulder.z||0)
     )/shoulderSpan,
-    shoulderBalance:arm.shoulder.y-arm.otherShoulder.y,
+    shoulderBalance:otherShoulderVisible
+      ? arm.shoulder.y-arm.otherShoulder.y
+      : null,
   };
   level4Reach.elbowAngle = elbowAngle;
 
@@ -6576,7 +6609,9 @@ function updateLevel4ReachController(lm){
   const availableExtension = Math.max(12, 165-baseline.elbowAngle);
   const extensionProgress = clamp01((elbowGain-1.5)/(availableExtension*0.70));
   const shoulderFlexProgress = clamp01((forwardReachGain-0.012)/0.24);
-  const shoulderHike = (baseline.shoulderBalance-sample.shoulderBalance) > 0.035;
+  const shoulderHike = Number.isFinite(baseline.shoulderBalance)
+    && Number.isFinite(sample.shoulderBalance)
+    && (baseline.shoulderBalance-sample.shoulderBalance) > 0.035;
   const startsExtended = baseline.elbowAngle >= 138;
   // Front-facing iPads estimate depth less reliably than joint angles. Keep a
   // dedicated elbow signal so flexing the elbow can always bring the object
@@ -6629,7 +6664,12 @@ function updateLevel4ReachController(lm){
   // either active elbow extension or a safely maintained already-extended arm.
   // Once engaged, return transport follows the forward-reach signal only when
   // elbow flexion is also evident, so shoulder elevation alone never drives it.
-  if(!level4Reach.engaged && cameraDirectionProgress >= 0.06 && elbowConfirmed){
+  const frontCameraElbowReach = !startsExtended
+    && elbowCycleProgress >= 0.05
+    && elbowGain >= 2.5;
+  if(!level4Reach.engaged
+      && elbowConfirmed
+      && (cameraDirectionProgress >= 0.035 || frontCameraElbowReach)){
     level4Reach.engaged = true;
     level4Reach.peakElbowAngle = elbowAngle;
     level4Reach.peakShoulderFlexProgress = cameraDirectionProgress;
@@ -6647,17 +6687,20 @@ function updateLevel4ReachController(lm){
     && (level4Reach.peakElbowAngle-elbowAngle) >= 1.5;
   let compoundProgress = level4Reach.progress;
   if(level4Reach.engaged && !returning && !returnElbowFlexion){
-    // Forward transport still needs both real reach displacement and elbow
-    // extension; shoulder elevation alone cannot lift the object.
-    compoundProgress = Math.min(cameraDirectionProgress, elbowCycleProgress);
+    // With the iPad directly in front, supported forward reach can be almost
+    // invisible in camera Z/Y. Elbow extension is therefore the primary live
+    // transport signal; shoulder hiking remains a separate stop condition.
+    compoundProgress = startsExtended
+      ? Math.min(cameraDirectionProgress, elbowCycleProgress)
+      : elbowCycleProgress;
   }else if(level4Reach.engaged && returnElbowFlexion){
     // Elbow flexion is the authoritative return signal. This intentionally
     // does not wait for noisy camera-Z or wrist-direction estimates to fall.
-    compoundProgress = Math.min(cameraDirectionProgress, elbowCycleProgress);
+    compoundProgress = elbowCycleProgress;
   }else if(returning && cameraDirectionProgress <= 0.04){
     compoundProgress = 0;
   }
-  if(cameraDirectionProgress <= 0.025 && level4Reach.progress <= 0.06){
+  if(elbowCycleProgress <= 0.025 && level4Reach.progress <= 0.06){
     level4Reach.engaged = false;
     level4Reach.peakElbowAngle = null;
     level4Reach.peakShoulderFlexProgress = 0;
@@ -6668,7 +6711,7 @@ function updateLevel4ReachController(lm){
     level4Reach.warning = '患側聳肩 · 請治療師即時糾正';
   }else{
     level4Reach.warning = '';
-    level4Reach.progress += 0.34 * (compoundProgress-level4Reach.progress);
+    level4Reach.progress += 0.48 * (compoundProgress-level4Reach.progress);
   }
   stage?.classList.toggle('level4-movement-alert', shoulderHike && !isTrialMode());
   return level4Reach;
@@ -11160,7 +11203,7 @@ window.__qa = {
       x:Number.isFinite(value?.x) ? value.x : fallback.x,
       y:Number.isFinite(value?.y) ? value.y : fallback.y,
       z:Number.isFinite(value?.z) ? value.z : (fallback.z || 0),
-      visibility:1,
+      visibility:Number.isFinite(value?.visibility) ? value.visibility : 1,
     });
     lm[shoulderIndex] = point(spec.shoulder, {x:0.45,y:0.30});
     lm[elbowIndex] = point(spec.elbow, {x:0.45,y:0.48});

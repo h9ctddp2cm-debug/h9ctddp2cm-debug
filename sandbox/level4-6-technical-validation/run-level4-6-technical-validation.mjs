@@ -174,6 +174,14 @@ try {
     shoulder:{x:.45,y:.22,z:0}, elbow:{x:.45,y:.40,z:0},
     wrist:{x:.58,y:.40,z:0}, otherShoulder:{x:.60,y:.30,z:0},
   };
+  const level4OccludedStartPose = {
+    ...level4StartPose,
+    otherShoulder:{x:.60,y:.30,z:0,visibility:.01},
+  };
+  const level4OccludedReachPose = {
+    ...level4ReachPose,
+    otherShoulder:{x:.60,y:.30,z:0,visibility:.01},
+  };
   await start(page, "4");
   for (let index = 0; index < 14; index += 1) {
     await page.evaluate(pose => window.__qa.setLevel4Pose(pose), level4StartPose);
@@ -214,6 +222,18 @@ try {
   check("4", "compound movement", "shoulder extension plus elbow flexion returns the object downward",
     level4Return.progress < 0.02 && level4Return.shoulderFlexProgress === 0
     && level4Return.elbowExtensionProgress === 0, level4Return);
+
+  await start(page, "4");
+  for (let index = 0; index < 14; index += 1) {
+    await page.evaluate(pose => window.__qa.setLevel4Pose(pose), level4OccludedStartPose);
+  }
+  for (let index = 0; index < 10; index += 1) {
+    await page.evaluate(pose => window.__qa.setLevel4Pose(pose), level4OccludedReachPose);
+  }
+  const level4OccludedReach = await page.evaluate(() => window.__qa.level4ReachState());
+  check("4", "table occlusion", "affected elbow extension remains playable when the opposite shoulder is hidden",
+    level4OccludedReach.framingReady && level4OccludedReach.progress > 0.80,
+    level4OccludedReach);
 
   for (const level of ["4", "5", "67"]) {
     const label = displayLevel[level];

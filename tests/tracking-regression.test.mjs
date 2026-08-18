@@ -56,9 +56,10 @@ test("Level 4 learns the real iPad reach direction and still requires elbow conf
   assert.ok(publicSource.includes("const elbowConfirmed = activeExtension || maintainedExtension"));
   assert.ok(publicSource.includes("directionLearningEligible"));
   assert.ok(publicSource.includes("level4Reach.forwardAxis = reachVector.map"));
-  assert.ok(publicSource.includes("cameraDirectionProgress >= 0.06 && elbowConfirmed"));
+  assert.ok(publicSource.includes("const frontCameraElbowReach = !startsExtended"));
+  assert.ok(publicSource.includes("cameraDirectionProgress >= 0.035 || frontCameraElbowReach"));
   assert.ok(publicSource.includes("level4Reach.engaged && returnElbowFlexion"));
-  assert.ok(publicSource.includes("Math.min(cameraDirectionProgress, elbowCycleProgress)"));
+  assert.ok(publicSource.includes(": elbowCycleProgress"));
   assert.ok(publicSource.includes("Elbow flexion is the authoritative return signal"));
   assert.ok(publicSource.includes("mapped.y = ch * 0.82 - level4Motion.progress * ch * 0.40"));
   assert.ok(publicSource.includes("baseline.wristRelativeZ-sample.wristRelativeZ"));
@@ -73,6 +74,16 @@ test("Level 4 calibration accepts an already-extended bedside starting posture",
   assert.ok(publicSource.includes("'maintained-extension'"));
 });
 
+test("Level 4 accepts a table-occluded arm and does not require the opposite shoulder", () => {
+  assert.ok(publicSource.includes("point.visibility >= 0.05"));
+  assert.match(
+    publicSource,
+    /\[arm\.shoulder, arm\.elbow, arm\.wrist\]\.every\(level4PosePointUsable\)/
+  );
+  assert.ok(publicSource.includes("const otherShoulderVisible = level4PosePointUsable"));
+  assert.ok(publicSource.includes("upperArmLength * 1.35"));
+});
+
 test("Level 3 visual themes share the standard lateral pickup and drop engine", () => {
   assert.match(publicSource, /function usesAdvancedThemeModule\(id\)/);
   assert.match(publicSource, /return !isLevel3Tabletop\(\) && isAdvTheme\(id\)/);
@@ -80,10 +91,19 @@ test("Level 3 visual themes share the standard lateral pickup and drop engine", 
 });
 
 test("Level 4 shoulder hiking freezes transport and alerts the therapist", () => {
-  assert.ok(publicSource.includes("const shoulderHike = (baseline.shoulderBalance-sample.shoulderBalance) > 0.035"));
+  assert.ok(publicSource.includes("const shoulderHike = Number.isFinite(baseline.shoulderBalance)"));
+  assert.ok(publicSource.includes("(baseline.shoulderBalance-sample.shoulderBalance) > 0.035"));
   assert.ok(publicSource.includes("compoundProgress = level4Reach.progress"));
   assert.match(publicSource, /患側聳肩 · 請治療師即時糾正/);
   assert.ok(publicSource.includes("classList.toggle('level4-movement-alert'"));
+});
+
+test("animal distractors remain movable but cannot spawn over a target", () => {
+  assert.ok(publicSource.includes("def.targetType === 'distractor' && targets.some"));
+  assert.ok(publicSource.includes("動物阻路：搬到空白位"));
+  assert.ok(publicSource.includes("動物已移開"));
+  assert.ok(publicSource.includes("heldItem.baseX = heldItem.x"));
+  assert.ok(publicSource.includes("heldItem.baseY = heldItem.y"));
 });
 
 test("Level 4 exposes deterministic compound-movement QA hooks", () => {

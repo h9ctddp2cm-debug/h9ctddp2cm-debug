@@ -1,15 +1,15 @@
 {
-  "generated_at": "2026-08-18T12:14:31.231Z",
+  "generated_at": "2026-08-18T12:22:58.082Z",
   "base_url": "http://127.0.0.1:4173",
   "scope": "Independent technical verification for FTHUE Levels 4, 5, and 6",
   "limitation": "Not clinical validation; Level 6 aperture detection does not measure pinch force.",
   "summary": {
-    "total": 122,
-    "passed": 122,
+    "total": 123,
+    "passed": 123,
     "failed": 0,
     "by_level": {
       "4": {
-        "passed": 45,
+        "passed": 46,
         "failed": 0
       },
       "5": {
@@ -252,9 +252,9 @@
       "passed": true,
       "details": {
         "isPinching": true,
-        "ratio": 0.45,
+        "ratio": 0.45000000000000007,
         "isSeparated": false,
-        "score": 0.375,
+        "score": 0.3749999999999999,
         "valid": true
       }
     },
@@ -369,7 +369,7 @@
       "passed": true,
       "details": {
         "calibrated": true,
-        "progress": 0.9896489765859888,
+        "progress": 0.9992483134490648,
         "engaged": true,
         "shoulderFlexProgress": 1,
         "elbowExtensionProgress": 1,
@@ -381,7 +381,7 @@
         "shoulderHike": false,
         "framingReady": true,
         "warning": "",
-        "cursorY": 398.4873393120394
+        "cursorY": 379.67702336197743
       }
     },
     {
@@ -391,7 +391,7 @@
       "passed": true,
       "details": {
         "calibrated": true,
-        "progress": 0.048121146936618474,
+        "progress": 0.045411736871031505,
         "engaged": true,
         "shoulderFlexProgress": 1,
         "elbowExtensionProgress": 0.0453109122292969,
@@ -403,7 +403,7 @@
         "shoulderHike": false,
         "framingReady": true,
         "warning": "",
-        "cursorY": 630.9471347586077
+        "cursorY": 637.1991243394235
       }
     },
     {
@@ -413,7 +413,7 @@
       "passed": true,
       "details": {
         "calibrated": true,
-        "progress": 0.00021697371848394587,
+        "progress": 0.000009230209959094844,
         "engaged": false,
         "shoulderFlexProgress": 0,
         "elbowExtensionProgress": 0,
@@ -425,7 +425,29 @@
         "shoulderHike": false,
         "framingReady": true,
         "warning": "",
-        "cursorY": 662.3707506792991
+        "cursorY": 663.9339124122463
+      }
+    },
+    {
+      "level": "4",
+      "category": "table occlusion",
+      "name": "affected elbow extension remains playable when the opposite shoulder is hidden",
+      "passed": true,
+      "details": {
+        "calibrated": true,
+        "progress": 0.9985544489405094,
+        "engaged": true,
+        "shoulderFlexProgress": 1,
+        "elbowExtensionProgress": 1,
+        "elbowAngle": 161.403384267591,
+        "elbowMode": "active-extension",
+        "directionMode": "individualized",
+        "directionPeak": 2.1368428254479963,
+        "forwardScale": 0.26,
+        "shoulderHike": false,
+        "framingReady": true,
+        "warning": "",
+        "cursorY": 388.2683269200137
       }
     },
     {
@@ -500,8 +522,8 @@
         },
         "items": [
           {
-            "label": "糯米雞",
-            "type": "lotusrice",
+            "label": "叉燒包",
+            "type": "charsiu",
             "x": 472,
             "y": 656,
             "r": 104
@@ -572,8 +594,8 @@
         },
         "items": [
           {
-            "label": "糯米雞",
-            "type": "lotusrice",
+            "label": "叉燒包",
+            "type": "charsiu",
             "x": 472,
             "y": 656,
             "r": 104
@@ -678,8 +700,8 @@
         },
         "items": [
           {
-            "label": "糯米雞",
-            "type": "lotusrice",
+            "label": "叉燒包",
+            "type": "charsiu",
             "x": 259.6,
             "y": 442.8,
             "r": 118
@@ -692,8 +714,8 @@
             "r": 118
           },
           {
-            "label": "糯米雞",
-            "type": "lotusrice",
+            "label": "叉燒包",
+            "type": "charsiu",
             "x": 920.4,
             "y": 442.8,
             "r": 118
@@ -757,8 +779,8 @@
         },
         "items": [
           {
-            "label": "糯米雞",
-            "type": "lotusrice",
+            "label": "叉燒包",
+            "type": "charsiu",
             "x": 259.6,
             "y": 442.8,
             "r": 118
@@ -771,8 +793,8 @@
             "r": 118
           },
           {
-            "label": "糯米雞",
-            "type": "lotusrice",
+            "label": "叉燒包",
+            "type": "charsiu",
             "x": 920.4,
             "y": 442.8,
             "r": 118
@@ -870,18 +892,18 @@
         },
         "items": [
           {
-            "label": "蝦餃",
-            "type": "hargau",
+            "label": "燒賣",
+            "type": "siumai",
             "x": 259.6,
             "y": 442.8,
-            "r": 145
+            "r": 100
           },
           {
-            "label": "蝦餃",
-            "type": "hargau",
+            "label": "燒賣",
+            "type": "siumai",
             "x": 590,
             "y": 442.8,
-            "r": 145
+            "r": 100
           },
           {
             "label": "蝦餃",
@@ -949,18 +971,18 @@
         },
         "items": [
           {
-            "label": "蝦餃",
-            "type": "hargau",
+            "label": "燒賣",
+            "type": "siumai",
             "x": 259.6,
             "y": 442.8,
-            "r": 145
+            "r": 100
           },
           {
-            "label": "蝦餃",
-            "type": "hargau",
+            "label": "燒賣",
+            "type": "siumai",
             "x": 590,
             "y": 442.8,
-            "r": 145
+            "r": 100
           },
           {
             "label": "蝦餃",
