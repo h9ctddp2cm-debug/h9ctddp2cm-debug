@@ -5593,10 +5593,10 @@ const THEMES = {
     thumbnail:'img/siumai.png', thumbnailAlt:'燒賣點心',
     categoriesFor(level){
       return level === '4' || level === '5'
-        ? [ { type:'charsiu',   itemLabel:'叉燒包', targetLabel:'叉燒包', img:imgCharsiu, targetImg:imgSteamerCharsiu, scale:0.78, color:'#1A6B5A' },
-            { type:'lotusrice', itemLabel:'糯米雞', targetLabel:'糯米雞', img:imgLotusrice, targetImg:imgSteamerLotusrice, scale:0.78, color:'#E07B39' } ]
-        : [ { type:'siumai', itemLabel:'燒賣', targetLabel:'燒賣', img:imgSiumai, targetImg:imgSteamerSiumai, scale:0.78, color:'#1A6B5A' },
-            { type:'hargau', itemLabel:'蝦餃', targetLabel:'蝦餃', img:imgHargau, targetImg:imgSteamerHargau, scale:0.95, color:'#E07B39' } ];
+        ? [ { type:'charsiu',   itemLabel:'叉燒包', targetLabel:'叉燒包', img:imgCharsiu, targetImg:imgSteamerCharsiu, scale:0.66, color:'#1A6B5A' },
+            { type:'lotusrice', itemLabel:'糯米雞', targetLabel:'糯米雞', img:imgLotusrice, targetImg:imgSteamerLotusrice, scale:0.66, color:'#E07B39' } ]
+        : [ { type:'siumai', itemLabel:'燒賣', targetLabel:'燒賣', img:imgSiumai, targetImg:imgSteamerSiumai, scale:0.66, color:'#1A6B5A' },
+            { type:'hargau', itemLabel:'蝦餃', targetLabel:'蝦餃', img:imgHargau, targetImg:imgSteamerHargau, scale:0.76, color:'#E07B39' } ];
     },
   }),
   pilot_laundry: mkTheme({
@@ -6124,6 +6124,70 @@ function ensureFoodsClearOfInstructions(){
     const others = foods.filter((_, otherIndex)=>otherIndex !== index);
     foods[index] = makeFoodAt(def, others);
   });
+}
+
+function foodTargetRect(target){
+  return {
+    left:target.x-target.w/2,
+    right:target.x+target.w/2,
+    top:target.y-target.h/2,
+    bottom:target.y+target.h/2,
+  };
+}
+
+function foodParkingPositionIsClear(food, x, y){
+  const cw = gameCanvas.width, ch = gameCanvas.height;
+  const edge = Math.max(14, food.r * 0.18);
+  if(x-food.r < edge || x+food.r > cw-edge || y-food.r < edge || y+food.r > ch-edge) return false;
+
+  const instructionExclusion = getInstructionExclusionRect(cw, ch, Math.max(18, food.r * 0.16));
+  if(circleOverlapsRect(x, y, food.r, instructionExclusion)) return false;
+
+  const targetGap = Math.max(18, food.r * 0.16);
+  if(targets.some(target=>circleOverlapsRect(x, y, food.r + targetGap, foodTargetRect(target)))) return false;
+
+  for(const other of foods){
+    if(other === food || other.removed || other.held) continue;
+    const otherR = other.r || 60;
+    const itemGap = Math.max(14, Math.min(food.r, otherR) * 0.12);
+    if(Math.hypot(x-other.x, y-other.y) < food.r + otherR + itemGap) return false;
+  }
+  return true;
+}
+
+function nearestSafeParkingPosition(food, desiredX, desiredY){
+  const cw = gameCanvas.width, ch = gameCanvas.height;
+  const edge = Math.max(14, food.r * 0.18);
+  const clampX = value=>Math.max(food.r + edge, Math.min(cw-food.r-edge, value));
+  const clampY = value=>Math.max(food.r + edge, Math.min(ch-food.r-edge, value));
+  const startX = clampX(desiredX), startY = clampY(desiredY);
+  if(foodParkingPositionIsClear(food, startX, startY)) return {x:startX, y:startY};
+
+  const radialStep = Math.max(28, food.r * 0.48);
+  for(let ring=1; ring<=8; ring++){
+    const radius = ring * radialStep;
+    const points = Math.max(12, ring * 12);
+    for(let index=0; index<points; index++){
+      const angle = (Math.PI * 2 * index) / points;
+      const x = clampX(startX + Math.cos(angle) * radius);
+      const y = clampY(startY + Math.sin(angle) * radius);
+      if(foodParkingPositionIsClear(food, x, y)) return {x, y};
+    }
+  }
+
+  // Never snap back to the spawn point. If the screen is unusually crowded,
+  // retain the requested clamped position so the patient can still clear the view.
+  return {x:startX, y:startY};
+}
+
+function parkHeldItemInBlankSpace(item){
+  const parked = nearestSafeParkingPosition(item, item.x, item.y);
+  item.x = parked.x;
+  item.y = parked.y;
+  item.baseX = parked.x;
+  item.baseY = parked.y;
+  item.held = false;
+  return parked;
 }
 
 // 取得目前活動的配對物件 defs
@@ -7205,26 +7269,21 @@ function updateGraspLogic(){
           ensureFoodCount();
           setActionPrompt('已放開', '完成');
         } else {
-          // 未到碟上便鬆手夠耐：
-          //  - 動物 (distractor)：留低喺當前位置，唔記分（訓練病人「挪走干擾物」解難能力）
-          //  - 點心：放返原位讓病人再試
-          heldItem.held = false;
-          pilotBump('drops'); pilotBump('premature_release');
-          if(isLevel67GestureMode()) pilotBump('pinch_maintenance_fail');
-          researchLog('drop_outside', {item:heldItem.label});
-          if(heldItem.targetType === 'distractor'){
-            // 更新 baseX/baseY 為當前位置，之後 render 就用當前位置
-            heldItem.baseX = heldItem.x;
-            heldItem.baseY = heldItem.y;
-            setActionPrompt('已放開', '動物已移開');
-          } else {
-            heldItem.x = heldItem.baseX;
-            heldItem.y = heldItem.baseY;
-            setActionPrompt(graspPrompt('prep'), '移到' + getTheme().itemWord + '，' + graspPrompt('hold'));
-          }
+          // 在目標外放手屬於重新整理畫面的有效操作。所有物件都留在
+          // 最近的安全空白位，不記分、不當作失敗，亦不會彈回出生位置。
+          const parkedItem = heldItem;
+          const parked = parkHeldItemInBlankSpace(parkedItem);
+          pilotBump('release_success');
+          researchLog('drop_parked', {
+            item:parkedItem.label,
+            item_type:parkedItem.targetType,
+            parked_x:Math.round(parked.x),
+            parked_y:Math.round(parked.y),
+          });
+          setActionPrompt('已放開', parkedItem.targetType === 'distractor' ? '動物已移開' : '點心已移到空白位');
           heldItem = null;
           noteHoldEnd();
-          noteReleaseAttemptEnd(false);
+          noteReleaseAttemptEnd(true);
         }
         releaseDwellStart = 0;
         releaseDwellPlate = null;
@@ -11196,6 +11255,26 @@ window.__qa = {
     initGame();
     return window.render_game_to_text();
   },
+  parkFirstItemAt(px, py){
+    const item = foods.find(food=>!food.removed);
+    if(!item) return null;
+    item.held = true;
+    item.x = Number(px);
+    item.y = Number(py);
+    const parked = parkHeldItemInBlankSpace(item);
+    return {
+      id:item.id,
+      label:item.label,
+      x:item.x,
+      y:item.y,
+      baseX:item.baseX,
+      baseY:item.baseY,
+      requestedX:Number(px),
+      requestedY:Number(py),
+      parked,
+      targetClear:targets.every(target=>!circleOverlapsRect(item.x, item.y, item.r, foodTargetRect(target))),
+    };
+  },
   setHand(nx, ny, grasping, openPrep){
     const poseLm = qaHand?.poseLm;
     qaHand = { nx, ny, isGrasping: !!grasping };
@@ -11995,9 +12074,11 @@ window.__qa = {
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./service-worker.js").catch((error) => {
-      console.warn("[offline] Service worker registration failed:", error);
-    });
+    navigator.serviceWorker.register("./service-worker.js", { updateViaCache:"none" })
+      .then((registration) => registration.update())
+      .catch((error) => {
+        console.warn("[offline] Service worker registration failed:", error);
+      });
   });
 }
 </script></body>

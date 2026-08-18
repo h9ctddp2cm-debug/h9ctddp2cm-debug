@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const publicSource = readFileSync(path.join(root, "index.html"), "utf8");
+const serviceWorkerSource = readFileSync(path.join(root, "service-worker.js"), "utf8");
 const level3Page = readFileSync(path.join(root, "sandbox/level3-bilateral/index.html"), "utf8");
 const level3App = readFileSync(path.join(root, "sandbox/level3-bilateral/diagnosticApp.js"), "utf8");
 const level3Engine = readFileSync(path.join(root, "sandbox/level3-bilateral/Level3BilateralSandbox.js"), "utf8");
@@ -105,15 +106,25 @@ test("Level 4 shoulder hiking freezes transport and alerts the therapist", () =>
   assert.ok(publicSource.includes("classList.toggle('level4-movement-alert'"));
 });
 
-test("all starting items stay clear of targets and animal distractors remain movable", () => {
+test("all items stay clear of targets and can be parked in blank space", () => {
   assert.match(publicSource, /if\(targets\.some\(target =>\s*circleOverlapsRect/);
   assert.ok(publicSource.includes("clearsProtectedZones(x, y)"));
-  assert.match(publicSource, /scale:0\.78/);
+  assert.match(publicSource, /scale:0\.66/);
+  assert.match(publicSource, /scale:0\.76/);
   assert.ok(publicSource.includes("[[0.22,0.34],[0.50,0.45],[0.78,0.34]]"));
   assert.ok(publicSource.includes("動物阻路：搬到空白位"));
   assert.ok(publicSource.includes("動物已移開"));
-  assert.ok(publicSource.includes("heldItem.baseX = heldItem.x"));
-  assert.ok(publicSource.includes("heldItem.baseY = heldItem.y"));
+  assert.ok(publicSource.includes("點心已移到空白位"));
+  assert.ok(publicSource.includes("function parkHeldItemInBlankSpace(item)"));
+  assert.ok(publicSource.includes("function nearestSafeParkingPosition(food, desiredX, desiredY)"));
+  assert.ok(publicSource.includes("researchLog('drop_parked'"));
+  assert.ok(!publicSource.includes("heldItem.x = heldItem.baseX"));
+  assert.ok(!publicSource.includes("heldItem.y = heldItem.baseY"));
+});
+
+test("offline worker forces the current build instead of serving the stale game", () => {
+  assert.ok(publicSource.includes('updateViaCache:"none"'));
+  assert.match(serviceWorkerSource, /fthue-rehab-v7-20260818/);
 });
 
 test("Level 4 exposes deterministic compound-movement QA hooks", () => {
