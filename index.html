@@ -155,6 +155,10 @@ html,body{
     z-index:3;
     pointer-events:none;
   }
+  .game-stage.level4-selfie-window video#gameVideo{
+    opacity:0;
+    pointer-events:none;
+  }
   .game-stage canvas#gameCanvas{ z-index:2; }
   .recording-indicator,
   .trial-mode-indicator{ left:auto; right:10px; bottom:calc(min(25dvh,210px) + 22px); }
@@ -809,6 +813,35 @@ html,body{
   display:grid; grid-template-columns:1fr; gap:14px;
   width:100%; max-width:980px; margin:0 auto;
 }
+.level4-session-picker{
+  width:100%; max-width:980px; margin:0 auto 14px;
+  border:1px solid var(--border); border-radius:16px; background:#fff;
+}
+.level4-session-picker summary{
+  min-height:52px; display:flex; align-items:center; justify-content:center;
+  cursor:pointer; color:var(--teal-dark); font-size:15px; font-weight:850;
+  list-style:none; padding:8px 16px;
+}
+.level4-session-picker summary::-webkit-details-marker{ display:none; }
+.level4-session-options{
+  display:flex; flex-wrap:wrap; justify-content:center; gap:8px;
+  padding:0 12px 12px;
+}
+.level4-session-options button{
+  min-height:44px; border:2px solid var(--border); border-radius:999px;
+  padding:8px 14px; background:#fff; color:var(--teal-dark);
+  font:800 14px/1.2 inherit; cursor:pointer;
+}
+.level4-session-options button[aria-pressed="true"]{
+  border-color:var(--teal); background:rgba(26,107,90,.11);
+}
+.level4-session-options .level4-auto{
+  border-color:#98651d; color:#75480d; background:#fff8e8;
+}
+.level4-session-message{
+  min-height:20px; margin:0 12px 10px; text-align:center;
+  color:#7d1a12; font-size:13px; font-weight:800;
+}
 @media (min-width:600px){ .activity-grid{ grid-template-columns:1fr 1fr; } }
 .activity-card{
   background:linear-gradient(145deg,#fff 0%,#fffdf8 100%);
@@ -1206,6 +1239,18 @@ html,body{
       <h1 id="libraryLevelLabel">FTHUE Level 4 · 桌面中線訓練</h1>
       <p class="lead">選擇遊戲</p>
     </div>
+    <details class="level4-session-picker" id="level4SessionPicker" hidden>
+      <summary id="level4SessionSummary">治療師設定 · 本節顯示 2 款</summary>
+      <div class="level4-session-options" id="level4SessionOptions">
+        <button type="button" data-level4-session-theme="dimsum">點心</button>
+        <button type="button" data-level4-session-theme="wipewindow">抹窗</button>
+        <button type="button" data-level4-session-theme="bowling">保齡</button>
+        <button type="button" data-level4-session-theme="mahjongwash">洗麻雀</button>
+        <button type="button" data-level4-session-theme="buspay">拍卡</button>
+        <button type="button" class="level4-auto" id="btnLevel4AutoRotate">自動輪替</button>
+      </div>
+      <p class="level4-session-message" id="level4SessionMessage">選 1–2 款</p>
+    </details>
     <div class="activity-grid" id="activityGrid"></div>
     <button class="nav-back" id="btnBackToLevel">返回主頁</button>
   </div>
@@ -1937,6 +1982,8 @@ const state = {
   personalPinchEnter:null, personalPinchExit:null, personalPinchOpen:null,
   mirrorX:true,
   sessionMode:'training', // training | trial
+  level4SessionThemes:['dimsum','wipewindow'],
+  level4RotationIndex:0,
 };
 const RESEARCH_VERSION = 'pilot-5.0.0-neuroscience';
 const PILOT_TRAINING_SCENARIOS = {
@@ -2106,6 +2153,19 @@ function isLevel4Tabletop(){
 }
 function isLevel4WipeGame(){
   return isLevel4Tabletop() && state.theme === 'wipewindow';
+}
+function isLevel4BowlingGame(){
+  return isLevel4Tabletop() && state.theme === 'bowling';
+}
+function isLevel4MahjongWashGame(){
+  return isLevel4Tabletop() && state.theme === 'mahjongwash';
+}
+function isLevel4BusPayGame(){
+  return isLevel4Tabletop() && state.theme === 'buspay';
+}
+function isLevel4StandaloneGame(){
+  return isLevel4WipeGame() || isLevel4BowlingGame()
+    || isLevel4MahjongWashGame() || isLevel4BusPayGame();
 }
 function isLevel3Tabletop(){
   return !research.active && state.level === '3';
@@ -3846,7 +3906,8 @@ function selectActivity(themeId){
 function renderActivityLibrary(){
   const grid = document.getElementById('activityGrid');
   grid.innerHTML = '';
-  availableThemeOrder().forEach(id=>{
+  renderLevel4SessionPicker();
+  visibleThemeOrder().forEach(id=>{
     const th = THEMES[id];
     const btn = document.createElement('button');
     btn.className = 'activity-card';
@@ -3866,6 +3927,40 @@ function renderActivityLibrary(){
     grid.appendChild(btn);
   });
 }
+
+document.getElementById('level4SessionOptions').addEventListener('click', event=>{
+  const button = event.target.closest('[data-level4-session-theme]');
+  if(!button) return;
+  const id = button.dataset.level4SessionTheme;
+  const selected = [...state.level4SessionThemes];
+  const index = selected.indexOf(id);
+  if(index >= 0){
+    if(selected.length === 1){
+      document.getElementById('level4SessionMessage').textContent = '最少保留 1 款';
+      return;
+    }
+    selected.splice(index,1);
+  }else{
+    if(selected.length >= 2){
+      document.getElementById('level4SessionMessage').textContent = '每節最多 2 款';
+      return;
+    }
+    selected.push(id);
+  }
+  state.level4SessionThemes = selected;
+  renderActivityLibrary();
+});
+document.getElementById('btnLevel4AutoRotate').addEventListener('click', ()=>{
+  const all = availableThemeOrder('4');
+  let start = state.level4RotationIndex % all.length;
+  const current = state.level4SessionThemes.slice(0,2);
+  if(current[0] === all[start] && current[1] === all[(start+1)%all.length]){
+    start = (start+2) % all.length;
+  }
+  state.level4SessionThemes = [all[start], all[(start+1)%all.length]];
+  state.level4RotationIndex = (start+2)%all.length;
+  renderActivityLibrary();
+});
 
 
 document.getElementById('durationOptions').addEventListener('click', e=>{
@@ -5649,7 +5744,7 @@ function mkTheme(def){ return Object.assign(Object.create(BASE_THEME), def); }
 const THEMES = {
   wipewindow: mkTheme({
     id:'wipewindow', title:'抹窗擦霧',
-    goal:'伸直手肘，向外畫大弧擦走霧氣',
+    goal:'持續控制：伸肘後畫大弧',
     itemWord:'霧氣', difficulty:'容易至中等', targetStyle:'panel',
     thumbnail:'img/advanced/level4_cartoon_side_forward.png',
     thumbnailAlt:'患手伸肘向外畫弧的 Level 4 練習',
@@ -5657,8 +5752,38 @@ const THEMES = {
     actionLabelFor(){ return '伸直手肘，向外畫大弧擦走霧氣'; },
     categoriesFor(){ return []; },
   }),
+  bowling: mkTheme({
+    id:'bowling', title:'保齡球',
+    goal:'幅度控制：推出再慢慢收回',
+    itemWord:'保齡球', difficulty:'容易', targetStyle:'panel',
+    thumbnail:'img/advanced/level4_cartoon_side_forward.png',
+    thumbnailAlt:'患手沿桌面向前伸肘',
+    verbFor(){ return '向前伸肘再收手'; },
+    actionLabelFor(){ return '完整向前伸肘及收手'; },
+    categoriesFor(){ return []; },
+  }),
+  mahjongwash: mkTheme({
+    id:'mahjongwash', title:'洗麻雀',
+    goal:'側向控制：沿枱面穩定掃動',
+    itemWord:'麻雀', difficulty:'中等', targetStyle:'panel',
+    thumbnail:'img/advanced/real_mahjong_tiles.png',
+    thumbnailAlt:'沿桌面畫弧洗麻雀',
+    verbFor(){ return '伸肘畫大弧'; },
+    actionLabelFor(){ return '沿桌面連續畫大弧'; },
+    categoriesFor(){ return []; },
+  }),
+  buspay: mkTheme({
+    id:'buspay', title:'巴士拍卡',
+    goal:'終點準確：伸到目標並停穩',
+    itemWord:'讀卡器', difficulty:'中等', targetStyle:'panel',
+    thumbnail:'img/advanced/thumb_card_heart.png',
+    thumbnailAlt:'向前伸手拍卡',
+    verbFor(){ return '伸肘拍卡'; },
+    actionLabelFor(){ return '向前伸肘對準讀卡器'; },
+    categoriesFor(){ return []; },
+  }),
   dimsum: mkTheme({
-    id:'dimsum', title:'茶樓飲茶', goal:'將點心放到相同款式的蒸籠',
+    id:'dimsum', title:'茶樓飲茶', goal:'基本前伸：將手穩定送到目標',
     itemWord:'點心', difficulty:'容易', targetStyle:'steamer',
     thumbnail:'img/siumai.png', thumbnailAlt:'燒賣點心',
     categoriesFor(level){
@@ -5780,7 +5905,7 @@ const THEMES = {
     },
   }),
 };
-const THEME_ORDER = ['wipewindow','flowers','dimsum','laundry','cards','mahjong','cooking'];
+const THEME_ORDER = ['wipewindow','bowling','mahjongwash','buspay','flowers','dimsum','laundry','cards','mahjong','cooking'];
 const LEVEL3_THEME_VARIANTS = {
   dimsum:[
     { type:'siumai', itemLabel:'燒賣', targetLabel:'燒賣', img:imgSiumai, targetImg:imgSteamerSiumai, scale:0.66, color:'#1A6B5A' },
@@ -5826,11 +5951,35 @@ function advanceLevel3RoundVariant(){
   setupTargets();
 }
 function themeAvailableForLevel(themeId, level = state.level){
-  if(themeId === 'wipewindow') return level === '4';
+  if(['wipewindow','bowling','mahjongwash','buspay'].includes(themeId)) return level === '4';
   return themeId !== 'cooking' || level === '67';
 }
 function availableThemeOrder(level = state.level){
+  if(level === '4'){
+    return ['dimsum','wipewindow','bowling','mahjongwash','buspay'];
+  }
   return THEME_ORDER.filter(id=>themeAvailableForLevel(id, level));
+}
+function visibleThemeOrder(level = state.level){
+  if(level !== '4') return availableThemeOrder(level);
+  const allowed = new Set(availableThemeOrder(level));
+  const selected = state.level4SessionThemes.filter(id=>allowed.has(id));
+  return selected.length ? selected.slice(0,2) : ['dimsum'];
+}
+
+function renderLevel4SessionPicker(){
+  const picker = document.getElementById('level4SessionPicker');
+  if(!picker) return;
+  const isLevel4 = state.level === '4';
+  picker.hidden = !isLevel4;
+  if(!isLevel4) return;
+  const selected = visibleThemeOrder('4');
+  document.getElementById('level4SessionSummary').textContent =
+    '治療師設定 · 本節顯示 ' + selected.length + ' 款';
+  document.getElementById('level4SessionMessage').textContent = '選 1–2 款';
+  picker.querySelectorAll('[data-level4-session-theme]').forEach(button=>{
+    button.setAttribute('aria-pressed', selected.includes(button.dataset.level4SessionTheme) ? 'true' : 'false');
+  });
 }
 
 function getTheme(){ return THEMES[state.theme] || THEMES.dimsum; }
@@ -6031,6 +6180,7 @@ function initGame(){
   level3Lateral.reset();
   level4Reach.reset();
   level4Wipe.reset();
+  level4MiniGames.reset();
   level3RoundVariant = null;
   level3PreviousVariantType = '';
   if(isLevel3Tabletop()) chooseLevel3RoundVariant();
@@ -6040,14 +6190,16 @@ function initGame(){
   updateHUD();
 
   resizeGameCanvas();
+  const gameStage = document.querySelector('.game-stage');
+  if(gameStage) gameStage.classList.toggle('level4-selfie-window', isLevel4WipeGame());
   // 先顯示提示，讓第一局生成物件時已可量度右上角提示禁區
   setActionPrompt('等待偵測手部', '手放鏡頭前');
-  if(isLevel4WipeGame()){
+  if(isLevel4StandaloneGame()){
     const persistBar = document.getElementById('persistentRules');
-    if(persistBar) persistBar.textContent = '伸肘 → 向外畫大弧';
+    if(persistBar) persistBar.textContent = getTheme().verbFor('4');
     setPromptSlot('rules');
   }
-  if(isLevel4WipeGame()){
+  if(isLevel4StandaloneGame()){
     if(advCurrent) advTeardown();
   } else if(usesAdvancedThemeModule()){
     // 進階活動（麻雀 / 啤牌 / 煮飯 / 插花 / 收衫）有各自的玩法模組
@@ -6099,7 +6251,7 @@ function initGame(){
   }
 
   // 遊戲開始：顯示 tier 0 規則 banner（進階活動有自己的引導面板）
-  if(!usesAdvancedThemeModule() && !isLevel4WipeGame()){
+  if(!usesAdvancedThemeModule() && !isLevel4StandaloneGame()){
     showLevelUpBanner();
     // Banner 顯示後再檢查一次，避免第一局因提示框剛載入而遮住點心
     ensureFoodsClearOfInstructions();
@@ -7098,6 +7250,13 @@ function updateTracking(){
     if(isLevel4WipeGame()){
       updateLevel4Wipe(cursorX/cw, cursorY/ch, level4Motion);
     }
+    if(isLevel4BowlingGame()) updateLevel4Bowling(level4Motion);
+    if(isLevel4MahjongWashGame()) updateLevel4MahjongWash(
+      level4Motion, cursorX/cw, cursorY/ch
+    );
+    if(isLevel4BusPayGame()) updateLevel4BusPay(
+      level4Motion, cursorX/cw, cursorY/ch
+    );
     posHistory.push({ t: now, x: cursorX, y: cursorY });
     // Phase-specific cursor path length (research metrics)
     if(research.active && research.phaseMetrics && lastPathX >= 0 && cursorX >= 0){
@@ -7195,6 +7354,24 @@ function updateGameLogic(){
       }else{
         setActionPrompt('伸肘向外畫弧', '手腕保持移動');
       }
+      return;
+    }
+    if(isLevel4BowlingGame()){
+      dwellTarget = null;
+      setActionPrompt(
+        level4MiniGames.bowling.phase === 'return' ? '屈肘收手' : '向前伸直手肘',
+        '完成整個來回才出球'
+      );
+      return;
+    }
+    if(isLevel4MahjongWashGame()){
+      dwellTarget = null;
+      setActionPrompt('伸肘畫大弧', '洗牌 ' + Math.round(level4MiniGames.mahjong.progress*100) + '%');
+      return;
+    }
+    if(isLevel4BusPayGame()){
+      dwellTarget = null;
+      setActionPrompt('伸肘拍卡', level4MiniGames.bus.holdFrames ? '保持對準' : '移到黃色讀卡器');
       return;
     }
   }
@@ -7630,23 +7807,44 @@ function renderLevel4WipeGame(ctx, cw, ch){
   const cellW = w/level4Wipe.cols, cellH = h/level4Wipe.rows;
   ctx.save();
 
-  // A light window scene keeps the live patient image visible. The fog is
-  // intentionally translucent rather than a full-screen opaque mask.
-  const scene = ctx.createLinearGradient(x,y,x,y+h);
-  scene.addColorStop(0,'rgba(202,235,247,0.30)');
-  scene.addColorStop(1,'rgba(243,231,190,0.18)');
-  ctx.fillStyle = scene;
+  // Draw the live camera inside the window itself. This also works on phones,
+  // where the general camera preview stays compact to protect game controls.
+  if(gameVideo.readyState >= 2 && gameVideo.videoWidth && gameVideo.videoHeight){
+    ctx.save();
+    rrPath(ctx,x,y,w,h,24);
+    ctx.clip();
+    const sourceRatio = gameVideo.videoWidth/gameVideo.videoHeight;
+    const targetRatio = w/h;
+    let sx=0, sy=0, sw=gameVideo.videoWidth, sh=gameVideo.videoHeight;
+    if(sourceRatio > targetRatio){
+      sw = sh*targetRatio;
+      sx = (gameVideo.videoWidth-sw)/2;
+    }else{
+      sh = sw/targetRatio;
+      sy = (gameVideo.videoHeight-sh)/2;
+    }
+    ctx.translate(x+w,y);
+    ctx.scale(-1,1);
+    ctx.drawImage(gameVideo,sx,sy,sw,sh,0,0,w,h);
+    ctx.restore();
+  }else{
+    ctx.fillStyle = '#dfe8e6';
+    rrPath(ctx,x,y,w,h,24);
+    ctx.fill();
+  }
+
+  // Uncleaned cells are deliberately opaque; cleaned cells reveal the
+  // patient like a selfie.
+  ctx.strokeStyle = 'rgba(255,255,255,0.98)';
+  ctx.lineWidth = 8;
   rrPath(ctx,x,y,w,h,24);
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(255,255,255,0.90)';
-  ctx.lineWidth = 6;
   ctx.stroke();
 
   for(let row=0; row<level4Wipe.rows; row++){
     for(let col=0; col<level4Wipe.cols; col++){
       if(level4Wipe.cells[row*level4Wipe.cols+col]) continue;
-      const mist = 0.32 + ((row+col)%3)*0.035;
-      ctx.fillStyle = `rgba(220,225,228,${mist})`;
+      const mist = 0.88 + ((row+col)%3)*0.035;
+      ctx.fillStyle = `rgba(151,174,180,${mist})`;
       ctx.fillRect(
         x+col*cellW-0.5,
         y+row*cellH-0.5,
@@ -7655,6 +7853,16 @@ function renderLevel4WipeGame(ctx, cw, ch){
       );
     }
   }
+  // High-contrast wet-glass sheen makes the remaining fog unmistakable.
+  const sheen = ctx.createLinearGradient(x,y,x+w,y+h);
+  sheen.addColorStop(0,'rgba(255,255,255,.34)');
+  sheen.addColorStop(.48,'rgba(255,255,255,.05)');
+  sheen.addColorStop(1,'rgba(255,255,255,.24)');
+  ctx.fillStyle = sheen;
+  ctx.globalCompositeOperation = 'source-atop';
+  rrPath(ctx,x,y,w,h,24);
+  ctx.fill();
+  ctx.globalCompositeOperation = 'source-over';
 
   ctx.fillStyle = 'rgba(255,255,255,0.92)';
   rrPath(ctx,x+w/2-78,y+h-54,156,40,20);
@@ -7681,6 +7889,18 @@ function renderGame(){
   ctx.clearRect(0,0,cw,ch);
   if(isLevel4WipeGame()){
     renderLevel4WipeGame(ctx, cw, ch);
+    return;
+  }
+  if(isLevel4BowlingGame()){
+    renderLevel4Bowling(ctx, cw, ch);
+    return;
+  }
+  if(isLevel4MahjongWashGame()){
+    renderLevel4MahjongWash(ctx, cw, ch);
+    return;
+  }
+  if(isLevel4BusPayGame()){
+    renderLevel4BusPay(ctx, cw, ch);
     return;
   }
   drawLevel4MidlineGuide(ctx);
@@ -11400,6 +11620,9 @@ window.render_game_to_text = function(){
           ' validMovement:' + level4Wipe.validMovement +
           ' completed:' + level4Wipe.completed);
       }
+      if(typeof level4MiniGamesText === 'function' && !isLevel4WipeGame()){
+        lines.push(level4MiniGamesText());
+      }
     }
   }
   if((currentScreen === 'game' || currentScreen === 'result') && usesAdvancedThemeModule() && advCurrent){
@@ -11845,8 +12068,25 @@ window.__qa = {
     constants(){ return { maxHoldMs:MAX_HOLD_MS, releaseDifficultyLimit:RELEASE_DIFFICULTY_LIMIT,
       levelNotes:{...SAFETY_LEVEL_NOTES} }; },
   },
-  themes(){ return availableThemeOrder().map(id=>({ id, title:THEMES[id].title,
-    categories: THEMES[id].categoriesFor(state.level).map(c=>({type:c.type, item:c.itemLabel, target:c.targetLabel})) })); },
+  themes(level = state.level){
+    const previousLevel = state.level;
+    const requestedLevel = LEVELS[level] ? level : previousLevel;
+    return availableThemeOrder(requestedLevel).map(id=>({
+      id,
+      title:THEMES[id].title,
+      categories: THEMES[id].categoriesFor(requestedLevel)
+        .map(c=>({type:c.type, item:c.itemLabel, target:c.targetLabel})),
+    }));
+  },
+  level4SessionThemes(){ return [...state.level4SessionThemes]; },
+  setLevel4SessionThemes(ids){
+    const allowed = new Set(availableThemeOrder('4'));
+    const next = [...new Set((ids || []).filter(id=>allowed.has(id)))].slice(0,2);
+    if(!next.length) throw new Error('Level 4 requires at least one session game');
+    state.level4SessionThemes = next;
+    if(state.level === '4') renderActivityLibrary();
+    return [...state.level4SessionThemes];
+  },
 
   /* ---------- 進階活動 QA hooks（無需相機） ---------- */
   adv:{
@@ -12083,6 +12323,34 @@ window.__qa = {
       prefix:url.slice(0, 22) }; },
   },
 };
+
+/* Narrow runtime bridge for the independently loaded Level 4 games.
+   Keep the main rehabilitation runtime private inside this IIFE while exposing
+   only the drawing, scoring and live cursor values those games require. */
+window.__level4GameRuntime = Object.freeze({
+  addScore(points, eventName, detail){
+    score += points;
+    correctCount += 1;
+    grabCount += 1;
+    updateHUD();
+    triggerFeedback(true);
+    researchLog(eventName, detail || {});
+  },
+  now: nowMs,
+  clamp01,
+  roundedRect: rrPath,
+  theme(){ return state.theme; },
+  isBowling: isLevel4BowlingGame,
+  isMahjongWash: isLevel4MahjongWashGame,
+  isBusPay: isLevel4BusPayGame,
+  cursor(){
+    return {
+      detected: handDetected,
+      x: cursorX,
+      y: cursorY,
+    };
+  },
+});
 
 })();
 </script>
@@ -12414,6 +12682,7 @@ window.__qa = {
 })();
 
 </script>
+<script src="level4-three-games-module.js"></script>
 <script>
 /* Level 4 on-device diagnostics.
    Add ?debug=1 to the URL. This reads the existing text-state hook only and

@@ -127,8 +127,11 @@ try {
 
   const expectedTypes = { "4": "dwell", "5": "grasp", "67": "pinch" };
   const displayLevel = { "4": "4", "5": "5", "67": "6" };
-  const themes = await page.evaluate(() => window.__qa.themes().map(theme => theme.id));
   for (const level of Object.keys(expectedTypes)) {
+    const themes = await page.evaluate(
+      requestedLevel => window.__qa.themes(requestedLevel).map(theme => theme.id),
+      level,
+    );
     for (const theme of themes) {
       const launch = await start(page, level, theme);
       check(displayLevel[level], "launch matrix", `${theme} launches with the correct engine`,
@@ -525,7 +528,7 @@ const lines = [
   "",
   "## Verified scope",
   "",
-  "- Six-theme launch matrix and correct engine selection.",
+  "- Level-filtered launch matrix and correct engine selection.",
   "- Level-specific gesture or dwell thresholds and full placement flows.",
   "- Correct versus incorrect placement accounting.",
   "- Tracking-loss grace and sustained-loss reset.",

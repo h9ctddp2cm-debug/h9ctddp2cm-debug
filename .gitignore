@@ -3,3 +3,9 @@ node_modules/
 .env
 .env.*
 *.log
+
+# Local clinical QA captures may contain identifiable participant/tester imagery.
+qa/user-recordings/
+qa/level4-user-5789/
+qa/level4-recording-recheck/
+tools/__pycache__/

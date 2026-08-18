@@ -38,7 +38,7 @@ test("portrait phones keep the camera inline in a compact preview instead of ful
   assert.match(publicSource, /height:min\(25dvh,210px\)/);
   assert.ok(publicSource.includes("videoEl.setAttribute('webkit-playsinline', '')"));
   assert.ok(publicSource.includes("videoEl.controls = false"));
-  assert.match(serviceWorkerSource, /fthue-rehab-v12-20260818-level4-diagnostics/);
+  assert.match(serviceWorkerSource, /fthue-rehab-v14-20260818-level4-session-choice/);
 });
 
 test("Levels 3 and 4 can use Pose when tabletop hands occlude the finger model", () => {
@@ -52,8 +52,8 @@ test("Level 3 opens the shared activity library instead of the diagnostic redire
   assert.match(publicSource, /'3':\s*\{\s*id:'3'/);
   assert.match(publicSource, /beginSessionMode\('3',\s*'training'\)/);
   assert.doesNotMatch(publicSource, /window\.location\.href\s*=\s*'sandbox\/level3-bilateral/);
-  assert.match(publicSource, /const THEME_ORDER = \['wipewindow','flowers','dimsum','laundry','cards','mahjong','cooking'\]/);
-  assert.match(publicSource, /if\(themeId === 'wipewindow'\) return level === '4'/);
+  assert.match(publicSource, /const THEME_ORDER = \['wipewindow','bowling','mahjongwash','buspay','flowers','dimsum','laundry','cards','mahjong','cooking'\]/);
+  assert.match(publicSource, /if\(\['wipewindow','bowling','mahjongwash','buspay'\]\.includes\(themeId\)\) return level === '4'/);
 });
 
 test("Level 3 bilateral controller follows the selected affected side only", () => {
@@ -162,7 +162,7 @@ test("all items stay clear of targets and can be parked in blank space", () => {
 
 test("offline worker forces the current build instead of serving the stale game", () => {
   assert.ok(publicSource.includes('updateViaCache:"none"'));
-  assert.match(serviceWorkerSource, /fthue-rehab-v12-20260818-level4-diagnostics/);
+  assert.match(serviceWorkerSource, /fthue-rehab-v14-20260818-level4-session-choice/);
 });
 
 test("Level 4 exposes deterministic compound-movement QA hooks", () => {
@@ -187,7 +187,7 @@ test("Level 4 wipe-window is an independent activity and preserves the other Lev
   assert.ok(publicSource.includes("return !isGrossTabletop() && isAdvTheme(id)"));
   assert.match(publicSource, /function isLevel4WipeGame\(\)\{\s*return isLevel4Tabletop\(\) && state\.theme === 'wipewindow'/);
   assert.match(publicSource, /if\(isLevel4WipeGame\(\)\)\{\s*renderLevel4WipeGame/);
-  assert.match(publicSource, /if\(themeId === 'wipewindow'\) return level === '4'/);
+  assert.match(publicSource, /if\(\['wipewindow','bowling','mahjongwash','buspay'\]\.includes\(themeId\)\) return level === '4'/);
   for (const id of ["flowers", "dimsum", "laundry", "cards", "mahjong"]) {
     assert.ok(publicSource.includes(`${id}: mkTheme({`), `${id} remains registered`);
   }

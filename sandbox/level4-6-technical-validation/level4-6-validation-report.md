@@ -1,18 +1,18 @@
 # Level 4–6 Technical Validation Report
 
-Generated: 2026-08-18T13:08:13.422Z
+Generated: 2026-08-18T15:42:53.881Z
 
-Result: **PASS** (125/125 checks passed)
+Result: **PASS** (126/126 checks passed)
 
 | FTHUE level | Passed | Failed |
 |---|---:|---:|
 | 4 | 48 | 0 |
 | 5 | 40 | 0 |
-| 6 | 30 | 0 |
+| 6 | 31 | 0 |
 
 ## Verified scope
 
-- Six-theme launch matrix and correct engine selection.
+- Level-filtered launch matrix and correct engine selection.
 - Level-specific gesture or dwell thresholds and full placement flows.
 - Correct versus incorrect placement accounting.
 - Tracking-loss grace and sustained-loss reset.
@@ -28,11 +28,11 @@ This is reproducible software technical verification only. It does not establish
 
 ## Checks
 
-- PASS | Level 4 | launch matrix | flowers launches with the correct engine
 - PASS | Level 4 | launch matrix | dimsum launches with the correct engine
-- PASS | Level 4 | launch matrix | laundry launches with the correct engine
-- PASS | Level 4 | launch matrix | cards launches with the correct engine
-- PASS | Level 4 | launch matrix | mahjong launches with the correct engine
+- PASS | Level 4 | launch matrix | wipewindow launches with the correct engine
+- PASS | Level 4 | launch matrix | bowling launches with the correct engine
+- PASS | Level 4 | launch matrix | mahjongwash launches with the correct engine
+- PASS | Level 4 | launch matrix | buspay launches with the correct engine
 - PASS | Level 5 | launch matrix | flowers launches with the correct engine
 - PASS | Level 5 | launch matrix | dimsum launches with the correct engine
 - PASS | Level 5 | launch matrix | laundry launches with the correct engine
@@ -43,6 +43,7 @@ This is reproducible software technical verification only. It does not establish
 - PASS | Level 6 | launch matrix | laundry launches with the correct engine
 - PASS | Level 6 | launch matrix | cards launches with the correct engine
 - PASS | Level 6 | launch matrix | mahjong launches with the correct engine
+- PASS | Level 6 | launch matrix | cooking launches with the correct engine
 - PASS | Level 5 | gesture | one curled finger cannot trigger grasp
 - PASS | Level 5 | gesture | two curled fingers trigger configured grasp
 - PASS | Level 5 | gesture | one reopened finger does not release held item

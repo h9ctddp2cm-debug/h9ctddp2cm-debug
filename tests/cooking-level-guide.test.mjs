@@ -9,7 +9,7 @@ const source = readFileSync(path.join(root, "index.html"), "utf8");
 
 test("cooking is available only for FTHUE Level 6–7", () => {
   assert.match(source, /themeId !== 'cooking' \|\| level === '67'/);
-  assert.match(source, /availableThemeOrder\(\)\.forEach/);
+  assert.match(source, /visibleThemeOrder\(\)\.forEach/);
   assert.match(source, /if\(!themeAvailableForLevel\('cooking'\)\)/);
 });
 

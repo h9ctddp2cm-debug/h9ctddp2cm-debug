@@ -18,12 +18,21 @@ mkdir -p "$DIST"
 
 # --- public entry point + media -------------------------------------------
 cp "$ROOT/index.html" "$DIST/index.html"
+cp "$ROOT/level4-three-games-module.js" "$DIST/level4-three-games-module.js"
 cp -R "$ROOT/img" "$DIST/img"
 cp "$ROOT/manifest.webmanifest" "$DIST/manifest.webmanifest"
 cp "$ROOT/service-worker.js" "$DIST/service-worker.js"
 cp "$ROOT/offline.html" "$DIST/offline.html"
 cp -R "$ROOT/icons" "$DIST/icons"
 cp -R "$ROOT/vendor" "$DIST/vendor"
+
+# The inline-edit bridge is only for Perplexity's authoring preview. It is not
+# required by the standalone clinical build, so remove it from production.
+perl -0pi -e 's#<script data-pplx-inline-edit>.*?</script>\s*##s' "$DIST/index.html"
+if grep -q 'data-pplx-inline-edit' "$DIST/index.html"; then
+  echo "BUILD FAILED: authoring preview bridge remains in dist/public" >&2
+  exit 1
+fi
 
 # --- public Level 3 bilateral sandbox (runtime files only) -----------------
 mkdir -p "$DIST/sandbox/level3-bilateral"
