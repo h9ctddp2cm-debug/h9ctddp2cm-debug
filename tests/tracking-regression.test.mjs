@@ -110,7 +110,7 @@ test("Level 4 exposes deterministic compound-movement QA hooks", () => {
   assert.ok(publicSource.includes("setLevel4Pose(spec)"));
   assert.ok(publicSource.includes("level4ReachState()"));
   assert.ok(publicSource.includes("resetLevel4Reach()"));
-  assert.ok(publicSource.includes("setActionPrompt('鏡頭向下／拉遠', '肩・手肘・手腕全部入鏡')"));
+  assert.ok(publicSource.includes("setActionPrompt('iPad 同枱直放 · 約 1 米', '患側肩・手肘・手腕全部入鏡')"));
 });
 
 test("Level 5 grasp requires two curled fingers and releases after two visibly reopen", () => {
