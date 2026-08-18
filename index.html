@@ -1240,7 +1240,7 @@ html,body{
       <p class="lead">選擇遊戲</p>
     </div>
     <details class="level4-session-picker" id="level4SessionPicker" hidden>
-      <summary id="level4SessionSummary">治療師設定 · 本節顯示 2 款</summary>
+      <summary id="level4SessionSummary">Level 4 遊戲 · 顯示 5 款</summary>
       <div class="level4-session-options" id="level4SessionOptions">
         <button type="button" data-level4-session-theme="dimsum">點心</button>
         <button type="button" data-level4-session-theme="wipewindow">抹窗</button>
@@ -1249,7 +1249,7 @@ html,body{
         <button type="button" data-level4-session-theme="buspay">拍卡</button>
         <button type="button" class="level4-auto" id="btnLevel4AutoRotate">自動輪替</button>
       </div>
-      <p class="level4-session-message" id="level4SessionMessage">選 1–2 款</p>
+      <p class="level4-session-message" id="level4SessionMessage">按下可顯示／隱藏</p>
     </details>
     <div class="activity-grid" id="activityGrid"></div>
     <button class="nav-back" id="btnBackToLevel">返回主頁</button>
@@ -1982,7 +1982,7 @@ const state = {
   personalPinchEnter:null, personalPinchExit:null, personalPinchOpen:null,
   mirrorX:true,
   sessionMode:'training', // training | trial
-  level4SessionThemes:['dimsum','wipewindow'],
+  level4SessionThemes:['dimsum','wipewindow','bowling','mahjongwash','buspay'],
   level4RotationIndex:0,
 };
 const RESEARCH_VERSION = 'pilot-5.0.0-neuroscience';
@@ -3941,10 +3941,6 @@ document.getElementById('level4SessionOptions').addEventListener('click', event=
     }
     selected.splice(index,1);
   }else{
-    if(selected.length >= 2){
-      document.getElementById('level4SessionMessage').textContent = '每節最多 2 款';
-      return;
-    }
     selected.push(id);
   }
   state.level4SessionThemes = selected;
@@ -5964,7 +5960,7 @@ function visibleThemeOrder(level = state.level){
   if(level !== '4') return availableThemeOrder(level);
   const allowed = new Set(availableThemeOrder(level));
   const selected = state.level4SessionThemes.filter(id=>allowed.has(id));
-  return selected.length ? selected.slice(0,2) : ['dimsum'];
+  return selected.length ? selected : ['dimsum'];
 }
 
 function renderLevel4SessionPicker(){
@@ -5975,8 +5971,8 @@ function renderLevel4SessionPicker(){
   if(!isLevel4) return;
   const selected = visibleThemeOrder('4');
   document.getElementById('level4SessionSummary').textContent =
-    '治療師設定 · 本節顯示 ' + selected.length + ' 款';
-  document.getElementById('level4SessionMessage').textContent = '選 1–2 款';
+    'Level 4 遊戲 · 顯示 ' + selected.length + ' 款';
+  document.getElementById('level4SessionMessage').textContent = '按下可顯示／隱藏';
   picker.querySelectorAll('[data-level4-session-theme]').forEach(button=>{
     button.setAttribute('aria-pressed', selected.includes(button.dataset.level4SessionTheme) ? 'true' : 'false');
   });
