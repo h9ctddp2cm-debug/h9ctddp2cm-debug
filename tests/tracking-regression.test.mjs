@@ -110,9 +110,10 @@ test("Level 5 calibration accepts the participant's available opening range with
 });
 
 test("Level 6–7 calibration accepts a light pinch without inventing a larger aperture range", () => {
-  assert.match(publicSource, /openMean\s*-\s*Math\.max\(0\.035,\s*openMean\s*\*\s*0\.055\)/);
+  assert.match(publicSource, /openMean\s*-\s*Math\.max\(0\.020,\s*openMean\s*\*\s*0\.035\)/);
   assert.match(publicSource, /const gap = Math\.max\(0\.025, openMean - closedMean\)/);
-  assert.match(publicSource, /personalPinchEnter = closedMean \+ gap \* 0\.60/);
+  assert.match(publicSource, /personalPinchEnter = closedMean \+ gap \* 0\.72/);
+  assert.match(publicSource, /personalPinchExit = closedMean \+ gap \* 0\.84/);
   assert.ok(publicSource.includes("personalPinchOpen = Math.min("));
   assert.doesNotMatch(publicSource, /Math\.max\(0\.12, openMean - closedMean\)/);
 });
@@ -129,7 +130,11 @@ test("Level 6–7 exposes three independent interaction modes", () => {
 
 test("bare, peg and chopsticks modes use different observable tracking signals", () => {
   assert.match(publicSource, /const required = state\.gameType === 'pinch'\s*\?\s*\[0,4,5,8,9,12,17\]/);
-  assert.match(publicSource, /const gap = \(distance\(lm\[4\], lm\[8\]\) \+ distance\(lm\[4\], lm\[12\]\)\) \/ 2/);
+  assert.match(publicSource, /const indexGap = distance\(lm\[4\], lm\[8\]\)/);
+  assert.match(publicSource, /const middleGap = distance\(lm\[4\], lm\[12\]\)/);
+  assert.match(publicSource, /Math\.min\(indexGap, middleGap\) \* 0\.62/);
+  assert.match(publicSource, /isOpenPrep:!pinch\.isPinching/);
+  assert.match(publicSource, /const GESTURE_CONFIRM_MS = 60/);
   assert.match(publicSource, /isPegMode\(\).*personalGraspEnter/s);
   assert.match(publicSource, /source:'index-dwell'/);
   assert.match(publicSource, /method:isChopsticksMode\(\) \? 'chopsticks_index_dwell' : 'dwell'/);

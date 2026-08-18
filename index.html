@@ -4921,7 +4921,10 @@ function detectWrist(videoEl){
       const midY = (lm[4].y + lm[8].y + lm[12].y) / 3;
       return { detected:true, nx:interactionX(midX), ny:midY,
         isGrasping:stabiliseDetectedGesture(pinch.isPinching, 'pinch'),
-        graspScore:pinch.score, isOpenPrep:pinch.isSeparated, pinchRatio:pinch.ratio, lm };
+        graspScore:pinch.score,
+        // Crossing the participant's release threshold is enough to prepare the
+        // next pickup. Do not require them to reopen to their calibrated maximum.
+        isOpenPrep:!pinch.isPinching, pinchRatio:pinch.ratio, lm };
     }
     const usePalmCursor = state.gameType === 'grasp' || isGrossTabletop();
     const nx = interactionX(usePalmCursor ? palmX : tip.x);
@@ -5034,7 +5037,12 @@ function computePinchState(lm, isPinchingPrev){
   const palmLength = distance(lm[9], lm[0]);
   const palmWidth = distance(lm[5], lm[17]) * 1.35;
   const scale = Math.max(palmLength, palmWidth);
-  const gap = (distance(lm[4], lm[8]) + distance(lm[4], lm[12])) / 2;
+  const indexGap = distance(lm[4], lm[8]);
+  const middleGap = distance(lm[4], lm[12]);
+  // A light three-finger pinch is often asymmetrical after stroke. Keep both
+  // fingers in the measurement, but let the nearer fingertip carry more weight.
+  const gap = Math.min(indexGap, middleGap) * 0.62
+    + Math.max(indexGap, middleGap) * 0.38;
   const ratio = scale < 0.001 ? 1 : (gap / scale);
   const pinchThresholds = research.active ? research : state;
   const personal = (!research.active || research.stratum === '6' || research.stratum === '7') &&
@@ -5053,7 +5061,7 @@ function computePinchState(lm, isPinchingPrev){
     valid:true,
   };
 }
-const GESTURE_CONFIRM_MS = 90;
+const GESTURE_CONFIRM_MS = 60;
 let detectedGestureState = { mode:'', stable:false, candidate:false, candidateAt:0 };
 function stabiliseDetectedGesture(rawValue, mode){
   const now = performance.now();
@@ -5195,7 +5203,7 @@ function startCalibLoop(){
             const changedEnough = isPinchMode()
               // A clinically appropriate light pinch may use only part of the
               // available aperture. Do not require a near-tip-to-tip closure.
-              ? value <= openMean - Math.max(0.035, openMean * 0.055)
+              ? value <= openMean - Math.max(0.020, openMean * 0.035)
               : value >= openMean + 0.035;
             if(changedEnough){
               c.closedScores.push(value);
@@ -5231,11 +5239,11 @@ function startCalibLoop(){
           // forced 0.12 minimum could place the "open" threshold above the
           // participant's real opening, permanently blocking pickup.
           const gap = Math.max(0.025, openMean - closedMean);
-          thresholds.personalPinchEnter = closedMean + gap * 0.60;
-          thresholds.personalPinchExit = closedMean + gap * 0.76;
+          thresholds.personalPinchEnter = closedMean + gap * 0.72;
+          thresholds.personalPinchExit = closedMean + gap * 0.84;
           thresholds.personalPinchOpen = Math.min(
-            openMean - gap * 0.06,
-            closedMean + gap * 0.88
+            openMean - gap * 0.03,
+            closedMean + gap * 0.94
           );
         }
         document.getElementById('btnStartGame').disabled = !c.ready;
