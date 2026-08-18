@@ -17,12 +17,12 @@ test('Level 4 presents five complementary games while preserving other themes', 
   assert.match(html, /\['wipewindow','bowling','mahjongwash','buspay'\]\.includes\(themeId\)/);
 });
 
-test('Level 4 library limits the visible session choice to one or two therapist-selected games', () => {
-  assert.match(html, /level4SessionThemes:\['dimsum','wipewindow'\]/);
+test('Level 4 library shows all five games by default and allows independent visibility choices', () => {
+  assert.match(html, /level4SessionThemes:\['dimsum','wipewindow','bowling','mahjongwash','buspay'\]/);
   assert.match(html, /function visibleThemeOrder\(level = state\.level\)/);
-  assert.match(html, /return selected\.length \? selected\.slice\(0,2\) : \['dimsum'\]/);
-  assert.match(html, /治療師設定 · 本節顯示/);
-  assert.match(html, /每節最多 2 款/);
+  assert.match(html, /return selected\.length \? selected : \['dimsum'\]/);
+  assert.match(html, /Level 4 遊戲 · 顯示/);
+  assert.doesNotMatch(html, /每節最多 2 款/);
   assert.match(html, /id="btnLevel4AutoRotate"/);
   assert.match(html, /if\(current\[0\] === all\[start\] && current\[1\] === all\[\(start\+1\)%all\.length\]\)/);
 });
