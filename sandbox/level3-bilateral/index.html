@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Level 3 患側外滑 · 診斷 Sandbox</title>
+  <link rel="preconnect" href="https://api.fontshare.com">
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&f[]=cabinet-grotesk@600,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./diagnostic.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到主要內容</a>
+  <header class="topbar">
+    <div>
+      <h1>Level 3 患側外滑</h1>
+    </div>
+    <div class="header-actions">
+      <span class="mode-badge" id="sessionModeBadge" data-testid="indicator-level3-mode">訓練 · 錄影及姿勢提示</span>
+      <span class="isolation-badge" data-testid="status-isolation">與正式 Pilot Study 隔離</span>
+      <button class="icon-button" type="button" id="themeToggle" data-testid="button-theme" aria-label="切換深色模式">◐</button>
+    </div>
+  </header>
+
+  <div class="safety-gate" id="safetyGate" role="dialog" aria-modal="true"
+    aria-labelledby="safety-gate-title" data-testid="panel-level3-safety-gate">
+    <div class="safety-gate-card">
+      <h2 id="safety-gate-title">開始前安全確認（FTHUE Level 3）</h2>
+      <ul class="gate-list">
+        <li data-testid="text-l3-safety-stop">治療師全程監督，出現疼痛、手緊或代償 → 立即停止。</li>
+        <li data-testid="text-l3-safety-movement">坐穩，前臂放桌面毛巾上，好手帶動患手向外滑，毛巾跟著移動，身體保持正中不歪。</li>
+        <li data-testid="text-l3-safety-practice">先試 3 次，無痛才正式做；動作慢、穩，不追求次數，隨時可休息或停止。</li>
+      </ul>
+      <label class="gate-ack" for="safetyGateAck">
+        <input type="checkbox" id="safetyGateAck" data-testid="checkbox-l3-safety-ack">
+        <span>治療師已核對並全程監督</span>
+      </label>
+      <div class="gate-actions">
+        <button type="button" class="button primary" id="safetyGateContinue"
+          data-testid="button-l3-safety-continue" disabled>繼續</button>
+        <button type="button" class="button ghost" id="safetyGateBack"
+          data-testid="button-l3-safety-back">返回主頁</button>
+      </div>
+    </div>
+  </div>
+
+  <main id="main">
+    <section id="movementAlertBar" class="safety-note critical movement-alert-bar" aria-labelledby="safety-red-title"
+      data-testid="panel-level3-red-warning">
+      <h2 id="safety-red-title" data-testid="text-level3-live-warning">肩膊被拉扯／疼痛、患手愈來愈繃緊、軀幹向側傾斜：停止</h2>
+      <p><b>肩外展向患側外滑；手肘按能力保持或逐步伸直，身體保持正中。</b></p>
+    </section>
+
+    <details class="safety-note" aria-labelledby="safety-title">
+      <summary id="safety-title"><b>影子測試限制</b></summary>
+      <p>影像只作動作品質提示；治療師作最終判斷。</p>
+    </details>
+
+    <div class="diagnostic-grid">
+      <aside class="panel controls-panel" aria-labelledby="controls-title">
+        <div class="panel-heading">
+          <p class="section-kicker">Therapist parameters</p>
+          <h2 id="controls-title">治療師設定</h2>
+        </div>
+
+        <div class="form-grid">
+          <label class="field full">
+            <span>匿名患者識別碼</span>
+            <input id="patientId" value="SUBACUTE_PT_001" maxlength="40" autocomplete="off" data-testid="input-patient-id">
+            <small>只可輸入匿名編號。</small>
+          </label>
+          <label class="field">
+            <span>FTHUE 等級</span>
+            <select id="fthueLevel" data-testid="select-fthue-level">
+              <option value="3" selected>Level 3</option>
+              <option value="4">Level 4</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>隨機序列</span>
+            <select id="participantSequence" data-testid="select-participant-sequence">
+              <option value="AB" selected>AB：ST → DT</option>
+              <option value="BA">BA：DT → ST</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>區塊位置</span>
+            <select id="blockOrderPosition" data-testid="select-block-position">
+              <option value="1" selected>Block 1</option>
+              <option value="2">Block 2</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>實驗條件</span>
+            <select id="experimentalCondition" disabled data-testid="select-condition">
+              <option value="SINGLE_TASK_BASELINE" selected>Single-task baseline</option>
+              <option value="DUAL_TASK_INTERFERENCE">Dual-task interference</option>
+            </select>
+            <small>自動鎖定。</small>
+          </label>
+          <div class="field">
+            <span>計劃主動時間</span>
+            <output id="plannedDuration" class="readonly-value" data-testid="text-planned-duration">5 分鐘</output>
+            <small>警告密度分母。</small>
+          </div>
+          <label class="field full">
+            <span>認知負荷階層</span>
+            <select id="cognitiveTier" data-testid="select-cognitive-tier">
+              <option value="NONE_CONTROL" selected>無控制組</option>
+              <option value="LOW_MATCHING">低：目標比對</option>
+              <option value="MODERATE_COUNTING">中：指定項目計數</option>
+              <option value="HIGH_RUNNING_TOTAL">高：連續加總</option>
+            </select>
+          </label>
+          <label class="field full">
+            <span>治療師備註</span>
+            <textarea id="therapistNotes" rows="3" maxlength="500" placeholder="只記錄代償、疲勞或測試觀察，不含個人資料" data-testid="textarea-therapist-notes"></textarea>
+          </label>
+        </div>
+
+        <details class="fatigue-panel">
+          <summary>疲勞量尺 T0 / T1 / T2</summary>
+          <p>VAS-F 0–100；RPE 6–20。未量度留空。</p>
+          <div class="fatigue-grid">
+            <label class="field">
+              <span>T0 VAS-F (mm)</span>
+              <input id="vasFT0Mm" type="number" min="0" max="100" step="1" inputmode="numeric" data-testid="input-vas-t0">
+            </label>
+            <label class="field">
+              <span>T0 RPE (6–20)</span>
+              <input id="rpeT0Borg620" type="number" min="6" max="20" step="1" inputmode="numeric" data-testid="input-rpe-t0">
+            </label>
+            <label class="field">
+              <span>T1 pre-rest VAS-F</span>
+              <input id="vasFT1PreRestMm" type="number" min="0" max="100" step="1" inputmode="numeric" data-testid="input-vas-t1-pre">
+            </label>
+            <label class="field">
+              <span>T1 pre-rest RPE</span>
+              <input id="rpeT1PreRestBorg620" type="number" min="6" max="20" step="1" inputmode="numeric" data-testid="input-rpe-t1-pre">
+            </label>
+            <label class="field">
+              <span>T1 post-rest VAS-F</span>
+              <input id="vasFT1PostRestMm" type="number" min="0" max="100" step="1" inputmode="numeric" data-testid="input-vas-t1-post">
+            </label>
+            <label class="field">
+              <span>T1 post-rest RPE</span>
+              <input id="rpeT1PostRestBorg620" type="number" min="6" max="20" step="1" inputmode="numeric" data-testid="input-rpe-t1-post">
+            </label>
+            <label class="field">
+              <span>T2 post-session VAS-F</span>
+              <input id="vasFT2PostSessionMm" type="number" min="0" max="100" step="1" inputmode="numeric" data-testid="input-vas-t2">
+            </label>
+            <label class="field">
+              <span>T2 post-session RPE</span>
+              <input id="rpeT2PostSessionBorg620" type="number" min="6" max="20" step="1" inputmode="numeric" data-testid="input-rpe-t2">
+            </label>
+          </div>
+        </details>
+
+        <fieldset id="affectedSideFieldset" class="affected-side-fieldset">
+          <legend>患手是？</legend>
+          <div class="segmented">
+            <label><input type="radio" name="affectedSide" value="LEFT" data-testid="radio-side-left"><span>左手患側</span></label>
+            <label><input type="radio" name="affectedSide" value="RIGHT" data-testid="radio-side-right"><span>右手患側</span></label>
+          </div>
+          <small id="affectedSideHint" class="affected-side-hint" aria-live="polite">必須先選患側，系統才會判斷外滑方向。</small>
+        </fieldset>
+
+        <label class="field">
+          <span>節次協議標籤</span>
+          <select id="protocolVariant" data-testid="select-protocol-variant">
+            <option value="A">A</option>
+            <option value="B" selected>B</option>
+            <option value="C">C</option>
+          </select>
+          <small>桌面橫向滑行，沒有抬高。</small>
+        </label>
+
+        <label class="field">
+          <span>橫向距離</span>
+          <select id="reachProfile" data-testid="select-reach-profile">
+            <option value="SHORT" selected>短（預設）</option>
+            <option value="STANDARD">標準</option>
+            <option value="LONG">長</option>
+          </select>
+          <small>先試 3 次；無痛、無代償。</small>
+        </label>
+
+        <label class="field">
+          <span>中央容差</span>
+          <select id="toleranceMode" data-testid="select-tolerance">
+            <option value="NARROW">較窄</option>
+            <option value="STANDARD" selected>標準</option>
+            <option value="WIDE">較寬</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>患者左側的追蹤方向</span>
+          <select id="directionMapping" data-testid="select-direction-mapping">
+            <option value="1">X 增加</option>
+            <option value="-1" selected>X 減少</option>
+          </select>
+          <small>按實際追蹤方向設定。</small>
+        </label>
+
+        <div class="session-controls" aria-label="Session controls">
+          <button id="startSession" class="button primary" type="button" data-testid="button-start-session">開始</button>
+          <button id="pauseSession" class="button warning" type="button" disabled data-testid="button-pause-session">暫停</button>
+          <button id="invalidateRep" class="button danger" type="button" disabled data-testid="button-invalidate-rep">作廢目前 Rep</button>
+          <button id="endSession" class="button secondary" type="button" disabled data-testid="button-end-session">結束</button>
+        </div>
+        <p id="sessionControlStatus" class="inline-status compact-status" data-testid="status-session" aria-live="polite"></p>
+
+        <button id="startCamera" class="button primary" type="button" data-testid="button-start-camera" disabled>先選患手</button>
+        <button id="beginCalibration" class="button warning" type="button" data-testid="button-begin-calibration">校準</button>
+        <button id="runSynthetic" class="button secondary" type="button" data-testid="button-run-synthetic">測試</button>
+        <p id="cameraStatus" class="inline-status" data-testid="status-camera" aria-live="polite">鏡頭對準</p>
+        <div class="camera-error" id="cameraErrorBox" role="alert" aria-live="assertive"
+          data-testid="panel-l3-camera-error">
+          <h3 data-testid="text-l3-camera-error-title">未能啟動相機</h3>
+          <p id="cameraErrorMessage" data-testid="text-l3-camera-error-message"></p>
+          <p class="camera-error-detail" id="cameraErrorDetail" data-testid="text-l3-camera-error-detail"></p>
+          <div class="camera-error-actions">
+            <button type="button" class="button primary" id="cameraRetry"
+              data-testid="button-l3-camera-retry">重新嘗試</button>
+            <button type="button" class="button ghost" id="cameraReturn"
+              data-testid="button-l3-camera-return">返回主頁</button>
+          </div>
+        </div>
+      </aside>
+
+      <section class="panel camera-panel" aria-labelledby="camera-title">
+        <div class="camera-heading">
+          <div>
+          <h2 id="camera-title">Level 3 患側外滑</h2>
+          </div>
+          <div class="camera-status-chips">
+            <span class="recording-indicator" id="recordingIndicator" data-testid="status-level3-recording" aria-live="polite">REC 待機</span>
+            <span class="fps" id="fpsValue" data-testid="text-fps">FPS --</span>
+          </div>
+        </div>
+        <div class="canvas-wrap">
+          <video id="cameraVideo" playsinline muted></video>
+          <canvas id="diagnosticCanvas" width="640" height="480" aria-label="即時視訊、VCP 及校準邊界診斷圖"></canvas>
+        </div>
+        <div class="canvas-legend" aria-label="圖例">
+          <span><i class="legend-center"></i>中央基準</span>
+          <span><i class="legend-window"></i>中央容差</span>
+          <span><i class="legend-target"></i>當前目標</span>
+          <span><i class="legend-skeleton"></i>VCP 中點</span>
+        </div>
+        <section id="recordingReview" class="recording-review" data-testid="panel-level3-recording-review" hidden
+          aria-labelledby="recording-review-title">
+          <div>
+            <h3 id="recording-review-title">本次訓練影片回看</h3>
+            <p>只錄頭部以下；需要時可手動下載。</p>
+          </div>
+          <video id="recordingReviewVideo" playsinline preload="metadata" aria-label="本次訓練影片回看"></video>
+          <div class="recording-review-actions">
+            <button id="recordingPlay" class="button secondary" type="button" data-testid="button-level3-recording-play">播放</button>
+            <button id="recordingDownload" class="button primary" type="button" data-testid="button-level3-recording-download">下載／儲存</button>
+            <button id="recordingDelete" class="button ghost" type="button" data-testid="button-level3-recording-delete">刪除</button>
+          </div>
+        </section>
+      </section>
+    </div>
+
+    <section class="metrics-section" aria-labelledby="metrics-title">
+      <div class="section-heading">
+        <div>
+          <p class="section-kicker">Pose Lite · alternate-frame telemetry</p>
+          <h2 id="metrics-title">即時工程指標</h2>
+        </div>
+        <span id="trackingBadge" class="tracking-badge" data-testid="status-tracking">等待訊號</span>
+      </div>
+
+      <div class="metric-grid">
+        <article class="metric-card state-card">
+          <span>Current state</span>
+          <strong id="stateValue" data-testid="text-state">STATE_CALIBRATION</strong>
+          <small id="actionValue" data-testid="text-action">RESET</small>
+        </article>
+        <article class="metric-card">
+          <span>VCP X／中央／容差</span>
+          <strong id="vcpValue" data-testid="text-vcp">-- / 0.500 / ±0.050</strong>
+          <small id="targetValue" data-testid="text-target">目標距離 0.160</small>
+        </article>
+        <article class="metric-card">
+          <span>肩寬／肩部中點 X</span>
+          <strong id="shoulderValue" data-testid="text-shoulder">-- / --</strong>
+          <small id="directionValue" data-testid="text-direction">首次向左</small>
+        </article>
+        <article class="metric-card">
+          <span>完成次數</span>
+          <strong id="scoreValue" data-testid="text-score">0</strong>
+            <small>患側外滑並返回中央</small>
+        </article>
+      </div>
+
+      <div class="monitor-grid">
+        <article class="monitor-card" id="symmetryCard">
+          <div class="monitor-heading">
+            <div>
+              <span>雙手距離變化</span>
+              <strong id="symmetryValue" data-testid="text-symmetry">--</strong>
+            </div>
+            <small id="symmetryLimit" data-testid="text-symmetry-limit">界線 --</small>
+          </div>
+          <div class="meter"><span id="symmetryMeter"></span></div>
+          <p>接近界線時顯示黃色預警；超出時暫停狀態進程。</p>
+        </article>
+        <article class="monitor-card" id="trunkCard">
+          <div class="monitor-heading">
+            <div>
+              <span>肩部中點位移</span>
+              <strong id="trunkValue" data-testid="text-trunk">--</strong>
+            </div>
+            <small id="trunkLimit" data-testid="text-trunk-limit">界線 --</small>
+          </div>
+          <div class="meter"><span id="trunkMeter"></span></div>
+          <p>這是軀幹位置改變指標，不是側傾的臨床診斷。</p>
+        </article>
+      </div>
+
+      <p id="guidance" class="guidance" data-testid="text-guidance" aria-live="assertive"></p>
+    </section>
+
+    <section class="log-section" aria-labelledby="cognitive-title">
+      <div class="section-heading">
+        <div>
+          <p class="section-kicker">Raw response annotation</p>
+          <h2 id="cognitive-title">認知反應與診斷 Console</h2>
+        </div>
+      </div>
+      <div class="annotation-grid">
+        <label class="field">
+          <span>Stimulus ID</span>
+          <input id="stimulusId" value="none_control" data-testid="input-stimulus-id">
+        </label>
+        <label class="field">
+          <span>反應狀態</span>
+          <select id="responseStatus" data-testid="select-response-status">
+            <option value="NOT_APPLICABLE">Not applicable</option>
+            <option value="PENDING">Pending</option>
+            <option value="SUBMITTED">Submitted</option>
+            <option value="NO_RESPONSE">No response</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>準確度</span>
+          <select id="responseAccuracy" data-testid="select-response-accuracy">
+            <option value="">Null / not scored</option>
+            <option value="true">Correct</option>
+            <option value="false">Incorrect</option>
+          </select>
+        </label>
+        <button id="applyCognitiveResponse" class="button secondary" type="button" data-testid="button-apply-cognitive">套用到目前 Rep</button>
+      </div>
+      <pre id="diagnosticConsole" class="diagnostic-console" data-testid="text-diagnostic-console">[Console initialized] Waiting for session.</pre>
+    </section>
+
+    <section class="log-section" aria-labelledby="log-title">
+      <div class="section-heading">
+        <div>
+          <p class="section-kicker">Shadow-test evidence</p>
+          <h2 id="log-title">Session 事件記錄</h2>
+        </div>
+        <div class="log-actions">
+          <button id="logSnapshot" class="button secondary" type="button" data-testid="button-log-snapshot">記錄目前一幀</button>
+          <button id="exportJson" class="button secondary" type="button" disabled data-testid="button-export-json">匯出 JSON</button>
+          <button id="exportCsv" class="button secondary" type="button" disabled data-testid="button-export-csv">匯出 CSV</button>
+          <button id="exportDataset" class="button primary" type="button" disabled data-testid="button-export-dataset">匯出研究 Dataset</button>
+          <button id="clearLog" class="button ghost" type="button" disabled data-testid="button-clear-log">清除</button>
+        </div>
+      </div>
+      <p class="section-intro">系統只自動記錄校準成功、到達目標、完成循環及動作質素警示。資料只存在目前瀏覽器記憶體，重新整理後清除。</p>
+      <div class="log-summary">
+        <span>事件數 <strong id="logCount" data-testid="text-log-count">0</strong></span>
+        <span>Session <strong id="sessionId" data-testid="text-session-id">--</strong></span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>時間</th><th>事件</th><th>狀態</th><th>VCP X</th><th>肩寬</th><th>肩中點 X</th></tr>
+          </thead>
+          <tbody id="logRows" data-testid="table-log-rows"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Developer sandbox only. The active engine evaluates bilateral lateral tabletop trajectories.
+      The legacy &ldquo;target elevation&rdquo; control is renamed to a neutral protocol/session label because the
+      task is horizontal sliding; the legacy numeric metadata key is still written for backward compatibility.</p>
+  </footer>
+  <script type="module" src="./diagnosticApp.js"></script>
+</body>
+</html>
