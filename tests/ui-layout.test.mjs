@@ -377,7 +377,7 @@ test('final FTHUE Level 3–7 movement wording is consistent', async (t) => {
 
     assert.deepEqual(copy.headings, [
       '雙手外側滑動',
-      '患手向前滑動',
+      '抹窗擦霧',
       '患手握放練習',
       '患手捏放練習',
     ]);

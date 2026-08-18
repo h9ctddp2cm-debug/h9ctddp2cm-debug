@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v9-20260818";
+const CACHE_VERSION = "fthue-rehab-v10-20260818-level4-wipe";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

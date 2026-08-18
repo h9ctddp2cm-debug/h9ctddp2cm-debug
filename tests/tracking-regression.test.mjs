@@ -38,7 +38,7 @@ test("portrait phones keep the camera inline in a compact preview instead of ful
   assert.match(publicSource, /height:min\(25dvh,210px\)/);
   assert.ok(publicSource.includes("videoEl.setAttribute('webkit-playsinline', '')"));
   assert.ok(publicSource.includes("videoEl.controls = false"));
-  assert.match(serviceWorkerSource, /fthue-rehab-v9-20260818/);
+  assert.match(serviceWorkerSource, /fthue-rehab-v10-20260818-level4-wipe/);
 });
 
 test("Levels 3 and 4 can use Pose when tabletop hands occlude the finger model", () => {
@@ -64,26 +64,24 @@ test("Level 3 bilateral controller follows the selected affected side only", () 
   assert.ok(publicSource.includes("level3LateralState()"));
 });
 
-test("Level 4 records camera direction but uses elbow angle as the authoritative transport signal", () => {
+test("Level 4 calibrates elbow extension but lets the real wrist draw the wipe path", () => {
   assert.ok(publicSource.includes("const elbowConfirmed = activeExtension || maintainedExtension"));
   assert.ok(publicSource.includes("directionLearningEligible"));
   assert.ok(publicSource.includes("level4Reach.forwardAxis = reachVector.map"));
   assert.ok(publicSource.includes("let compoundProgress = level4Reach.engaged ? extensionProgress : 0"));
-  assert.ok(publicSource.includes("if(returnElbowFlexion) compoundProgress = extensionProgress"));
-  assert.ok(publicSource.includes("The smoothed elbow angle is authoritative"));
-  assert.ok(publicSource.includes("mapped.y = ch * 0.82 - level4Motion.progress * ch * 0.40"));
+  assert.ok(publicSource.includes("The wipe cursor follows the real affected wrist"));
+  assert.ok(publicSource.includes("updateLevel4Wipe(cursorX/cw, cursorY/ch, level4Motion)"));
   assert.ok(publicSource.includes("baseline.wristRelativeZ-sample.wristRelativeZ"));
   assert.ok(publicSource.includes("baseline.wristRelativeY-sample.wristRelativeY"));
   assert.ok(publicSource.includes("sample.wristReachRadius-baseline.wristReachRadius"));
 });
 
-test("Level 4 ignores elbow jitter and only permits placement near full extension", () => {
+test("Level 4 ignores elbow jitter and gates wiping after deliberate extension", () => {
   assert.ok(publicSource.includes("level4Reach.elbowAngleHistory.length > 5"));
   assert.ok(publicSource.includes("elbowGain >= 6"));
   assert.ok(publicSource.includes("level4Reach.movementConfirmFrames >= 3"));
-  assert.ok(publicSource.includes("level4Reach.completionReady"));
-  assert.ok(publicSource.includes("level4Reach.progress >= 0.94"));
-  assert.match(publicSource, /繼續伸直手肘/);
+  assert.ok(publicSource.includes("motion.elbowExtensionProgress >= 0.35"));
+  assert.ok(publicSource.includes("setActionPrompt('慢慢伸直手肘', '再向外畫大弧')"));
 });
 
 test("Level 4 calibration accepts an already-extended bedside starting posture", () => {
@@ -105,7 +103,7 @@ test("Level 4 accepts a table-occluded arm and does not require the opposite sho
 
 test("Level 3 visual themes share the standard lateral pickup and drop engine", () => {
   assert.match(publicSource, /function usesAdvancedThemeModule\(id\)/);
-  assert.match(publicSource, /return !isLevel3Tabletop\(\) && isAdvTheme\(id\)/);
+  assert.match(publicSource, /return !isGrossTabletop\(\) && isAdvTheme\(id\)/);
   assert.match(publicSource, /if\(usesAdvancedThemeModule\(\)\)\{ advUpdate\(\); advRender\(\); \}/);
 });
 
@@ -152,14 +150,38 @@ test("all items stay clear of targets and can be parked in blank space", () => {
 
 test("offline worker forces the current build instead of serving the stale game", () => {
   assert.ok(publicSource.includes('updateViaCache:"none"'));
-  assert.match(serviceWorkerSource, /fthue-rehab-v9-20260818/);
+  assert.match(serviceWorkerSource, /fthue-rehab-v10-20260818-level4-wipe/);
 });
 
 test("Level 4 exposes deterministic compound-movement QA hooks", () => {
   assert.ok(publicSource.includes("setLevel4Pose(spec)"));
   assert.ok(publicSource.includes("level4ReachState()"));
   assert.ok(publicSource.includes("resetLevel4Reach()"));
+  assert.ok(publicSource.includes("wipeLevel4At(nx, ny, valid)"));
   assert.ok(publicSource.includes("setActionPrompt('iPad 同枱直放 · 約 1 米', '患側肩・手肘・手腕全部入鏡')"));
+});
+
+test("Level 4 uses a performant fog grid and no longer runs pickup modules", () => {
+  assert.ok(publicSource.includes("const level4Wipe = {"));
+  assert.match(publicSource, /cols:18,\s*rows:12/);
+  assert.match(publicSource, /cleanPercent >= 88/);
+  assert.doesNotMatch(
+    publicSource.slice(
+      publicSource.indexOf("const level4Wipe = {"),
+      publicSource.indexOf("function updateLevel4ReachController")
+    ),
+    /getImageData/
+  );
+  assert.ok(publicSource.includes("return !isGrossTabletop() && isAdvTheme(id)"));
+  assert.match(publicSource, /if\(isLevel4Tabletop\(\)\)\{\s*renderLevel4WipeGame/);
+});
+
+test("Level 4 fog advances only with elbow-gated real wrist movement", () => {
+  assert.ok(publicSource.includes("motion.elbowExtensionProgress >= 0.35"));
+  assert.ok(publicSource.includes("&& !motion.shoulderHike"));
+  assert.ok(publicSource.includes("if(distance < 0.006 || distance > 0.18) return"));
+  assert.ok(publicSource.includes("updateLevel4Wipe(cursorX/cw, cursorY/ch, level4Motion)"));
+  assert.ok(!publicSource.includes("mapped.y = ch * 0.82 - level4Motion.progress"));
 });
 
 test("Level 5 grasp requires two curled fingers and releases after two visibly reopen", () => {
