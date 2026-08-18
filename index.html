@@ -929,15 +929,15 @@ html,body{
         <button class="level-select" id="btnLevel4" data-level="4">
           <div class="level-copy">
             <span class="lv-tag">FTHUE Level 4</span>
-            <h3>抹窗擦霧</h3>
-            <p class="lv-action">伸肘｜向外畫大弧</p>
+            <h3>患手向前滑動</h3>
+            <p class="lv-action">側坐｜患側旁枱向前滑</p>
           </div>
           <div class="level-motion single">
             <figure>
               <img src="img/advanced/level4_lateral_forward_slide_v2.gif"
                 alt="病人側坐，枱放在患側旁邊，患側手肘由約九十度屈曲起始，前臂在滑板上向前滑"
                 data-testid="gif-level-4">
-              <figcaption>伸肘向外畫弧</figcaption>
+              <figcaption>患手向前滑</figcaption>
             </figure>
           </div>
         </button>
@@ -951,7 +951,7 @@ html,body{
           <summary>詳情</summary>
           <p class="lv-note">
             <span class="lv-line">側坐，枱只放患側旁邊；患側手肘先屈曲約 90°</span>
-            <span class="lv-line">患手伸肘，再向外畫大弧擦走霧氣</span>
+            <span class="lv-line">前臂放滑板向前滑：輕微肩外展＋肩屈曲＋肘伸直</span>
             <span class="lv-line">身體保持正中，避免聳肩</span>
           </p>
         </details>
@@ -2104,6 +2104,9 @@ function affectedSideSign(){
 function isLevel4Tabletop(){
   return !research.active && state.level === '4';
 }
+function isLevel4WipeGame(){
+  return isLevel4Tabletop() && state.theme === 'wipewindow';
+}
 function isLevel3Tabletop(){
   return !research.active && state.level === '3';
 }
@@ -2111,7 +2114,8 @@ function isGrossTabletop(){
   return isLevel3Tabletop() || isLevel4Tabletop();
 }
 function affectedDirectionLabel(){
-  if(isLevel4Tabletop()) return '伸肘向外畫弧';
+  if(isLevel4WipeGame()) return '伸肘向外畫弧';
+  if(isLevel4Tabletop()) return '沿桌面中線向前放置';
   if(isLevel3Tabletop()) return activeAffectedSide() === 'right' ? '向右患側外滑' : '向左患側外滑';
   return activeAffectedSide() === 'right' ? '向畫面右外下方放置' : '向畫面左外下方放置';
 }
@@ -2274,7 +2278,7 @@ const SAFETY_LEVEL_NOTES = {
 };
 const SAFETY_LEVEL_TITLES = {
   '3': 'FTHUE Level 3 · 雙手外側滑動（Sandbox）',
-  '4': 'FTHUE Level 4 · 抹窗擦霧',
+  '4': 'FTHUE Level 4 · 患手向前滑動',
   '5': 'FTHUE Level 5 · 患手握放練習',
   '67': 'FTHUE Level 6–7 · 患手捏放練習',
 };
@@ -3544,8 +3548,8 @@ function renderPilotLanguage(){
 const LEVELS = {
   '3': { id:'3', tag:'FTHUE Level 3', name:'雙手患側外滑', gameType:'dwell',
          actionLabel:'好手帶患手，由中央向患側外滑' },
-  '4': { id:'4', tag:'FTHUE Level 4', name:'抹窗擦霧', gameType:'dwell',
-         actionLabel:'患手伸肘，向外畫大弧擦走霧氣' },
+  '4': { id:'4', tag:'FTHUE Level 4', name:'患手向前滑動', gameType:'dwell',
+         actionLabel:'患手放在檯面滑板上，向前滑動' },
   '5': { id:'5', tag:'FTHUE Level 5', name:'患手握放練習', gameType:'grasp',
          actionLabel:'伸出患手、輕輕合手、張開手' },
   '67': { id:'67', tag:'FTHUE Level 6–7', name:'患手捏放練習', gameType:'pinch',
@@ -5634,8 +5638,8 @@ function drawBasket(ctx, x, y, s){
 }
 
 /* ==================== 活動主題註冊表 ==================== */
-const LEVEL_VERB = { '4':'伸肘向外畫弧', '5':'輕輕合手拿起', '67':'輕輕捏起' };
-const LEVEL_ACTION = { '4':'抹窗擦霧', '5':'患手握放練習', '67':'患手捏放練習' };
+const LEVEL_VERB = { '4':'慢慢向前滑', '5':'輕輕合手拿起', '67':'輕輕捏起' };
+const LEVEL_ACTION = { '4':'患手向前滑動', '5':'患手握放練習', '67':'患手捏放練習' };
 const BASE_THEME = {
   verbFor(level){ return LEVEL_VERB[level] || LEVEL_VERB['4']; },
   actionLabelFor(level){ return LEVEL_ACTION[level] || LEVEL_ACTION['4']; },
@@ -5643,6 +5647,16 @@ const BASE_THEME = {
 function mkTheme(def){ return Object.assign(Object.create(BASE_THEME), def); }
 
 const THEMES = {
+  wipewindow: mkTheme({
+    id:'wipewindow', title:'抹窗擦霧',
+    goal:'伸直手肘，向外畫大弧擦走霧氣',
+    itemWord:'霧氣', difficulty:'容易至中等', targetStyle:'panel',
+    thumbnail:'img/advanced/level4_cartoon_side_forward.png',
+    thumbnailAlt:'患手伸肘向外畫弧的 Level 4 練習',
+    verbFor(){ return '伸肘向外畫弧'; },
+    actionLabelFor(){ return '伸直手肘，向外畫大弧擦走霧氣'; },
+    categoriesFor(){ return []; },
+  }),
   dimsum: mkTheme({
     id:'dimsum', title:'茶樓飲茶', goal:'將點心放到相同款式的蒸籠',
     itemWord:'點心', difficulty:'容易', targetStyle:'steamer',
@@ -5766,7 +5780,7 @@ const THEMES = {
     },
   }),
 };
-const THEME_ORDER = ['flowers','dimsum','laundry','cards','mahjong','cooking'];
+const THEME_ORDER = ['wipewindow','flowers','dimsum','laundry','cards','mahjong','cooking'];
 const LEVEL3_THEME_VARIANTS = {
   dimsum:[
     { type:'siumai', itemLabel:'燒賣', targetLabel:'燒賣', img:imgSiumai, targetImg:imgSteamerSiumai, scale:0.66, color:'#1A6B5A' },
@@ -5812,6 +5826,7 @@ function advanceLevel3RoundVariant(){
   setupTargets();
 }
 function themeAvailableForLevel(themeId, level = state.level){
+  if(themeId === 'wipewindow') return level === '4';
   return themeId !== 'cooking' || level === '67';
 }
 function availableThemeOrder(level = state.level){
@@ -6027,12 +6042,12 @@ function initGame(){
   resizeGameCanvas();
   // 先顯示提示，讓第一局生成物件時已可量度右上角提示禁區
   setActionPrompt('等待偵測手部', '手放鏡頭前');
-  if(isLevel4Tabletop()){
+  if(isLevel4WipeGame()){
     const persistBar = document.getElementById('persistentRules');
     if(persistBar) persistBar.textContent = '伸肘 → 向外畫大弧';
     setPromptSlot('rules');
   }
-  if(isLevel4Tabletop()){
+  if(isLevel4WipeGame()){
     if(advCurrent) advTeardown();
   } else if(usesAdvancedThemeModule()){
     // 進階活動（麻雀 / 啤牌 / 煮飯 / 插花 / 收衫）有各自的玩法模組
@@ -6084,7 +6099,7 @@ function initGame(){
   }
 
   // 遊戲開始：顯示 tier 0 規則 banner（進階活動有自己的引導面板）
-  if(!usesAdvancedThemeModule() && !isLevel4Tabletop()){
+  if(!usesAdvancedThemeModule() && !isLevel4WipeGame()){
     showLevelUpBanner();
     // Banner 顯示後再檢查一次，避免第一局因提示框剛載入而遮住點心
     ensureFoodsClearOfInstructions();
@@ -6702,7 +6717,7 @@ const level4Wipe = {
 };
 const LEVEL4_WIPE_BOUNDS = {left:0.12, top:0.24, right:0.88, bottom:0.86};
 function level4MarkFogPoint(nx, ny){
-  if(!isLevel4Tabletop() || level4Wipe.completed) return;
+  if(!isLevel4WipeGame() || level4Wipe.completed) return;
   const b = LEVEL4_WIPE_BOUNDS;
   if(nx < b.left || nx > b.right || ny < b.top || ny > b.bottom) return;
   const gx = (nx-b.left)/(b.right-b.left) * level4Wipe.cols;
@@ -6732,7 +6747,7 @@ function level4MarkFogPoint(nx, ny){
   }
 }
 function updateLevel4Wipe(cursorNx, cursorNy, motion){
-  if(!isLevel4Tabletop()) return;
+  if(!isLevel4WipeGame()) return;
   if(level4Wipe.completed){
     if(nowMs() >= level4Wipe.nextPaneAt) level4Wipe.reset();
     return;
@@ -7080,7 +7095,7 @@ function updateTracking(){
     }
     cursorX = dotEmaX;
     cursorY = dotEmaY;
-    if(isLevel4Tabletop()){
+    if(isLevel4WipeGame()){
       updateLevel4Wipe(cursorX/cw, cursorY/ch, level4Motion);
     }
     posHistory.push({ t: now, x: cursorX, y: cursorY });
@@ -7169,17 +7184,19 @@ function updateGameLogic(){
       setActionPrompt('保持屈肘起點', '準備伸肘');
       return;
     }
-    dwellTarget = null;
-    if(level4Wipe.completed){
-      setActionPrompt('完成', '準備下一塊窗');
-    }else if(!level4Reach.engaged || level4Reach.elbowExtensionProgress < 0.35){
-      setActionPrompt('慢慢伸直手肘', '再向外畫大弧');
-    }else if(level4Wipe.validMovement){
-      setActionPrompt('向外畫大弧', '已清潔 ' + level4Wipe.cleanPercent + '%');
-    }else{
-      setActionPrompt('伸肘向外畫弧', '手腕保持移動');
+    if(isLevel4WipeGame()){
+      dwellTarget = null;
+      if(level4Wipe.completed){
+        setActionPrompt('完成', '準備下一塊窗');
+      }else if(!level4Reach.engaged || level4Reach.elbowExtensionProgress < 0.35){
+        setActionPrompt('慢慢伸直手肘', '再向外畫大弧');
+      }else if(level4Wipe.validMovement){
+        setActionPrompt('向外畫大弧', '已清潔 ' + level4Wipe.cleanPercent + '%');
+      }else{
+        setActionPrompt('伸肘向外畫弧', '手腕保持移動');
+      }
+      return;
     }
-    return;
   }
   if(isGraspStyleMode()){
     updateGraspLogic();
@@ -7662,7 +7679,7 @@ function renderGame(){
   const ctx = gameCtx;
   const cw = gameCanvas.width, ch = gameCanvas.height;
   ctx.clearRect(0,0,cw,ch);
-  if(isLevel4Tabletop()){
+  if(isLevel4WipeGame()){
     renderLevel4WipeGame(ctx, cw, ch);
     return;
   }
@@ -11376,9 +11393,11 @@ window.render_game_to_text = function(){
         ' directionPeak:' + level4Reach.forwardAxisPeak.toFixed(3) +
         ' shoulderHike:' + level4Reach.shoulderHike +
         ' warning:' + (level4Reach.warning || 'none'));
-      lines.push('level4Wipe=clean:' + level4Wipe.cleanPercent +
-        ' validMovement:' + level4Wipe.validMovement +
-        ' completed:' + level4Wipe.completed);
+      if(isLevel4WipeGame()){
+        lines.push('level4Wipe=clean:' + level4Wipe.cleanPercent +
+          ' validMovement:' + level4Wipe.validMovement +
+          ' completed:' + level4Wipe.completed);
+      }
     }
   }
   if((currentScreen === 'game' || currentScreen === 'result') && usesAdvancedThemeModule() && advCurrent){
