@@ -822,3 +822,8 @@
 - 擁擠畫面的 fallback 亦必須保留提示及目標保護，不會再以強行重疊方式生成。
 - iPad 直向 820×1180 及橫向 1180×820 視覺檢查確認點心、標籤與蒸籠目標沒有遮擋。
 - 驗證結果：Level 4–6 技術驗證 **125/125**、追蹤回歸 **21/21**；inline scripts 及 diff formatting 全部通過。
+
+## 2026-08-18 — 手機相機預覽修正
+- 手機直向遊戲時，相機由全螢幕背景改為右下角固定小預覽窗；MediaPipe 仍使用原始相機串流解像度。
+- 加入 `webkit-playsinline` 及 runtime inline playback 設定，避免 iPhone 將相機影片切換成原生全螢幕。
+- Service Worker 升級至 v8，確保裝置取得新版手機介面。

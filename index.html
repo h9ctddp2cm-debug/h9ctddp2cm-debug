@@ -139,6 +139,26 @@ html,body{
 .game-stage canvas#gameCanvas{
   position:absolute; inset:0; width:100%; height:100%; background:transparent;
 }
+/* Phones need the game and controls to remain visible while the camera is active.
+   Keep the source video running at full capture resolution for MediaPipe, but show
+   only a compact, non-interactive preview instead of filling the whole viewport. */
+@media (max-width:600px) and (orientation:portrait){
+  .game-stage video#gameVideo{
+    inset:auto 10px 12px auto;
+    width:min(40vw,168px);
+    height:min(25dvh,210px);
+    object-fit:cover;
+    border:3px solid rgba(255,255,255,.96);
+    border-radius:14px;
+    background:#dfe8e5;
+    box-shadow:0 4px 16px rgba(0,0,0,.28);
+    z-index:3;
+    pointer-events:none;
+  }
+  .game-stage canvas#gameCanvas{ z-index:2; }
+  .recording-indicator,
+  .trial-mode-indicator{ left:auto; right:10px; bottom:calc(min(25dvh,210px) + 22px); }
+}
 .game-stage.level4-movement-alert{
   box-shadow:inset 0 0 0 10px rgba(181,44,37,.92);
   animation:level4AlertPulse .72s ease-in-out infinite alternate;
@@ -1371,7 +1391,7 @@ html,body{
   <div id="screen-game" class="screen">
     <div class="game-stage">
       <div id="feedbackOverlay" style="display:none;position:absolute;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;pointer-events:none;font-size:180px;opacity:0;transition:opacity 0.15s;"></div>
-      <video id="gameVideo" playsinline autoplay muted></video>
+      <video id="gameVideo" playsinline webkit-playsinline autoplay muted></video>
       <canvas id="gameCanvas"></canvas>
       <div class="cook-motion-guide" id="cookMotionGuide" aria-hidden="true"
         data-testid="panel-cooking-motion-guide">
@@ -4778,6 +4798,13 @@ async function startCamera(videoElId){
     return false;
   }
   try{
+    // iOS may promote a camera-backed video to its native fullscreen player
+    // unless inline playback is asserted both in markup and at runtime.
+    videoEl.playsInline = true;
+    videoEl.setAttribute('playsinline', '');
+    videoEl.setAttribute('webkit-playsinline', '');
+    videoEl.muted = true;
+    videoEl.controls = false;
     if(state.stream){
       state.stream.getTracks().forEach(t=>t.stop());
       state.stream = null;

@@ -30,6 +30,17 @@ test("camera capture follows portrait or landscape orientation instead of forcin
   assert.match(publicSource, /video: cameraVideoConstraints/);
 });
 
+test("portrait phones keep the camera inline in a compact preview instead of fullscreen", () => {
+  assert.match(publicSource, /<video id="gameVideo" playsinline webkit-playsinline autoplay muted>/);
+  assert.match(publicSource, /@media \(max-width:600px\) and \(orientation:portrait\)/);
+  assert.match(publicSource, /\.game-stage video#gameVideo\{/);
+  assert.match(publicSource, /width:min\(40vw,168px\)/);
+  assert.match(publicSource, /height:min\(25dvh,210px\)/);
+  assert.ok(publicSource.includes("videoEl.setAttribute('webkit-playsinline', '')"));
+  assert.ok(publicSource.includes("videoEl.controls = false"));
+  assert.match(serviceWorkerSource, /fthue-rehab-v8-20260818/);
+});
+
 test("Levels 3 and 4 can use Pose when tabletop hands occlude the finger model", () => {
   assert.match(publicSource, /source:'pose-bilateral-wrist'/);
   assert.match(publicSource, /source:'pose-wrist'/);
@@ -124,7 +135,7 @@ test("all items stay clear of targets and can be parked in blank space", () => {
 
 test("offline worker forces the current build instead of serving the stale game", () => {
   assert.ok(publicSource.includes('updateViaCache:"none"'));
-  assert.match(serviceWorkerSource, /fthue-rehab-v7-20260818/);
+  assert.match(serviceWorkerSource, /fthue-rehab-v8-20260818/);
 });
 
 test("Level 4 exposes deterministic compound-movement QA hooks", () => {
