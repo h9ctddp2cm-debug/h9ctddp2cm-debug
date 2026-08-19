@@ -199,6 +199,13 @@ html,body{
 .level4-calib-actions button:active{ background:#c9ebe0; }
 .level4-calib-hint{ font-size:14px; font-weight:850; line-height:1.35; }
 .level4-calib-hint .en{ display:block; font-size:12px; font-weight:700; color:#4c625e; }
+.level4-preflight-readouts{
+  display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:5px 8px;
+  padding:7px 8px; border-radius:10px; background:#edf7f3; color:#254c44;
+  font-size:12px; font-weight:800; font-variant-numeric:tabular-nums;
+}
+.level4-preflight-readouts span{ min-width:0; }
+.level4-preflight-readouts b{ color:#0b3e34; font-weight:950; white-space:nowrap; }
 .level4-calib-diag{
   font-size:11px; font-weight:700; line-height:1.3; color:#4c625e;
   white-space:pre-wrap; word-break:break-all;
@@ -1520,6 +1527,12 @@ html,body{
             data-testid="button-level4-mark-extended">記錄伸直終點<br>Mark end</button>
         </div>
         <div class="level4-calib-hint" id="level4CalibHint" role="status" aria-live="polite"></div>
+        <div class="level4-preflight-readouts" aria-label="Level 4 預檢即時讀數">
+          <span>2D 肘角 <b id="level4RawElbowAngle">—</b></span>
+          <span>進度 <b id="level4NormalizedProgress">0%</b></span>
+          <span>狀態 <b id="level4RecognisedState">—</b></span>
+          <span>驗證 <b id="level4VerificationCount">0/3</b></span>
+        </div>
         <div class="level4-calib-diag" id="level4CalibDiag"></div>
       </div>
       <div class="hud">
@@ -6195,7 +6208,7 @@ const LEVEL4_GUIDE_ASSETS = {
   mahjongwash:{src:'img/advanced/level4_mahjongwash_real_life.gif',
     alt:'實景示範：單手前臂沿枱面畫弧洗麻雀'},
   buspay:{src:'img/advanced/level4_buspay_real_life.gif',
-    alt:'實景示範：伸手向前在巴士讀卡器拍卡'},
+    alt:'合成實景示範：屈肘起點、向前伸肘、保持伸肘向外畫弧，再於巴士讀卡器拍卡'},
 };
 /* Kept as an alias so older call sites and QA harnesses keep working. */
 const LEVEL4_SCENARIO_GIFS = LEVEL4_GUIDE_ASSETS;
@@ -6206,12 +6219,12 @@ function level4ScenarioGif(themeId = state.theme){
 const THEMES = {
   wipewindow: mkTheme({
     id:'wipewindow', title:'抹窗擦霧',
-    goal:'持續控制：伸肘後畫大弧',
+    goal:'持續控制：先伸肘，再保持伸肘向外畫大弧',
     itemWord:'霧氣', difficulty:'容易至中等', targetStyle:'panel',
     thumbnail:'img/advanced/level4_cartoon_side_forward.png',
     thumbnailAlt:'患手伸肘向外畫弧的 Level 4 練習',
-    verbFor(){ return '伸肘向外畫弧'; },
-    actionLabelFor(){ return '伸直手肘，向外畫大弧擦走霧氣'; },
+    verbFor(){ return '先伸肘，再向外畫弧'; },
+    actionLabelFor(){ return '先伸直手肘，保持伸肘向外畫大弧擦走霧氣'; },
     categoriesFor(){ return []; },
   }),
   bowling: mkTheme({
@@ -6226,22 +6239,22 @@ const THEMES = {
   }),
   mahjongwash: mkTheme({
     id:'mahjongwash', title:'洗麻雀',
-    goal:'側向控制：沿枱面穩定掃動',
+    goal:'側向控制：先伸肘，再保持伸肘沿枱面向外掃動',
     itemWord:'麻雀', difficulty:'中等', targetStyle:'panel',
     thumbnail:'img/advanced/level4_mahjongwash_real_life.gif',
     thumbnailAlt:'實景示範：沿桌面畫大弧洗麻雀',
-    verbFor(){ return '伸肘畫大弧'; },
-    actionLabelFor(){ return '沿桌面連續畫大弧'; },
+    verbFor(){ return '先伸肘，再向外畫大弧'; },
+    actionLabelFor(){ return '先伸直手肘，保持伸肘沿桌面向外畫大弧'; },
     categoriesFor(){ return []; },
   }),
   buspay: mkTheme({
     id:'buspay', title:'巴士拍卡',
-    goal:'終點準確：伸到目標並停穩',
+    goal:'終點準確：先伸肘，再向外畫弧到目標停穩',
     itemWord:'讀卡器', difficulty:'中等', targetStyle:'panel',
     thumbnail:'img/advanced/level4_buspay_real_life.gif',
-    thumbnailAlt:'實景示範：在巴士內向讀卡器拍卡',
-    verbFor(){ return '伸肘拍卡'; },
-    actionLabelFor(){ return '向前伸肘對準讀卡器'; },
+    thumbnailAlt:'合成實景示範：先向前伸肘，再保持伸肘向外畫弧，最後在巴士讀卡器拍卡',
+    verbFor(){ return '先伸肘，再向外停穩拍卡'; },
+    actionLabelFor(){ return '先伸直手肘，向外畫弧，再對準讀卡器停穩拍卡'; },
     categoriesFor(){ return []; },
   }),
   dimsum: mkTheme({
@@ -7401,6 +7414,10 @@ const level4Reach = {
   reason:level4Controller ? 'framing' : 'calibration-module-missing',
   calibrated:false,
   framingReady:false,
+  gameReady:false,
+  preflightPassed:false,
+  verification:{required:3,count:0,phase:'await-flexed',failure:'',locked:true},
+  recognisedState:null,
   progress:0,
   instantProgress:0,
   engaged:false,
@@ -7433,6 +7450,8 @@ const level4Reach = {
   arcInstant:0,
   arcActive:false,
   arcHold:false,
+  arcPaused:false,
+  extensionRetention:null,
   arcCalibrated:false,
   arcBaseline:null,
   arcScale:null,
@@ -7465,6 +7484,8 @@ function level4SyncReachMirror(){
   if(!level4Controller){
     level4Reach.framingReady = false;
     level4Reach.calibrated = false;
+    level4Reach.gameReady = false;
+    level4Reach.preflightPassed = false;
     level4Reach.progress = 0;
     level4Reach.instantProgress = 0;
     level4Reach.elbowExtensionProgress = 0;
@@ -7477,6 +7498,10 @@ function level4SyncReachMirror(){
   level4Reach.reason = snap.reason;
   level4Reach.calibrated = snap.calibrated;
   level4Reach.framingReady = snap.framingReady;
+  level4Reach.gameReady = snap.gameReady;
+  level4Reach.preflightPassed = snap.preflightPassed;
+  level4Reach.verification = snap.verification || level4Reach.verification;
+  level4Reach.recognisedState = snap.recognisedState || null;
   level4Reach.progress = snap.progress;
   level4Reach.instantProgress = snap.instantProgress;
   level4Reach.engaged = snap.engaged;
@@ -7509,6 +7534,8 @@ function level4SyncReachMirror(){
   level4Reach.arcInstant = snap.arc ? snap.arc.instant : 0;
   level4Reach.arcActive = snap.arcActive;
   level4Reach.arcHold = snap.arc ? snap.arc.hold : false;
+  level4Reach.arcPaused = snap.arc ? snap.arc.paused : false;
+  level4Reach.extensionRetention = snap.arc ? snap.arc.extensionRetention : null;
   level4Reach.arcCalibrated = snap.arc ? snap.arc.calibrated : false;
   level4Reach.arcBaseline = snap.arc ? snap.arc.baseline : null;
   level4Reach.arcScale = snap.arc ? snap.arc.scale : null;
@@ -7565,16 +7592,22 @@ function level4UpdateCalibrationBar(){
   const hint = document.getElementById('level4CalibHint');
   const diag = document.getElementById('level4CalibDiag');
   const guide = level4Reach.guidance();
+  const verification = level4Reach.verification || {required:3,count:0};
+  const rawAngle = document.getElementById('level4RawElbowAngle');
+  const normalised = document.getElementById('level4NormalizedProgress');
+  const recognised = document.getElementById('level4RecognisedState');
+  const verificationCount = document.getElementById('level4VerificationCount');
+  if(rawAngle) rawAngle.textContent = Number.isFinite(level4Reach.elbowAngle)
+    ? level4Reach.elbowAngle.toFixed(1) + '°' : '—';
+  if(normalised) normalised.textContent = Math.round(clamp01(level4Reach.progress)*100) + '%';
+  if(recognised) recognised.textContent = level4Reach.recognisedState || '追蹤未就緒';
+  if(verificationCount) verificationCount.textContent =
+    verification.count + '/' + verification.required;
   if(hint){
-    hint.innerHTML = level4Reach.calibrated
-      ? '<span>已校準 · 伸肘向前／屈肘收手</span>'
-        + '<span class="en">Calibrated · extend to advance, flex to return</span>'
-      : '<span>' + guide.main + (guide.detail ? ' · ' + guide.detail : '') + '</span>'
-        + '<span class="en">' + guide.en + '</span>';
+    hint.innerHTML = '<span>' + guide.main + (guide.detail ? ' · ' + guide.detail : '') + '</span>'
+      + '<span class="en">' + guide.en + '</span>';
   }
-  if(diag) diag.textContent = level4Reach.calibrated && !level4DebugEnabled()
-    ? ''
-    : level4CalibrationDiagnosticsLine();
+  if(diag) diag.textContent = level4CalibrationDiagnosticsLine();
 }
 function level4DebugEnabled(){
   try{
@@ -7588,8 +7621,8 @@ function level4DebugEnabled(){
    Progress is stored as a small logical grid. This avoids reading every canvas
    pixel on every camera frame, which was too expensive on older iPads. */
 const level4Wipe = {
-  cols:18,
-  rows:12,
+  cols:16,
+  rows:10,
   cells:[],
   cleaned:0,
   cleanPercent:0,
@@ -7607,14 +7640,16 @@ const level4Wipe = {
     this.nextPaneAt = 0;
   }
 };
-const LEVEL4_WIPE_BOUNDS = {left:0.12, top:0.24, right:0.88, bottom:0.86};
+// Deliberately broad bedside window: the active fog occupies a visibly larger
+// central canvas while the movement filter below still rejects stationary noise.
+const LEVEL4_WIPE_BOUNDS = {left:0.07, top:0.18, right:0.93, bottom:0.90};
 function level4MarkFogPoint(nx, ny){
   if(!isLevel4WipeGame() || level4Wipe.completed) return;
   const b = LEVEL4_WIPE_BOUNDS;
   if(nx < b.left || nx > b.right || ny < b.top || ny > b.bottom) return;
   const gx = (nx-b.left)/(b.right-b.left) * level4Wipe.cols;
   const gy = (ny-b.top)/(b.bottom-b.top) * level4Wipe.rows;
-  const radius = 1.45;
+  const radius = 1.80;
   for(let row=0; row<level4Wipe.rows; row++){
     for(let col=0; col<level4Wipe.cols; col++){
       if(Math.hypot(col+0.5-gx, row+0.5-gy) > radius) continue;
@@ -7644,13 +7679,14 @@ function level4MarkFogPoint(nx, ny){
    movement: adequate stabilized elbow extension first, then the side-correct
    outward/abduction path. 茶樓 dimsum and 保齡球 bowling never use this gate. */
 function level4PathGateOpen(motion){
-  if(!motion?.calibrated || motion.shoulderHike) return false;
+  if(!motion?.calibrated || motion.gameReady !== true || motion.shoulderHike) return false;
   const extensionSeen = motion.reachGate
     || motion.cyclePhase === 'reached'
     || motion.cyclePhase === 'arc-out'
     || motion.cyclePhase === 'arc-return';
   if(!extensionSeen) return false;
-  if(!motion.arcCalibrated) return clamp01(motion.progress) >= 0.35;
+  if(!motion.arcCalibrated || motion.arcPaused) return false;
+  if(Number.isFinite(motion.extensionRetention) && motion.extensionRetention < 0.45) return false;
   return motion.arcActive || clamp01(motion.arcProgress) >= 0.12;
 }
 function updateLevel4Wipe(cursorNx, cursorNy, motion){
@@ -7677,7 +7713,12 @@ function updateLevel4Wipe(cursorNx, cursorNy, motion){
   const distance = Math.hypot(dx,dy);
   // A stationary wrist must not clear the window. Ignore tracking noise, and
   // interpolate intentional arcs so faster movements do not leave large gaps.
-  if(distance < 0.006 || distance > 0.18) return;
+  // Refresh the anchor even for small tremor so a stationary jitter cloud can
+  // never accumulate into a long virtual wipe.
+  if(distance < 0.006 || distance > 0.18){
+    level4Wipe.lastPoint = point;
+    return;
+  }
   const steps = Math.max(1, Math.ceil(distance/0.018));
   for(let i=1; i<=steps; i++){
     level4MarkFogPoint(
@@ -7920,6 +7961,12 @@ function updateGameLogic(){
       setActionPrompt(guide.main, guide.detail);
       return;
     }
+    if(!level4Reach.gameReady){
+      dwellTarget = null;
+      const guide = level4Reach.guidance();
+      setActionPrompt(guide.main, guide.detail);
+      return;
+    }
     if(isLevel4WipeGame()){
       dwellTarget = null;
       if(level4Wipe.completed){
@@ -7943,12 +7990,13 @@ function updateGameLogic(){
     }
     if(isLevel4MahjongWashGame()){
       dwellTarget = null;
-      setActionPrompt('伸肘畫大弧', '洗牌 ' + Math.round(level4MiniGames.mahjong.progress*100) + '%');
+      setActionPrompt('先伸肘，再保持伸肘向外畫大弧', '洗牌 ' + Math.round(level4MiniGames.mahjong.progress*100) + '%');
       return;
     }
     if(isLevel4BusPayGame()){
       dwellTarget = null;
-      setActionPrompt('伸肘拍卡', level4MiniGames.bus.holdFrames ? '保持對準' : '移到黃色讀卡器');
+      setActionPrompt('先伸肘 → 向外畫弧 → 停穩拍卡',
+        level4MiniGames.bus.holdFrames ? '保持對準黃色讀卡器' : '伸肘後向外移到黃色讀卡器');
       return;
     }
   }
@@ -7976,7 +8024,7 @@ function updateGameLogic(){
       // 對於顫抖病人：碰到食物邊邊也算抓到
       // Pickup only at the participant's own calibrated flexed endpoint.
       const level4AtStart = !isLevel4Tabletop()
-        || (level4Reach.returnReady && !level4Reach.engaged);
+        || (level4Reach.gameReady && level4Reach.returnReady && !level4Reach.engaged);
       const overFood = nearest && level4AtStart && nearestDist <= (nearest.r + 80);
       if(overFood && still){
         if(dwellTarget !== 'food'){
@@ -8035,7 +8083,7 @@ function updateGameLogic(){
       }
       // Placement only once the calibrated extended endpoint is reached.
       const level4CanPlace = !isLevel4Tabletop()
-        || (level4Reach.completionReady && level4Reach.reachGate);
+        || (level4Reach.gameReady && level4Reach.completionReady && level4Reach.reachGate);
       if(onPlate && level4CanPlace && still){
         if(dwellTarget !== 'plate'){
           dwellTarget = 'plate';
@@ -12515,6 +12563,10 @@ window.__qa = {
   level4ReachState(){
     return {
       calibrated:level4Reach.calibrated,
+      gameReady:level4Reach.gameReady,
+      preflightPassed:level4Reach.preflightPassed,
+      verification:{...level4Reach.verification},
+      recognisedState:level4Reach.recognisedState,
       stage:level4Reach.stage,
       reason:level4Reach.reason,
       progress:level4Reach.progress,
@@ -12550,6 +12602,8 @@ window.__qa = {
       arcInstant:level4Reach.arcInstant,
       arcActive:level4Reach.arcActive,
       arcHold:level4Reach.arcHold,
+      arcPaused:level4Reach.arcPaused,
+      extensionRetention:level4Reach.extensionRetention,
       arcCalibrated:level4Reach.arcCalibrated,
       cyclePhase:level4Reach.cyclePhase,
       cycleOrdered:level4Reach.cycleOrdered,
@@ -13071,6 +13125,8 @@ window.__level4GameRuntime = Object.freeze({
   reachMotion(){
     return {
       calibrated:level4Reach.calibrated,
+      gameReady:level4Reach.gameReady,
+      preflightPassed:level4Reach.preflightPassed,
       progress:clamp01(level4Reach.progress),
       engaged:level4Reach.engaged,
       reachGate:level4Reach.reachGate,
@@ -13080,6 +13136,8 @@ window.__level4GameRuntime = Object.freeze({
       // Signal B for the three path games only.
       arcProgress:clamp01(level4Reach.arcProgress),
       arcActive:level4Reach.arcActive,
+      arcPaused:level4Reach.arcPaused,
+      extensionRetention:level4Reach.extensionRetention,
       arcCalibrated:level4Reach.arcCalibrated,
       cyclePhase:level4Reach.cyclePhase,
       cycleOrdered:level4Reach.cycleOrdered,
