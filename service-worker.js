@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v22-20260819-level4-safe-gifs";
+const CACHE_VERSION = "fthue-rehab-v23-20260819-level4-real-life-gifs-adaptive";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");
