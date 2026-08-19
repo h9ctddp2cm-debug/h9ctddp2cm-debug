@@ -9,3 +9,6 @@ qa/user-recordings/
 qa/level4-user-5789/
 qa/level4-recording-recheck/
 tools/__pycache__/
+# Local visual QA may contain identifiable bedside or device-test imagery.
+# Never stage or publish these captures; tracked historical QA files remain tracked.
+qa/

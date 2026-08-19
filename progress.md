@@ -1,5 +1,17 @@
 # 上肢功能復康訓練 · 多活動遊戲 — 開發記錄
 
+Original prompt: Fix Level 6–7 interactions: make light clothes-peg press detection easier without claiming tool/force sensing; keep bare three-finger pinch held through transport until a stabilized reopen; enlarge Level 6–7 dim sum and steamers 1.5× without collisions; and make Home/Back/Stop safely return to level selection.
+
+## 2026-08-19 Level 6–7 interaction, layout and navigation repair
+
+- **Clothes-peg:** calibration and runtime now use the same composite hand-aperture score (thumb-to-index and thumb-to-middle observable gaps). A smaller sustained calibrated change enters a press; separate lower exit threshold preserves hysteresis. All relevant copy states that the camera observes visible hand motion only, and does not identify a tool or measure force.
+- **Bare three-finger transport:** the stabilized pinch state is now the sole held/reopen source. A raw `isOpenPrep` fluctuation cannot immediately release an item. Bare-pinch transport uses a slightly faster adaptive cursor EMA while carrying, with low-speed jitter filtering retained.
+- **Dim sum:** Level 6–7 dim sum and steamer dimensions are 1.5× with viewport caps. iPad layouts use two separated bottom steamers; compact portrait stacks two left-side steamers vertically to avoid the inline camera preview and preserve a clear source-to-target lane.
+- **Navigation:** result Home, game Back, safety-pause Home and stop-confirmation Home all use one complete level-selection exit path. It clears safety/rest/stop overlays, timers, tracking/camera state, held-item state and animation work. Safety pause retains both Continue and Stop actions.
+- **Deterministic coverage:** added `tests/level67-interactions.test.mjs` for light-press hysteresis, 1.5× layout at iPad landscape/portrait and compact portrait, and safety/result Home cleanup. Updated tracking assertions and cache version (`v17`).
+- **Validated:** `bash tools/checkjs.sh`; `git diff --check`; `NODE_PATH=/home/user/node_modules node --test tests/level67-interactions.test.mjs` (5/5); and full `node --test tests/*.mjs` (71 passed, 0 failed, 3 pre-existing skips). Browser visual QA saved in `qa/level67-interactions-ipad-landscape.png`, `qa/level67-interactions-phone-final.png`, and `qa/level67-interactions-safety-home.png`; no page errors observed.
+- **Bedside caveat:** thresholds are intentionally easier, but still need confirmation against the target iPad camera angle, lighting, finger visibility and each participant’s available hand-opening range. MediaPipe cannot observe actual peg force or confirm physical tool contact.
+
 ## 2026-08-18 Level 4 五款遊戲正式顯示
 
 - Level 4 活動庫預設直接顯示五款獨立遊戲：茶樓飲茶、抹窗擦霧、保齡球、洗麻雀及巴士拍卡，不再只顯示兩款。

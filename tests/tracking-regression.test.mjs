@@ -38,7 +38,7 @@ test("portrait phones keep the camera inline in a compact preview instead of ful
   assert.match(publicSource, /height:min\(25dvh,210px\)/);
   assert.ok(publicSource.includes("videoEl.setAttribute('webkit-playsinline', '')"));
   assert.ok(publicSource.includes("videoEl.controls = false"));
-  assert.match(serviceWorkerSource, /fthue-rehab-v16-20260819-peg-light-press/);
+  assert.match(serviceWorkerSource, /fthue-rehab-v17-20260819-level67-interactions/);
 });
 
 test("Levels 3 and 4 can use Pose when tabletop hands occlude the finger model", () => {
@@ -162,7 +162,7 @@ test("all items stay clear of targets and can be parked in blank space", () => {
 
 test("offline worker forces the current build instead of serving the stale game", () => {
   assert.ok(publicSource.includes('updateViaCache:"none"'));
-  assert.match(serviceWorkerSource, /fthue-rehab-v16-20260819-peg-light-press/);
+  assert.match(serviceWorkerSource, /fthue-rehab-v17-20260819-level67-interactions/);
 });
 
 test("Level 4 exposes deterministic compound-movement QA hooks", () => {
@@ -210,7 +210,7 @@ test("Level 5 calibration accepts the participant's available opening range with
   assert.match(publicSource, /now\s*-\s*c\.openStart\s*>=\s*750/);
   assert.match(publicSource, /openMean\s*\+\s*0\.035/);
   assert.match(publicSource, /now\s*-\s*c\.closedStart\s*>=\s*550/);
-  assert.match(publicSource, /openMean\s*\+\s*gap\s*\*\s*\(isPegMode\(\)\s*\?\s*0\.34\s*:\s*0\.48\)/);
+  assert.match(publicSource, /openMean\s*\+\s*gap\s*\*\s*\(isPegMode\(\)\s*\?\s*0\.24\s*:\s*0\.48\)/);
   assert.match(
     publicSource,
     /const PREP_OPEN_MS\s*=\s*220,\s*GRASP_HOLD_MS\s*=\s*360,\s*DROP_DWELL_MS\s*=\s*650/
@@ -241,23 +241,24 @@ test("bare, peg and chopsticks modes use different observable tracking signals",
   assert.match(publicSource, /const indexGap = distance\(lm\[4\], lm\[8\]\)/);
   assert.match(publicSource, /const middleGap = distance\(lm\[4\], lm\[12\]\)/);
   assert.match(publicSource, /Math\.min\(indexGap, middleGap\) \* 0\.62/);
-  assert.match(publicSource, /isOpenPrep:!pinch\.isPinching/);
+  assert.match(publicSource, /const pinchHeld = stabiliseDetectedGesture\(pinch\.isPinching, 'pinch'\)/);
+  assert.match(publicSource, /isOpenPrep:!pinchHeld/);
   assert.match(publicSource, /const GESTURE_CONFIRM_MS = 60/);
   assert.match(publicSource, /function computePegPressState\(lm, isPressingPrev\)/);
   assert.match(publicSource, /source:'peg-aperture'/);
-  assert.match(publicSource, /isPegMode\(\) \? 0\.012 : 0\.04/);
+  assert.match(publicSource, /isPegMode\(\) \? 0\.006 : 0\.04/);
   assert.match(publicSource, /source:'index-dwell'/);
   assert.match(publicSource, /method:isChopsticksMode\(\) \? 'chopsticks_index_dwell' : 'dwell'/);
 });
 
 test("peg mode accepts a small calibrated light press and uses hysteresis for release", () => {
   assert.match(publicSource, /function computePegPressState\(lm, isPressingPrev\)/);
-  assert.match(publicSource, /const aperture = Math\.min\(indexGap, middleGap \* 0\.92\)/);
-  assert.match(publicSource, /const enter = personal \? thresholds\.personalGraspEnter : 0\.24/);
-  assert.match(publicSource, /const exit = personal \? thresholds\.personalGraspExit : 0\.18/);
-  assert.match(publicSource, /aperture <= \(isPressingPrev \? 0\.50 : 0\.43\)/);
-  assert.match(publicSource, /value >= openMean \+ Math\.max\(0\.010, openMean \* 0\.025\)/);
-  assert.match(publicSource, /isPegMode\(\) \? 0\.34 : 0\.48/);
+  assert.match(publicSource, /const aperture = nearGap \* 0\.68 \+ meanGap \* 0\.32/);
+  assert.match(publicSource, /const enter = personal \? thresholds\.personalGraspEnter : 0\.56/);
+  assert.match(publicSource, /const exit = personal \? thresholds\.personalGraspExit : 0\.51/);
+  assert.match(publicSource, /score >= \(isPressingPrev \? exit : enter\)/);
+  assert.match(publicSource, /value >= openMean \+ Math\.max\(0\.006, openMean \* 0\.015\)/);
+  assert.match(publicSource, /isPegMode\(\) \? 0\.24 : 0\.48/);
 });
 
 test("research and QA flows preserve the selected Level 6–7 tool mode", () => {
