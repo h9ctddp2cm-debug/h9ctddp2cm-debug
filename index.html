@@ -1495,6 +1495,7 @@ html,body{
         <div class="safety-pause-actions">
           <button type="button" id="btnSafetyPauseResume" data-testid="button-safety-pause-resume">患者已準備好，繼續</button>
           <button type="button" class="ghost" id="btnSafetyPauseStop" data-testid="button-safety-pause-stop">停止這一節</button>
+          <button type="button" class="ghost" id="btnSafetyPauseHome" data-testid="button-safety-pause-home">返回主頁</button>
         </div>
       </div>
       <div class="stop-confirm" id="stopConfirmOverlay" role="alertdialog" aria-live="assertive"
@@ -1509,6 +1510,7 @@ html,body{
           <button type="button" data-stop-reason="other" data-testid="button-stop-reason-other">其他原因</button>
         </div>
         <button type="button" class="ghost" id="btnStopCancel" data-testid="button-stop-cancel">取消，繼續訓練</button>
+        <button type="button" class="ghost" id="btnStopHome" data-testid="button-stop-home">返回主頁</button>
       </div>
       <div class="comp-panel" id="compPanel" data-testid="panel-compensation">
         <h3>治療師觀察記錄（人手確認）</h3>
@@ -2603,6 +2605,8 @@ window.confirmStop = confirmStop;
   const row = document.getElementById('stopReasonRow');
   const pauseResume = document.getElementById('btnSafetyPauseResume');
   const pauseStop = document.getElementById('btnSafetyPauseStop');
+  const pauseHome = document.getElementById('btnSafetyPauseHome');
+  const stopHome = document.getElementById('btnStopHome');
   if(rest) rest.addEventListener('click', startRest);
   if(stop) stop.addEventListener('click', openStopConfirm);
   if(cancel) cancel.addEventListener('click', closeStopConfirm);
@@ -2620,6 +2624,8 @@ window.confirmStop = confirmStop;
     });
   }
   if(pauseStop) pauseStop.addEventListener('click', ()=> confirmStop('pain_or_discomfort'));
+  if(pauseHome) pauseHome.addEventListener('click', ()=> exitToLevelSelection());
+  if(stopHome) stopHome.addEventListener('click', ()=> exitToLevelSelection());
   if(resume){
     // Existing research rest overlay button also ends a manual rest.
     resume.addEventListener('click', ()=>{ if(restPauseActive) endRest(); });
@@ -2733,6 +2739,8 @@ function resetSafetyRuntime(){
   safetyPauseActive = false;
   hideSafetyPause();
   closeStopConfirm();
+  const restOverlay = document.getElementById('pilotRestOverlay');
+  if(restOverlay) restOverlay.classList.remove('show');
   const alertEl = document.getElementById('compAlert');
   if(alertEl){ alertEl.style.display = 'none'; alertEl.textContent = ''; }
   const panel = document.getElementById('compPanel');
@@ -3881,7 +3889,7 @@ document.getElementById('btnResearchBegin').addEventListener('click', async ()=>
   if(await startCamera('calibVideo') === false) return;
   startCalibLoop();
 });
-document.getElementById('btnBackToLevel').addEventListener('click', ()=> showScreen('level'));
+document.getElementById('btnBackToLevel').addEventListener('click', ()=> exitToLevelSelection());
 document.getElementById('btnBackToLibrary').addEventListener('click', ()=>{
   renderActivityLibrary();
   showScreen('library');
@@ -4518,14 +4526,7 @@ document.getElementById('btnRetry').addEventListener('click', async ()=>{
   await enterCalibrationFlow();
 });
 // Home：返回級別選擇畫面
-document.getElementById('btnHome').addEventListener('click', ()=>{
-  clearMovementRecording();
-  stopCamera();
-  research.active = false;
-  setStandardSession();
-  document.getElementById('calibChecklist').classList.remove('active');
-  showScreen('level');
-});
+document.getElementById('btnHome').addEventListener('click', ()=> exitToLevelSelection());
 
 function leaveCurrentGame(){
   const wasResearch = research.active;
@@ -4555,6 +4556,43 @@ function leaveCurrentGame(){
     renderActivityLibrary();
     showScreen('library');
   }
+}
+
+// Home is an escape hatch, not a partial screen switch. It clears timer,
+// camera and safety-overlay state so a 5-second hold/rest overlay cannot sit
+// above the Level selection screen and trap the next interaction.
+function exitToLevelSelection(){
+  safetyGatePending = null;
+  cameraErrorContext = null;
+  state.running = false;
+  state.paused = false;
+  if(typeof stopCalibLoop === 'function') stopCalibLoop();
+  resetSafetyRuntime();
+  hideCameraError();
+  if(usesAdvancedThemeModule()) advTeardown();
+  if(gameTimerId){ clearInterval(gameTimerId); gameTimerId = null; }
+  if(cogTimerId){ clearInterval(cogTimerId); cogTimerId = null; }
+  if(gameRAF){ cancelAnimationFrame(gameRAF); gameRAF = null; }
+  window.removeEventListener('resize', resizeGameCanvas);
+  clearTimeout(window._lvlBannerTimer);
+  try{ window.speechSynthesis.cancel(); }catch(e){}
+  clearMovementRecording();
+  stopCamera();
+  heldItem = null;
+  releaseDwellStart = 0;
+  releaseDwellPlate = null;
+  isGrasping = false;
+  handOpenPrep = false;
+  qaHand = null;
+  promptRulesEnabled = true;
+  setPromptSlot('rules');
+  document.getElementById('btnPause').classList.remove('pause-active');
+  document.getElementById('btnPause').textContent = 'Ⅱ 暫停';
+  document.getElementById('calibChecklist').classList.remove('active');
+  research.active = false;
+  state.sessionMode = 'training';
+  state.qaMode = false;
+  showScreen('level');
 }
 document.getElementById('btnGameBack').addEventListener('click', leaveCurrentGame);
 
@@ -5059,12 +5097,15 @@ function detectWrist(videoEl){
       const pinch = computePinchState(lm, isGrasping);
       const midX = (lm[4].x + lm[8].x + lm[12].x) / 3;
       const midY = (lm[4].y + lm[8].y + lm[12].y) / 3;
+      // One stabilized state is the source of truth for both carrying and
+      // releasing. A raw aperture fluctuation must not release a held pinch.
+      const pinchHeld = stabiliseDetectedGesture(pinch.isPinching, 'pinch');
       return { detected:true, nx:interactionX(midX), ny:midY,
-        isGrasping:stabiliseDetectedGesture(pinch.isPinching, 'pinch'),
+        isGrasping:pinchHeld,
         graspScore:pinch.score,
-        // Crossing the participant's release threshold is enough to prepare the
-        // next pickup. Do not require them to reopen to their calibrated maximum.
-        isOpenPrep:!pinch.isPinching, pinchRatio:pinch.ratio, lm };
+        // Release is armed only after the same stabilized reopen state.
+        // It does not require reopening to a theoretical maximum.
+        isOpenPrep:!pinchHeld, pinchRatio:pinch.ratio, lm };
     }
     const usePalmCursor = state.gameType === 'grasp' || isGrossTabletop();
     const nx = interactionX(usePalmCursor ? palmX : tip.x);
@@ -5155,11 +5196,12 @@ function computeGraspScore(lm, isGraspingPrev){
   return { isGrasping, score, valid:true };
 }
 
-/* Clothes-peg mode needs a dedicated light-press signal. A peg may only move
-   the thumb and index/middle fingertips a short distance, so Level 5's
-   whole-hand curl rule misses clinically appropriate light presses. Measure
-   the smallest visible thumb-to-finger aperture relative to hand scale and
-   use the participant's relaxed/pressed calibration whenever available. */
+/* Clothes-peg mode observes visible hand motion only; it neither identifies a
+   physical tool nor measures force. A light press can move thumb, index and
+   middle fingertips by only a short distance, so whole-hand curl is unsuitable.
+   Blend the nearest aperture with the mean aperture: this remains tolerant of
+   asymmetric movement while preventing one flickering fingertip from activating
+   the game. Calibration and runtime both use this same score. */
 function computePegPressState(lm, isPressingPrev){
   if(!hasFiniteHandLandmarks(lm, [0,4,5,8,9,12])){
     return { isPressing:false, aperture:null, score:0, valid:false };
@@ -5172,19 +5214,21 @@ function computePegPressState(lm, isPressingPrev){
   );
   const indexGap = distance(lm[4], lm[8]) / handScale;
   const middleGap = distance(lm[4], lm[12]) / handScale;
-  const aperture = Math.min(indexGap, middleGap * 0.92);
+  const nearGap = Math.min(indexGap, middleGap * 0.92);
+  const meanGap = (indexGap + middleGap * 0.92) / 2;
+  const aperture = nearGap * 0.68 + meanGap * 0.32;
   const score = clamp01((0.98 - aperture) / 0.78);
   const thresholds = research.active ? research : state;
   const personal = Number.isFinite(thresholds.personalGraspEnter) &&
     Number.isFinite(thresholds.personalGraspExit);
-  const enter = personal ? thresholds.personalGraspEnter : 0.24;
-  const exit = personal ? thresholds.personalGraspExit : 0.18;
+  const enter = personal ? thresholds.personalGraspEnter : 0.56;
+  const exit = personal ? thresholds.personalGraspExit : 0.51;
   const isPressing = personal
     ? score >= (isPressingPrev ? exit : enter)
-    : aperture <= (isPressingPrev ? 0.50 : 0.43);
+    : score >= (isPressingPrev ? exit : enter);
   return {
-    isPressing,
-    aperture, score, valid:true
+    isPressing, aperture, indexGap, middleGap, nearGap, meanGap,
+    score, valid:true
   };
 }
 
@@ -5324,9 +5368,9 @@ function updateCalibrationCopy(){
     openCheck.textContent = '○ 張開三指';
     closeCheck.textContent = '○ 三指輕捏';
   }else if(isPegMode()){
-    hint.textContent = '手掌及指尖入鏡。先放鬆，再輕按夾仔。';
+    hint.textContent = '手掌及指尖入鏡。先放鬆，再輕輕合手指。';
     openCheck.textContent = '○ 放鬆打開';
-    closeCheck.textContent = '○ 輕按夾仔';
+    closeCheck.textContent = '○ 輕輕合手指';
   }else if(isChopsticksMode()){
     hint.textContent = '食指尖／筷子前端方向入鏡；見綠點即可。';
   }else if(state.gameType === 'grasp'){
@@ -5380,7 +5424,7 @@ function startCalibLoop(){
               : isPegMode()
                 // Pressing a low-resistance peg produces much less whole-hand
                 // change than a grasp. Accept a small but sustained difference.
-                ? value >= openMean + Math.max(0.010, openMean * 0.025)
+                ? value >= openMean + Math.max(0.006, openMean * 0.015)
                 : value >= openMean + 0.035;
             if(changedEnough){
               c.closedScores.push(value);
@@ -5401,11 +5445,11 @@ function startCalibLoop(){
             c.openScores.length && c.closedScores.length){
           const openMean = medianValue(c.openScores);
           const closedMean = medianValue(c.closedScores);
-          const gap = Math.max(isPegMode() ? 0.012 : 0.04, closedMean - openMean);
-          thresholds.personalGraspEnter = openMean + gap * (isPegMode() ? 0.34 : 0.48);
+          const gap = Math.max(isPegMode() ? 0.006 : 0.04, closedMean - openMean);
+          thresholds.personalGraspEnter = openMean + gap * (isPegMode() ? 0.24 : 0.48);
           thresholds.personalGraspExit = Math.min(
-            thresholds.personalGraspEnter - (isPegMode() ? 0.006 : 0.015),
-            openMean + gap * (isPegMode() ? 0.20 : 0.38),
+            thresholds.personalGraspEnter - (isPegMode() ? 0.004 : 0.015),
+            openMean + gap * (isPegMode() ? 0.12 : 0.38),
           );
         }
         if(c.ready && state.gameType === 'pinch' &&
@@ -6343,6 +6387,10 @@ function isPortrait(){
   return gameCanvas.height > gameCanvas.width;
 }
 
+function isLevel67DimSumTheme(){
+  return state.level === '67' && getTheme().targetStyle === 'steamer';
+}
+
 function setupTargets(){
   const cw = gameCanvas.width, ch = gameCanvas.height;
   const portrait = isPortrait();
@@ -6380,8 +6428,44 @@ function setupTargets(){
   const shortReach = (!research.active && state.level === '5');
   const pullToCentre = (x)=> shortReach ? (cw / 2 + (x - cw / 2) * 0.72) : x;
   // 患側名稱直接對應畫面方向：右患側向右下，左患側向左下。
-  const tw = portrait ? Math.min(cw * 0.29, 230) : Math.min(cw * 0.24, 260);
+  const level67DimSum = isLevel67DimSumTheme();
+  const standardTw = portrait ? Math.min(cw * 0.29, 230) : Math.min(cw * 0.24, 260);
+  // Level 6–7 dim sum is intentionally 1.5×. The viewport cap is only reached
+  // on a narrow display, where it keeps both steamers fully visible and apart.
+  const tw = level67DimSum
+    ? Math.min(standardTw * 1.5, portrait ? cw * 0.46 : cw * 0.40)
+    : standardTw;
   const th = tw * (style === 'steamer' ? 0.74 : 0.62);
+  if(level67DimSum){
+    const edge = 14;
+    // Phone portrait keeps the inline camera preview at the lower right. Stack
+    // the two enlarged steamers at the lower left so the preview never hides a
+    // valid target, while leaving a clear lane below the source dim sum.
+    if(portrait && cw <= 520){
+      const targetX = Math.max(tw/2 + edge, Math.min(cw * 0.25, cw - tw/2 - edge));
+      const lowerY = ch - th/2 - edge;
+      const upperY = Math.max(th/2 + edge, lowerY - th - 24);
+      targets = cats.slice(0,2).map((c, i)=>({
+        type:c.type, label:c.targetLabel, img:c.targetImg || c.img || null,
+        drawIcon:c.drawIcon || null, style,
+        x:targetX, y:i === 0 ? upperY : lowerY, w:tw, h:th,
+        color:c.color || (i===0 ? '#1A6B5A' : '#E07B39'),
+      }));
+      return;
+    }
+    const minGap = tw + 18;
+    const maxGap = Math.max(0, cw - tw - edge * 2);
+    const targetGap = Math.min(maxGap, Math.max(cw * 0.50, minGap));
+    const targetY = Math.max(th/2 + edge, ch - th/2 - edge);
+    targets = cats.slice(0,2).map((c, i)=>({
+      type:c.type, label:c.targetLabel, img:c.targetImg || c.img || null,
+      drawIcon:c.drawIcon || null, style,
+      x:cw/2 + (i === 0 ? -targetGap/2 : targetGap/2),
+      y:targetY, w:tw, h:th,
+      color:c.color || (i === 0 ? '#1A6B5A' : '#E07B39'),
+    }));
+    return;
+  }
   const outsideX = pullToCentre(sideSign > 0 ? cw * 0.78 : cw * 0.22);
   const landscapeXs = (sideSign > 0 ? [cw * 0.66, cw * 0.87] : [cw * 0.34, cw * 0.13]).map(pullToCentre);
   const portraitYs = shortReach
@@ -6532,7 +6616,15 @@ function makeFoodAt(def, existingFoods){
   const baseR = (isLevel4Tabletop() ? (portrait ? 78 : 104)
     : (portrait ? (advancedPilot ? 62 : 72) : 100)) * level5Boost;
   // Task-specific strata: FTHUE 6 and 7 use progressively smaller objects.
-  const r = baseR * (def.scale || 1.0) * (research.active ? pilotStratum().itemScale : 1);
+  const level67DimSum = state.level === '67' && dimSumTheme;
+  const requestedR = baseR * (def.scale || 1.0) *
+    (research.active ? pilotStratum().itemScale : 1) * (level67DimSum ? 1.5 : 1);
+  // On compact portrait canvases the 1.5× size is capped only when necessary
+  // to preserve a clear three-item layout and an unobstructed instruction area.
+  const maxLevel67DimSumR = portrait
+    ? Math.min(cw * 0.135, ch * 0.11)
+    : cw * 0.135;
+  const r = level67DimSum ? Math.min(requestedR, maxLevel67DimSumR) : requestedR;
 
   // 直向以兩欄多列分佈；橫向保留足夠肩部移動距離，同時容納進階版最多 6 個物件。
   // 限制 spawn 區域：左右都留更大邊距（避免右下角衝碰磟子造成 jitter）
@@ -6588,13 +6680,17 @@ function makeFoodAt(def, existingFoods){
   // separation for the large Level 4 / transparent dim-sum images.
   const slotRatios = isLevel4Tabletop()
     ? [[0.40,0.80],[0.60,0.80]]
-    : (portrait
+    : (level67DimSum
+      ? (portrait
+        ? [[0.24,0.34],[0.76,0.34],[0.50,0.55]]
+        : [[0.22,0.39],[0.50,0.50],[0.78,0.39]])
+      : (portrait
       ? (dimSumTheme
         ? [[0.22,0.34],[0.50,0.45],[0.78,0.34]]
         : [[0.22,0.45],[0.50,0.45],[0.78,0.45]])
       : (dimSumTheme
         ? [[0.22,0.42],[0.50,0.54],[0.78,0.42]]
-        : [[0.22,0.54],[0.50,0.54],[0.78,0.54]]));
+        : [[0.22,0.54],[0.50,0.54],[0.78,0.54]])));
   const activeCount = existingFoods.filter(food => !food.removed).length;
   for(let offset=0; offset<slotRatios.length; offset++){
     const slot = slotRatios[(activeCount + offset) % slotRatios.length];
@@ -7282,8 +7378,14 @@ function updateTracking(){
       const dx = px - dotEmaX, dy = py - dotEmaY;
       const movement = Math.hypot(dx, dy);
       if(movement > TRACKING_DEAD_ZONE_PX){
-        // Faster response for intentional reaching, stronger smoothing near a target.
-        const alpha = movement > 70 ? 0.28 : movement > 24 ? 0.20 : 0.11;
+        // During a Level 6–7 bare-pinch carry, favour a responsive iPad
+        // transport path while retaining a modest EMA and the dead zone.
+        const carryingBarePinch = !!heldItem && isLevel67BareMode();
+        const alpha = movement > 70
+          ? (carryingBarePinch ? 0.46 : 0.28)
+          : movement > 24
+            ? (carryingBarePinch ? 0.34 : 0.20)
+            : (carryingBarePinch ? 0.18 : 0.11);
         dotEmaX += alpha * dx;
         dotEmaY += alpha * dy;
       }
@@ -7574,10 +7676,10 @@ function graspPrompt(key){
     return '張開三指放下';
   }
   if(isPegMode()){
-    if(key === 'prep') return '打開夾仔';
-    if(key === 'hold') return '輕按夾仔';
-    if(key === 'carry') return '保持輕按';
-    return '放鬆打開夾仔';
+    if(key === 'prep') return '放鬆張開手指';
+    if(key === 'hold') return '輕輕合手指';
+    if(key === 'carry') return '保持手指輕合';
+    return '放鬆張開手指放下';
   }
   // Patient-facing wording avoids '握拳 / 握緊', which encourages excessive flexor
   // effort in a spastic hand. Internal variable names are unchanged.
@@ -12019,7 +12121,9 @@ window.__qa = {
     peg(aperture, previous=false){
       const lm = Array.from({length:21}, ()=>({x:0,y:0,z:0}));
       lm[0] = {x:0,y:0,z:0};
-      lm[5] = {x:0.24,y:0,z:0};
+      // Keep the QA hand scale at one so `aperture` is a direct, normalized
+      // test input rather than an accidental by-product of landmark 5.
+      lm[5] = {x:0.8,y:0,z:0};
       lm[9] = {x:1,y:0,z:0};
       lm[4] = {x:0,y:0,z:0};
       lm[8] = {x:Number(aperture),y:0,z:0};
@@ -12032,10 +12136,31 @@ window.__qa = {
       return kind === 'grasp' ? computeGraspScore(lm, false) : computePinchState(lm, false);
     },
   },
+  level67Layout(){
+    const activeFoods = foods.filter(f=>!f.removed);
+    const targetsDoNotOverlap = targets.every((target, index)=>targets.slice(index + 1).every(other=>(
+      target.x-target.w/2 >= other.x+other.w/2 ||
+      other.x-other.w/2 >= target.x+target.w/2 ||
+      target.y-target.h/2 >= other.y+other.h/2 ||
+      other.y-other.h/2 >= target.y+target.h/2
+    )));
+    return {
+      level:state.level,
+      theme:state.theme,
+      targets:targets.map(t=>({x:t.x, y:t.y, w:t.w, h:t.h})),
+      items:activeFoods.map(f=>({x:f.x, y:f.y, r:f.r})),
+      insideCanvas:targets.every(t=>t.x-t.w/2 >= 0 && t.x+t.w/2 <= gameCanvas.width &&
+        t.y-t.h/2 >= 0 && t.y+t.h/2 <= gameCanvas.height) &&
+        activeFoods.every(f=>f.x-f.r >= 0 && f.x+f.r <= gameCanvas.width &&
+          f.y-f.r >= 0 && f.y+f.r <= gameCanvas.height),
+      targetsDoNotOverlap,
+    };
+  },
+  returnHome(){ exitToLevelSelection(); return this.state(); },
   state(){ return {
     screen: currentScreen, level: state.level, theme: state.theme, gameType: state.gameType,
     score, correctCount, grabCount, wrongCount:totalWrong, timeLeft,
-    handDetected, detectionHeldGrace,
+    running:!!state.running, handDetected, detectionHeldGrace,
     held: heldItem ? heldItem.label : null,
     paused: !!state.paused,
     safetyBlocking: isSafetyBlocking(),

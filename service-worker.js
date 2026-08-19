@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v16-20260819-peg-light-press";
+const CACHE_VERSION = "fthue-rehab-v17-20260819-level67-interactions";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");
