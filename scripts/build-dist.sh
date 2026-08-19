@@ -20,7 +20,17 @@ mkdir -p "$DIST"
 cp "$ROOT/index.html" "$DIST/index.html"
 cp "$ROOT/level4-three-games-module.js" "$DIST/level4-three-games-module.js"
 cp "$ROOT/level4-elbow-calibration.js" "$DIST/level4-elbow-calibration.js"
+cp "$ROOT/fthue-adaptive-progression.js" "$DIST/fthue-adaptive-progression.js"
 cp -R "$ROOT/img" "$DIST/img"
+
+# The three Level 4 real-life instructional GIFs must always ship so the guide
+# works with no network. They contain no faces, logos or identifiable people.
+for gif in level4_bowling_real_life.gif level4_buspay_real_life.gif level4_mahjongwash_real_life.gif; do
+  if [ ! -f "$DIST/img/advanced/$gif" ]; then
+    echo "BUILD FAILED: missing Level 4 guide asset img/advanced/$gif" >&2
+    exit 1
+  fi
+done
 cp "$ROOT/manifest.webmanifest" "$DIST/manifest.webmanifest"
 cp "$ROOT/service-worker.js" "$DIST/service-worker.js"
 cp "$ROOT/offline.html" "$DIST/offline.html"

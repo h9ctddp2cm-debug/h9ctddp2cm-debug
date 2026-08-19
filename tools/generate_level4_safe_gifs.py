@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""Generate privacy-safe, fully illustrated Level 4 scenario GIFs."""
+"""SUPERSEDED — kept only as an audit record of the previous cartoon assets.
+
+The Level 4 bowling, bus-card and mahjong-wash guides now ship the reviewed
+real-life GIFs (img/advanced/level4_*_real_life.gif). Running this script would
+re-create the retired *_illustrated.gif files, which the app no longer
+references and which tests assert must not be present. Do not run it as part of
+any build.
+"""
 
 from pathlib import Path
 from math import cos, pi, sin

@@ -39,7 +39,7 @@ test("portrait phones keep the camera inline in a compact preview instead of ful
   assert.match(publicSource, /height:min\(25dvh,210px\)/);
   assert.ok(publicSource.includes("videoEl.setAttribute('webkit-playsinline', '')"));
   assert.ok(publicSource.includes("videoEl.controls = false"));
-  assert.match(serviceWorkerSource, /fthue-rehab-v21-20260819-level4-stabilized-arc-games/);
+  assert.match(serviceWorkerSource, /fthue-rehab-v23-20260819-level4-real-life-gifs-adaptive/);
 });
 
 test("Levels 3 and 4 can use Pose when tabletop hands occlude the finger model", () => {
@@ -183,7 +183,7 @@ test("all items stay clear of targets and can be parked in blank space", () => {
 
 test("offline worker forces the current build instead of serving the stale game", () => {
   assert.ok(publicSource.includes('updateViaCache:"none"'));
-  assert.match(serviceWorkerSource, /fthue-rehab-v21-20260819-level4-stabilized-arc-games/);
+  assert.match(serviceWorkerSource, /fthue-rehab-v23-20260819-level4-real-life-gifs-adaptive/);
 });
 
 test("Level 4 exposes deterministic compound-movement QA hooks", () => {

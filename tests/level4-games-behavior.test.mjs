@@ -181,9 +181,18 @@ test('bowling and bus visuals are offline, deterministic and recognizable', () =
 });
 
 test('per-theme Level 4 scenario GIFs are mapped and shipped offline', () => {
-  assert.match(html, /bowling:\{src:'img\/advanced\/level4_bowling_illustrated\.gif'/);
-  assert.match(html, /buspay:\{src:'img\/advanced\/level4_buspay_illustrated\.gif'/);
-  assert.match(html, /mahjongwash:\{src:'img\/advanced\/level4_mahjongwash_illustrated\.gif'/);
+  assert.match(html, /const LEVEL4_GUIDE_ASSETS = \{/);
+  assert.match(html, /bowling:\{src:'img\/advanced\/level4_bowling_real_life\.gif'/);
+  assert.match(html, /buspay:\{src:'img\/advanced\/level4_buspay_real_life\.gif'/);
+  assert.match(html, /mahjongwash:\{src:'img\/advanced\/level4_mahjongwash_real_life\.gif'/);
+  // The superseded illustrated GIFs must no longer be referenced anywhere.
+  assert.doesNotMatch(html, /level4_bowling_illustrated\.gif/);
+  assert.doesNotMatch(html, /level4_buspay_illustrated\.gif/);
+  assert.doesNotMatch(html, /level4_mahjongwash_illustrated\.gif/);
+  // Activity-library thumbnails use the same real-life assets.
+  assert.match(html, /thumbnail:'img\/advanced\/level4_bowling_real_life\.gif'/);
+  assert.match(html, /thumbnail:'img\/advanced\/level4_buspay_real_life\.gif'/);
+  assert.match(html, /thumbnail:'img\/advanced\/level4_mahjongwash_real_life\.gif'/);
   assert.match(html, /wipewindow:\{src:'img\/advanced\/level4_lateral_forward_slide_v2\.gif'/);
   assert.match(html, /dimsum:\{src:'img\/advanced\/level4_lateral_forward_slide_v2\.gif'/);
   assert.match(html, /function renderLevel4ScenarioDemo\(\)/);
@@ -191,8 +200,17 @@ test('per-theme Level 4 scenario GIFs are mapped and shipped offline', () => {
   // Compact and inline: the demo lives in the setup flow, never over the canvas.
   assert.match(html, /\.level4-scenario-demo\{/);
   assert.doesNotMatch(html, /level4-scenario-demo\{[^}]*position:\s*fixed/);
-  for(const file of ['level4_bowling_illustrated.gif', 'level4_buspay_illustrated.gif', 'level4_mahjongwash_illustrated.gif']){
+  const shipped = ['level4_bowling_real_life.gif', 'level4_buspay_real_life.gif',
+    'level4_mahjongwash_real_life.gif'];
+  for(const file of shipped){
     assert.ok(fs.existsSync(path.join(root, 'img/advanced', file)), `${file} must ship with the app`);
+    // The build guards each asset explicitly so a missing GIF fails the build.
+    assert.ok(build.includes(file), `${file} must be guarded by scripts/build-dist.sh`);
+  }
+  for(const file of ['level4_bowling_illustrated.gif', 'level4_buspay_illustrated.gif',
+    'level4_mahjongwash_illustrated.gif']){
+    assert.ok(!fs.existsSync(path.join(root, 'img/advanced', file)),
+      `${file} must be removed from the shipped assets`);
   }
   // img/ is copied wholesale into dist and precached from the dist listing.
   assert.match(build, /cp -R "\$ROOT\/img" "\$DIST\/img"/);

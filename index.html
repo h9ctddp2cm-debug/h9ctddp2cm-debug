@@ -377,6 +377,28 @@ html,body{
   border:1.5px solid #2b4f8c; background:#fff; color:#1e3a68; font:800 15px/1.2 inherit; cursor:pointer; }
 .comp-panel .comp-alert{ margin:6px 0 0; padding:9px 10px; border-radius:10px; background:#fff2ef;
   color:#7d1a12; font-size:14px; font-weight:800; line-height:1.5; }
+
+/* ---- 有效連續試作進度及級別建議（治療師參考） ---- */
+.adaptive-streak{ position:absolute; top:78px; left:10px; z-index:23; display:flex; flex-direction:column;
+  gap:4px; max-width:min(320px,74vw); padding:8px 11px; border-radius:12px;
+  border:1.5px solid rgba(1,105,111,.55); background:rgba(255,255,255,.95);
+  box-shadow:0 3px 10px rgba(0,0,0,.18); text-align:left; }
+.adaptive-streak[hidden]{ display:none; }
+.adaptive-streak-main{ font:800 15px/1.35 inherit; color:#0c4e54; font-variant-numeric:tabular-nums lining-nums; }
+.adaptive-streak-note{ font:750 13px/1.4 inherit; color:#7d1a12; }
+.adaptive-streak-note[hidden]{ display:none; }
+.adaptive-card{ position:absolute; inset:0; z-index:72; display:none; flex-direction:column;
+  align-items:center; justify-content:center; gap:16px; padding:24px;
+  background:rgba(12,78,84,.95); color:#fff; text-align:center; }
+.adaptive-card.show{ display:flex; }
+.adaptive-card strong{ font-size:clamp(22px,4.2vw,34px); font-weight:900; }
+.adaptive-card span{ max-width:660px; font-size:clamp(16px,2.6vw,21px); font-weight:750; line-height:1.55; }
+.adaptive-card .adaptive-card-disclaimer{ max-width:660px; margin:0; padding:9px 12px; border-radius:10px;
+  background:rgba(255,255,255,.14); font-size:clamp(13px,2vw,16px); font-weight:700; line-height:1.5; }
+.adaptive-card-actions{ display:flex; flex-wrap:wrap; gap:12px; justify-content:center; }
+.adaptive-card-actions button{ min-height:58px; padding:14px 22px; border-radius:12px;
+  border:2px solid #fff; background:#fff; color:#0c4e54; font:900 18px/1.2 inherit; cursor:pointer; }
+.adaptive-card-actions button.ghost{ background:transparent; color:#fff; }
 .secondary-rule{
   position:static; z-index:18;
   max-width:100%; padding:6px 9px;
@@ -1573,6 +1595,22 @@ html,body{
         <button type="button" data-comp="finger_tightening" data-testid="button-comp-finger">手指愈握愈緊</button>
         <p class="comp-alert" id="compAlert" data-testid="text-comp-alert" style="display:none;"></p>
       </div>
+      <div class="adaptive-streak" id="adaptiveStreakStatus" role="status" aria-live="polite"
+        data-testid="text-adaptive-streak" hidden>
+        <span class="adaptive-streak-main" id="adaptiveStreakMain">有效連續成功 0/15</span>
+        <span class="adaptive-streak-note" id="adaptiveStreakNote" hidden>追蹤／校準問題，本次不計</span>
+      </div>
+      <div class="adaptive-card" id="adaptiveProgressionCard" role="alertdialog" aria-live="assertive"
+        aria-labelledby="adaptiveCardTitle" data-testid="panel-adaptive-recommendation">
+        <strong id="adaptiveCardTitle">治療師參考</strong>
+        <span id="adaptiveCardBody"></span>
+        <p class="adaptive-card-disclaimer" id="adaptiveCardDisclaimer"
+          data-testid="text-adaptive-disclaimer">本程式不會自動評估 FTHUE 級別，也不會自行更改級別；是否調整須由治療師確認。</p>
+        <div class="adaptive-card-actions">
+          <button type="button" id="btnAdaptiveAccept" data-testid="button-adaptive-accept">接受建議並更新訓練級別</button>
+          <button type="button" class="ghost" id="btnAdaptiveDecline" data-testid="button-adaptive-decline">不接受，維持現有級別</button>
+        </div>
+      </div>
       <div class="game-controls">
         <button class="game-control-btn" id="btnGameBack" aria-label="返回活動選擇">← 返回</button>
         <button class="game-control-btn therapist-btn" id="btnCompObserve" aria-label="治療師代償觀察記錄"
@@ -2014,6 +2052,7 @@ html,body{
 <!-- Level 4 participant-specific two-pose elbow calibration (shared by all
      five Level 4 games and by the deterministic Node tests). -->
 <script src="level4-elbow-calibration.js"></script>
+<script src="fthue-adaptive-progression.js"></script>
 <script>
 (function(){
 "use strict";
@@ -2042,6 +2081,11 @@ const state = {
   sessionMode:'training', // training | trial
   level4SessionThemes:['dimsum','wipewindow','bowling','mahjongwash','buspay'],
   level4RotationIndex:0,
+  /* Adaptive progression: the app-side TRAINING stage/band only. The clinical
+     FTHUE level stays with the therapist and is never changed automatically. */
+  trainingStageId:'',
+  trainingStageLevel:'',
+  trainingBand:'',
 };
 const RESEARCH_VERSION = 'pilot-5.0.0-neuroscience';
 const PILOT_TRAINING_SCENARIOS = {
@@ -2583,6 +2627,7 @@ function showCameraError(err, context){
   if(startBtn) startBtn.disabled = true;
   sessionSafety.trackingFailureCount++;
   safetyLog('camera_error', { error_name: (err && (err.name || err.code)) || 'unknown' });
+  adaptiveInvalidateNextTrial('camera_error');
 }
 function hideCameraError(){
   const box = document.getElementById('cameraErrorBox');
@@ -2774,9 +2819,187 @@ window.recordCompensation = recordCompensation;
       const btn = event.target.closest('[data-comp]');
       if(!btn) return;
       recordCompensation(btn.dataset.comp);
+      adaptiveNoteCompensation(btn.dataset.comp);
     });
   }
 })();
+
+/* ==================== 適應性進度（治療師確認制） ====================
+   這個模組只統計「完成一次遊戲試作」的連續有效結果，並向治療師提出參考建議。
+   它不會自動評估 FTHUE 級別，也不會自行更改臨床級別；所有變更須治療師按鍵確認。
+   計算單位是一次完整的任務循環（例如一次放置、一次拍卡、一次推保齡球），
+   絕不會把逐幀偵測當成試作。 */
+const ADAPTIVE_STAGE_FOR_LEVEL = { '3':'early_level3', '4':'early_level4', '5':'level5', '67':'level6' };
+let adaptiveProgression = null;
+let adaptiveTrialSeq = 0;
+/* When tracking, calibration, occlusion or the camera fails, the NEXT completed
+   trial is discarded instead of being scored either way. */
+let adaptiveInvalidReason = '';
+let adaptiveLastTrialId = '';
+
+function adaptiveLang(){ return (research.active && pilotLang === 'en') ? 'en' : 'zh'; }
+
+function adaptiveEnsureController(){
+  if(adaptiveProgression) return adaptiveProgression;
+  const lib = window.FthueAdaptiveProgression;
+  if(!lib) return null;
+  adaptiveProgression = lib.createController({
+    stageId: ADAPTIVE_STAGE_FOR_LEVEL[state.level] || 'early_level4',
+    mode: isTrialMode() ? 'trial' : 'training',
+    log: safetyLog,
+  });
+  return adaptiveProgression;
+}
+
+/* Called when a level/mode is chosen so the stage and mode follow the session. */
+function adaptiveBeginSession(levelId, mode){
+  const controller = adaptiveEnsureController();
+  if(!controller) return;
+  controller.setMode(mode === 'trial' ? 'trial' : 'training');
+  const desired = state.trainingStageId && state.trainingStageLevel === levelId
+    ? state.trainingStageId
+    : (ADAPTIVE_STAGE_FOR_LEVEL[levelId] || 'early_level4');
+  controller.setStage(desired);
+  adaptiveInvalidReason = '';
+  adaptiveLastTrialId = '';
+  adaptiveRenderStreak();
+  adaptiveHideCard();
+}
+
+function adaptiveRenderStreak(){
+  const box = document.getElementById('adaptiveStreakStatus');
+  const main = document.getElementById('adaptiveStreakMain');
+  const note = document.getElementById('adaptiveStreakNote');
+  const controller = adaptiveProgression;
+  if(!box || !main || !note) return;
+  if(!controller || !state.running){ box.hidden = true; return; }
+  const lang = adaptiveLang();
+  const snap = controller.snapshot();
+  box.hidden = false;
+  main.textContent = controller.progressText(lang);
+  const invalid = !!(snap.lastTrial && snap.lastTrial.classification === 'invalid');
+  note.hidden = !invalid;
+  if(invalid){
+    note.textContent = window.FthueAdaptiveProgression.TEXT[lang === 'en' ? 'en' : 'zh'].invalidTrial;
+  }
+}
+
+function adaptiveHideCard(){
+  const card = document.getElementById('adaptiveProgressionCard');
+  if(card) card.classList.remove('show');
+}
+
+function adaptiveShowRecommendation(recommendation){
+  if(!recommendation) return;
+  // Trial (試玩) mode never shows a clinical-looking level recommendation.
+  if(!recommendation.clinical) return;
+  const card = document.getElementById('adaptiveProgressionCard');
+  const title = document.getElementById('adaptiveCardTitle');
+  const body = document.getElementById('adaptiveCardBody');
+  const accept = document.getElementById('btnAdaptiveAccept');
+  const decline = document.getElementById('btnAdaptiveDecline');
+  if(!card || !title || !body) return;
+  const lang = adaptiveLang();
+  const t = window.FthueAdaptiveProgression.TEXT[lang === 'en' ? 'en' : 'zh'];
+  title.textContent = recommendation.title[lang] || recommendation.title.zh;
+  body.textContent = recommendation.body[lang] || recommendation.body.zh;
+  if(accept){
+    accept.hidden = !recommendation.actionable;
+    accept.textContent = t.accept;
+  }
+  if(decline){
+    decline.textContent = recommendation.actionable ? t.decline
+      : (lang === 'en' ? 'Close' : '瞭解，維持現有級別');
+  }
+  card.classList.add('show');
+}
+
+/* Accepting updates the app's training stage/band used for game selection.
+   The clinical FTHUE level printed on the record is still the therapist's. */
+function adaptiveAcceptRecommendation(){
+  const controller = adaptiveProgression;
+  if(!controller) return null;
+  const result = controller.accept();
+  adaptiveHideCard();
+  if(result){
+    state.trainingStageId = result.to.id;
+    state.trainingStageLevel = result.to.appLevel;
+    state.trainingBand = result.to.id;
+    const label = document.getElementById('libraryLevelLabel');
+    if(label) label.textContent += ' · 訓練階段：' + result.to.zh;
+  }
+  adaptiveRenderStreak();
+  return result;
+}
+
+function adaptiveDeclineRecommendation(){
+  const controller = adaptiveProgression;
+  if(!controller) return null;
+  const result = controller.decline();
+  adaptiveHideCard();
+  adaptiveRenderStreak();
+  return result;
+}
+
+(function wireAdaptiveCard(){
+  const accept = document.getElementById('btnAdaptiveAccept');
+  const decline = document.getElementById('btnAdaptiveDecline');
+  if(accept) accept.addEventListener('click', ()=> adaptiveAcceptRecommendation());
+  if(decline) decline.addEventListener('click', ()=> adaptiveDeclineRecommendation());
+})();
+
+/* Mark the next completed trial as INVALID (tracking loss, calibration failure,
+   occlusion, camera error, technical failure). */
+function adaptiveInvalidateNextTrial(reason){
+  adaptiveInvalidReason = String(reason || 'technical_failure');
+}
+
+/* Single integration point for every real completion/failure event.
+   `source` names the game so the research log stays auditable. */
+function adaptiveNoteTrial(source, outcome, meta){
+  const controller = adaptiveEnsureController();
+  if(!controller) return null;
+  const detail = meta || {};
+  // A Level 4 trial without a completed two-pose calibration cannot be scored
+  // clinically, so it is discarded rather than counted as a failure.
+  if(!adaptiveInvalidReason && isLevel4Tabletop() && level4Reach && !level4Reach.calibrated){
+    adaptiveInvalidReason = 'calibration_failure';
+  }
+  adaptiveTrialSeq += 1;
+  const trialId = detail.trialId || (source + '-' + adaptiveTrialSeq);
+  adaptiveLastTrialId = trialId;
+  const report = {
+    trialId,
+    source,
+    outcome: adaptiveInvalidReason ? 'invalid' : outcome,
+    reason: adaptiveInvalidReason || detail.reason || '',
+    lang: adaptiveLang(),
+  };
+  if(detail.landmarkConfidence !== undefined) report.landmarkConfidence = detail.landmarkConfidence;
+  if(detail.adequateLandmarkConfidence !== undefined){
+    report.adequateLandmarkConfidence = detail.adequateLandmarkConfidence;
+  }
+  adaptiveInvalidReason = '';
+  const result = controller.recordTrial(report);
+  adaptiveRenderStreak();
+  if(result.recommendation) adaptiveShowRecommendation(result.recommendation);
+  return result;
+}
+
+/* A therapist-confirmed compensation turns the most recent otherwise successful
+   valid trial into a failure. The existing repeated-compensation pause and
+   difficulty-reduction behaviour above is untouched. */
+function adaptiveNoteCompensation(kind){
+  const controller = adaptiveProgression;
+  if(!controller || isTrialMode()) return null;
+  const result = controller.noteCompensation({ trialId: adaptiveLastTrialId, kind, lang: adaptiveLang() });
+  adaptiveRenderStreak();
+  if(result && result.recommendation) adaptiveShowRecommendation(result.recommendation);
+  return result;
+}
+
+window.adaptiveNoteTrial = adaptiveNoteTrial;
+window.adaptiveInvalidateNextTrial = adaptiveInvalidateNextTrial;
 
 /* ---------- Level 5：最長持物時間 + 放手困難 ---------- */
 let holdStartedAtMs = 0;
@@ -3780,6 +4003,7 @@ function beginSessionMode(levelId, mode){
   state.sessionMode = mode === 'trial' ? 'trial' : 'training';
   research.active = false;
   selectLevel(levelId);
+  adaptiveBeginSession(levelId, state.sessionMode);
   document.getElementById('libraryLevelLabel').textContent += isTrialMode()
     ? ' · 試玩 · 不錄影／不提示'
     : ' · 訓練 · 錄影及姿勢提示';
@@ -5958,23 +6182,25 @@ const BASE_THEME = {
 };
 function mkTheme(def){ return Object.assign(Object.create(BASE_THEME), def); }
 
-/* Level 4 scenario demonstrations. These privacy-safe illustrated GIFs are
-   generated from drawing primitives only, contain no captured human media,
-   and are stored locally for offline use. */
-const LEVEL4_SCENARIO_GIFS = {
+/* Level 4 scenario demonstrations (LEVEL4_GUIDE_ASSETS).
+   保齡球、巴士拍卡及洗麻雀使用實景示範 GIF：畫面內沒有人臉、沒有可識別人物，
+   亦沒有任何商標，全部檔案存放在 img/advanced 內，隨 dist 一併離線快取。 */
+const LEVEL4_GUIDE_ASSETS = {
   dimsum:{src:'img/advanced/level4_lateral_forward_slide_v2.gif',
     alt:'患側手肘由屈曲起始，前臂沿枱面向前滑'},
   wipewindow:{src:'img/advanced/level4_lateral_forward_slide_v2.gif',
     alt:'伸直手肘後向患側畫大弧抹窗'},
-  bowling:{src:'img/advanced/level4_bowling_illustrated.gif',
-    alt:'保齡球沿球道推出撞倒球瓶'},
-  mahjongwash:{src:'img/advanced/level4_mahjongwash_illustrated.gif',
-    alt:'單手前臂放在滑板上沿枱面畫弧洗麻雀'},
-  buspay:{src:'img/advanced/level4_buspay_illustrated.gif',
-    alt:'伸手向前在巴士讀卡器拍卡'},
+  bowling:{src:'img/advanced/level4_bowling_real_life.gif',
+    alt:'實景示範：保齡球沿球道推出撞倒球瓶'},
+  mahjongwash:{src:'img/advanced/level4_mahjongwash_real_life.gif',
+    alt:'實景示範：單手前臂沿枱面畫弧洗麻雀'},
+  buspay:{src:'img/advanced/level4_buspay_real_life.gif',
+    alt:'實景示範：伸手向前在巴士讀卡器拍卡'},
 };
+/* Kept as an alias so older call sites and QA harnesses keep working. */
+const LEVEL4_SCENARIO_GIFS = LEVEL4_GUIDE_ASSETS;
 function level4ScenarioGif(themeId = state.theme){
-  return LEVEL4_SCENARIO_GIFS[themeId] || null;
+  return LEVEL4_GUIDE_ASSETS[themeId] || null;
 }
 
 const THEMES = {
@@ -5992,8 +6218,8 @@ const THEMES = {
     id:'bowling', title:'保齡球',
     goal:'幅度控制：推出再慢慢收回',
     itemWord:'保齡球', difficulty:'容易', targetStyle:'panel',
-    thumbnail:'img/advanced/level4_bowling_illustrated.gif',
-    thumbnailAlt:'保齡球沿球道撞倒球瓶',
+    thumbnail:'img/advanced/level4_bowling_real_life.gif',
+    thumbnailAlt:'實景示範：保齡球沿球道撞倒球瓶',
     verbFor(){ return '向前伸肘再收手'; },
     actionLabelFor(){ return '完整向前伸肘及收手'; },
     categoriesFor(){ return []; },
@@ -6002,8 +6228,8 @@ const THEMES = {
     id:'mahjongwash', title:'洗麻雀',
     goal:'側向控制：沿枱面穩定掃動',
     itemWord:'麻雀', difficulty:'中等', targetStyle:'panel',
-    thumbnail:'img/advanced/level4_mahjongwash_illustrated.gif',
-    thumbnailAlt:'沿桌面畫大弧洗麻雀',
+    thumbnail:'img/advanced/level4_mahjongwash_real_life.gif',
+    thumbnailAlt:'實景示範：沿桌面畫大弧洗麻雀',
     verbFor(){ return '伸肘畫大弧'; },
     actionLabelFor(){ return '沿桌面連續畫大弧'; },
     categoriesFor(){ return []; },
@@ -6012,8 +6238,8 @@ const THEMES = {
     id:'buspay', title:'巴士拍卡',
     goal:'終點準確：伸到目標並停穩',
     itemWord:'讀卡器', difficulty:'中等', targetStyle:'panel',
-    thumbnail:'img/advanced/level4_buspay_illustrated.gif',
-    thumbnailAlt:'在巴士內向讀卡器拍卡',
+    thumbnail:'img/advanced/level4_buspay_real_life.gif',
+    thumbnailAlt:'實景示範：在巴士內向讀卡器拍卡',
     verbFor(){ return '伸肘拍卡'; },
     actionLabelFor(){ return '向前伸肘對準讀卡器'; },
     categoriesFor(){ return []; },
@@ -7410,6 +7636,8 @@ function level4MarkFogPoint(nx, ny){
     updateHUD();
     triggerFeedback(true);
     researchLog('level4_wipe_complete', {clean_percent:level4Wipe.cleanPercent});
+    // One cleaned pane = one completed Level 4 task cycle.
+    adaptiveNoteTrial('level4_wipe', 'success');
   }
 }
 /* Path games (抹窗 wipewindow, 洗麻雀 mahjongwash, 巴士拍卡 buspay) need the ordered
@@ -7629,6 +7857,9 @@ function updateTracking(){
       research.trackingPresent = false;
       research.trackingLostAt = now;
       researchLog('tracking_lost', {});
+      // Temporary tracking loss makes the next completed trial INVALID: it is
+      // neither a success nor a failure, and it must not touch either streak.
+      adaptiveInvalidateNextTrial('tracking_loss');
     }
     handDetected = false;
     detectionHeldGrace = false;
@@ -7818,6 +8049,8 @@ function updateGameLogic(){
             wrongStreak = 0;
             triggerFeedback(true);
             researchLog('drop_correct', {item:heldItem.label, target:onPlate.label});
+            // One completed transport/placement cycle = one adaptive trial.
+            adaptiveNoteTrial('transport_place', 'success');
             // 升級檢查：若 correctCount 到 5/10/15/20，顯示新規則
             showLevelUpBanner();
             dimsumReward();
@@ -7826,6 +8059,7 @@ function updateGameLogic(){
             wrongStreak++; totalWrong++;
             triggerFeedback(false);
             researchLog('drop_wrong', {item:heldItem.label, target:onPlate.label});
+            adaptiveNoteTrial('transport_place', 'failure', {reason:'wrong_target'});
             if(wrongStreak >= 5){ triggerRecoveryPause(); }
           }
           updateHUD();
@@ -8012,6 +8246,8 @@ function updateGraspLogic(){
             wrongStreak = 0;
             triggerFeedback(true);
             researchLog('drop_correct', {item:heldItem.label, target:onPlate.label});
+            // One completed grasp/release cycle = one adaptive trial.
+            adaptiveNoteTrial('grasp_release', 'success');
             pilotMaybeRuleSwitch();
             // 升級檢查：若 correctCount 到 5/10/15/20，顯示新規則
             showLevelUpBanner();
@@ -8022,6 +8258,7 @@ function updateGraspLogic(){
             pilotBump('wrong');
             triggerFeedback(false);
             researchLog('drop_wrong', {item:heldItem.label, target:onPlate.label});
+            adaptiveNoteTrial('grasp_release', 'failure', {reason:'wrong_target'});
             if(wrongStreak >= 5){ triggerRecoveryPause(); }
           }
           updateHUD();
@@ -8489,6 +8726,8 @@ function endGame(endReason){
   state.running = false;
   state.paused = false;
   resetSafetyRuntime();
+  adaptiveHideCard();
+  adaptiveRenderStreak();
   if(usesAdvancedThemeModule()) advTeardown();
   if(gameTimerId){ clearInterval(gameTimerId); gameTimerId = null; }
   if(cogTimerId){ clearInterval(cogTimerId); cogTimerId = null; }
@@ -10758,6 +10997,8 @@ function cardsUpdate(){
     const pts = cfg2.bonus ? 20 : 10;
     score += pts; correctCount++; grabCount++;
     updateHUD();
+    // One card placed on the affected-side pile = one completed task cycle.
+    adaptiveNoteTrial('cards_place', 'success');
     if(cards.got >= cards.need){
       cards.rounds++;
       const oldTier = cards.tierIdx;
@@ -10811,6 +11052,7 @@ function cardsUpdate(){
     grabCount++; totalWrong++;
     updateHUD();
     triggerFeedback(false);
+    adaptiveNoteTrial('cards_place', 'failure', {reason:'wrong_suit'});
     cards.msg = '呢張係' + CARD_SUIT_NAME[c.suit] + '，要揀' + CARD_SUIT_NAME[cards.suit] + '。';
     speakCantonese('呢張係' + CARD_SUIT_NAME[c.suit] + '。要揀' + CARD_SUIT_NAME[cards.suit] + '。');
   }
@@ -11008,6 +11250,8 @@ function laundryUpdate(){
       laundry.correct++;
       score += 10; correctCount++; grabCount++;
       updateHUD();
+      // One garment sorted into a basket = one completed task cycle.
+      adaptiveNoteTrial('laundry_place', 'success');
       const oldTier = laundry.tier;
       laundry.tier = laundryTier(laundry.correct);
       if(laundry.tier > oldTier){
@@ -11053,6 +11297,7 @@ function laundryUpdate(){
       grabCount++; totalWrong++;
       updateHUD();
       triggerFeedback(false);
+      adaptiveNoteTrial('laundry_place', 'failure', {reason:'wrong_basket'});
       laundry.msg = b ? ('呢個係' + LAUNDRY_COLORS[b.color].name + '籃，' + g.name + '要放' +
         LAUNDRY_COLORS[g.color].name + '籃。') : '未放入衫籃，衣物返回原位。';
       speakCantonese(laundry.msg);
@@ -12494,9 +12739,22 @@ window.__qa = {
       restTotalSec:sessionSafety.restTotalSec }; },
     stop(reason){ confirmStop(reason); return { screen:currentScreen,
       stopReason:sessionSafety.stopReason, stoppedEarly:sessionSafety.stoppedEarly }; },
-    compensation(kind){ recordCompensation(kind); return { counts:{...sessionSafety.compensationCounts},
-      blocking:isSafetyBlocking(), pauseCount:sessionSafety.compensationPauseCount,
-      alert:(document.getElementById('compAlert')||{}).textContent||'' }; },
+    compensation(kind){ recordCompensation(kind); adaptiveNoteCompensation(kind);
+      return { counts:{...sessionSafety.compensationCounts},
+        blocking:isSafetyBlocking(), pauseCount:sessionSafety.compensationPauseCount,
+        alert:(document.getElementById('compAlert')||{}).textContent||'' }; },
+    adaptive:{
+      state(){ return adaptiveProgression ? adaptiveProgression.snapshot() : null; },
+      trial(outcome, meta){ return adaptiveNoteTrial('qa', outcome, meta); },
+      invalidateNext(reason){ adaptiveInvalidateNextTrial(reason); return true; },
+      progressText(){ return adaptiveProgression ? adaptiveProgression.progressText(adaptiveLang()) : ''; },
+      cardVisible(){
+        const card = document.getElementById('adaptiveProgressionCard');
+        return !!card && card.classList.contains('show');
+      },
+      accept(){ return adaptiveAcceptRecommendation(); },
+      decline(){ return adaptiveDeclineRecommendation(); },
+    },
     holdStart(){ noteHoldStart(); return true; },
     holdCheck(){ return { fired:checkHoldTimeout(), holdTimeoutCount:sessionSafety.holdTimeoutCount,
       blocking:isSafetyBlocking(),
@@ -12796,6 +13054,9 @@ window.__level4GameRuntime = Object.freeze({
     updateHUD();
     triggerFeedback(true);
     researchLog(eventName, detail || {});
+    // Each standalone Level 4 game scores once per completed task cycle
+    // (one bowling throw, one washed arc, one card tap), never per frame.
+    adaptiveNoteTrial(eventName || 'level4_game', 'success');
   },
   now: nowMs,
   clamp01,
