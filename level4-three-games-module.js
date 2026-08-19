@@ -4,7 +4,7 @@
 
 const level4MiniGames = {
   bowling:{
-    phase:'reach', peak:0, ballProgress:0, rollStartedAt:0,
+    phase:'reach', peak:0, armProgress:0, ballProgress:0, rollStartedAt:0,
     pins:0, rounds:0, readyForNextAt:0,
   },
   mahjong:{
@@ -17,7 +17,7 @@ const level4MiniGames = {
   },
   reset(){
     Object.assign(this.bowling, {
-      phase:'reach', peak:0, ballProgress:0, rollStartedAt:0,
+      phase:'reach', peak:0, armProgress:0, ballProgress:0, rollStartedAt:0,
       pins:0, rounds:0, readyForNextAt:0,
     });
     Object.assign(this.mahjong, {
@@ -58,13 +58,17 @@ function updateLevel4Bowling(motion){
     }
     if(game.readyForNextAt && now >= game.readyForNextAt){
       Object.assign(game, {
-        phase:'reach', peak:0, ballProgress:0, rollStartedAt:0,
+        phase:'reach', peak:0, armProgress:0, ballProgress:0, rollStartedAt:0,
         pins:0, readyForNextAt:0,
       });
     }
     return;
   }
   if(!motion?.calibrated || motion.shoulderHike) return;
+  // Before release, the ball follows the shared vertical reach signal:
+  // elbow extension raises it up the lane and flexion brings it back down.
+  // Elbow motion is never interpreted as lane X.
+  if(Number.isFinite(motion.progress)) game.armProgress = level4Runtime.clamp01(motion.progress);
   if(motion.engaged && motion.progress >= 0.55){
     game.phase = 'return';
     game.peak = Math.max(game.peak, motion.progress);
@@ -73,7 +77,7 @@ function updateLevel4Bowling(motion){
     game.peak = Math.max(game.peak, motion.progress);
     // A full reach must be followed by elbow flexion/return. A single noisy
     // extension frame can never release the ball.
-    if(motion.completionReady || (game.peak >= 0.68 && motion.progress <= 0.18)){
+    if(game.peak >= 0.68 && motion.progress <= 0.18){
       game.phase = 'rolling';
       game.rollStartedAt = now;
       game.ballProgress = 0;
@@ -185,13 +189,15 @@ function renderLevel4Bowling(ctx,cw,ch){
     level4Runtime.roundedRect(ctx,px-7,py-13,14,28,7);ctx.fill();
     ctx.fillStyle='#c84a42';ctx.fillRect(px-7,py-2,14,4);
   }
-  const ballY=laneY+laneH*(.86-.66*game.ballProgress);
+  const verticalProgress = game.phase === 'rolling' ? game.ballProgress : game.armProgress;
+  const ballY=laneY+laneH*(.86-.66*verticalProgress);
   ctx.beginPath();ctx.arc(cw/2,ballY,26,0,Math.PI*2);
   ctx.fillStyle='#276aa8';ctx.fill();
   ctx.fillStyle='rgba(255,255,255,.72)';
   for(const dx of [-7,0,7]){ctx.beginPath();ctx.arc(cw/2+dx,ballY-6,3,0,Math.PI*2);ctx.fill();}
   level4DrawTitle(ctx,cw,'保齡球',
     game.phase==='return'?'屈肘收手':game.phase==='rolling'?'出球':'向前伸肘');
+  level4Runtime.drawVerticalReachGuide(ctx,cw,ch);
   ctx.restore();
 }
 
@@ -224,6 +230,7 @@ function renderLevel4MahjongWash(ctx,cw,ch){
   ctx.fillStyle='#f0b83f';
   level4Runtime.roundedRect(ctx,x,y+h+18,w*game.progress,20,10);ctx.fill();
   level4DrawTitle(ctx,cw,'洗麻雀',game.completed?'完成':'伸肘畫大弧');
+  level4Runtime.drawVerticalReachGuide(ctx,cw,ch);
   ctx.restore();
 }
 
@@ -242,6 +249,7 @@ function renderLevel4BusPay(ctx,cw,ch){
   ctx.fillStyle='#273a38';ctx.font='800 24px "PingFang TC","Noto Sans TC",sans-serif';
   ctx.textAlign='center';ctx.fillText('拍卡',tx,ty+8);
   level4DrawTitle(ctx,cw,'巴士拍卡','伸肘對準黃色位置');
+  level4Runtime.drawVerticalReachGuide(ctx,cw,ch);
   const cursor = level4Runtime.cursor();
   if(cursor.detected && cursor.x>=0){
     ctx.beginPath();ctx.arc(cursor.x,cursor.y,30,0,Math.PI*2);

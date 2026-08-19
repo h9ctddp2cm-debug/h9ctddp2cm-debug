@@ -2169,6 +2169,14 @@ function isLevel4StandaloneGame(){
   return isLevel4WipeGame() || isLevel4BowlingGame()
     || isLevel4MahjongWashGame() || isLevel4BusPayGame();
 }
+// Dimsum (and any future ordinary Level 4 matching theme) is the supported
+// forward-transport task. The four standalone games deliberately retain their
+// own controllers: wipe-window and mahjong-wash need a real wrist path,
+// bowling consumes reach progress, and bus-pay uses a real precision cursor.
+function isLevel4StandardTransportGame(){
+  return isLevel4Tabletop() && !isLevel4StandaloneGame()
+    && !usesAdvancedThemeModule();
+}
 function isLevel3Tabletop(){
   return !research.active && state.level === '3';
 }
@@ -2177,7 +2185,7 @@ function isGrossTabletop(){
 }
 function affectedDirectionLabel(){
   if(isLevel4WipeGame()) return '伸肘向外畫弧';
-  if(isLevel4Tabletop()) return '沿桌面中線向前放置';
+  if(isLevel4Tabletop()) return '伸肘向上前送';
   if(isLevel3Tabletop()) return activeAffectedSide() === 'right' ? '向右患側外滑' : '向左患側外滑';
   return activeAffectedSide() === 'right' ? '向畫面右外下方放置' : '向畫面左外下方放置';
 }
@@ -2224,6 +2232,43 @@ function drawLevel4MidlineGuide(ctx){
   ctx.closePath();
   ctx.fillStyle = '#1A6B5A';
   ctx.fill();
+  ctx.restore();
+}
+// The shared Level 4 reach signal has one screen interpretation: extension
+// progresses upward/forward and flexion returns downward. Its guide lane is
+// fixed in X, so elbow motion can never be presented as left/right movement.
+function level4VerticalReachPoint(cw = gameCanvas.width, ch = gameCanvas.height){
+  const top = ch * 0.32;
+  const bottom = ch * 0.84;
+  return {
+    x:Math.max(42, cw * 0.072),
+    y:bottom + (top-bottom) * clamp01(level4Reach.progress),
+  };
+}
+function drawLevel4VerticalReachGuide(ctx, cw, ch){
+  if(!isLevel4Tabletop()) return;
+  const point = level4VerticalReachPoint(cw, ch);
+  const top = ch * 0.32;
+  const bottom = ch * 0.84;
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = 'rgba(17,95,83,.48)';
+  ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.moveTo(point.x,bottom); ctx.lineTo(point.x,top); ctx.stroke();
+  ctx.fillStyle = 'rgba(17,95,83,.92)';
+  ctx.beginPath();
+  ctx.moveTo(point.x,top-12);
+  ctx.lineTo(point.x-10,top+8);
+  ctx.lineTo(point.x+10,top+8);
+  ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.arc(point.x,point.y,12,0,Math.PI*2);
+  ctx.fillStyle = '#FFD166'; ctx.fill();
+  ctx.strokeStyle = '#155f53'; ctx.lineWidth = 3; ctx.stroke();
+  ctx.fillStyle = '#155f53';
+  ctx.font = '700 14px "PingFang TC","Noto Sans TC",sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('伸肘 ↑', point.x, top-22);
+  ctx.fillText('屈肘 ↓', point.x, bottom+24);
   ctx.restore();
 }
 function pointInsideZone(x, y, zone){
@@ -6140,6 +6185,63 @@ let timeLeft = 60;
 let gameTimerId = null;
 let foodIdSeq = 1;
 
+/* ---------- Level 4 pickup-locked transport ----------
+   On a front-facing iPad the wrist's screen X can drift substantially during
+   elbow extension. Keep the real wrist cursor for selection, then, only after
+   an ordinary Level 4 item is picked up, move that item on its own stable
+   vertical lane. Y is a pure function of the already-smoothed elbow reach
+   progress; flexion follows exactly the same lane back down. */
+function beginLevel4StandardCarry(item){
+  if(!item || !isLevel4StandardTransportGame()) return;
+  const matchingTarget = targets.find(target => target.type === item.targetType);
+  // Standard source slots normally sit under their matching target. If a
+  // replenished item occupies the other slot, choose the matching target's
+  // fixed lane immediately rather than asking the patient to correct that
+  // layout mismatch with wrist-X movement.
+  const pickupX = item.x;
+  const pickupFitsTarget = matchingTarget
+    && Math.abs(pickupX-matchingTarget.x) <= matchingTarget.w/2 + item.r;
+  item.level4Carry = {
+    pickupX,
+    laneX:pickupFitsTarget ? pickupX : (matchingTarget ? matchingTarget.x : pickupX),
+    pickupY:item.y,
+    targetY:matchingTarget ? matchingTarget.y : gameCanvas.height * 0.43,
+  };
+}
+function level4StandardCarryPoint(item = heldItem){
+  if(!item || !isLevel4StandardTransportGame() || !item.level4Carry) return null;
+  const carry = item.level4Carry;
+  const progress = clamp01(level4Reach.progress);
+  return {
+    x:carry.laneX,
+    y:carry.pickupY + (carry.targetY-carry.pickupY) * progress,
+  };
+}
+function moveHeldItemWithController(){
+  const carryPoint = level4StandardCarryPoint();
+  if(carryPoint){
+    heldItem.x = carryPoint.x;
+    heldItem.y = carryPoint.y;
+    return carryPoint;
+  }
+  if(heldItem){
+    heldItem.x = cursorX;
+    heldItem.y = cursorY;
+    return {x:cursorX, y:cursorY};
+  }
+  return null;
+}
+function heldItemControlPoint(){
+  return level4StandardCarryPoint() || (heldItem
+    ? {x:heldItem.x, y:heldItem.y}
+    : {x:cursorX, y:cursorY});
+}
+function displayCursorPoint(){
+  // Keep the visual controller attached to the item after pickup so a raw
+  // wrist-X shift cannot look like the carried object has drifted sideways.
+  return level4StandardCarryPoint() || {x:cursorX, y:cursorY};
+}
+
 // 雙重任務認知指令
 let cogInstruction = null; // {type:'color'|'number'|'side', text, target}
 let cogTimerId = null;
@@ -7195,12 +7297,12 @@ function updateLevel4ReachController(lm){
 
   const baseline = level4Reach.baseline;
   const elbowGain = elbowAngle-baseline.elbowAngle;
-  // A side-seated patient can reach forward along screen X, screen Y, camera Z,
-  // or a mixture of all three depending on where the iPad is placed. Learn that
-  // participant/device-specific vector from the first deliberate extension
-  // instead of assuming one fixed camera direction.
+  // Screen X is deliberately excluded. Level 4 interprets the elbow signal as
+  // vertical on-screen forward progress, never as horizontal cursor transport.
+  // Learn a participant/device-specific depth, height, and reach-radius vector
+  // from the first deliberate extension instead of assuming one fixed camera
+  // direction.
   const reachVector = [
-    (sample.wristRelativeX-baseline.wristRelativeX) * 0.65,
     sample.wristRelativeY-baseline.wristRelativeY,
     sample.wristRelativeZ-baseline.wristRelativeZ,
     sample.wristReachRadius-baseline.wristReachRadius,
@@ -7367,8 +7469,10 @@ function updateTracking(){
       mapped.y = ch * 0.72;
     }
     if(isLevel4Tabletop()){
-      // The wipe cursor follows the real affected wrist. Elbow extension gates
-      // cleaning, but it does not fabricate vertical movement on the screen.
+      // The wipe cursor follows the real affected wrist. The shared elbow
+      // controller is vertical-only; special games may keep a real wrist path
+      // for their intrinsic precision/path task, but extension and flexion
+      // themselves never remap to cursor X.
     }
     const stablePoint = stabiliseTrackingPoint(mapped.x, mapped.y);
     const px = stablePoint.x;
@@ -7555,6 +7659,7 @@ function updateGameLogic(){
           // 夾起
           nearest.held = true;
           heldItem = nearest;
+          beginLevel4StandardCarry(nearest);
           gripActive = true;
           grabCount++;
           researchLog('pickup', {item:nearest.label, method:isChopsticksMode() ? 'chopsticks_index_dwell' : 'dwell'});
@@ -7578,21 +7683,21 @@ function updateGameLogic(){
     }
 
     if(heldItem && gripActive){
-      heldItem.x = cursorX;
-      heldItem.y = cursorY;
+      moveHeldItemWithController();
     }
 
     // 夾住食物時：停在碟上 DWELL_MS 自動放下
     if(heldItem && gripActive){
+      const heldPoint = heldItemControlPoint();
       let onPlate = null;
       let onPlateDistance = Infinity;
       for(const t of targets){
         // Score when any part of food overlaps the plate (food radius + plate boundary)
         const foodR = heldItem ? heldItem.r : 60;
-        const withinX = cursorX >= (t.x - t.w/2 - foodR) && cursorX <= (t.x + t.w/2 + foodR);
-        const withinY = cursorY >= (t.y - t.h/2 - foodR) && cursorY <= (t.y + t.h/2 + foodR);
+        const withinX = heldPoint.x >= (t.x - t.w/2 - foodR) && heldPoint.x <= (t.x + t.w/2 + foodR);
+        const withinY = heldPoint.y >= (t.y - t.h/2 - foodR) && heldPoint.y <= (t.y + t.h/2 + foodR);
         if(withinX && withinY){
-          const targetDistance = dist(cursorX, cursorY, t.x, t.y);
+          const targetDistance = dist(heldPoint.x, heldPoint.y, t.x, t.y);
           if(targetDistance < onPlateDistance){
             onPlate = t;
             onPlateDistance = targetDistance;
@@ -8018,6 +8123,7 @@ function renderLevel4WipeGame(ctx, cw, ch){
   ctx.textBaseline = 'middle';
   ctx.fillText('清潔 '+level4Wipe.cleanPercent+'%',x+w/2,y+h-34);
 
+  drawLevel4VerticalReachGuide(ctx, cw, ch);
   if(handDetected && cursorX >= 0 && cursorY >= 0){
     ctx.beginPath();
     ctx.arc(cursorX,cursorY,34,0,Math.PI*2);
@@ -8155,7 +8261,8 @@ function renderGame(){
   }
 
   // 游標：大圓點 + 停留進度環 / 握放手勢圖示
-  if(cursorX >= 0 && cursorY >= 0 && handDetected){
+  const cursorPoint = displayCursorPoint();
+  if(cursorPoint.x >= 0 && cursorPoint.y >= 0 && handDetected){
     ctx.save();
 
     if(isGraspStyleMode()){
@@ -8163,7 +8270,7 @@ function renderGame(){
       if(isGrasping){
         // 握拳：實心橙色圓
         ctx.beginPath();
-        ctx.arc(cursorX, cursorY, 28, 0, Math.PI*2);
+        ctx.arc(cursorPoint.x, cursorPoint.y, 28, 0, Math.PI*2);
         ctx.fillStyle = 'rgba(224,123,57,0.85)';
         ctx.fill();
         ctx.lineWidth = 3;
@@ -8173,11 +8280,11 @@ function renderGame(){
         ctx.font = 'bold 22px -apple-system,"PingFang TC","Noto Sans TC",sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(isPinchMode() ? '捏' : '✊', cursorX, cursorY);
+        ctx.fillText(isPinchMode() ? '捏' : '✊', cursorPoint.x, cursorPoint.y);
       } else {
         // 張開手：白色空心圓
         ctx.beginPath();
-        ctx.arc(cursorX, cursorY, 30, 0, Math.PI*2);
+        ctx.arc(cursorPoint.x, cursorPoint.y, 30, 0, Math.PI*2);
         ctx.fillStyle = 'rgba(255,255,255,0.25)';
         ctx.fill();
         ctx.lineWidth = 3;
@@ -8195,13 +8302,13 @@ function renderGame(){
 
       // 外圈白邊（增加可見度）
       ctx.beginPath();
-      ctx.arc(cursorX, cursorY, 22, 0, Math.PI*2);
+      ctx.arc(cursorPoint.x, cursorPoint.y, 22, 0, Math.PI*2);
       ctx.fillStyle = 'rgba(255,255,255,0.55)';
       ctx.fill();
 
       // 主色圓
       ctx.beginPath();
-      ctx.arc(cursorX, cursorY, 18, 0, Math.PI*2);
+      ctx.arc(cursorPoint.x, cursorPoint.y, 18, 0, Math.PI*2);
       ctx.fillStyle = fillColor;
       ctx.fill();
       ctx.lineWidth = 2;
@@ -8210,14 +8317,14 @@ function renderGame(){
 
       // 中心小白點
       ctx.beginPath();
-      ctx.arc(cursorX, cursorY, 4, 0, Math.PI*2);
+      ctx.arc(cursorPoint.x, cursorPoint.y, 4, 0, Math.PI*2);
       ctx.fillStyle = 'rgba(255,255,255,0.95)';
       ctx.fill();
 
       // 停留進度環
       if(dwellActive && lastDwellPct > 0){
         ctx.beginPath();
-        ctx.arc(cursorX, cursorY, 26, -Math.PI/2, -Math.PI/2 + lastDwellPct * Math.PI*2);
+        ctx.arc(cursorPoint.x, cursorPoint.y, 26, -Math.PI/2, -Math.PI/2 + lastDwellPct * Math.PI*2);
         ctx.strokeStyle = '#2E7D52';
         ctx.lineWidth = 4;
         ctx.stroke();
@@ -12052,7 +12159,26 @@ window.__qa = {
       wipeCleanPercent:level4Wipe.cleanPercent,
       wipeValidMovement:level4Wipe.validMovement,
       wipeCompleted:level4Wipe.completed,
+      screenForward:level4VerticalReachPoint(),
       cursorY,
+    };
+  },
+  level4TransportState(){
+    const carry = heldItem?.level4Carry || null;
+    const controlled = level4StandardCarryPoint();
+    return {
+      standardTransport:isLevel4StandardTransportGame(),
+      held:heldItem ? {
+        id:heldItem.id,
+        label:heldItem.label,
+        x:heldItem.x,
+        y:heldItem.y,
+      } : null,
+      rawCursor:{x:cursorX, y:cursorY},
+      displayCursor:displayCursorPoint(),
+      reachProgress:level4Reach.progress,
+      carry:carry ? {...carry} : null,
+      controlled:controlled ? {...controlled} : null,
     };
   },
   resetLevel4Reach(){
@@ -12521,6 +12647,8 @@ window.__level4GameRuntime = Object.freeze({
   isBowling: isLevel4BowlingGame,
   isMahjongWash: isLevel4MahjongWashGame,
   isBusPay: isLevel4BusPayGame,
+  reachProgress(){ return clamp01(level4Reach.progress); },
+  drawVerticalReachGuide: drawLevel4VerticalReachGuide,
   cursor(){
     return {
       detected: handDetected,
