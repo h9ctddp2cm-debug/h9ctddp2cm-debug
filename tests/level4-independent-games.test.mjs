@@ -38,7 +38,8 @@ test('actual tracking and render loops connect all three independent games', () 
 
 test('bowling requires a reach-return cycle and bus pay requires stable frames', () => {
   assert.match(moduleJs, /game\.phase = 'return'/);
-  assert.match(moduleJs, /game\.peak >= 0\.68 && motion\.progress <= 0\.18/);
+  assert.match(moduleJs, /if\(level4MotionReachGate\(motion\)\)/);
+  assert.match(moduleJs, /if\(level4MotionReturnReady\(motion\)\)/);
   assert.match(moduleJs, /game\.holdFrames < 4/);
   assert.match(moduleJs, /game\.armed = false/);
 });
@@ -74,7 +75,8 @@ test('ordinary Level 4 transport is lane-locked while standalone mechanics stay 
   assert.match(html, /drawLevel4VerticalReachGuide\(ctx, cw, ch\)/);
   assert.match(html, /reachProgress\(\)\{ return clamp01\(level4Reach\.progress\); \}/);
   assert.match(moduleJs, /armProgress:0/);
-  assert.match(moduleJs, /game\.armProgress = level4Runtime\.clamp01\(motion\.progress\)/);
+  assert.match(moduleJs, /const progress = level4MotionProgress\(motion\)/);
+  assert.match(moduleJs, /game\.armProgress = progress/);
   assert.match(moduleJs, /const verticalProgress = game\.phase === 'rolling' \? game\.ballProgress : game\.armProgress/);
   assert.match(moduleJs, /level4Runtime\.drawVerticalReachGuide\(ctx,cw,ch\)/);
   assert.match(moduleJs, /function updateLevel4MahjongWash\(motion, nx, ny\)/);

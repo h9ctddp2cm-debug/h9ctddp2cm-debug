@@ -1,15 +1,15 @@
 {
-  "generated_at": "2026-08-19T11:24:21.792Z",
+  "generated_at": "2026-08-19T12:54:43.810Z",
   "base_url": "http://127.0.0.1:4173",
   "scope": "Independent technical verification for FTHUE Levels 4, 5, and 6",
   "limitation": "Not clinical validation; Level 6 aperture detection does not measure pinch force.",
   "summary": {
-    "total": 138,
-    "passed": 138,
+    "total": 143,
+    "passed": 143,
     "failed": 0,
     "by_level": {
       "4": {
-        "passed": 60,
+        "passed": 65,
         "failed": 0
       },
       "5": {
@@ -347,26 +347,631 @@
     },
     {
       "level": "4",
-      "category": "compound movement",
-      "name": "90-degree supported start calibrates the reach controller",
+      "category": "two-pose calibration",
+      "name": "flexed then extended capture calibrates and returns to progress 0",
       "passed": true,
       "details": {
         "calibrated": true,
+        "stage": "ready",
+        "reason": "calibrated",
         "progress": 0,
+        "instantProgress": 0,
         "engaged": false,
+        "reachGate": false,
+        "returnReady": true,
         "shoulderFlexProgress": 0,
         "elbowExtensionProgress": 0,
         "elbowAngle": 90,
-        "fullExtensionAngle": 157.5,
+        "spanRatio": 0.7162452681024037,
+        "worldSpan": null,
+        "radial": 1.4802402207449679,
+        "depthZ": 0,
+        "depthSource": "image-z",
+        "weights": {
+          "angle": 0.39534883720930236,
+          "spanRatio": 0.45465116279069767,
+          "radial": 0.09642857142857143,
+          "depthZ": 0.05357142857142856
+        },
+        "separation": {
+          "angle": 63.80780112703462,
+          "spanRatio": 0.2604561030146203,
+          "worldSpan": null,
+          "radial": 0.49403883191647835,
+          "depthZ": -2.0000000000000004
+        },
+        "signalProgress": {
+          "angle": 0,
+          "spanRatio": 0,
+          "radial": 0,
+          "depthZ": 0
+        },
+        "endpoints": {
+          "flexed": {
+            "angle": 90,
+            "spanRatio": 0.7162452681024037,
+            "worldSpan": null,
+            "radial": 1.4802402207449679,
+            "depthZ": 0,
+            "lateral": -0.4193548387096775,
+            "shoulderBalance": 0
+          },
+          "extended": {
+            "angle": 153.80780112703462,
+            "spanRatio": 0.976701371117024,
+            "worldSpan": null,
+            "radial": 1.9742790526614462,
+            "depthZ": -2.0000000000000004,
+            "lateral": -0.9564449944132198,
+            "shoulderBalance": 0
+          }
+        },
+        "qualified": [
+          "angle",
+          "spanRatio",
+          "radial",
+          "depthZ"
+        ],
+        "lacking": [
+          {
+            "signal": "worldSpan",
+            "reason": "unavailable",
+            "separation": null,
+            "required": 0.08
+          }
+        ],
+        "manual": {
+          "flexed": false,
+          "extended": false
+        },
+        "retryCount": 0,
+        "captureCount": {
+          "flexed": 1,
+          "extended": 1
+        },
         "completionReady": false,
-        "movementConfirmFrames": 0,
-        "elbowMode": "active-extension",
-        "directionMode": "waiting",
-        "directionPeak": 0,
-        "forwardScale": 0.12,
         "shoulderHike": false,
         "framingReady": true,
         "warning": "",
+        "guidance": {
+          "main": "",
+          "detail": "",
+          "en": ""
+        },
+        "diagnostics": "stage:ready calibrated:true framingReady:true progress:0.000 instant:0.000 engaged:false reachGate:false returnReady:true completionReady:false depthSource:image-z movementSeen:true shoulderHike:false reason:calibrated retries:0 manual:-- raw=angle:90.000 spanRatio:0.716 worldSpan:na radial:1.480 depthZ:0.000 endpoints=angle:90.000>153.808 spanRatio:0.716>0.977 worldSpan:na>na radial:1.480>1.974 depthZ:0.000>-2.000 side:right arc:0.000 arcInstant:0.000 arcActive:false arcHold:false arcPaused:true arcReason:arc-paused-elbow-flexed retention:0.000 arcBaseline:-0.956 arcScale:0.300 lateral:-0.419 cycle:start cycleOrdered:false cycleCount:0 stabilizer:snap-flexed alpha:1.00 step:0.000 hold:0 dirRun:00 rejected:none rejectedFrames:4 filtered=angle:90.000 spanRatio:0.716 worldSpan:na radial:1.480 depthZ:0.000 separation=angle:63.808/w0.40 spanRatio:0.260/w0.45 worldSpan:na/w0 radial:0.494/w0.10 depthZ:-2.000/w0.05 signalProgress=angle:0.000 spanRatio:0.000 worldSpan:na radial:0.000 depthZ:0.000",
+        "lateral": -0.4193548387096775,
+        "arcProgress": 0,
+        "arcInstant": 0,
+        "arcActive": false,
+        "arcHold": false,
+        "arcCalibrated": true,
+        "cyclePhase": "start",
+        "cycleOrdered": false,
+        "cycleComplete": false,
+        "cycleCount": 0,
+        "stabilizer": {
+          "reason": "snap-flexed",
+          "alpha": 1,
+          "step": 0,
+          "holdFrames": 0,
+          "direction": 0,
+          "directionRun": 0,
+          "rejected": [],
+          "rejectedFrames": 4,
+          "snapRun": 23
+        },
+        "pathGateOpen": false,
+        "side": "right",
+        "wipeCleanPercent": 0,
+        "wipeValidMovement": false,
+        "wipeCompleted": false,
+        "screenForward": {
+          "x": 84.96,
+          "y": 688.8
+        },
+        "cursorY": 672.4
+      }
+    },
+    {
+      "level": "4",
+      "category": "two-pose calibration",
+      "name": "holding only the start pose waits for the extended capture",
+      "passed": true,
+      "details": {
+        "calibrated": false,
+        "stage": "capture-extended",
+        "reason": "awaiting-extension",
+        "progress": 0,
+        "instantProgress": 0,
+        "engaged": false,
+        "reachGate": false,
+        "returnReady": true,
+        "shoulderFlexProgress": 0,
+        "elbowExtensionProgress": 0,
+        "elbowAngle": 90,
+        "spanRatio": 0.7162452681024037,
+        "worldSpan": null,
+        "radial": 1.4802402207449679,
+        "depthZ": 0,
+        "depthSource": "image-z",
+        "weights": {},
+        "separation": {
+          "angle": 0,
+          "spanRatio": 0,
+          "worldSpan": null,
+          "radial": 0,
+          "depthZ": 0
+        },
+        "signalProgress": {},
+        "endpoints": {
+          "flexed": {
+            "angle": 90,
+            "spanRatio": 0.7162452681024037,
+            "worldSpan": null,
+            "radial": 1.4802402207449679,
+            "depthZ": 0,
+            "lateral": -0.4193548387096775,
+            "shoulderBalance": 0
+          },
+          "extended": null
+        },
+        "qualified": [],
+        "lacking": [
+          {
+            "signal": "angle",
+            "reason": "too-similar",
+            "separation": 0,
+            "required": 12
+          },
+          {
+            "signal": "spanRatio",
+            "reason": "too-similar",
+            "separation": 0,
+            "required": 0.08
+          },
+          {
+            "signal": "worldSpan",
+            "reason": "unavailable",
+            "separation": null,
+            "required": 0.08
+          },
+          {
+            "signal": "radial",
+            "reason": "too-similar",
+            "separation": 0,
+            "required": 0.1
+          },
+          {
+            "signal": "depthZ",
+            "reason": "too-similar",
+            "separation": 0,
+            "required": 0.06
+          }
+        ],
+        "manual": {
+          "flexed": false,
+          "extended": false
+        },
+        "retryCount": 0,
+        "captureCount": {
+          "flexed": 1,
+          "extended": 0
+        },
+        "completionReady": false,
+        "shoulderHike": false,
+        "framingReady": true,
+        "warning": "",
+        "guidance": {
+          "main": "慢慢伸直手肘到最遠",
+          "detail": "到最遠位置停住 · 正在記錄終點",
+          "en": "Extend the elbow, then hold"
+        },
+        "diagnostics": "stage:capture-extended calibrated:false framingReady:true progress:0.000 instant:0.000 engaged:false reachGate:false returnReady:true completionReady:false depthSource:image-z movementSeen:false shoulderHike:false reason:awaiting-extension retries:0 manual:-- raw=angle:90.000 spanRatio:0.716 worldSpan:na radial:1.480 depthZ:0.000 endpoints=angle:90.000>na spanRatio:0.716>na worldSpan:na>na radial:1.480>na depthZ:0.000>na side:right arc:0.000 arcInstant:0.000 arcActive:false arcHold:false arcPaused:false arcReason:arc-idle retention:na arcBaseline:na arcScale:na lateral:na cycle:start cycleOrdered:false cycleCount:0 stabilizer:idle alpha:0.00 step:0.000 hold:0 dirRun:00 rejected:none rejectedFrames:0 filtered=angle:90.000 spanRatio:0.716 worldSpan:na radial:1.480 depthZ:0.000 separation=angle:0.000/w0 spanRatio:0.000/w0 worldSpan:na/w0 radial:0.000/w0 depthZ:0.000/w0 signalProgress=angle:na spanRatio:na worldSpan:na radial:na depthZ:na",
+        "lateral": null,
+        "arcProgress": 0,
+        "arcInstant": 0,
+        "arcActive": false,
+        "arcHold": false,
+        "arcCalibrated": false,
+        "cyclePhase": "start",
+        "cycleOrdered": false,
+        "cycleComplete": false,
+        "cycleCount": 0,
+        "stabilizer": {
+          "reason": "idle",
+          "alpha": 0,
+          "step": 0,
+          "holdFrames": 0,
+          "direction": 0,
+          "directionRun": 0,
+          "rejected": [],
+          "rejectedFrames": 0,
+          "snapRun": 0
+        },
+        "pathGateOpen": false,
+        "side": "right",
+        "wipeCleanPercent": 0,
+        "wipeValidMovement": false,
+        "wipeCompleted": false,
+        "screenForward": {
+          "x": 84.96,
+          "y": 688.8
+        },
+        "cursorY": 672.4
+      }
+    },
+    {
+      "level": "4",
+      "category": "two-pose calibration",
+      "name": "insufficient endpoint separation requests a retry with diagnostics",
+      "passed": true,
+      "details": {
+        "calibrated": false,
+        "stage": "retry",
+        "reason": "insufficient-separation",
+        "progress": 0,
+        "instantProgress": 0,
+        "engaged": false,
+        "reachGate": false,
+        "returnReady": true,
+        "shoulderFlexProgress": 0,
+        "elbowExtensionProgress": 0,
+        "elbowAngle": 90,
+        "spanRatio": 0.7162452681024037,
+        "worldSpan": null,
+        "radial": 1.4802402207449679,
+        "depthZ": 0,
+        "depthSource": "image-z",
+        "weights": {},
+        "separation": {
+          "angle": 0,
+          "spanRatio": 0,
+          "worldSpan": null,
+          "radial": 0,
+          "depthZ": 0
+        },
+        "signalProgress": {},
+        "endpoints": {
+          "flexed": {
+            "angle": 90,
+            "spanRatio": 0.7162452681024037,
+            "worldSpan": null,
+            "radial": 1.4802402207449679,
+            "depthZ": 0,
+            "lateral": -0.4193548387096775,
+            "shoulderBalance": 0
+          },
+          "extended": null
+        },
+        "qualified": [],
+        "lacking": [
+          {
+            "signal": "angle",
+            "reason": "too-similar",
+            "separation": 0,
+            "required": 12
+          },
+          {
+            "signal": "spanRatio",
+            "reason": "too-similar",
+            "separation": 0,
+            "required": 0.08
+          },
+          {
+            "signal": "worldSpan",
+            "reason": "unavailable",
+            "separation": null,
+            "required": 0.08
+          },
+          {
+            "signal": "radial",
+            "reason": "too-similar",
+            "separation": 0,
+            "required": 0.1
+          },
+          {
+            "signal": "depthZ",
+            "reason": "too-similar",
+            "separation": 0,
+            "required": 0.06
+          }
+        ],
+        "manual": {
+          "flexed": false,
+          "extended": false
+        },
+        "retryCount": 6,
+        "captureCount": {
+          "flexed": 1,
+          "extended": 0
+        },
+        "completionReady": false,
+        "shoulderHike": false,
+        "framingReady": true,
+        "warning": "",
+        "guidance": {
+          "main": "兩個姿勢分別不足 · 請重做",
+          "detail": "屈肘起點與伸直終點要明顯不同 · 肘角 angle、手臂比例 span、肩腕距離 radial、深度 depth",
+          "en": "Start and end poses too similar — capture again"
+        },
+        "diagnostics": "stage:retry calibrated:false framingReady:true progress:0.000 instant:0.000 engaged:false reachGate:false returnReady:true completionReady:false depthSource:image-z movementSeen:true shoulderHike:false reason:insufficient-separation retries:6 manual:-- raw=angle:90.000 spanRatio:0.716 worldSpan:na radial:1.480 depthZ:0.000 endpoints=angle:90.000>na spanRatio:0.716>na worldSpan:na>na radial:1.480>na depthZ:0.000>na side:right arc:0.000 arcInstant:0.000 arcActive:false arcHold:false arcPaused:false arcReason:arc-idle retention:na arcBaseline:na arcScale:na lateral:na cycle:start cycleOrdered:false cycleCount:0 stabilizer:idle alpha:0.00 step:0.000 hold:0 dirRun:00 rejected:none rejectedFrames:2 filtered=angle:90.000 spanRatio:0.716 worldSpan:na radial:1.480 depthZ:0.000 separation=angle:0.000/w0 spanRatio:0.000/w0 worldSpan:na/w0 radial:0.000/w0 depthZ:0.000/w0 signalProgress=angle:na spanRatio:na worldSpan:na radial:na depthZ:na",
+        "lateral": null,
+        "arcProgress": 0,
+        "arcInstant": 0,
+        "arcActive": false,
+        "arcHold": false,
+        "arcCalibrated": false,
+        "cyclePhase": "start",
+        "cycleOrdered": false,
+        "cycleComplete": false,
+        "cycleCount": 0,
+        "stabilizer": {
+          "reason": "idle",
+          "alpha": 0,
+          "step": 0,
+          "holdFrames": 0,
+          "direction": 0,
+          "directionRun": 0,
+          "rejected": [],
+          "rejectedFrames": 2,
+          "snapRun": 0
+        },
+        "pathGateOpen": false,
+        "side": "right",
+        "wipeCleanPercent": 0,
+        "wipeValidMovement": false,
+        "wipeCompleted": false,
+        "screenForward": {
+          "x": 84.96,
+          "y": 688.8
+        },
+        "cursorY": 672.4
+      }
+    },
+    {
+      "level": "4",
+      "category": "two-pose calibration",
+      "name": "therapist buttons mark both endpoints manually",
+      "passed": true,
+      "details": {
+        "calibrated": true,
+        "stage": "ready",
+        "reason": "calibrated-manual",
+        "progress": 1,
+        "instantProgress": 1,
+        "engaged": true,
+        "reachGate": true,
+        "returnReady": false,
+        "shoulderFlexProgress": 1,
+        "elbowExtensionProgress": 1,
+        "elbowAngle": 153.80780112703462,
+        "spanRatio": 0.976701371117024,
+        "worldSpan": null,
+        "radial": 1.9742790526614462,
+        "depthZ": -2.0000000000000004,
+        "depthSource": "image-z",
+        "weights": {
+          "angle": 0.39534883720930236,
+          "spanRatio": 0.45465116279069767,
+          "radial": 0.09642857142857143,
+          "depthZ": 0.05357142857142856
+        },
+        "separation": {
+          "angle": 63.80780112703462,
+          "spanRatio": 0.2604561030146203,
+          "worldSpan": null,
+          "radial": 0.49403883191647835,
+          "depthZ": -2.0000000000000004
+        },
+        "signalProgress": {
+          "angle": 1,
+          "spanRatio": 1,
+          "radial": 1,
+          "depthZ": 1
+        },
+        "endpoints": {
+          "flexed": {
+            "angle": 90,
+            "spanRatio": 0.7162452681024037,
+            "worldSpan": null,
+            "radial": 1.4802402207449679,
+            "depthZ": 0,
+            "lateral": -0.4193548387096775,
+            "shoulderBalance": 0
+          },
+          "extended": {
+            "angle": 153.80780112703462,
+            "spanRatio": 0.976701371117024,
+            "worldSpan": null,
+            "radial": 1.9742790526614462,
+            "depthZ": -2.0000000000000004,
+            "lateral": -0.9564449944132198,
+            "shoulderBalance": 0
+          }
+        },
+        "qualified": [
+          "angle",
+          "spanRatio",
+          "radial",
+          "depthZ"
+        ],
+        "lacking": [
+          {
+            "signal": "worldSpan",
+            "reason": "unavailable",
+            "separation": null,
+            "required": 0.08
+          }
+        ],
+        "manual": {
+          "flexed": true,
+          "extended": true
+        },
+        "retryCount": 0,
+        "captureCount": {
+          "flexed": 2,
+          "extended": 2
+        },
+        "completionReady": true,
+        "shoulderHike": false,
+        "framingReady": true,
+        "warning": "",
+        "guidance": {
+          "main": "",
+          "detail": "",
+          "en": ""
+        },
+        "diagnostics": "stage:ready calibrated:true framingReady:true progress:1.000 instant:1.000 engaged:true reachGate:true returnReady:false completionReady:true depthSource:image-z movementSeen:true shoulderHike:false reason:calibrated-manual retries:0 manual:FE raw=angle:153.808 spanRatio:0.977 worldSpan:na radial:1.974 depthZ:-2.000 endpoints=angle:90.000>153.808 spanRatio:0.716>0.977 worldSpan:na>na radial:1.480>1.974 depthZ:0.000>-2.000 side:right arc:0.000 arcInstant:0.000 arcActive:false arcHold:false arcPaused:false arcReason:arc-idle retention:1.000 arcBaseline:-0.956 arcScale:0.300 lateral:-0.956 cycle:reached cycleOrdered:false cycleCount:0 stabilizer:snap-extended alpha:1.00 step:0.000 hold:0 dirRun:00 rejected:none rejectedFrames:2 filtered=angle:153.808 spanRatio:0.977 worldSpan:na radial:1.974 depthZ:-2.000 separation=angle:63.808/w0.40 spanRatio:0.260/w0.45 worldSpan:na/w0 radial:0.494/w0.10 depthZ:-2.000/w0.05 signalProgress=angle:1.000 spanRatio:1.000 worldSpan:na radial:1.000 depthZ:1.000",
+        "lateral": -0.9564449944132198,
+        "arcProgress": 0,
+        "arcInstant": 0,
+        "arcActive": false,
+        "arcHold": false,
+        "arcCalibrated": true,
+        "cyclePhase": "reached",
+        "cycleOrdered": false,
+        "cycleComplete": false,
+        "cycleCount": 0,
+        "stabilizer": {
+          "reason": "snap-extended",
+          "alpha": 1,
+          "step": 0,
+          "holdFrames": 0,
+          "direction": 0,
+          "directionRun": 0,
+          "rejected": [],
+          "rejectedFrames": 2,
+          "snapRun": 10
+        },
+        "pathGateOpen": false,
+        "side": "right",
+        "wipeCleanPercent": 0,
+        "wipeValidMovement": false,
+        "wipeCompleted": false,
+        "screenForward": {
+          "x": 84.96,
+          "y": 262.4
+        },
+        "cursorY": 672.4
+      }
+    },
+    {
+      "level": "4",
+      "category": "two-pose calibration",
+      "name": "manual calibration still returns to 0 at the flexed endpoint",
+      "passed": true,
+      "details": {
+        "calibrated": true,
+        "stage": "ready",
+        "reason": "calibrated-manual",
+        "progress": 0,
+        "instantProgress": 0,
+        "engaged": false,
+        "reachGate": false,
+        "returnReady": true,
+        "shoulderFlexProgress": 0,
+        "elbowExtensionProgress": 0,
+        "elbowAngle": 90,
+        "spanRatio": 0.7162452681024037,
+        "worldSpan": null,
+        "radial": 1.4802402207449679,
+        "depthZ": 0,
+        "depthSource": "image-z",
+        "weights": {
+          "angle": 0.39534883720930236,
+          "spanRatio": 0.45465116279069767,
+          "radial": 0.09642857142857143,
+          "depthZ": 0.05357142857142856
+        },
+        "separation": {
+          "angle": 63.80780112703462,
+          "spanRatio": 0.2604561030146203,
+          "worldSpan": null,
+          "radial": 0.49403883191647835,
+          "depthZ": -2.0000000000000004
+        },
+        "signalProgress": {
+          "angle": 0,
+          "spanRatio": 0,
+          "radial": 0,
+          "depthZ": 0
+        },
+        "endpoints": {
+          "flexed": {
+            "angle": 90,
+            "spanRatio": 0.7162452681024037,
+            "worldSpan": null,
+            "radial": 1.4802402207449679,
+            "depthZ": 0,
+            "lateral": -0.4193548387096775,
+            "shoulderBalance": 0
+          },
+          "extended": {
+            "angle": 153.80780112703462,
+            "spanRatio": 0.976701371117024,
+            "worldSpan": null,
+            "radial": 1.9742790526614462,
+            "depthZ": -2.0000000000000004,
+            "lateral": -0.9564449944132198,
+            "shoulderBalance": 0
+          }
+        },
+        "qualified": [
+          "angle",
+          "spanRatio",
+          "radial",
+          "depthZ"
+        ],
+        "lacking": [
+          {
+            "signal": "worldSpan",
+            "reason": "unavailable",
+            "separation": null,
+            "required": 0.08
+          }
+        ],
+        "manual": {
+          "flexed": true,
+          "extended": true
+        },
+        "retryCount": 0,
+        "captureCount": {
+          "flexed": 2,
+          "extended": 2
+        },
+        "completionReady": false,
+        "shoulderHike": false,
+        "framingReady": true,
+        "warning": "",
+        "guidance": {
+          "main": "",
+          "detail": "",
+          "en": ""
+        },
+        "diagnostics": "stage:ready calibrated:true framingReady:true progress:0.000 instant:0.000 engaged:false reachGate:false returnReady:true completionReady:false depthSource:image-z movementSeen:true shoulderHike:false reason:calibrated-manual retries:0 manual:FE raw=angle:90.000 spanRatio:0.716 worldSpan:na radial:1.480 depthZ:0.000 endpoints=angle:90.000>153.808 spanRatio:0.716>0.977 worldSpan:na>na radial:1.480>1.974 depthZ:0.000>-2.000 side:right arc:0.000 arcInstant:0.000 arcActive:false arcHold:false arcPaused:true arcReason:arc-paused-elbow-flexed retention:0.000 arcBaseline:-0.956 arcScale:0.300 lateral:-0.419 cycle:start cycleOrdered:false cycleCount:0 stabilizer:snap-flexed alpha:1.00 step:0.000 hold:0 dirRun:00 rejected:none rejectedFrames:4 filtered=angle:90.000 spanRatio:0.716 worldSpan:na radial:1.480 depthZ:0.000 separation=angle:63.808/w0.40 spanRatio:0.260/w0.45 worldSpan:na/w0 radial:0.494/w0.10 depthZ:-2.000/w0.05 signalProgress=angle:0.000 spanRatio:0.000 worldSpan:na radial:0.000 depthZ:0.000",
+        "lateral": -0.4193548387096775,
+        "arcProgress": 0,
+        "arcInstant": 0,
+        "arcActive": false,
+        "arcHold": false,
+        "arcCalibrated": true,
+        "cyclePhase": "start",
+        "cycleOrdered": false,
+        "cycleComplete": false,
+        "cycleCount": 0,
+        "stabilizer": {
+          "reason": "snap-flexed",
+          "alpha": 1,
+          "step": 0,
+          "holdFrames": 0,
+          "direction": 0,
+          "directionRun": 0,
+          "rejected": [],
+          "rejectedFrames": 4,
+          "snapRun": 21
+        },
+        "pathGateOpen": false,
+        "side": "right",
         "wipeCleanPercent": 0,
         "wipeValidMovement": false,
         "wipeCompleted": false,
@@ -384,21 +989,116 @@
       "passed": true,
       "details": {
         "calibrated": true,
+        "stage": "ready",
+        "reason": "calibrated",
         "progress": 0,
+        "instantProgress": 0,
         "engaged": false,
-        "shoulderFlexProgress": 0.1772570986855997,
+        "reachGate": false,
+        "returnReady": true,
+        "shoulderFlexProgress": 0,
         "elbowExtensionProgress": 0,
         "elbowAngle": 94.39870535499553,
-        "fullExtensionAngle": 157.5,
+        "spanRatio": 0.7417175272720485,
+        "worldSpan": null,
+        "radial": 1.5347819244295118,
+        "depthZ": 0,
+        "depthSource": "image-z",
+        "weights": {
+          "angle": 0.39534883720930236,
+          "spanRatio": 0.45465116279069767,
+          "radial": 0.09642857142857143,
+          "depthZ": 0.05357142857142856
+        },
+        "separation": {
+          "angle": 63.80780112703462,
+          "spanRatio": 0.2604561030146203,
+          "worldSpan": null,
+          "radial": 0.49403883191647835,
+          "depthZ": -2.0000000000000004
+        },
+        "signalProgress": {
+          "angle": 0.06893679577263864,
+          "spanRatio": 0.09779866501425366,
+          "radial": 0.11039962885703826,
+          "depthZ": 0
+        },
+        "endpoints": {
+          "flexed": {
+            "angle": 90,
+            "spanRatio": 0.7162452681024037,
+            "worldSpan": null,
+            "radial": 1.4802402207449679,
+            "depthZ": 0,
+            "lateral": -0.4193548387096775,
+            "shoulderBalance": 0
+          },
+          "extended": {
+            "angle": 153.80780112703462,
+            "spanRatio": 0.976701371117024,
+            "worldSpan": null,
+            "radial": 1.9742790526614462,
+            "depthZ": -2.0000000000000004,
+            "lateral": -0.9564449944132198,
+            "shoulderBalance": 0
+          }
+        },
+        "qualified": [
+          "angle",
+          "spanRatio",
+          "radial",
+          "depthZ"
+        ],
+        "lacking": [
+          {
+            "signal": "worldSpan",
+            "reason": "unavailable",
+            "separation": null,
+            "required": 0.08
+          }
+        ],
+        "manual": {
+          "flexed": false,
+          "extended": false
+        },
+        "retryCount": 0,
+        "captureCount": {
+          "flexed": 1,
+          "extended": 1
+        },
         "completionReady": false,
-        "movementConfirmFrames": 0,
-        "elbowMode": "active-extension",
-        "directionMode": "waiting",
-        "directionPeak": 0,
-        "forwardScale": 0.12,
         "shoulderHike": false,
         "framingReady": true,
         "warning": "",
+        "guidance": {
+          "main": "",
+          "detail": "",
+          "en": ""
+        },
+        "diagnostics": "stage:ready calibrated:true framingReady:true progress:0.000 instant:0.000 engaged:false reachGate:false returnReady:true completionReady:false depthSource:image-z movementSeen:true shoulderHike:false reason:calibrated retries:0 manual:-- raw=angle:94.399 spanRatio:0.742 worldSpan:na radial:1.535 depthZ:0.000 endpoints=angle:90.000>153.808 spanRatio:0.716>0.977 worldSpan:na>na radial:1.480>1.974 depthZ:0.000>-2.000 side:right arc:0.000 arcInstant:0.000 arcActive:false arcHold:false arcPaused:true arcReason:arc-paused-elbow-flexed retention:0.069 arcBaseline:-0.956 arcScale:0.300 lateral:-0.419 cycle:start cycleOrdered:false cycleCount:0 stabilizer:snap-flexed alpha:1.00 step:0.000 hold:0 dirRun:00 rejected:none rejectedFrames:4 filtered=angle:94.399 spanRatio:0.742 worldSpan:na radial:1.535 depthZ:0.000 separation=angle:63.808/w0.40 spanRatio:0.260/w0.45 worldSpan:na/w0 radial:0.494/w0.10 depthZ:-2.000/w0.05 signalProgress=angle:0.069 spanRatio:0.098 worldSpan:na radial:0.110 depthZ:0.000",
+        "lateral": -0.4188359575631892,
+        "arcProgress": 0,
+        "arcInstant": 0,
+        "arcActive": false,
+        "arcHold": false,
+        "arcCalibrated": true,
+        "cyclePhase": "start",
+        "cycleOrdered": false,
+        "cycleComplete": false,
+        "cycleCount": 0,
+        "stabilizer": {
+          "reason": "snap-flexed",
+          "alpha": 1,
+          "step": 0,
+          "holdFrames": 0,
+          "direction": 0,
+          "directionRun": 0,
+          "rejected": [],
+          "rejectedFrames": 4,
+          "snapRun": 35
+        },
+        "pathGateOpen": false,
+        "side": "right",
         "wipeCleanPercent": 0,
         "wipeValidMovement": false,
         "wipeCompleted": false,
@@ -416,27 +1116,122 @@
       "passed": true,
       "details": {
         "calibrated": true,
-        "progress": 0.41072781697276667,
+        "stage": "ready",
+        "reason": "calibrated",
+        "progress": 0.5003347744245745,
+        "instantProgress": 0.5003742222669842,
         "engaged": true,
-        "shoulderFlexProgress": 1,
-        "elbowExtensionProgress": 0.4257200359399831,
+        "reachGate": false,
+        "returnReady": false,
+        "shoulderFlexProgress": 0.5003347744245745,
+        "elbowExtensionProgress": 0.5003742222669842,
         "elbowAngle": 121.60750224624894,
-        "fullExtensionAngle": 157.5,
+        "spanRatio": 0.8738753233205987,
+        "worldSpan": null,
+        "radial": 1.9379255804998183,
+        "depthZ": 0,
+        "depthSource": "image-z",
+        "weights": {
+          "angle": 0.39534883720930236,
+          "spanRatio": 0.45465116279069767,
+          "radial": 0.09642857142857143,
+          "depthZ": 0.05357142857142856
+        },
+        "separation": {
+          "angle": 63.80780112703462,
+          "spanRatio": 0.2604561030146203,
+          "worldSpan": null,
+          "radial": 0.49403883191647835,
+          "depthZ": -2.0000000000000004
+        },
+        "signalProgress": {
+          "angle": 0.49535482633732714,
+          "spanRatio": 0.6052077620517368,
+          "radial": 0.9264157596264139,
+          "depthZ": 0
+        },
+        "endpoints": {
+          "flexed": {
+            "angle": 90,
+            "spanRatio": 0.7162452681024037,
+            "worldSpan": null,
+            "radial": 1.4802402207449679,
+            "depthZ": 0,
+            "lateral": -0.4193548387096775,
+            "shoulderBalance": 0
+          },
+          "extended": {
+            "angle": 153.80780112703462,
+            "spanRatio": 0.976701371117024,
+            "worldSpan": null,
+            "radial": 1.9742790526614462,
+            "depthZ": -2.0000000000000004,
+            "lateral": -0.9564449944132198,
+            "shoulderBalance": 0
+          }
+        },
+        "qualified": [
+          "angle",
+          "spanRatio",
+          "radial",
+          "depthZ"
+        ],
+        "lacking": [
+          {
+            "signal": "worldSpan",
+            "reason": "unavailable",
+            "separation": null,
+            "required": 0.08
+          }
+        ],
+        "manual": {
+          "flexed": false,
+          "extended": false
+        },
+        "retryCount": 0,
+        "captureCount": {
+          "flexed": 1,
+          "extended": 1
+        },
         "completionReady": false,
-        "movementConfirmFrames": 6,
-        "elbowMode": "active-extension",
-        "directionMode": "individualized",
-        "directionPeak": 0.7027946591845814,
-        "forwardScale": 0.26,
         "shoulderHike": false,
         "framingReady": true,
         "warning": "",
+        "guidance": {
+          "main": "",
+          "detail": "",
+          "en": ""
+        },
+        "diagnostics": "stage:ready calibrated:true framingReady:true progress:0.500 instant:0.500 engaged:true reachGate:false returnReady:false completionReady:false depthSource:image-z movementSeen:true shoulderHike:false reason:calibrated retries:0 manual:-- raw=angle:121.608 spanRatio:0.874 worldSpan:na radial:1.938 depthZ:0.000 endpoints=angle:90.000>153.808 spanRatio:0.716>0.977 worldSpan:na>na radial:1.480>1.974 depthZ:0.000>-2.000 side:right arc:0.000 arcInstant:0.000 arcActive:false arcHold:false arcPaused:true arcReason:arc-paused-elbow-flexed retention:0.495 arcBaseline:-0.956 arcScale:0.300 lateral:-0.391 cycle:extending cycleOrdered:false cycleCount:0 stabilizer:tracking alpha:0.70 step:0.000 hold:0 dirRun:+9 rejected:none rejectedFrames:6 filtered=angle:121.608 spanRatio:0.874 worldSpan:na radial:1.938 depthZ:0.000 separation=angle:63.808/w0.40 spanRatio:0.260/w0.45 worldSpan:na/w0 radial:0.494/w0.10 depthZ:-2.000/w0.05 signalProgress=angle:0.495 spanRatio:0.605 worldSpan:na radial:0.926 depthZ:0.000",
+        "lateral": -0.3908089253608932,
+        "arcProgress": 0,
+        "arcInstant": 0,
+        "arcActive": false,
+        "arcHold": false,
+        "arcCalibrated": true,
+        "cyclePhase": "extending",
+        "cycleOrdered": false,
+        "cycleComplete": false,
+        "cycleCount": 0,
+        "stabilizer": {
+          "reason": "tracking",
+          "alpha": 0.7,
+          "step": 0.00009204496562287279,
+          "holdFrames": 0,
+          "direction": 1,
+          "directionRun": 9,
+          "rejected": [],
+          "rejectedFrames": 6,
+          "snapRun": 0
+        },
+        "pathGateOpen": false,
+        "side": "right",
         "wipeCleanPercent": 0,
         "wipeValidMovement": false,
         "wipeCompleted": false,
         "screenForward": {
           "x": 84.96,
-          "y": 513.6656588428123
+          "y": 475.4572521853614
         },
         "cursorY": 672.4
       }
@@ -448,21 +1243,116 @@
       "passed": true,
       "details": {
         "calibrated": true,
+        "stage": "ready",
+        "reason": "calibrated",
         "progress": 0,
+        "instantProgress": 0,
         "engaged": false,
-        "shoulderFlexProgress": 0.5382352941176459,
+        "reachGate": false,
+        "returnReady": true,
+        "shoulderFlexProgress": 0,
         "elbowExtensionProgress": 0,
         "elbowAngle": 90,
-        "fullExtensionAngle": 157.5,
+        "spanRatio": 0.716245268102404,
+        "worldSpan": null,
+        "radial": 1.3060943124220308,
+        "depthZ": 0,
+        "depthSource": "image-z",
+        "weights": {
+          "angle": 0.39534883720930236,
+          "spanRatio": 0.45465116279069767,
+          "radial": 0.09642857142857143,
+          "depthZ": 0.05357142857142856
+        },
+        "separation": {
+          "angle": 63.80780112703462,
+          "spanRatio": 0.2604561030146203,
+          "worldSpan": null,
+          "radial": 0.49403883191647835,
+          "depthZ": -2.0000000000000004
+        },
+        "signalProgress": {
+          "angle": 0,
+          "spanRatio": 8.525221807245084e-16,
+          "radial": 0,
+          "depthZ": 0
+        },
+        "endpoints": {
+          "flexed": {
+            "angle": 90,
+            "spanRatio": 0.7162452681024037,
+            "worldSpan": null,
+            "radial": 1.4802402207449679,
+            "depthZ": 0,
+            "lateral": -0.4193548387096775,
+            "shoulderBalance": 0
+          },
+          "extended": {
+            "angle": 153.80780112703462,
+            "spanRatio": 0.976701371117024,
+            "worldSpan": null,
+            "radial": 1.9742790526614462,
+            "depthZ": -2.0000000000000004,
+            "lateral": -0.9564449944132198,
+            "shoulderBalance": 0
+          }
+        },
+        "qualified": [
+          "angle",
+          "spanRatio",
+          "radial",
+          "depthZ"
+        ],
+        "lacking": [
+          {
+            "signal": "worldSpan",
+            "reason": "unavailable",
+            "separation": null,
+            "required": 0.08
+          }
+        ],
+        "manual": {
+          "flexed": false,
+          "extended": false
+        },
+        "retryCount": 0,
+        "captureCount": {
+          "flexed": 1,
+          "extended": 1
+        },
         "completionReady": false,
-        "movementConfirmFrames": 0,
-        "elbowMode": "active-extension",
-        "directionMode": "waiting",
-        "directionPeak": 0,
-        "forwardScale": 0.12,
         "shoulderHike": true,
         "framingReady": true,
         "warning": "患側聳肩 · 請治療師即時糾正",
+        "guidance": {
+          "main": "",
+          "detail": "",
+          "en": ""
+        },
+        "diagnostics": "stage:ready calibrated:true framingReady:true progress:0.000 instant:0.000 engaged:false reachGate:false returnReady:true completionReady:false depthSource:image-z movementSeen:true shoulderHike:true reason:calibrated retries:0 manual:-- raw=angle:90.000 spanRatio:0.716 worldSpan:na radial:1.306 depthZ:0.000 endpoints=angle:90.000>153.808 spanRatio:0.716>0.977 worldSpan:na>na radial:1.480>1.974 depthZ:0.000>-2.000 side:right arc:0.000 arcInstant:0.000 arcActive:false arcHold:false arcPaused:true arcReason:arc-paused-elbow-flexed retention:0.000 arcBaseline:-0.956 arcScale:0.300 lateral:-0.419 cycle:start cycleOrdered:false cycleCount:0 stabilizer:shoulder-hike alpha:1.00 step:0.000 hold:0 dirRun:00 rejected:none rejectedFrames:4 filtered=angle:90.000 spanRatio:0.716 worldSpan:na radial:1.306 depthZ:0.000 separation=angle:63.808/w0.40 spanRatio:0.260/w0.45 worldSpan:na/w0 radial:0.494/w0.10 depthZ:-2.000/w0.05 signalProgress=angle:0.000 spanRatio:0.000 worldSpan:na radial:0.000 depthZ:0.000",
+        "lateral": -0.4193548387096775,
+        "arcProgress": 0,
+        "arcInstant": 0,
+        "arcActive": false,
+        "arcHold": false,
+        "arcCalibrated": true,
+        "cyclePhase": "start",
+        "cycleOrdered": false,
+        "cycleComplete": false,
+        "cycleCount": 0,
+        "stabilizer": {
+          "reason": "shoulder-hike",
+          "alpha": 1,
+          "step": 0,
+          "holdFrames": 0,
+          "direction": 0,
+          "directionRun": 0,
+          "rejected": [],
+          "rejectedFrames": 4,
+          "snapRun": 22
+        },
+        "pathGateOpen": false,
+        "side": "right",
         "wipeCleanPercent": 0,
         "wipeValidMovement": false,
         "wipeCompleted": false,
@@ -480,27 +1370,122 @@
       "passed": true,
       "details": {
         "calibrated": true,
-        "progress": 0.9781659894415103,
+        "stage": "ready",
+        "reason": "calibrated",
+        "progress": 1,
+        "instantProgress": 1,
         "engaged": true,
+        "reachGate": true,
+        "returnReady": false,
         "shoulderFlexProgress": 1,
         "elbowExtensionProgress": 1,
-        "elbowAngle": 161.403384267591,
-        "fullExtensionAngle": 157.5,
+        "elbowAngle": 153.80780112703462,
+        "spanRatio": 0.976701371117024,
+        "worldSpan": null,
+        "radial": 1.9742790526614462,
+        "depthZ": -2.0000000000000004,
+        "depthSource": "image-z",
+        "weights": {
+          "angle": 0.39534883720930236,
+          "spanRatio": 0.45465116279069767,
+          "radial": 0.09642857142857143,
+          "depthZ": 0.05357142857142856
+        },
+        "separation": {
+          "angle": 63.80780112703462,
+          "spanRatio": 0.2604561030146203,
+          "worldSpan": null,
+          "radial": 0.49403883191647835,
+          "depthZ": -2.0000000000000004
+        },
+        "signalProgress": {
+          "angle": 1,
+          "spanRatio": 1,
+          "radial": 1,
+          "depthZ": 1
+        },
+        "endpoints": {
+          "flexed": {
+            "angle": 90,
+            "spanRatio": 0.7162452681024037,
+            "worldSpan": null,
+            "radial": 1.4802402207449679,
+            "depthZ": 0,
+            "lateral": -0.4193548387096775,
+            "shoulderBalance": 0
+          },
+          "extended": {
+            "angle": 153.80780112703462,
+            "spanRatio": 0.976701371117024,
+            "worldSpan": null,
+            "radial": 1.9742790526614462,
+            "depthZ": -2.0000000000000004,
+            "lateral": -0.9564449944132198,
+            "shoulderBalance": 0
+          }
+        },
+        "qualified": [
+          "angle",
+          "spanRatio",
+          "radial",
+          "depthZ"
+        ],
+        "lacking": [
+          {
+            "signal": "worldSpan",
+            "reason": "unavailable",
+            "separation": null,
+            "required": 0.08
+          }
+        ],
+        "manual": {
+          "flexed": false,
+          "extended": false
+        },
+        "retryCount": 0,
+        "captureCount": {
+          "flexed": 1,
+          "extended": 1
+        },
         "completionReady": true,
-        "movementConfirmFrames": 6,
-        "elbowMode": "active-extension",
-        "directionMode": "individualized",
-        "directionPeak": 2.5316111633466982,
-        "forwardScale": 0.26,
         "shoulderHike": false,
         "framingReady": true,
         "warning": "",
+        "guidance": {
+          "main": "",
+          "detail": "",
+          "en": ""
+        },
+        "diagnostics": "stage:ready calibrated:true framingReady:true progress:1.000 instant:1.000 engaged:true reachGate:true returnReady:false completionReady:true depthSource:image-z movementSeen:true shoulderHike:false reason:calibrated retries:0 manual:-- raw=angle:153.808 spanRatio:0.977 worldSpan:na radial:1.974 depthZ:-2.000 endpoints=angle:90.000>153.808 spanRatio:0.716>0.977 worldSpan:na>na radial:1.480>1.974 depthZ:0.000>-2.000 side:right arc:0.000 arcInstant:0.000 arcActive:false arcHold:false arcPaused:false arcReason:arc-idle retention:1.000 arcBaseline:-0.956 arcScale:0.300 lateral:-0.956 cycle:reached cycleOrdered:false cycleCount:0 stabilizer:snap-extended alpha:1.00 step:0.000 hold:0 dirRun:00 rejected:none rejectedFrames:6 filtered=angle:153.808 spanRatio:0.977 worldSpan:na radial:1.974 depthZ:-2.000 separation=angle:63.808/w0.40 spanRatio:0.260/w0.45 worldSpan:na/w0 radial:0.494/w0.10 depthZ:-2.000/w0.05 signalProgress=angle:1.000 spanRatio:1.000 worldSpan:na radial:1.000 depthZ:1.000",
+        "lateral": -0.9564449944132198,
+        "arcProgress": 0,
+        "arcInstant": 0,
+        "arcActive": false,
+        "arcHold": false,
+        "arcCalibrated": true,
+        "cyclePhase": "reached",
+        "cycleOrdered": false,
+        "cycleComplete": false,
+        "cycleCount": 0,
+        "stabilizer": {
+          "reason": "snap-extended",
+          "alpha": 1,
+          "step": 0,
+          "holdFrames": 0,
+          "direction": 0,
+          "directionRun": 0,
+          "rejected": [],
+          "rejectedFrames": 6,
+          "snapRun": 34
+        },
+        "pathGateOpen": false,
+        "side": "right",
         "wipeCleanPercent": 0,
         "wipeValidMovement": false,
         "wipeCompleted": false,
         "screenForward": {
           "x": 84.96,
-          "y": 271.71002210214
+          "y": 262.4
         },
         "cursorY": 672.4
       }
@@ -512,27 +1497,122 @@
       "passed": true,
       "details": {
         "calibrated": true,
-        "progress": 0.005159981815999793,
-        "engaged": true,
-        "shoulderFlexProgress": 1,
-        "elbowExtensionProgress": 0,
-        "elbowAngle": 93.87882289203809,
-        "fullExtensionAngle": 157.5,
+        "stage": "ready",
+        "reason": "calibrated",
+        "progress": 0,
+        "instantProgress": 0.03409090909090909,
+        "engaged": false,
+        "reachGate": false,
+        "returnReady": true,
+        "shoulderFlexProgress": 0,
+        "elbowExtensionProgress": 0.03409090909090909,
+        "elbowAngle": 81.869897645844,
+        "spanRatio": 0.6610458377237273,
+        "worldSpan": null,
+        "radial": 1.9742790526614462,
+        "depthZ": -2.0000000000000004,
+        "depthSource": "image-z",
+        "weights": {
+          "angle": 0.39534883720930236,
+          "spanRatio": 0.45465116279069767,
+          "radial": 0.09642857142857143,
+          "depthZ": 0.05357142857142856
+        },
+        "separation": {
+          "angle": 63.80780112703462,
+          "spanRatio": 0.2604561030146203,
+          "worldSpan": null,
+          "radial": 0.49403883191647835,
+          "depthZ": -2.0000000000000004
+        },
+        "signalProgress": {
+          "angle": 0,
+          "spanRatio": 0,
+          "radial": 1,
+          "depthZ": 1
+        },
+        "endpoints": {
+          "flexed": {
+            "angle": 90,
+            "spanRatio": 0.7162452681024037,
+            "worldSpan": null,
+            "radial": 1.4802402207449679,
+            "depthZ": 0,
+            "lateral": -0.4193548387096775,
+            "shoulderBalance": 0
+          },
+          "extended": {
+            "angle": 153.80780112703462,
+            "spanRatio": 0.976701371117024,
+            "worldSpan": null,
+            "radial": 1.9742790526614462,
+            "depthZ": -2.0000000000000004,
+            "lateral": -0.9564449944132198,
+            "shoulderBalance": 0
+          }
+        },
+        "qualified": [
+          "angle",
+          "spanRatio",
+          "radial",
+          "depthZ"
+        ],
+        "lacking": [
+          {
+            "signal": "worldSpan",
+            "reason": "unavailable",
+            "separation": null,
+            "required": 0.08
+          }
+        ],
+        "manual": {
+          "flexed": false,
+          "extended": false
+        },
+        "retryCount": 0,
+        "captureCount": {
+          "flexed": 1,
+          "extended": 1
+        },
         "completionReady": false,
-        "movementConfirmFrames": 0,
-        "elbowMode": "active-extension",
-        "directionMode": "individualized",
-        "directionPeak": 2.5316111633466982,
-        "forwardScale": 0.26,
         "shoulderHike": false,
         "framingReady": true,
         "warning": "",
+        "guidance": {
+          "main": "",
+          "detail": "",
+          "en": ""
+        },
+        "diagnostics": "stage:ready calibrated:true framingReady:true progress:0.000 instant:0.034 engaged:false reachGate:false returnReady:true completionReady:false depthSource:image-z movementSeen:true shoulderHike:false reason:calibrated retries:0 manual:-- raw=angle:81.870 spanRatio:0.661 worldSpan:na radial:1.974 depthZ:-2.000 endpoints=angle:90.000>153.808 spanRatio:0.716>0.977 worldSpan:na>na radial:1.480>1.974 depthZ:0.000>-2.000 side:right arc:0.000 arcInstant:0.000 arcActive:false arcHold:false arcPaused:true arcReason:arc-paused-elbow-flexed retention:0.000 arcBaseline:-0.956 arcScale:0.300 lateral:-0.647 cycle:start cycleOrdered:false cycleCount:0 stabilizer:snap-flexed alpha:1.00 step:0.000 hold:0 dirRun:00 rejected:none rejectedFrames:8 filtered=angle:81.870 spanRatio:0.661 worldSpan:na radial:1.974 depthZ:-2.000 separation=angle:63.808/w0.40 spanRatio:0.260/w0.45 worldSpan:na/w0 radial:0.494/w0.10 depthZ:-2.000/w0.05 signalProgress=angle:0.000 spanRatio:0.000 worldSpan:na radial:1.000 depthZ:1.000",
+        "lateral": -0.6473360243627615,
+        "arcProgress": 0,
+        "arcInstant": 0,
+        "arcActive": false,
+        "arcHold": false,
+        "arcCalibrated": true,
+        "cyclePhase": "start",
+        "cycleOrdered": false,
+        "cycleComplete": false,
+        "cycleCount": 0,
+        "stabilizer": {
+          "reason": "snap-flexed",
+          "alpha": 1,
+          "step": 0,
+          "holdFrames": 0,
+          "direction": 0,
+          "directionRun": 0,
+          "rejected": [],
+          "rejectedFrames": 8,
+          "snapRun": 46
+        },
+        "pathGateOpen": false,
+        "side": "right",
         "wipeCleanPercent": 0,
         "wipeValidMovement": false,
         "wipeCompleted": false,
         "screenForward": {
           "x": 84.96,
-          "y": 686.5997837536577
+          "y": 688.8
         },
         "cursorY": 672.4
       }
@@ -544,27 +1624,122 @@
       "passed": true,
       "details": {
         "calibrated": true,
-        "progress": 0.000010321436253073366,
+        "stage": "ready",
+        "reason": "calibrated",
+        "progress": 0,
+        "instantProgress": 0,
         "engaged": false,
+        "reachGate": false,
+        "returnReady": true,
         "shoulderFlexProgress": 0,
         "elbowExtensionProgress": 0,
         "elbowAngle": 90,
-        "fullExtensionAngle": 157.5,
+        "spanRatio": 0.7162452681024037,
+        "worldSpan": null,
+        "radial": 1.4802402207449679,
+        "depthZ": 0,
+        "depthSource": "image-z",
+        "weights": {
+          "angle": 0.39534883720930236,
+          "spanRatio": 0.45465116279069767,
+          "radial": 0.09642857142857143,
+          "depthZ": 0.05357142857142856
+        },
+        "separation": {
+          "angle": 63.80780112703462,
+          "spanRatio": 0.2604561030146203,
+          "worldSpan": null,
+          "radial": 0.49403883191647835,
+          "depthZ": -2.0000000000000004
+        },
+        "signalProgress": {
+          "angle": 0,
+          "spanRatio": 0,
+          "radial": 0,
+          "depthZ": 0
+        },
+        "endpoints": {
+          "flexed": {
+            "angle": 90,
+            "spanRatio": 0.7162452681024037,
+            "worldSpan": null,
+            "radial": 1.4802402207449679,
+            "depthZ": 0,
+            "lateral": -0.4193548387096775,
+            "shoulderBalance": 0
+          },
+          "extended": {
+            "angle": 153.80780112703462,
+            "spanRatio": 0.976701371117024,
+            "worldSpan": null,
+            "radial": 1.9742790526614462,
+            "depthZ": -2.0000000000000004,
+            "lateral": -0.9564449944132198,
+            "shoulderBalance": 0
+          }
+        },
+        "qualified": [
+          "angle",
+          "spanRatio",
+          "radial",
+          "depthZ"
+        ],
+        "lacking": [
+          {
+            "signal": "worldSpan",
+            "reason": "unavailable",
+            "separation": null,
+            "required": 0.08
+          }
+        ],
+        "manual": {
+          "flexed": false,
+          "extended": false
+        },
+        "retryCount": 0,
+        "captureCount": {
+          "flexed": 1,
+          "extended": 1
+        },
         "completionReady": false,
-        "movementConfirmFrames": 0,
-        "elbowMode": "active-extension",
-        "directionMode": "individualized",
-        "directionPeak": 2.5316111633466982,
-        "forwardScale": 0.26,
         "shoulderHike": false,
         "framingReady": true,
         "warning": "",
+        "guidance": {
+          "main": "",
+          "detail": "",
+          "en": ""
+        },
+        "diagnostics": "stage:ready calibrated:true framingReady:true progress:0.000 instant:0.000 engaged:false reachGate:false returnReady:true completionReady:false depthSource:image-z movementSeen:true shoulderHike:false reason:calibrated retries:0 manual:-- raw=angle:90.000 spanRatio:0.716 worldSpan:na radial:1.480 depthZ:0.000 endpoints=angle:90.000>153.808 spanRatio:0.716>0.977 worldSpan:na>na radial:1.480>1.974 depthZ:0.000>-2.000 side:right arc:0.000 arcInstant:0.000 arcActive:false arcHold:false arcPaused:true arcReason:arc-paused-elbow-flexed retention:0.000 arcBaseline:-0.956 arcScale:0.300 lateral:-0.419 cycle:start cycleOrdered:false cycleCount:0 stabilizer:snap-flexed alpha:1.00 step:0.000 hold:0 dirRun:00 rejected:none rejectedFrames:10 filtered=angle:90.000 spanRatio:0.716 worldSpan:na radial:1.480 depthZ:0.000 separation=angle:63.808/w0.40 spanRatio:0.260/w0.45 worldSpan:na/w0 radial:0.494/w0.10 depthZ:-2.000/w0.05 signalProgress=angle:0.000 spanRatio:0.000 worldSpan:na radial:0.000 depthZ:0.000",
+        "lateral": -0.4193548387096775,
+        "arcProgress": 0,
+        "arcInstant": 0,
+        "arcActive": false,
+        "arcHold": false,
+        "arcCalibrated": true,
+        "cyclePhase": "start",
+        "cycleOrdered": false,
+        "cycleComplete": false,
+        "cycleCount": 0,
+        "stabilizer": {
+          "reason": "snap-flexed",
+          "alpha": 1,
+          "step": 0,
+          "holdFrames": 0,
+          "direction": 0,
+          "directionRun": 0,
+          "rejected": [],
+          "rejectedFrames": 10,
+          "snapRun": 58
+        },
+        "pathGateOpen": false,
+        "side": "right",
         "wipeCleanPercent": 0,
         "wipeValidMovement": false,
         "wipeCompleted": false,
         "screenForward": {
           "x": 84.96,
-          "y": 688.7955989395816
+          "y": 688.8
         },
         "cursorY": 672.4
       }
@@ -582,27 +1757,122 @@
         "extended": {
           "reach": {
             "calibrated": true,
-            "progress": 0.96478385393792,
+            "stage": "ready",
+            "reason": "calibrated",
+            "progress": 1,
+            "instantProgress": 1,
             "engaged": true,
+            "reachGate": true,
+            "returnReady": false,
             "shoulderFlexProgress": 1,
             "elbowExtensionProgress": 1,
-            "elbowAngle": 161.403384267591,
-            "fullExtensionAngle": 157.5,
+            "elbowAngle": 153.80780112703462,
+            "spanRatio": 0.976701371117024,
+            "worldSpan": null,
+            "radial": 1.9742790526614462,
+            "depthZ": -2.0000000000000004,
+            "depthSource": "image-z",
+            "weights": {
+              "angle": 0.39534883720930236,
+              "spanRatio": 0.45465116279069767,
+              "radial": 0.09642857142857143,
+              "depthZ": 0.05357142857142856
+            },
+            "separation": {
+              "angle": 63.80780112703462,
+              "spanRatio": 0.2604561030146203,
+              "worldSpan": null,
+              "radial": 0.49403883191647835,
+              "depthZ": -2.0000000000000004
+            },
+            "signalProgress": {
+              "angle": 1,
+              "spanRatio": 1,
+              "radial": 1,
+              "depthZ": 1
+            },
+            "endpoints": {
+              "flexed": {
+                "angle": 90,
+                "spanRatio": 0.7162452681024037,
+                "worldSpan": null,
+                "radial": 1.4802402207449679,
+                "depthZ": 0,
+                "lateral": -0.4193548387096775,
+                "shoulderBalance": 0
+              },
+              "extended": {
+                "angle": 153.80780112703462,
+                "spanRatio": 0.976701371117024,
+                "worldSpan": null,
+                "radial": 1.9742790526614462,
+                "depthZ": -2.0000000000000004,
+                "lateral": -0.9564449944132198,
+                "shoulderBalance": 0
+              }
+            },
+            "qualified": [
+              "angle",
+              "spanRatio",
+              "radial",
+              "depthZ"
+            ],
+            "lacking": [
+              {
+                "signal": "worldSpan",
+                "reason": "unavailable",
+                "separation": null,
+                "required": 0.08
+              }
+            ],
+            "manual": {
+              "flexed": false,
+              "extended": false
+            },
+            "retryCount": 0,
+            "captureCount": {
+              "flexed": 1,
+              "extended": 1
+            },
             "completionReady": true,
-            "movementConfirmFrames": 6,
-            "elbowMode": "active-extension",
-            "directionMode": "individualized",
-            "directionPeak": 2.5316111633466982,
-            "forwardScale": 0.26,
             "shoulderHike": false,
             "framingReady": true,
             "warning": "",
+            "guidance": {
+              "main": "",
+              "detail": "",
+              "en": ""
+            },
+            "diagnostics": "stage:ready calibrated:true framingReady:true progress:1.000 instant:1.000 engaged:true reachGate:true returnReady:false completionReady:true depthSource:image-z movementSeen:true shoulderHike:false reason:calibrated retries:0 manual:-- raw=angle:153.808 spanRatio:0.977 worldSpan:na radial:1.974 depthZ:-2.000 endpoints=angle:90.000>153.808 spanRatio:0.716>0.977 worldSpan:na>na radial:1.480>1.974 depthZ:0.000>-2.000 side:right arc:0.000 arcInstant:0.000 arcActive:false arcHold:false arcPaused:false arcReason:arc-idle retention:1.000 arcBaseline:-0.956 arcScale:0.300 lateral:-0.956 cycle:reached cycleOrdered:false cycleCount:0 stabilizer:snap-extended alpha:1.00 step:0.000 hold:0 dirRun:00 rejected:none rejectedFrames:6 filtered=angle:153.808 spanRatio:0.977 worldSpan:na radial:1.974 depthZ:-2.000 separation=angle:63.808/w0.40 spanRatio:0.260/w0.45 worldSpan:na/w0 radial:0.494/w0.10 depthZ:-2.000/w0.05 signalProgress=angle:1.000 spanRatio:1.000 worldSpan:na radial:1.000 depthZ:1.000",
+            "lateral": -0.9564449944132198,
+            "arcProgress": 0,
+            "arcInstant": 0,
+            "arcActive": false,
+            "arcHold": false,
+            "arcCalibrated": true,
+            "cyclePhase": "reached",
+            "cycleOrdered": false,
+            "cycleComplete": false,
+            "cycleCount": 0,
+            "stabilizer": {
+              "reason": "snap-extended",
+              "alpha": 1,
+              "step": 0,
+              "holdFrames": 0,
+              "direction": 0,
+              "directionRun": 0,
+              "rejected": [],
+              "rejectedFrames": 6,
+              "snapRun": 35
+            },
+            "pathGateOpen": false,
+            "side": "right",
             "wipeCleanPercent": 0,
             "wipeValidMovement": false,
             "wipeCompleted": false,
             "screenForward": {
               "x": 84.96,
-              "y": 277.4161646808709
+              "y": 262.4
             },
             "cursorY": 156
           },
@@ -617,7 +1887,7 @@
               "x": 112,
               "y": 156
             },
-            "reachProgress": 0.96478385393792,
+            "reachProgress": 1,
             "carry": null,
             "controlled": null
           },
@@ -629,33 +1899,262 @@
             "rollStartedAt": 0,
             "pins": 0,
             "rounds": 0,
-            "readyForNextAt": 0
+            "readyForNextAt": 0,
+            "impactAt": 0,
+            "physicsAt": 0,
+            "pinBodies": [
+              {
+                "id": 0,
+                "x": 0,
+                "y": 0,
+                "homeX": 0,
+                "homeY": 0,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 1,
+                "x": -0.17,
+                "y": 0.085,
+                "homeX": -0.17,
+                "homeY": 0.085,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 2,
+                "x": 0.17,
+                "y": 0.085,
+                "homeX": 0.17,
+                "homeY": 0.085,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 3,
+                "x": -0.34,
+                "y": 0.17,
+                "homeX": -0.34,
+                "homeY": 0.17,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 4,
+                "x": 0,
+                "y": 0.17,
+                "homeX": 0,
+                "homeY": 0.17,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 5,
+                "x": 0.34,
+                "y": 0.17,
+                "homeX": 0.34,
+                "homeY": 0.17,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 6,
+                "x": -0.51,
+                "y": 0.255,
+                "homeX": -0.51,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 7,
+                "x": -0.17,
+                "y": 0.255,
+                "homeX": -0.17,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 8,
+                "x": 0.17,
+                "y": 0.255,
+                "homeX": 0.17,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 9,
+                "x": 0.51,
+                "y": 0.255,
+                "homeX": 0.51,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              }
+            ]
           }
         },
         "flexed": {
           "reach": {
             "calibrated": true,
-            "progress": 0.005133213725829009,
-            "engaged": true,
-            "shoulderFlexProgress": 1,
-            "elbowExtensionProgress": 0,
-            "elbowAngle": 93.87882289203809,
-            "fullExtensionAngle": 157.5,
+            "stage": "ready",
+            "reason": "calibrated",
+            "progress": 0,
+            "instantProgress": 0.03409090909090909,
+            "engaged": false,
+            "reachGate": false,
+            "returnReady": true,
+            "shoulderFlexProgress": 0,
+            "elbowExtensionProgress": 0.03409090909090909,
+            "elbowAngle": 81.869897645844,
+            "spanRatio": 0.6610458377237273,
+            "worldSpan": null,
+            "radial": 1.9742790526614462,
+            "depthZ": -2.0000000000000004,
+            "depthSource": "image-z",
+            "weights": {
+              "angle": 0.39534883720930236,
+              "spanRatio": 0.45465116279069767,
+              "radial": 0.09642857142857143,
+              "depthZ": 0.05357142857142856
+            },
+            "separation": {
+              "angle": 63.80780112703462,
+              "spanRatio": 0.2604561030146203,
+              "worldSpan": null,
+              "radial": 0.49403883191647835,
+              "depthZ": -2.0000000000000004
+            },
+            "signalProgress": {
+              "angle": 0,
+              "spanRatio": 0,
+              "radial": 1,
+              "depthZ": 1
+            },
+            "endpoints": {
+              "flexed": {
+                "angle": 90,
+                "spanRatio": 0.7162452681024037,
+                "worldSpan": null,
+                "radial": 1.4802402207449679,
+                "depthZ": 0,
+                "lateral": -0.4193548387096775,
+                "shoulderBalance": 0
+              },
+              "extended": {
+                "angle": 153.80780112703462,
+                "spanRatio": 0.976701371117024,
+                "worldSpan": null,
+                "radial": 1.9742790526614462,
+                "depthZ": -2.0000000000000004,
+                "lateral": -0.9564449944132198,
+                "shoulderBalance": 0
+              }
+            },
+            "qualified": [
+              "angle",
+              "spanRatio",
+              "radial",
+              "depthZ"
+            ],
+            "lacking": [
+              {
+                "signal": "worldSpan",
+                "reason": "unavailable",
+                "separation": null,
+                "required": 0.08
+              }
+            ],
+            "manual": {
+              "flexed": false,
+              "extended": false
+            },
+            "retryCount": 0,
+            "captureCount": {
+              "flexed": 1,
+              "extended": 1
+            },
             "completionReady": false,
-            "movementConfirmFrames": 0,
-            "elbowMode": "active-extension",
-            "directionMode": "individualized",
-            "directionPeak": 2.5316111633466982,
-            "forwardScale": 0.26,
             "shoulderHike": false,
             "framingReady": true,
             "warning": "",
+            "guidance": {
+              "main": "",
+              "detail": "",
+              "en": ""
+            },
+            "diagnostics": "stage:ready calibrated:true framingReady:true progress:0.000 instant:0.034 engaged:false reachGate:false returnReady:true completionReady:false depthSource:image-z movementSeen:true shoulderHike:false reason:calibrated retries:0 manual:-- raw=angle:81.870 spanRatio:0.661 worldSpan:na radial:1.974 depthZ:-2.000 endpoints=angle:90.000>153.808 spanRatio:0.716>0.977 worldSpan:na>na radial:1.480>1.974 depthZ:0.000>-2.000 side:right arc:0.000 arcInstant:0.000 arcActive:false arcHold:false arcPaused:true arcReason:arc-paused-elbow-flexed retention:0.000 arcBaseline:-0.956 arcScale:0.300 lateral:-0.647 cycle:start cycleOrdered:false cycleCount:0 stabilizer:snap-flexed alpha:1.00 step:0.000 hold:0 dirRun:00 rejected:none rejectedFrames:8 filtered=angle:81.870 spanRatio:0.661 worldSpan:na radial:1.974 depthZ:-2.000 separation=angle:63.808/w0.40 spanRatio:0.260/w0.45 worldSpan:na/w0 radial:0.494/w0.10 depthZ:-2.000/w0.05 signalProgress=angle:0.000 spanRatio:0.000 worldSpan:na radial:1.000 depthZ:1.000",
+            "lateral": -0.6473360243627615,
+            "arcProgress": 0,
+            "arcInstant": 0,
+            "arcActive": false,
+            "arcHold": false,
+            "arcCalibrated": true,
+            "cyclePhase": "start",
+            "cycleOrdered": false,
+            "cycleComplete": false,
+            "cycleCount": 0,
+            "stabilizer": {
+              "reason": "snap-flexed",
+              "alpha": 1,
+              "step": 0,
+              "holdFrames": 0,
+              "direction": 0,
+              "directionRun": 0,
+              "rejected": [],
+              "rejectedFrames": 8,
+              "snapRun": 48
+            },
+            "pathGateOpen": false,
+            "side": "right",
             "wipeCleanPercent": 0,
             "wipeValidMovement": false,
             "wipeCompleted": false,
             "screenForward": {
               "x": 84.96,
-              "y": 686.6111976673064
+              "y": 688.8
             },
             "cursorY": 156
           },
@@ -670,7 +2169,7 @@
               "x": 112,
               "y": 156
             },
-            "reachProgress": 0.005133213725829009,
+            "reachProgress": 0,
             "carry": null,
             "controlled": null
           },
@@ -682,7 +2181,141 @@
             "rollStartedAt": 0,
             "pins": 0,
             "rounds": 0,
-            "readyForNextAt": 0
+            "readyForNextAt": 0,
+            "impactAt": 0,
+            "physicsAt": 0,
+            "pinBodies": [
+              {
+                "id": 0,
+                "x": 0,
+                "y": 0,
+                "homeX": 0,
+                "homeY": 0,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 1,
+                "x": -0.17,
+                "y": 0.085,
+                "homeX": -0.17,
+                "homeY": 0.085,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 2,
+                "x": 0.17,
+                "y": 0.085,
+                "homeX": 0.17,
+                "homeY": 0.085,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 3,
+                "x": -0.34,
+                "y": 0.17,
+                "homeX": -0.34,
+                "homeY": 0.17,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 4,
+                "x": 0,
+                "y": 0.17,
+                "homeX": 0,
+                "homeY": 0.17,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 5,
+                "x": 0.34,
+                "y": 0.17,
+                "homeX": 0.34,
+                "homeY": 0.17,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 6,
+                "x": -0.51,
+                "y": 0.255,
+                "homeX": -0.51,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 7,
+                "x": -0.17,
+                "y": 0.255,
+                "homeX": -0.17,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 8,
+                "x": 0.17,
+                "y": 0.255,
+                "homeX": 0.17,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 9,
+                "x": 0.51,
+                "y": 0.255,
+                "homeX": 0.51,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              }
+            ]
           }
         }
       }
@@ -700,80 +2333,122 @@
         "extended": {
           "reach": {
             "calibrated": true,
-            "progress": 0.96478385393792,
+            "stage": "ready",
+            "reason": "calibrated",
+            "progress": 1,
+            "instantProgress": 1,
             "engaged": true,
+            "reachGate": true,
+            "returnReady": false,
             "shoulderFlexProgress": 1,
             "elbowExtensionProgress": 1,
-            "elbowAngle": 161.403384267591,
-            "fullExtensionAngle": 157.5,
+            "elbowAngle": 153.80780112703462,
+            "spanRatio": 0.976701371117024,
+            "worldSpan": null,
+            "radial": 1.9742790526614462,
+            "depthZ": -2.0000000000000004,
+            "depthSource": "image-z",
+            "weights": {
+              "angle": 0.39534883720930236,
+              "spanRatio": 0.45465116279069767,
+              "radial": 0.09642857142857143,
+              "depthZ": 0.05357142857142856
+            },
+            "separation": {
+              "angle": 63.80780112703462,
+              "spanRatio": 0.2604561030146203,
+              "worldSpan": null,
+              "radial": 0.49403883191647835,
+              "depthZ": -2.0000000000000004
+            },
+            "signalProgress": {
+              "angle": 1,
+              "spanRatio": 1,
+              "radial": 1,
+              "depthZ": 1
+            },
+            "endpoints": {
+              "flexed": {
+                "angle": 90,
+                "spanRatio": 0.7162452681024037,
+                "worldSpan": null,
+                "radial": 1.4802402207449679,
+                "depthZ": 0,
+                "lateral": -0.4193548387096775,
+                "shoulderBalance": 0
+              },
+              "extended": {
+                "angle": 153.80780112703462,
+                "spanRatio": 0.976701371117024,
+                "worldSpan": null,
+                "radial": 1.9742790526614462,
+                "depthZ": -2.0000000000000004,
+                "lateral": -0.9564449944132198,
+                "shoulderBalance": 0
+              }
+            },
+            "qualified": [
+              "angle",
+              "spanRatio",
+              "radial",
+              "depthZ"
+            ],
+            "lacking": [
+              {
+                "signal": "worldSpan",
+                "reason": "unavailable",
+                "separation": null,
+                "required": 0.08
+              }
+            ],
+            "manual": {
+              "flexed": false,
+              "extended": false
+            },
+            "retryCount": 0,
+            "captureCount": {
+              "flexed": 1,
+              "extended": 1
+            },
             "completionReady": true,
-            "movementConfirmFrames": 6,
-            "elbowMode": "active-extension",
-            "directionMode": "individualized",
-            "directionPeak": 2.5316111633466982,
-            "forwardScale": 0.26,
             "shoulderHike": false,
             "framingReady": true,
             "warning": "",
-            "wipeCleanPercent": 0,
-            "wipeValidMovement": true,
-            "wipeCompleted": false,
-            "screenForward": {
-              "x": 84.96,
-              "y": 277.4161646808709
+            "guidance": {
+              "main": "",
+              "detail": "",
+              "en": ""
             },
-            "cursorY": 156
-          },
-          "transport": {
-            "standardTransport": false,
-            "held": null,
-            "rawCursor": {
-              "x": 112,
-              "y": 156
+            "diagnostics": "stage:ready calibrated:true framingReady:true progress:1.000 instant:1.000 engaged:true reachGate:true returnReady:false completionReady:true depthSource:image-z movementSeen:true shoulderHike:false reason:calibrated retries:0 manual:-- raw=angle:153.808 spanRatio:0.977 worldSpan:na radial:1.974 depthZ:-2.000 endpoints=angle:90.000>153.808 spanRatio:0.716>0.977 worldSpan:na>na radial:1.480>1.974 depthZ:0.000>-2.000 side:right arc:0.000 arcInstant:0.000 arcActive:false arcHold:false arcPaused:false arcReason:arc-idle retention:1.000 arcBaseline:-0.956 arcScale:0.300 lateral:-0.956 cycle:reached cycleOrdered:false cycleCount:0 stabilizer:snap-extended alpha:1.00 step:0.000 hold:0 dirRun:00 rejected:none rejectedFrames:6 filtered=angle:153.808 spanRatio:0.977 worldSpan:na radial:1.974 depthZ:-2.000 separation=angle:63.808/w0.40 spanRatio:0.260/w0.45 worldSpan:na/w0 radial:0.494/w0.10 depthZ:-2.000/w0.05 signalProgress=angle:1.000 spanRatio:1.000 worldSpan:na radial:1.000 depthZ:1.000",
+            "lateral": -0.9564449944132198,
+            "arcProgress": 0,
+            "arcInstant": 0,
+            "arcActive": false,
+            "arcHold": false,
+            "arcCalibrated": true,
+            "cyclePhase": "reached",
+            "cycleOrdered": false,
+            "cycleComplete": false,
+            "cycleCount": 0,
+            "stabilizer": {
+              "reason": "snap-extended",
+              "alpha": 1,
+              "step": 0,
+              "holdFrames": 0,
+              "direction": 0,
+              "directionRun": 0,
+              "rejected": [],
+              "rejectedFrames": 6,
+              "snapRun": 37
             },
-            "displayCursor": {
-              "x": 112,
-              "y": 156
-            },
-            "reachProgress": 0.96478385393792,
-            "carry": null,
-            "controlled": null
-          },
-          "bowling": {
-            "phase": "reach",
-            "peak": 0,
-            "armProgress": 0,
-            "ballProgress": 0,
-            "rollStartedAt": 0,
-            "pins": 0,
-            "rounds": 0,
-            "readyForNextAt": 0
-          }
-        },
-        "flexed": {
-          "reach": {
-            "calibrated": true,
-            "progress": 0.0031825925100139856,
-            "engaged": true,
-            "shoulderFlexProgress": 1,
-            "elbowExtensionProgress": 0,
-            "elbowAngle": 93.87882289203809,
-            "fullExtensionAngle": 157.5,
-            "completionReady": false,
-            "movementConfirmFrames": 0,
-            "elbowMode": "active-extension",
-            "directionMode": "individualized",
-            "directionPeak": 2.5316111633466982,
-            "forwardScale": 0.26,
-            "shoulderHike": false,
-            "framingReady": true,
-            "warning": "",
+            "pathGateOpen": false,
+            "side": "right",
             "wipeCleanPercent": 0,
             "wipeValidMovement": false,
             "wipeCompleted": false,
             "screenForward": {
               "x": 84.96,
-              "y": 687.44294255373
+              "y": 262.4
             },
             "cursorY": 156
           },
@@ -788,7 +2463,7 @@
               "x": 112,
               "y": 156
             },
-            "reachProgress": 0.0031825925100139856,
+            "reachProgress": 1,
             "carry": null,
             "controlled": null
           },
@@ -800,7 +2475,423 @@
             "rollStartedAt": 0,
             "pins": 0,
             "rounds": 0,
-            "readyForNextAt": 0
+            "readyForNextAt": 0,
+            "impactAt": 0,
+            "physicsAt": 0,
+            "pinBodies": [
+              {
+                "id": 0,
+                "x": 0,
+                "y": 0,
+                "homeX": 0,
+                "homeY": 0,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 1,
+                "x": -0.17,
+                "y": 0.085,
+                "homeX": -0.17,
+                "homeY": 0.085,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 2,
+                "x": 0.17,
+                "y": 0.085,
+                "homeX": 0.17,
+                "homeY": 0.085,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 3,
+                "x": -0.34,
+                "y": 0.17,
+                "homeX": -0.34,
+                "homeY": 0.17,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 4,
+                "x": 0,
+                "y": 0.17,
+                "homeX": 0,
+                "homeY": 0.17,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 5,
+                "x": 0.34,
+                "y": 0.17,
+                "homeX": 0.34,
+                "homeY": 0.17,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 6,
+                "x": -0.51,
+                "y": 0.255,
+                "homeX": -0.51,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 7,
+                "x": -0.17,
+                "y": 0.255,
+                "homeX": -0.17,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 8,
+                "x": 0.17,
+                "y": 0.255,
+                "homeX": 0.17,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 9,
+                "x": 0.51,
+                "y": 0.255,
+                "homeX": 0.51,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              }
+            ]
+          }
+        },
+        "flexed": {
+          "reach": {
+            "calibrated": true,
+            "stage": "ready",
+            "reason": "calibrated",
+            "progress": 0,
+            "instantProgress": 0.03409090909090909,
+            "engaged": false,
+            "reachGate": false,
+            "returnReady": true,
+            "shoulderFlexProgress": 0,
+            "elbowExtensionProgress": 0.03409090909090909,
+            "elbowAngle": 81.869897645844,
+            "spanRatio": 0.6610458377237273,
+            "worldSpan": null,
+            "radial": 1.9742790526614462,
+            "depthZ": -2.0000000000000004,
+            "depthSource": "image-z",
+            "weights": {
+              "angle": 0.39534883720930236,
+              "spanRatio": 0.45465116279069767,
+              "radial": 0.09642857142857143,
+              "depthZ": 0.05357142857142856
+            },
+            "separation": {
+              "angle": 63.80780112703462,
+              "spanRatio": 0.2604561030146203,
+              "worldSpan": null,
+              "radial": 0.49403883191647835,
+              "depthZ": -2.0000000000000004
+            },
+            "signalProgress": {
+              "angle": 0,
+              "spanRatio": 0,
+              "radial": 1,
+              "depthZ": 1
+            },
+            "endpoints": {
+              "flexed": {
+                "angle": 90,
+                "spanRatio": 0.7162452681024037,
+                "worldSpan": null,
+                "radial": 1.4802402207449679,
+                "depthZ": 0,
+                "lateral": -0.4193548387096775,
+                "shoulderBalance": 0
+              },
+              "extended": {
+                "angle": 153.80780112703462,
+                "spanRatio": 0.976701371117024,
+                "worldSpan": null,
+                "radial": 1.9742790526614462,
+                "depthZ": -2.0000000000000004,
+                "lateral": -0.9564449944132198,
+                "shoulderBalance": 0
+              }
+            },
+            "qualified": [
+              "angle",
+              "spanRatio",
+              "radial",
+              "depthZ"
+            ],
+            "lacking": [
+              {
+                "signal": "worldSpan",
+                "reason": "unavailable",
+                "separation": null,
+                "required": 0.08
+              }
+            ],
+            "manual": {
+              "flexed": false,
+              "extended": false
+            },
+            "retryCount": 0,
+            "captureCount": {
+              "flexed": 1,
+              "extended": 1
+            },
+            "completionReady": false,
+            "shoulderHike": false,
+            "framingReady": true,
+            "warning": "",
+            "guidance": {
+              "main": "",
+              "detail": "",
+              "en": ""
+            },
+            "diagnostics": "stage:ready calibrated:true framingReady:true progress:0.000 instant:0.034 engaged:false reachGate:false returnReady:true completionReady:false depthSource:image-z movementSeen:true shoulderHike:false reason:calibrated retries:0 manual:-- raw=angle:81.870 spanRatio:0.661 worldSpan:na radial:1.974 depthZ:-2.000 endpoints=angle:90.000>153.808 spanRatio:0.716>0.977 worldSpan:na>na radial:1.480>1.974 depthZ:0.000>-2.000 side:right arc:0.000 arcInstant:0.000 arcActive:false arcHold:false arcPaused:true arcReason:arc-paused-elbow-flexed retention:0.000 arcBaseline:-0.956 arcScale:0.300 lateral:-0.647 cycle:start cycleOrdered:false cycleCount:0 stabilizer:snap-flexed alpha:1.00 step:0.000 hold:0 dirRun:00 rejected:none rejectedFrames:8 filtered=angle:81.870 spanRatio:0.661 worldSpan:na radial:1.974 depthZ:-2.000 separation=angle:63.808/w0.40 spanRatio:0.260/w0.45 worldSpan:na/w0 radial:0.494/w0.10 depthZ:-2.000/w0.05 signalProgress=angle:0.000 spanRatio:0.000 worldSpan:na radial:1.000 depthZ:1.000",
+            "lateral": -0.6473360243627615,
+            "arcProgress": 0,
+            "arcInstant": 0,
+            "arcActive": false,
+            "arcHold": false,
+            "arcCalibrated": true,
+            "cyclePhase": "start",
+            "cycleOrdered": false,
+            "cycleComplete": false,
+            "cycleCount": 0,
+            "stabilizer": {
+              "reason": "snap-flexed",
+              "alpha": 1,
+              "step": 0,
+              "holdFrames": 0,
+              "direction": 0,
+              "directionRun": 0,
+              "rejected": [],
+              "rejectedFrames": 8,
+              "snapRun": 50
+            },
+            "pathGateOpen": false,
+            "side": "right",
+            "wipeCleanPercent": 0,
+            "wipeValidMovement": false,
+            "wipeCompleted": false,
+            "screenForward": {
+              "x": 84.96,
+              "y": 688.8
+            },
+            "cursorY": 156
+          },
+          "transport": {
+            "standardTransport": false,
+            "held": null,
+            "rawCursor": {
+              "x": 112,
+              "y": 156
+            },
+            "displayCursor": {
+              "x": 112,
+              "y": 156
+            },
+            "reachProgress": 0,
+            "carry": null,
+            "controlled": null
+          },
+          "bowling": {
+            "phase": "reach",
+            "peak": 0,
+            "armProgress": 0,
+            "ballProgress": 0,
+            "rollStartedAt": 0,
+            "pins": 0,
+            "rounds": 0,
+            "readyForNextAt": 0,
+            "impactAt": 0,
+            "physicsAt": 0,
+            "pinBodies": [
+              {
+                "id": 0,
+                "x": 0,
+                "y": 0,
+                "homeX": 0,
+                "homeY": 0,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 1,
+                "x": -0.17,
+                "y": 0.085,
+                "homeX": -0.17,
+                "homeY": 0.085,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 2,
+                "x": 0.17,
+                "y": 0.085,
+                "homeX": 0.17,
+                "homeY": 0.085,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 3,
+                "x": -0.34,
+                "y": 0.17,
+                "homeX": -0.34,
+                "homeY": 0.17,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 4,
+                "x": 0,
+                "y": 0.17,
+                "homeX": 0,
+                "homeY": 0.17,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 5,
+                "x": 0.34,
+                "y": 0.17,
+                "homeX": 0.34,
+                "homeY": 0.17,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 6,
+                "x": -0.51,
+                "y": 0.255,
+                "homeX": -0.51,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 7,
+                "x": -0.17,
+                "y": 0.255,
+                "homeX": -0.17,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 8,
+                "x": 0.17,
+                "y": 0.255,
+                "homeX": 0.17,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 9,
+                "x": 0.51,
+                "y": 0.255,
+                "homeX": 0.51,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              }
+            ]
           }
         }
       }
@@ -818,27 +2909,122 @@
         "extended": {
           "reach": {
             "calibrated": true,
-            "progress": 0.96478385393792,
+            "stage": "ready",
+            "reason": "calibrated",
+            "progress": 1,
+            "instantProgress": 1,
             "engaged": true,
+            "reachGate": true,
+            "returnReady": false,
             "shoulderFlexProgress": 1,
             "elbowExtensionProgress": 1,
-            "elbowAngle": 161.403384267591,
-            "fullExtensionAngle": 157.5,
+            "elbowAngle": 153.80780112703462,
+            "spanRatio": 0.976701371117024,
+            "worldSpan": null,
+            "radial": 1.9742790526614462,
+            "depthZ": -2.0000000000000004,
+            "depthSource": "image-z",
+            "weights": {
+              "angle": 0.39534883720930236,
+              "spanRatio": 0.45465116279069767,
+              "radial": 0.09642857142857143,
+              "depthZ": 0.05357142857142856
+            },
+            "separation": {
+              "angle": 63.80780112703462,
+              "spanRatio": 0.2604561030146203,
+              "worldSpan": null,
+              "radial": 0.49403883191647835,
+              "depthZ": -2.0000000000000004
+            },
+            "signalProgress": {
+              "angle": 1,
+              "spanRatio": 1,
+              "radial": 1,
+              "depthZ": 1
+            },
+            "endpoints": {
+              "flexed": {
+                "angle": 90,
+                "spanRatio": 0.7162452681024037,
+                "worldSpan": null,
+                "radial": 1.4802402207449679,
+                "depthZ": 0,
+                "lateral": -0.4193548387096775,
+                "shoulderBalance": 0
+              },
+              "extended": {
+                "angle": 153.80780112703462,
+                "spanRatio": 0.976701371117024,
+                "worldSpan": null,
+                "radial": 1.9742790526614462,
+                "depthZ": -2.0000000000000004,
+                "lateral": -0.9564449944132198,
+                "shoulderBalance": 0
+              }
+            },
+            "qualified": [
+              "angle",
+              "spanRatio",
+              "radial",
+              "depthZ"
+            ],
+            "lacking": [
+              {
+                "signal": "worldSpan",
+                "reason": "unavailable",
+                "separation": null,
+                "required": 0.08
+              }
+            ],
+            "manual": {
+              "flexed": false,
+              "extended": false
+            },
+            "retryCount": 0,
+            "captureCount": {
+              "flexed": 1,
+              "extended": 1
+            },
             "completionReady": true,
-            "movementConfirmFrames": 6,
-            "elbowMode": "active-extension",
-            "directionMode": "individualized",
-            "directionPeak": 2.5316111633466982,
-            "forwardScale": 0.26,
             "shoulderHike": false,
             "framingReady": true,
             "warning": "",
+            "guidance": {
+              "main": "",
+              "detail": "",
+              "en": ""
+            },
+            "diagnostics": "stage:ready calibrated:true framingReady:true progress:1.000 instant:1.000 engaged:true reachGate:true returnReady:false completionReady:true depthSource:image-z movementSeen:true shoulderHike:false reason:calibrated retries:0 manual:-- raw=angle:153.808 spanRatio:0.977 worldSpan:na radial:1.974 depthZ:-2.000 endpoints=angle:90.000>153.808 spanRatio:0.716>0.977 worldSpan:na>na radial:1.480>1.974 depthZ:0.000>-2.000 side:right arc:0.000 arcInstant:0.000 arcActive:false arcHold:false arcPaused:false arcReason:arc-idle retention:1.000 arcBaseline:-0.956 arcScale:0.300 lateral:-0.956 cycle:reached cycleOrdered:false cycleCount:0 stabilizer:snap-extended alpha:1.00 step:0.000 hold:0 dirRun:00 rejected:none rejectedFrames:6 filtered=angle:153.808 spanRatio:0.977 worldSpan:na radial:1.974 depthZ:-2.000 separation=angle:63.808/w0.40 spanRatio:0.260/w0.45 worldSpan:na/w0 radial:0.494/w0.10 depthZ:-2.000/w0.05 signalProgress=angle:1.000 spanRatio:1.000 worldSpan:na radial:1.000 depthZ:1.000",
+            "lateral": -0.9564449944132198,
+            "arcProgress": 0,
+            "arcInstant": 0,
+            "arcActive": false,
+            "arcHold": false,
+            "arcCalibrated": true,
+            "cyclePhase": "reached",
+            "cycleOrdered": false,
+            "cycleComplete": false,
+            "cycleCount": 0,
+            "stabilizer": {
+              "reason": "snap-extended",
+              "alpha": 1,
+              "step": 0,
+              "holdFrames": 0,
+              "direction": 0,
+              "directionRun": 0,
+              "rejected": [],
+              "rejectedFrames": 6,
+              "snapRun": 34
+            },
+            "pathGateOpen": false,
+            "side": "right",
             "wipeCleanPercent": 0,
             "wipeValidMovement": false,
             "wipeCompleted": false,
             "screenForward": {
               "x": 84.96,
-              "y": 277.4161646808709
+              "y": 262.4
             },
             "cursorY": 156
           },
@@ -853,45 +3039,274 @@
               "x": 112,
               "y": 156
             },
-            "reachProgress": 0.96478385393792,
+            "reachProgress": 1,
             "carry": null,
             "controlled": null
           },
           "bowling": {
             "phase": "return",
-            "peak": 0.96478385393792,
-            "armProgress": 0.96478385393792,
+            "peak": 1,
+            "armProgress": 1,
             "ballProgress": 0,
             "rollStartedAt": 0,
             "pins": 0,
             "rounds": 0,
-            "readyForNextAt": 0
+            "readyForNextAt": 0,
+            "impactAt": 0,
+            "physicsAt": 0,
+            "pinBodies": [
+              {
+                "id": 0,
+                "x": 0,
+                "y": 0,
+                "homeX": 0,
+                "homeY": 0,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 1,
+                "x": -0.17,
+                "y": 0.085,
+                "homeX": -0.17,
+                "homeY": 0.085,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 2,
+                "x": 0.17,
+                "y": 0.085,
+                "homeX": 0.17,
+                "homeY": 0.085,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 3,
+                "x": -0.34,
+                "y": 0.17,
+                "homeX": -0.34,
+                "homeY": 0.17,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 4,
+                "x": 0,
+                "y": 0.17,
+                "homeX": 0,
+                "homeY": 0.17,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 5,
+                "x": 0.34,
+                "y": 0.17,
+                "homeX": 0.34,
+                "homeY": 0.17,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 6,
+                "x": -0.51,
+                "y": 0.255,
+                "homeX": -0.51,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 7,
+                "x": -0.17,
+                "y": 0.255,
+                "homeX": -0.17,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 8,
+                "x": 0.17,
+                "y": 0.255,
+                "homeX": 0.17,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 9,
+                "x": 0.51,
+                "y": 0.255,
+                "homeX": 0.51,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              }
+            ]
           }
         },
         "flexed": {
           "reach": {
             "calibrated": true,
-            "progress": 0.008322551316128699,
-            "engaged": true,
-            "shoulderFlexProgress": 1,
-            "elbowExtensionProgress": 0,
-            "elbowAngle": 93.87882289203809,
-            "fullExtensionAngle": 157.5,
+            "stage": "ready",
+            "reason": "calibrated",
+            "progress": 0,
+            "instantProgress": 0.03409090909090909,
+            "engaged": false,
+            "reachGate": false,
+            "returnReady": true,
+            "shoulderFlexProgress": 0,
+            "elbowExtensionProgress": 0.03409090909090909,
+            "elbowAngle": 81.869897645844,
+            "spanRatio": 0.6610458377237273,
+            "worldSpan": null,
+            "radial": 1.9742790526614462,
+            "depthZ": -2.0000000000000004,
+            "depthSource": "image-z",
+            "weights": {
+              "angle": 0.39534883720930236,
+              "spanRatio": 0.45465116279069767,
+              "radial": 0.09642857142857143,
+              "depthZ": 0.05357142857142856
+            },
+            "separation": {
+              "angle": 63.80780112703462,
+              "spanRatio": 0.2604561030146203,
+              "worldSpan": null,
+              "radial": 0.49403883191647835,
+              "depthZ": -2.0000000000000004
+            },
+            "signalProgress": {
+              "angle": 0,
+              "spanRatio": 0,
+              "radial": 1,
+              "depthZ": 1
+            },
+            "endpoints": {
+              "flexed": {
+                "angle": 90,
+                "spanRatio": 0.7162452681024037,
+                "worldSpan": null,
+                "radial": 1.4802402207449679,
+                "depthZ": 0,
+                "lateral": -0.4193548387096775,
+                "shoulderBalance": 0
+              },
+              "extended": {
+                "angle": 153.80780112703462,
+                "spanRatio": 0.976701371117024,
+                "worldSpan": null,
+                "radial": 1.9742790526614462,
+                "depthZ": -2.0000000000000004,
+                "lateral": -0.9564449944132198,
+                "shoulderBalance": 0
+              }
+            },
+            "qualified": [
+              "angle",
+              "spanRatio",
+              "radial",
+              "depthZ"
+            ],
+            "lacking": [
+              {
+                "signal": "worldSpan",
+                "reason": "unavailable",
+                "separation": null,
+                "required": 0.08
+              }
+            ],
+            "manual": {
+              "flexed": false,
+              "extended": false
+            },
+            "retryCount": 0,
+            "captureCount": {
+              "flexed": 1,
+              "extended": 1
+            },
             "completionReady": false,
-            "movementConfirmFrames": 0,
-            "elbowMode": "active-extension",
-            "directionMode": "individualized",
-            "directionPeak": 2.5316111633466982,
-            "forwardScale": 0.26,
             "shoulderHike": false,
             "framingReady": true,
             "warning": "",
+            "guidance": {
+              "main": "",
+              "detail": "",
+              "en": ""
+            },
+            "diagnostics": "stage:ready calibrated:true framingReady:true progress:0.000 instant:0.034 engaged:false reachGate:false returnReady:true completionReady:false depthSource:image-z movementSeen:true shoulderHike:false reason:calibrated retries:0 manual:-- raw=angle:81.870 spanRatio:0.661 worldSpan:na radial:1.974 depthZ:-2.000 endpoints=angle:90.000>153.808 spanRatio:0.716>0.977 worldSpan:na>na radial:1.480>1.974 depthZ:0.000>-2.000 side:right arc:0.000 arcInstant:0.000 arcActive:false arcHold:false arcPaused:true arcReason:arc-paused-elbow-flexed retention:0.000 arcBaseline:-0.956 arcScale:0.300 lateral:-0.647 cycle:start cycleOrdered:false cycleCount:0 stabilizer:snap-flexed alpha:1.00 step:0.000 hold:0 dirRun:00 rejected:none rejectedFrames:8 filtered=angle:81.870 spanRatio:0.661 worldSpan:na radial:1.974 depthZ:-2.000 separation=angle:63.808/w0.40 spanRatio:0.260/w0.45 worldSpan:na/w0 radial:0.494/w0.10 depthZ:-2.000/w0.05 signalProgress=angle:0.000 spanRatio:0.000 worldSpan:na radial:1.000 depthZ:1.000",
+            "lateral": -0.6473360243627615,
+            "arcProgress": 0,
+            "arcInstant": 0,
+            "arcActive": false,
+            "arcHold": false,
+            "arcCalibrated": true,
+            "cyclePhase": "start",
+            "cycleOrdered": false,
+            "cycleComplete": false,
+            "cycleCount": 0,
+            "stabilizer": {
+              "reason": "snap-flexed",
+              "alpha": 1,
+              "step": 0,
+              "holdFrames": 0,
+              "direction": 0,
+              "directionRun": 0,
+              "rejected": [],
+              "rejectedFrames": 8,
+              "snapRun": 47
+            },
+            "pathGateOpen": false,
+            "side": "right",
             "wipeCleanPercent": 0,
             "wipeValidMovement": false,
             "wipeCompleted": false,
             "screenForward": {
               "x": 84.96,
-              "y": 685.2512641188026
+              "y": 688.8
             },
             "cursorY": 156
           },
@@ -906,19 +3321,153 @@
               "x": 112,
               "y": 156
             },
-            "reachProgress": 0.008322551316128699,
+            "reachProgress": 0,
             "carry": null,
             "controlled": null
           },
           "bowling": {
             "phase": "rolling",
-            "peak": 0.9916070063413166,
-            "armProgress": 0.14652318305653425,
-            "ballProgress": 0.005809524172828311,
-            "rollStartedAt": 2826.699999809265,
+            "peak": 1,
+            "armProgress": 0,
+            "ballProgress": 0.00019047600882393973,
+            "rollStartedAt": 5143.60000038147,
             "pins": 0,
             "rounds": 0,
-            "readyForNextAt": 0
+            "readyForNextAt": 0,
+            "impactAt": 0,
+            "physicsAt": 0,
+            "pinBodies": [
+              {
+                "id": 0,
+                "x": 0,
+                "y": 0,
+                "homeX": 0,
+                "homeY": 0,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 1,
+                "x": -0.17,
+                "y": 0.085,
+                "homeX": -0.17,
+                "homeY": 0.085,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 2,
+                "x": 0.17,
+                "y": 0.085,
+                "homeX": 0.17,
+                "homeY": 0.085,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 3,
+                "x": -0.34,
+                "y": 0.17,
+                "homeX": -0.34,
+                "homeY": 0.17,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 4,
+                "x": 0,
+                "y": 0.17,
+                "homeX": 0,
+                "homeY": 0.17,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 5,
+                "x": 0.34,
+                "y": 0.17,
+                "homeX": 0.34,
+                "homeY": 0.17,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 6,
+                "x": -0.51,
+                "y": 0.255,
+                "homeX": -0.51,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 7,
+                "x": -0.17,
+                "y": 0.255,
+                "homeX": -0.17,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 8,
+                "x": 0.17,
+                "y": 0.255,
+                "homeX": 0.17,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 9,
+                "x": 0.51,
+                "y": 0.255,
+                "homeX": 0.51,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              }
+            ]
           }
         }
       }
@@ -936,27 +3485,122 @@
         "extended": {
           "reach": {
             "calibrated": true,
-            "progress": 0.96478385393792,
+            "stage": "ready",
+            "reason": "calibrated",
+            "progress": 1,
+            "instantProgress": 1,
             "engaged": true,
+            "reachGate": true,
+            "returnReady": false,
             "shoulderFlexProgress": 1,
             "elbowExtensionProgress": 1,
-            "elbowAngle": 161.403384267591,
-            "fullExtensionAngle": 157.5,
+            "elbowAngle": 153.80780112703462,
+            "spanRatio": 0.976701371117024,
+            "worldSpan": null,
+            "radial": 1.9742790526614462,
+            "depthZ": -2.0000000000000004,
+            "depthSource": "image-z",
+            "weights": {
+              "angle": 0.39534883720930236,
+              "spanRatio": 0.45465116279069767,
+              "radial": 0.09642857142857143,
+              "depthZ": 0.05357142857142856
+            },
+            "separation": {
+              "angle": 63.80780112703462,
+              "spanRatio": 0.2604561030146203,
+              "worldSpan": null,
+              "radial": 0.49403883191647835,
+              "depthZ": -2.0000000000000004
+            },
+            "signalProgress": {
+              "angle": 1,
+              "spanRatio": 1,
+              "radial": 1,
+              "depthZ": 1
+            },
+            "endpoints": {
+              "flexed": {
+                "angle": 90,
+                "spanRatio": 0.7162452681024037,
+                "worldSpan": null,
+                "radial": 1.4802402207449679,
+                "depthZ": 0,
+                "lateral": -0.4193548387096775,
+                "shoulderBalance": 0
+              },
+              "extended": {
+                "angle": 153.80780112703462,
+                "spanRatio": 0.976701371117024,
+                "worldSpan": null,
+                "radial": 1.9742790526614462,
+                "depthZ": -2.0000000000000004,
+                "lateral": -0.9564449944132198,
+                "shoulderBalance": 0
+              }
+            },
+            "qualified": [
+              "angle",
+              "spanRatio",
+              "radial",
+              "depthZ"
+            ],
+            "lacking": [
+              {
+                "signal": "worldSpan",
+                "reason": "unavailable",
+                "separation": null,
+                "required": 0.08
+              }
+            ],
+            "manual": {
+              "flexed": false,
+              "extended": false
+            },
+            "retryCount": 0,
+            "captureCount": {
+              "flexed": 1,
+              "extended": 1
+            },
             "completionReady": true,
-            "movementConfirmFrames": 6,
-            "elbowMode": "active-extension",
-            "directionMode": "individualized",
-            "directionPeak": 2.5316111633466982,
-            "forwardScale": 0.26,
             "shoulderHike": false,
             "framingReady": true,
             "warning": "",
+            "guidance": {
+              "main": "",
+              "detail": "",
+              "en": ""
+            },
+            "diagnostics": "stage:ready calibrated:true framingReady:true progress:1.000 instant:1.000 engaged:true reachGate:true returnReady:false completionReady:true depthSource:image-z movementSeen:true shoulderHike:false reason:calibrated retries:0 manual:-- raw=angle:153.808 spanRatio:0.977 worldSpan:na radial:1.974 depthZ:-2.000 endpoints=angle:90.000>153.808 spanRatio:0.716>0.977 worldSpan:na>na radial:1.480>1.974 depthZ:0.000>-2.000 side:right arc:0.000 arcInstant:0.000 arcActive:false arcHold:false arcPaused:false arcReason:arc-idle retention:1.000 arcBaseline:-0.956 arcScale:0.300 lateral:-0.956 cycle:reached cycleOrdered:false cycleCount:0 stabilizer:snap-extended alpha:1.00 step:0.000 hold:0 dirRun:00 rejected:none rejectedFrames:6 filtered=angle:153.808 spanRatio:0.977 worldSpan:na radial:1.974 depthZ:-2.000 separation=angle:63.808/w0.40 spanRatio:0.260/w0.45 worldSpan:na/w0 radial:0.494/w0.10 depthZ:-2.000/w0.05 signalProgress=angle:1.000 spanRatio:1.000 worldSpan:na radial:1.000 depthZ:1.000",
+            "lateral": -0.9564449944132198,
+            "arcProgress": 0,
+            "arcInstant": 0,
+            "arcActive": false,
+            "arcHold": false,
+            "arcCalibrated": true,
+            "cyclePhase": "reached",
+            "cycleOrdered": false,
+            "cycleComplete": false,
+            "cycleCount": 0,
+            "stabilizer": {
+              "reason": "snap-extended",
+              "alpha": 1,
+              "step": 0,
+              "holdFrames": 0,
+              "direction": 0,
+              "directionRun": 0,
+              "rejected": [],
+              "rejectedFrames": 6,
+              "snapRun": 36
+            },
+            "pathGateOpen": false,
+            "side": "right",
             "wipeCleanPercent": 0,
             "wipeValidMovement": false,
             "wipeCompleted": false,
             "screenForward": {
               "x": 84.96,
-              "y": 277.4161646808709
+              "y": 262.4
             },
             "cursorY": 156
           },
@@ -971,7 +3615,7 @@
               "x": 112,
               "y": 156
             },
-            "reachProgress": 0.96478385393792,
+            "reachProgress": 1,
             "carry": null,
             "controlled": null
           },
@@ -983,33 +3627,262 @@
             "rollStartedAt": 0,
             "pins": 0,
             "rounds": 0,
-            "readyForNextAt": 0
+            "readyForNextAt": 0,
+            "impactAt": 0,
+            "physicsAt": 0,
+            "pinBodies": [
+              {
+                "id": 0,
+                "x": 0,
+                "y": 0,
+                "homeX": 0,
+                "homeY": 0,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 1,
+                "x": -0.17,
+                "y": 0.085,
+                "homeX": -0.17,
+                "homeY": 0.085,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 2,
+                "x": 0.17,
+                "y": 0.085,
+                "homeX": 0.17,
+                "homeY": 0.085,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 3,
+                "x": -0.34,
+                "y": 0.17,
+                "homeX": -0.34,
+                "homeY": 0.17,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 4,
+                "x": 0,
+                "y": 0.17,
+                "homeX": 0,
+                "homeY": 0.17,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 5,
+                "x": 0.34,
+                "y": 0.17,
+                "homeX": 0.34,
+                "homeY": 0.17,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 6,
+                "x": -0.51,
+                "y": 0.255,
+                "homeX": -0.51,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 7,
+                "x": -0.17,
+                "y": 0.255,
+                "homeX": -0.17,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 8,
+                "x": 0.17,
+                "y": 0.255,
+                "homeX": 0.17,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 9,
+                "x": 0.51,
+                "y": 0.255,
+                "homeX": 0.51,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              }
+            ]
           }
         },
         "flexed": {
           "reach": {
             "calibrated": true,
-            "progress": 0.008279376977143564,
-            "engaged": true,
-            "shoulderFlexProgress": 1,
-            "elbowExtensionProgress": 0,
-            "elbowAngle": 93.87882289203809,
-            "fullExtensionAngle": 157.5,
+            "stage": "ready",
+            "reason": "calibrated",
+            "progress": 0,
+            "instantProgress": 0.03409090909090909,
+            "engaged": false,
+            "reachGate": false,
+            "returnReady": true,
+            "shoulderFlexProgress": 0,
+            "elbowExtensionProgress": 0.03409090909090909,
+            "elbowAngle": 81.869897645844,
+            "spanRatio": 0.6610458377237273,
+            "worldSpan": null,
+            "radial": 1.9742790526614462,
+            "depthZ": -2.0000000000000004,
+            "depthSource": "image-z",
+            "weights": {
+              "angle": 0.39534883720930236,
+              "spanRatio": 0.45465116279069767,
+              "radial": 0.09642857142857143,
+              "depthZ": 0.05357142857142856
+            },
+            "separation": {
+              "angle": 63.80780112703462,
+              "spanRatio": 0.2604561030146203,
+              "worldSpan": null,
+              "radial": 0.49403883191647835,
+              "depthZ": -2.0000000000000004
+            },
+            "signalProgress": {
+              "angle": 0,
+              "spanRatio": 0,
+              "radial": 1,
+              "depthZ": 1
+            },
+            "endpoints": {
+              "flexed": {
+                "angle": 90,
+                "spanRatio": 0.7162452681024037,
+                "worldSpan": null,
+                "radial": 1.4802402207449679,
+                "depthZ": 0,
+                "lateral": -0.4193548387096775,
+                "shoulderBalance": 0
+              },
+              "extended": {
+                "angle": 153.80780112703462,
+                "spanRatio": 0.976701371117024,
+                "worldSpan": null,
+                "radial": 1.9742790526614462,
+                "depthZ": -2.0000000000000004,
+                "lateral": -0.9564449944132198,
+                "shoulderBalance": 0
+              }
+            },
+            "qualified": [
+              "angle",
+              "spanRatio",
+              "radial",
+              "depthZ"
+            ],
+            "lacking": [
+              {
+                "signal": "worldSpan",
+                "reason": "unavailable",
+                "separation": null,
+                "required": 0.08
+              }
+            ],
+            "manual": {
+              "flexed": false,
+              "extended": false
+            },
+            "retryCount": 0,
+            "captureCount": {
+              "flexed": 1,
+              "extended": 1
+            },
             "completionReady": false,
-            "movementConfirmFrames": 0,
-            "elbowMode": "active-extension",
-            "directionMode": "individualized",
-            "directionPeak": 2.5316111633466982,
-            "forwardScale": 0.26,
             "shoulderHike": false,
             "framingReady": true,
             "warning": "",
+            "guidance": {
+              "main": "",
+              "detail": "",
+              "en": ""
+            },
+            "diagnostics": "stage:ready calibrated:true framingReady:true progress:0.000 instant:0.034 engaged:false reachGate:false returnReady:true completionReady:false depthSource:image-z movementSeen:true shoulderHike:false reason:calibrated retries:0 manual:-- raw=angle:81.870 spanRatio:0.661 worldSpan:na radial:1.974 depthZ:-2.000 endpoints=angle:90.000>153.808 spanRatio:0.716>0.977 worldSpan:na>na radial:1.480>1.974 depthZ:0.000>-2.000 side:right arc:0.000 arcInstant:0.000 arcActive:false arcHold:false arcPaused:true arcReason:arc-paused-elbow-flexed retention:0.000 arcBaseline:-0.956 arcScale:0.300 lateral:-0.647 cycle:start cycleOrdered:false cycleCount:0 stabilizer:snap-flexed alpha:1.00 step:0.000 hold:0 dirRun:00 rejected:none rejectedFrames:8 filtered=angle:81.870 spanRatio:0.661 worldSpan:na radial:1.974 depthZ:-2.000 separation=angle:63.808/w0.40 spanRatio:0.260/w0.45 worldSpan:na/w0 radial:0.494/w0.10 depthZ:-2.000/w0.05 signalProgress=angle:0.000 spanRatio:0.000 worldSpan:na radial:1.000 depthZ:1.000",
+            "lateral": -0.6473360243627615,
+            "arcProgress": 0,
+            "arcInstant": 0,
+            "arcActive": false,
+            "arcHold": false,
+            "arcCalibrated": true,
+            "cyclePhase": "start",
+            "cycleOrdered": false,
+            "cycleComplete": false,
+            "cycleCount": 0,
+            "stabilizer": {
+              "reason": "snap-flexed",
+              "alpha": 1,
+              "step": 0,
+              "holdFrames": 0,
+              "direction": 0,
+              "directionRun": 0,
+              "rejected": [],
+              "rejectedFrames": 8,
+              "snapRun": 49
+            },
+            "pathGateOpen": false,
+            "side": "right",
             "wipeCleanPercent": 0,
             "wipeValidMovement": false,
             "wipeCompleted": false,
             "screenForward": {
               "x": 84.96,
-              "y": 685.2696736569459
+              "y": 688.8
             },
             "cursorY": 156
           },
@@ -1024,7 +3897,7 @@
               "x": 112,
               "y": 156
             },
-            "reachProgress": 0.008279376977143564,
+            "reachProgress": 0,
             "carry": null,
             "controlled": null
           },
@@ -1036,7 +3909,141 @@
             "rollStartedAt": 0,
             "pins": 0,
             "rounds": 0,
-            "readyForNextAt": 0
+            "readyForNextAt": 0,
+            "impactAt": 0,
+            "physicsAt": 0,
+            "pinBodies": [
+              {
+                "id": 0,
+                "x": 0,
+                "y": 0,
+                "homeX": 0,
+                "homeY": 0,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 1,
+                "x": -0.17,
+                "y": 0.085,
+                "homeX": -0.17,
+                "homeY": 0.085,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 2,
+                "x": 0.17,
+                "y": 0.085,
+                "homeX": 0.17,
+                "homeY": 0.085,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 3,
+                "x": -0.34,
+                "y": 0.17,
+                "homeX": -0.34,
+                "homeY": 0.17,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 4,
+                "x": 0,
+                "y": 0.17,
+                "homeX": 0,
+                "homeY": 0.17,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 5,
+                "x": 0.34,
+                "y": 0.17,
+                "homeX": 0.34,
+                "homeY": 0.17,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 6,
+                "x": -0.51,
+                "y": 0.255,
+                "homeX": -0.51,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 7,
+                "x": -0.17,
+                "y": 0.255,
+                "homeX": -0.17,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 8,
+                "x": 0.17,
+                "y": 0.255,
+                "homeX": 0.17,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 9,
+                "x": 0.51,
+                "y": 0.255,
+                "homeX": 0.51,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              }
+            ]
           }
         }
       }
@@ -1054,27 +4061,122 @@
         "extended": {
           "reach": {
             "calibrated": true,
-            "progress": 0.943199764416,
+            "stage": "ready",
+            "reason": "calibrated",
+            "progress": 1,
+            "instantProgress": 1,
             "engaged": true,
+            "reachGate": true,
+            "returnReady": false,
             "shoulderFlexProgress": 1,
             "elbowExtensionProgress": 1,
-            "elbowAngle": 161.403384267591,
-            "fullExtensionAngle": 157.5,
+            "elbowAngle": 153.80780112703462,
+            "spanRatio": 0.976701371117024,
+            "worldSpan": null,
+            "radial": 1.9742790526614462,
+            "depthZ": -2.0000000000000004,
+            "depthSource": "image-z",
+            "weights": {
+              "angle": 0.39534883720930236,
+              "spanRatio": 0.45465116279069767,
+              "radial": 0.09642857142857143,
+              "depthZ": 0.05357142857142856
+            },
+            "separation": {
+              "angle": 63.80780112703462,
+              "spanRatio": 0.2604561030146203,
+              "worldSpan": null,
+              "radial": 0.49403883191647835,
+              "depthZ": -2.0000000000000004
+            },
+            "signalProgress": {
+              "angle": 1,
+              "spanRatio": 1,
+              "radial": 1,
+              "depthZ": 1
+            },
+            "endpoints": {
+              "flexed": {
+                "angle": 90,
+                "spanRatio": 0.7162452681024037,
+                "worldSpan": null,
+                "radial": 1.4802402207449679,
+                "depthZ": 0,
+                "lateral": -0.4193548387096775,
+                "shoulderBalance": 0
+              },
+              "extended": {
+                "angle": 153.80780112703462,
+                "spanRatio": 0.976701371117024,
+                "worldSpan": null,
+                "radial": 1.9742790526614462,
+                "depthZ": -2.0000000000000004,
+                "lateral": -0.9564449944132198,
+                "shoulderBalance": 0
+              }
+            },
+            "qualified": [
+              "angle",
+              "spanRatio",
+              "radial",
+              "depthZ"
+            ],
+            "lacking": [
+              {
+                "signal": "worldSpan",
+                "reason": "unavailable",
+                "separation": null,
+                "required": 0.08
+              }
+            ],
+            "manual": {
+              "flexed": false,
+              "extended": false
+            },
+            "retryCount": 0,
+            "captureCount": {
+              "flexed": 1,
+              "extended": 1
+            },
             "completionReady": true,
-            "movementConfirmFrames": 6,
-            "elbowMode": "active-extension",
-            "directionMode": "individualized",
-            "directionPeak": 2.5316111633466982,
-            "forwardScale": 0.26,
             "shoulderHike": false,
             "framingReady": true,
             "warning": "",
+            "guidance": {
+              "main": "",
+              "detail": "",
+              "en": ""
+            },
+            "diagnostics": "stage:ready calibrated:true framingReady:true progress:1.000 instant:1.000 engaged:true reachGate:true returnReady:false completionReady:true depthSource:image-z movementSeen:true shoulderHike:false reason:calibrated retries:0 manual:-- raw=angle:153.808 spanRatio:0.977 worldSpan:na radial:1.974 depthZ:-2.000 endpoints=angle:90.000>153.808 spanRatio:0.716>0.977 worldSpan:na>na radial:1.480>1.974 depthZ:0.000>-2.000 side:right arc:0.000 arcInstant:0.000 arcActive:false arcHold:false arcPaused:false arcReason:arc-idle retention:1.000 arcBaseline:-0.956 arcScale:0.300 lateral:-0.956 cycle:reached cycleOrdered:false cycleCount:0 stabilizer:snap-extended alpha:1.00 step:0.000 hold:0 dirRun:00 rejected:none rejectedFrames:6 filtered=angle:153.808 spanRatio:0.977 worldSpan:na radial:1.974 depthZ:-2.000 separation=angle:63.808/w0.40 spanRatio:0.260/w0.45 worldSpan:na/w0 radial:0.494/w0.10 depthZ:-2.000/w0.05 signalProgress=angle:1.000 spanRatio:1.000 worldSpan:na radial:1.000 depthZ:1.000",
+            "lateral": -0.9564449944132198,
+            "arcProgress": 0,
+            "arcInstant": 0,
+            "arcActive": false,
+            "arcHold": false,
+            "arcCalibrated": true,
+            "cyclePhase": "reached",
+            "cycleOrdered": false,
+            "cycleComplete": false,
+            "cycleCount": 0,
+            "stabilizer": {
+              "reason": "snap-extended",
+              "alpha": 1,
+              "step": 0,
+              "holdFrames": 0,
+              "direction": 0,
+              "directionRun": 0,
+              "rejected": [],
+              "rejectedFrames": 6,
+              "snapRun": 36
+            },
+            "pathGateOpen": false,
+            "side": "right",
             "wipeCleanPercent": 0,
             "wipeValidMovement": false,
             "wipeCompleted": false,
             "screenForward": {
               "x": 84.96,
-              "y": 286.6196204530176
+              "y": 262.4
             },
             "cursorY": 156
           },
@@ -1089,7 +4191,7 @@
               "x": 112,
               "y": 156
             },
-            "reachProgress": 0.943199764416,
+            "reachProgress": 1,
             "carry": null,
             "controlled": null
           },
@@ -1101,33 +4203,262 @@
             "rollStartedAt": 0,
             "pins": 0,
             "rounds": 0,
-            "readyForNextAt": 0
+            "readyForNextAt": 0,
+            "impactAt": 0,
+            "physicsAt": 0,
+            "pinBodies": [
+              {
+                "id": 0,
+                "x": 0,
+                "y": 0,
+                "homeX": 0,
+                "homeY": 0,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 1,
+                "x": -0.17,
+                "y": 0.085,
+                "homeX": -0.17,
+                "homeY": 0.085,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 2,
+                "x": 0.17,
+                "y": 0.085,
+                "homeX": 0.17,
+                "homeY": 0.085,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 3,
+                "x": -0.34,
+                "y": 0.17,
+                "homeX": -0.34,
+                "homeY": 0.17,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 4,
+                "x": 0,
+                "y": 0.17,
+                "homeX": 0,
+                "homeY": 0.17,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 5,
+                "x": 0.34,
+                "y": 0.17,
+                "homeX": 0.34,
+                "homeY": 0.17,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 6,
+                "x": -0.51,
+                "y": 0.255,
+                "homeX": -0.51,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 7,
+                "x": -0.17,
+                "y": 0.255,
+                "homeX": -0.17,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 8,
+                "x": 0.17,
+                "y": 0.255,
+                "homeX": 0.17,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 9,
+                "x": 0.51,
+                "y": 0.255,
+                "homeX": 0.51,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              }
+            ]
           }
         },
         "flexed": {
           "reach": {
             "calibrated": true,
-            "progress": 0.0050900393868438705,
-            "engaged": true,
-            "shoulderFlexProgress": 1,
-            "elbowExtensionProgress": 0,
-            "elbowAngle": 93.87882289203809,
-            "fullExtensionAngle": 157.5,
+            "stage": "ready",
+            "reason": "calibrated",
+            "progress": 0,
+            "instantProgress": 0.03409090909090909,
+            "engaged": false,
+            "reachGate": false,
+            "returnReady": true,
+            "shoulderFlexProgress": 0,
+            "elbowExtensionProgress": 0.03409090909090909,
+            "elbowAngle": 81.869897645844,
+            "spanRatio": 0.6610458377237273,
+            "worldSpan": null,
+            "radial": 1.9742790526614462,
+            "depthZ": -2.0000000000000004,
+            "depthSource": "image-z",
+            "weights": {
+              "angle": 0.39534883720930236,
+              "spanRatio": 0.45465116279069767,
+              "radial": 0.09642857142857143,
+              "depthZ": 0.05357142857142856
+            },
+            "separation": {
+              "angle": 63.80780112703462,
+              "spanRatio": 0.2604561030146203,
+              "worldSpan": null,
+              "radial": 0.49403883191647835,
+              "depthZ": -2.0000000000000004
+            },
+            "signalProgress": {
+              "angle": 0,
+              "spanRatio": 0,
+              "radial": 1,
+              "depthZ": 1
+            },
+            "endpoints": {
+              "flexed": {
+                "angle": 90,
+                "spanRatio": 0.7162452681024037,
+                "worldSpan": null,
+                "radial": 1.4802402207449679,
+                "depthZ": 0,
+                "lateral": -0.4193548387096775,
+                "shoulderBalance": 0
+              },
+              "extended": {
+                "angle": 153.80780112703462,
+                "spanRatio": 0.976701371117024,
+                "worldSpan": null,
+                "radial": 1.9742790526614462,
+                "depthZ": -2.0000000000000004,
+                "lateral": -0.9564449944132198,
+                "shoulderBalance": 0
+              }
+            },
+            "qualified": [
+              "angle",
+              "spanRatio",
+              "radial",
+              "depthZ"
+            ],
+            "lacking": [
+              {
+                "signal": "worldSpan",
+                "reason": "unavailable",
+                "separation": null,
+                "required": 0.08
+              }
+            ],
+            "manual": {
+              "flexed": false,
+              "extended": false
+            },
+            "retryCount": 0,
+            "captureCount": {
+              "flexed": 1,
+              "extended": 1
+            },
             "completionReady": false,
-            "movementConfirmFrames": 0,
-            "elbowMode": "active-extension",
-            "directionMode": "individualized",
-            "directionPeak": 2.5316111633466982,
-            "forwardScale": 0.26,
             "shoulderHike": false,
             "framingReady": true,
             "warning": "",
+            "guidance": {
+              "main": "",
+              "detail": "",
+              "en": ""
+            },
+            "diagnostics": "stage:ready calibrated:true framingReady:true progress:0.000 instant:0.034 engaged:false reachGate:false returnReady:true completionReady:false depthSource:image-z movementSeen:true shoulderHike:false reason:calibrated retries:0 manual:-- raw=angle:81.870 spanRatio:0.661 worldSpan:na radial:1.974 depthZ:-2.000 endpoints=angle:90.000>153.808 spanRatio:0.716>0.977 worldSpan:na>na radial:1.480>1.974 depthZ:0.000>-2.000 side:right arc:0.000 arcInstant:0.000 arcActive:false arcHold:false arcPaused:true arcReason:arc-paused-elbow-flexed retention:0.000 arcBaseline:-0.956 arcScale:0.300 lateral:-0.647 cycle:start cycleOrdered:false cycleCount:0 stabilizer:snap-flexed alpha:1.00 step:0.000 hold:0 dirRun:00 rejected:none rejectedFrames:8 filtered=angle:81.870 spanRatio:0.661 worldSpan:na radial:1.974 depthZ:-2.000 separation=angle:63.808/w0.40 spanRatio:0.260/w0.45 worldSpan:na/w0 radial:0.494/w0.10 depthZ:-2.000/w0.05 signalProgress=angle:0.000 spanRatio:0.000 worldSpan:na radial:1.000 depthZ:1.000",
+            "lateral": -0.6473360243627615,
+            "arcProgress": 0,
+            "arcInstant": 0,
+            "arcActive": false,
+            "arcHold": false,
+            "arcCalibrated": true,
+            "cyclePhase": "start",
+            "cycleOrdered": false,
+            "cycleComplete": false,
+            "cycleCount": 0,
+            "stabilizer": {
+              "reason": "snap-flexed",
+              "alpha": 1,
+              "step": 0,
+              "holdFrames": 0,
+              "direction": 0,
+              "directionRun": 0,
+              "rejected": [],
+              "rejectedFrames": 8,
+              "snapRun": 48
+            },
+            "pathGateOpen": false,
+            "side": "right",
             "wipeCleanPercent": 0,
             "wipeValidMovement": false,
             "wipeCompleted": false,
             "screenForward": {
               "x": 84.96,
-              "y": 686.6296072054497
+              "y": 688.8
             },
             "cursorY": 156
           },
@@ -1142,7 +4473,7 @@
               "x": 112,
               "y": 156
             },
-            "reachProgress": 0.0050900393868438705,
+            "reachProgress": 0,
             "carry": null,
             "controlled": null
           },
@@ -1154,7 +4485,141 @@
             "rollStartedAt": 0,
             "pins": 0,
             "rounds": 0,
-            "readyForNextAt": 0
+            "readyForNextAt": 0,
+            "impactAt": 0,
+            "physicsAt": 0,
+            "pinBodies": [
+              {
+                "id": 0,
+                "x": 0,
+                "y": 0,
+                "homeX": 0,
+                "homeY": 0,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 1,
+                "x": -0.17,
+                "y": 0.085,
+                "homeX": -0.17,
+                "homeY": 0.085,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 2,
+                "x": 0.17,
+                "y": 0.085,
+                "homeX": 0.17,
+                "homeY": 0.085,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 3,
+                "x": -0.34,
+                "y": 0.17,
+                "homeX": -0.34,
+                "homeY": 0.17,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 4,
+                "x": 0,
+                "y": 0.17,
+                "homeX": 0,
+                "homeY": 0.17,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 5,
+                "x": 0.34,
+                "y": 0.17,
+                "homeX": 0.34,
+                "homeY": 0.17,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 6,
+                "x": -0.51,
+                "y": 0.255,
+                "homeX": -0.51,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 7,
+                "x": -0.17,
+                "y": 0.255,
+                "homeX": -0.17,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 8,
+                "x": 0.17,
+                "y": 0.255,
+                "homeX": 0.17,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              },
+              {
+                "id": 9,
+                "x": 0.51,
+                "y": 0.255,
+                "homeX": 0.51,
+                "homeY": 0.255,
+                "vx": 0,
+                "vy": 0,
+                "angle": 0,
+                "va": 0,
+                "down": false,
+                "resting": true
+              }
+            ]
           }
         }
       }
@@ -1188,9 +4653,9 @@
       "details": {
         "standardTransport": true,
         "held": {
-          "id": 19,
-          "label": "叉燒包",
-          "x": 472,
+          "id": 27,
+          "label": "糯米雞",
+          "x": 688.4,
           "y": 656
         },
         "rawCursor": {
@@ -1198,18 +4663,18 @@
           "y": 656
         },
         "displayCursor": {
-          "x": 472,
+          "x": 688.4,
           "y": 656
         },
         "reachProgress": 0,
         "carry": {
           "pickupX": 472,
-          "laneX": 472,
+          "laneX": 688.4,
           "pickupY": 656,
           "targetY": 352.6
         },
         "controlled": {
-          "x": 472,
+          "x": 688.4,
           "y": 656
         }
       }
@@ -1223,9 +4688,9 @@
         "heldStart": {
           "standardTransport": true,
           "held": {
-            "id": 19,
-            "label": "叉燒包",
-            "x": 472,
+            "id": 27,
+            "label": "糯米雞",
+            "x": 688.4,
             "y": 656
           },
           "rawCursor": {
@@ -1233,47 +4698,47 @@
             "y": 656
           },
           "displayCursor": {
-            "x": 472,
+            "x": 688.4,
             "y": 656
           },
           "reachProgress": 0,
           "carry": {
             "pickupX": 472,
-            "laneX": 472,
+            "laneX": 688.4,
             "pickupY": 656,
             "targetY": 352.6
           },
           "controlled": {
-            "x": 472,
+            "x": 688.4,
             "y": 656
           }
         },
         "heldExtended": {
           "standardTransport": true,
           "held": {
-            "id": 19,
-            "label": "叉燒包",
-            "x": 472,
-            "y": 355.14643427604454
+            "id": 27,
+            "label": "糯米雞",
+            "x": 688.4,
+            "y": 352.6
           },
           "rawCursor": {
             "x": 232,
             "y": 656
           },
           "displayCursor": {
-            "x": 472,
-            "y": 355.14643427604454
+            "x": 688.4,
+            "y": 352.6
           },
-          "reachProgress": 0.9916070063413166,
+          "reachProgress": 1,
           "carry": {
             "pickupX": 472,
-            "laneX": 472,
+            "laneX": 688.4,
             "pickupY": 656,
             "targetY": 352.6
           },
           "controlled": {
-            "x": 472,
-            "y": 355.14643427604454
+            "x": 688.4,
+            "y": 352.6
           }
         }
       }
@@ -1287,9 +4752,9 @@
         "heldStart": {
           "standardTransport": true,
           "held": {
-            "id": 19,
-            "label": "叉燒包",
-            "x": 472,
+            "id": 27,
+            "label": "糯米雞",
+            "x": 688.4,
             "y": 656
           },
           "rawCursor": {
@@ -1297,47 +4762,47 @@
             "y": 656
           },
           "displayCursor": {
-            "x": 472,
+            "x": 688.4,
             "y": 656
           },
           "reachProgress": 0,
           "carry": {
             "pickupX": 472,
-            "laneX": 472,
+            "laneX": 688.4,
             "pickupY": 656,
             "targetY": 352.6
           },
           "controlled": {
-            "x": 472,
+            "x": 688.4,
             "y": 656
           }
         },
         "heldExtended": {
           "standardTransport": true,
           "held": {
-            "id": 19,
-            "label": "叉燒包",
-            "x": 472,
-            "y": 355.14643427604454
+            "id": 27,
+            "label": "糯米雞",
+            "x": 688.4,
+            "y": 352.6
           },
           "rawCursor": {
             "x": 232,
             "y": 656
           },
           "displayCursor": {
-            "x": 472,
-            "y": 355.14643427604454
+            "x": 688.4,
+            "y": 352.6
           },
-          "reachProgress": 0.9916070063413166,
+          "reachProgress": 1,
           "carry": {
             "pickupX": 472,
-            "laneX": 472,
+            "laneX": 688.4,
             "pickupY": 656,
             "targetY": 352.6
           },
           "controlled": {
-            "x": 472,
-            "y": 355.14643427604454
+            "x": 688.4,
+            "y": 352.6
           }
         }
       }
@@ -1351,57 +4816,57 @@
         "heldExtended": {
           "standardTransport": true,
           "held": {
-            "id": 19,
-            "label": "叉燒包",
-            "x": 472,
-            "y": 355.14643427604454
+            "id": 27,
+            "label": "糯米雞",
+            "x": 688.4,
+            "y": 352.6
           },
           "rawCursor": {
             "x": 232,
             "y": 656
           },
           "displayCursor": {
-            "x": 472,
-            "y": 355.14643427604454
+            "x": 688.4,
+            "y": 352.6
           },
-          "reachProgress": 0.9916070063413166,
+          "reachProgress": 1,
           "carry": {
             "pickupX": 472,
-            "laneX": 472,
+            "laneX": 688.4,
             "pickupY": 656,
             "targetY": 352.6
           },
           "controlled": {
-            "x": 472,
-            "y": 355.14643427604454
+            "x": 688.4,
+            "y": 352.6
           }
         },
         "heldFlexed": {
           "standardTransport": true,
           "held": {
-            "id": 19,
-            "label": "叉燒包",
-            "x": 472,
-            "y": 655.6249442617298
+            "id": 27,
+            "label": "糯米雞",
+            "x": 688.4,
+            "y": 656
           },
           "rawCursor": {
             "x": 232,
             "y": 656
           },
           "displayCursor": {
-            "x": 472,
-            "y": 655.6249442617298
+            "x": 688.4,
+            "y": 656
           },
-          "reachProgress": 0.0012361758018135571,
+          "reachProgress": 0,
           "carry": {
             "pickupX": 472,
-            "laneX": 472,
+            "laneX": 688.4,
             "pickupY": 656,
             "targetY": 352.6
           },
           "controlled": {
-            "x": 472,
-            "y": 655.6249442617298
+            "x": 688.4,
+            "y": 656
           }
         }
       }
@@ -1422,9 +4887,501 @@
           "x": 318.00000000000006,
           "y": 471.99999999999994
         },
-        "reachProgress": 0.96478385393792,
+        "reachProgress": 1,
         "carry": null,
         "controlled": null
+      }
+    },
+    {
+      "level": "4",
+      "category": "ordered arc cycle",
+      "name": "shoulder abduction activates the lateral signal only after the calibrated extension, holds reach steady, pauses on elbow flexion and ends at the flexed start",
+      "passed": true,
+      "details": {
+        "arcBeforeReach": {
+          "calibrated": true,
+          "stage": "ready",
+          "reason": "calibrated",
+          "progress": 1,
+          "instantProgress": 1,
+          "engaged": true,
+          "reachGate": true,
+          "returnReady": false,
+          "shoulderFlexProgress": 1,
+          "elbowExtensionProgress": 1,
+          "elbowAngle": 153.80780112703462,
+          "spanRatio": 0.976701371117024,
+          "worldSpan": null,
+          "radial": 1.9742790526614462,
+          "depthZ": -2.0000000000000004,
+          "depthSource": "image-z",
+          "weights": {
+            "angle": 0.39534883720930236,
+            "spanRatio": 0.45465116279069767,
+            "radial": 0.09642857142857143,
+            "depthZ": 0.05357142857142856
+          },
+          "separation": {
+            "angle": 63.80780112703462,
+            "spanRatio": 0.2604561030146203,
+            "worldSpan": null,
+            "radial": 0.49403883191647835,
+            "depthZ": -2.0000000000000004
+          },
+          "signalProgress": {
+            "angle": 1,
+            "spanRatio": 1,
+            "radial": 1,
+            "depthZ": 1
+          },
+          "endpoints": {
+            "flexed": {
+              "angle": 90,
+              "spanRatio": 0.7162452681024037,
+              "worldSpan": null,
+              "radial": 1.4802402207449679,
+              "depthZ": 0,
+              "lateral": -0.4193548387096775,
+              "shoulderBalance": 0
+            },
+            "extended": {
+              "angle": 153.80780112703462,
+              "spanRatio": 0.976701371117024,
+              "worldSpan": null,
+              "radial": 1.9742790526614462,
+              "depthZ": -2.0000000000000004,
+              "lateral": -0.9564449944132198,
+              "shoulderBalance": 0
+            }
+          },
+          "qualified": [
+            "angle",
+            "spanRatio",
+            "radial",
+            "depthZ"
+          ],
+          "lacking": [
+            {
+              "signal": "worldSpan",
+              "reason": "unavailable",
+              "separation": null,
+              "required": 0.08
+            }
+          ],
+          "manual": {
+            "flexed": false,
+            "extended": false
+          },
+          "retryCount": 0,
+          "captureCount": {
+            "flexed": 1,
+            "extended": 1
+          },
+          "completionReady": true,
+          "shoulderHike": false,
+          "framingReady": true,
+          "warning": "",
+          "guidance": {
+            "main": "",
+            "detail": "",
+            "en": ""
+          },
+          "diagnostics": "stage:ready calibrated:true framingReady:true progress:1.000 instant:1.000 engaged:true reachGate:true returnReady:false completionReady:true depthSource:image-z movementSeen:true shoulderHike:false reason:calibrated retries:0 manual:-- raw=angle:153.808 spanRatio:0.977 worldSpan:na radial:1.974 depthZ:-2.000 endpoints=angle:90.000>153.808 spanRatio:0.716>0.977 worldSpan:na>na radial:1.480>1.974 depthZ:0.000>-2.000 side:right arc:0.000 arcInstant:0.000 arcActive:false arcHold:false arcPaused:false arcReason:arc-idle retention:1.000 arcBaseline:-0.956 arcScale:0.300 lateral:-0.956 cycle:reached cycleOrdered:false cycleCount:0 stabilizer:snap-extended alpha:1.00 step:0.000 hold:0 dirRun:00 rejected:none rejectedFrames:6 filtered=angle:153.808 spanRatio:0.977 worldSpan:na radial:1.974 depthZ:-2.000 separation=angle:63.808/w0.40 spanRatio:0.260/w0.45 worldSpan:na/w0 radial:0.494/w0.10 depthZ:-2.000/w0.05 signalProgress=angle:1.000 spanRatio:1.000 worldSpan:na radial:1.000 depthZ:1.000",
+          "lateral": -0.9564449944132198,
+          "arcProgress": 0,
+          "arcInstant": 0,
+          "arcActive": false,
+          "arcHold": false,
+          "arcCalibrated": true,
+          "cyclePhase": "reached",
+          "cycleOrdered": false,
+          "cycleComplete": false,
+          "cycleCount": 0,
+          "stabilizer": {
+            "reason": "snap-extended",
+            "alpha": 1,
+            "step": 0,
+            "holdFrames": 0,
+            "direction": 0,
+            "directionRun": 0,
+            "rejected": [],
+            "rejectedFrames": 6,
+            "snapRun": 34
+          },
+          "pathGateOpen": false,
+          "side": "right",
+          "wipeCleanPercent": 0,
+          "wipeValidMovement": false,
+          "wipeCompleted": false,
+          "screenForward": {
+            "x": 84.96,
+            "y": 262.4
+          },
+          "cursorY": 672.4
+        },
+        "arcOut": {
+          "calibrated": true,
+          "stage": "ready",
+          "reason": "calibrated",
+          "progress": 1,
+          "instantProgress": 0.8991861397454386,
+          "engaged": true,
+          "reachGate": true,
+          "returnReady": false,
+          "shoulderFlexProgress": 1,
+          "elbowExtensionProgress": 0.8991861397454386,
+          "elbowAngle": 169.5085229876684,
+          "spanRatio": 0.9958148568859103,
+          "worldSpan": null,
+          "radial": 1.5563490039905006,
+          "depthZ": -1.7333333333333338,
+          "depthSource": "image-z",
+          "weights": {
+            "angle": 0.39534883720930236,
+            "spanRatio": 0.45465116279069767,
+            "radial": 0.09642857142857143,
+            "depthZ": 0.05357142857142856
+          },
+          "separation": {
+            "angle": 63.80780112703462,
+            "spanRatio": 0.2604561030146203,
+            "worldSpan": null,
+            "radial": 0.49403883191647835,
+            "depthZ": -2.0000000000000004
+          },
+          "signalProgress": {
+            "angle": 1,
+            "spanRatio": 1,
+            "radial": 0.1540542530842992,
+            "depthZ": 0.8666666666666667
+          },
+          "endpoints": {
+            "flexed": {
+              "angle": 90,
+              "spanRatio": 0.7162452681024037,
+              "worldSpan": null,
+              "radial": 1.4802402207449679,
+              "depthZ": 0,
+              "lateral": -0.4193548387096775,
+              "shoulderBalance": 0
+            },
+            "extended": {
+              "angle": 153.80780112703462,
+              "spanRatio": 0.976701371117024,
+              "worldSpan": null,
+              "radial": 1.9742790526614462,
+              "depthZ": -2.0000000000000004,
+              "lateral": -0.9564449944132198,
+              "shoulderBalance": 0
+            }
+          },
+          "qualified": [
+            "angle",
+            "spanRatio",
+            "radial",
+            "depthZ"
+          ],
+          "lacking": [
+            {
+              "signal": "worldSpan",
+              "reason": "unavailable",
+              "separation": null,
+              "required": 0.08
+            }
+          ],
+          "manual": {
+            "flexed": false,
+            "extended": false
+          },
+          "retryCount": 0,
+          "captureCount": {
+            "flexed": 1,
+            "extended": 1
+          },
+          "completionReady": false,
+          "shoulderHike": false,
+          "framingReady": true,
+          "warning": "",
+          "guidance": {
+            "main": "",
+            "detail": "",
+            "en": ""
+          },
+          "diagnostics": "stage:ready calibrated:true framingReady:true progress:1.000 instant:0.899 engaged:true reachGate:true returnReady:false completionReady:false depthSource:image-z movementSeen:true shoulderHike:false reason:calibrated retries:0 manual:-- raw=angle:169.509 spanRatio:0.996 worldSpan:na radial:1.556 depthZ:-1.733 endpoints=angle:90.000>153.808 spanRatio:0.716>0.977 worldSpan:na>na radial:1.480>1.974 depthZ:0.000>-2.000 side:right arc:0.953 arcInstant:1.000 arcActive:true arcHold:true arcPaused:false arcReason:arc-active retention:1.000 arcBaseline:-0.956 arcScale:1.744 lateral:0.981 cycle:arc-out cycleOrdered:false cycleCount:0 stabilizer:arc-hold alpha:0.00 step:0.000 hold:8 dirRun:00 rejected:none rejectedFrames:8 filtered=angle:169.509 spanRatio:0.996 worldSpan:na radial:1.556 depthZ:-1.733 separation=angle:63.808/w0.40 spanRatio:0.260/w0.45 worldSpan:na/w0 radial:0.494/w0.10 depthZ:-2.000/w0.05 signalProgress=angle:1.000 spanRatio:1.000 worldSpan:na radial:0.154 depthZ:0.867",
+          "lateral": 0.9810885026280707,
+          "arcProgress": 0.9532885048835462,
+          "arcInstant": 1,
+          "arcActive": true,
+          "arcHold": true,
+          "arcCalibrated": true,
+          "cyclePhase": "arc-out",
+          "cycleOrdered": false,
+          "cycleComplete": false,
+          "cycleCount": 0,
+          "stabilizer": {
+            "reason": "arc-hold",
+            "alpha": 0,
+            "step": 0,
+            "holdFrames": 8,
+            "direction": 0,
+            "directionRun": 0,
+            "rejected": [],
+            "rejectedFrames": 8,
+            "snapRun": 0
+          },
+          "pathGateOpen": true,
+          "side": "right",
+          "wipeCleanPercent": 0,
+          "wipeValidMovement": true,
+          "wipeCompleted": false,
+          "screenForward": {
+            "x": 84.96,
+            "y": 262.4
+          },
+          "cursorY": 672.4
+        },
+        "arcFlexed": {
+          "calibrated": true,
+          "stage": "ready",
+          "reason": "calibrated",
+          "progress": 0,
+          "instantProgress": 0,
+          "engaged": false,
+          "reachGate": false,
+          "returnReady": true,
+          "shoulderFlexProgress": 0,
+          "elbowExtensionProgress": 0,
+          "elbowAngle": 56.309932474020215,
+          "spanRatio": 0.5205323314208719,
+          "worldSpan": null,
+          "radial": 1.2018504251546633,
+          "depthZ": 0,
+          "depthSource": "image-z",
+          "weights": {
+            "angle": 0.39534883720930236,
+            "spanRatio": 0.45465116279069767,
+            "radial": 0.09642857142857143,
+            "depthZ": 0.05357142857142856
+          },
+          "separation": {
+            "angle": 63.80780112703462,
+            "spanRatio": 0.2604561030146203,
+            "worldSpan": null,
+            "radial": 0.49403883191647835,
+            "depthZ": -2.0000000000000004
+          },
+          "signalProgress": {
+            "angle": 0,
+            "spanRatio": 0,
+            "radial": 0,
+            "depthZ": 0
+          },
+          "endpoints": {
+            "flexed": {
+              "angle": 90,
+              "spanRatio": 0.7162452681024037,
+              "worldSpan": null,
+              "radial": 1.4802402207449679,
+              "depthZ": 0,
+              "lateral": -0.4193548387096775,
+              "shoulderBalance": 0
+            },
+            "extended": {
+              "angle": 153.80780112703462,
+              "spanRatio": 0.976701371117024,
+              "worldSpan": null,
+              "radial": 1.9742790526614462,
+              "depthZ": -2.0000000000000004,
+              "lateral": -0.9564449944132198,
+              "shoulderBalance": 0
+            }
+          },
+          "qualified": [
+            "angle",
+            "spanRatio",
+            "radial",
+            "depthZ"
+          ],
+          "lacking": [
+            {
+              "signal": "worldSpan",
+              "reason": "unavailable",
+              "separation": null,
+              "required": 0.08
+            }
+          ],
+          "manual": {
+            "flexed": false,
+            "extended": false
+          },
+          "retryCount": 0,
+          "captureCount": {
+            "flexed": 1,
+            "extended": 1
+          },
+          "completionReady": false,
+          "shoulderHike": false,
+          "framingReady": true,
+          "warning": "",
+          "guidance": {
+            "main": "",
+            "detail": "",
+            "en": ""
+          },
+          "diagnostics": "stage:ready calibrated:true framingReady:true progress:0.000 instant:0.000 engaged:false reachGate:false returnReady:true completionReady:false depthSource:image-z movementSeen:true shoulderHike:false reason:calibrated retries:0 manual:-- raw=angle:56.310 spanRatio:0.521 worldSpan:na radial:1.202 depthZ:0.000 endpoints=angle:90.000>153.808 spanRatio:0.716>0.977 worldSpan:na>na radial:1.480>1.974 depthZ:0.000>-2.000 side:right arc:0.000 arcInstant:0.000 arcActive:false arcHold:false arcPaused:true arcReason:arc-paused-elbow-flexed retention:0.000 arcBaseline:-0.956 arcScale:1.744 lateral:-0.029 cycle:start cycleOrdered:true cycleCount:1 stabilizer:snap-flexed alpha:1.00 step:0.000 hold:0 dirRun:00 rejected:none rejectedFrames:10 filtered=angle:56.310 spanRatio:0.521 worldSpan:na radial:1.202 depthZ:0.000 separation=angle:63.808/w0.40 spanRatio:0.260/w0.45 worldSpan:na/w0 radial:0.494/w0.10 depthZ:-2.000/w0.05 signalProgress=angle:0.000 spanRatio:0.000 worldSpan:na radial:0.000 depthZ:0.000",
+          "lateral": -0.02887393863807339,
+          "arcProgress": 0,
+          "arcInstant": 0,
+          "arcActive": false,
+          "arcHold": false,
+          "arcCalibrated": true,
+          "cyclePhase": "start",
+          "cycleOrdered": true,
+          "cycleComplete": false,
+          "cycleCount": 1,
+          "stabilizer": {
+            "reason": "snap-flexed",
+            "alpha": 1,
+            "step": 0,
+            "holdFrames": 0,
+            "direction": 0,
+            "directionRun": 0,
+            "rejected": [],
+            "rejectedFrames": 10,
+            "snapRun": 6
+          },
+          "pathGateOpen": false,
+          "side": "right",
+          "wipeCleanPercent": 0,
+          "wipeValidMovement": false,
+          "wipeCompleted": false,
+          "screenForward": {
+            "x": 84.96,
+            "y": 688.8
+          },
+          "cursorY": 672.4
+        },
+        "arcCycleEnd": {
+          "calibrated": true,
+          "stage": "ready",
+          "reason": "calibrated",
+          "progress": 0,
+          "instantProgress": 0,
+          "engaged": false,
+          "reachGate": false,
+          "returnReady": true,
+          "shoulderFlexProgress": 0,
+          "elbowExtensionProgress": 0,
+          "elbowAngle": 90,
+          "spanRatio": 0.7162452681024037,
+          "worldSpan": null,
+          "radial": 1.4802402207449679,
+          "depthZ": 0,
+          "depthSource": "image-z",
+          "weights": {
+            "angle": 0.39534883720930236,
+            "spanRatio": 0.45465116279069767,
+            "radial": 0.09642857142857143,
+            "depthZ": 0.05357142857142856
+          },
+          "separation": {
+            "angle": 63.80780112703462,
+            "spanRatio": 0.2604561030146203,
+            "worldSpan": null,
+            "radial": 0.49403883191647835,
+            "depthZ": -2.0000000000000004
+          },
+          "signalProgress": {
+            "angle": 0,
+            "spanRatio": 0,
+            "radial": 0,
+            "depthZ": 0
+          },
+          "endpoints": {
+            "flexed": {
+              "angle": 90,
+              "spanRatio": 0.7162452681024037,
+              "worldSpan": null,
+              "radial": 1.4802402207449679,
+              "depthZ": 0,
+              "lateral": -0.4193548387096775,
+              "shoulderBalance": 0
+            },
+            "extended": {
+              "angle": 153.80780112703462,
+              "spanRatio": 0.976701371117024,
+              "worldSpan": null,
+              "radial": 1.9742790526614462,
+              "depthZ": -2.0000000000000004,
+              "lateral": -0.9564449944132198,
+              "shoulderBalance": 0
+            }
+          },
+          "qualified": [
+            "angle",
+            "spanRatio",
+            "radial",
+            "depthZ"
+          ],
+          "lacking": [
+            {
+              "signal": "worldSpan",
+              "reason": "unavailable",
+              "separation": null,
+              "required": 0.08
+            }
+          ],
+          "manual": {
+            "flexed": false,
+            "extended": false
+          },
+          "retryCount": 0,
+          "captureCount": {
+            "flexed": 1,
+            "extended": 1
+          },
+          "completionReady": false,
+          "shoulderHike": false,
+          "framingReady": true,
+          "warning": "",
+          "guidance": {
+            "main": "",
+            "detail": "",
+            "en": ""
+          },
+          "diagnostics": "stage:ready calibrated:true framingReady:true progress:0.000 instant:0.000 engaged:false reachGate:false returnReady:true completionReady:false depthSource:image-z movementSeen:true shoulderHike:false reason:calibrated retries:0 manual:-- raw=angle:90.000 spanRatio:0.716 worldSpan:na radial:1.480 depthZ:0.000 endpoints=angle:90.000>153.808 spanRatio:0.716>0.977 worldSpan:na>na radial:1.480>1.974 depthZ:0.000>-2.000 side:right arc:0.000 arcInstant:0.000 arcActive:false arcHold:false arcPaused:true arcReason:arc-paused-elbow-flexed retention:0.000 arcBaseline:-0.956 arcScale:1.744 lateral:-0.419 cycle:start cycleOrdered:false cycleCount:1 stabilizer:snap-flexed alpha:1.00 step:0.000 hold:0 dirRun:00 rejected:none rejectedFrames:14 filtered=angle:90.000 spanRatio:0.716 worldSpan:na radial:1.480 depthZ:0.000 separation=angle:63.808/w0.40 spanRatio:0.260/w0.45 worldSpan:na/w0 radial:0.494/w0.10 depthZ:-2.000/w0.05 signalProgress=angle:0.000 spanRatio:0.000 worldSpan:na radial:0.000 depthZ:0.000",
+          "lateral": -0.4193548387096775,
+          "arcProgress": 0,
+          "arcInstant": 0,
+          "arcActive": false,
+          "arcHold": false,
+          "arcCalibrated": true,
+          "cyclePhase": "start",
+          "cycleOrdered": false,
+          "cycleComplete": false,
+          "cycleCount": 1,
+          "stabilizer": {
+            "reason": "snap-flexed",
+            "alpha": 1,
+            "step": 0,
+            "holdFrames": 0,
+            "direction": 0,
+            "directionRun": 0,
+            "rejected": [],
+            "rejectedFrames": 14,
+            "snapRun": 27
+          },
+          "pathGateOpen": false,
+          "side": "right",
+          "wipeCleanPercent": 0,
+          "wipeValidMovement": false,
+          "wipeCompleted": false,
+          "screenForward": {
+            "x": 84.96,
+            "y": 688.8
+          },
+          "cursorY": 672.4
+        }
       }
     },
     {
@@ -1437,39 +5394,207 @@
         "peak": 0.72,
         "armProgress": 0.12,
         "ballProgress": 0,
-        "rollStartedAt": 4401.199999809265,
+        "rollStartedAt": 6634.199999809265,
         "pins": 0,
         "rounds": 0,
-        "readyForNextAt": 0
+        "readyForNextAt": 0,
+        "impactAt": 0,
+        "physicsAt": 0,
+        "pinBodies": [
+          {
+            "id": 0,
+            "x": 0,
+            "y": 0,
+            "homeX": 0,
+            "homeY": 0,
+            "vx": 0,
+            "vy": 0,
+            "angle": 0,
+            "va": 0,
+            "down": false,
+            "resting": true
+          },
+          {
+            "id": 1,
+            "x": -0.17,
+            "y": 0.085,
+            "homeX": -0.17,
+            "homeY": 0.085,
+            "vx": 0,
+            "vy": 0,
+            "angle": 0,
+            "va": 0,
+            "down": false,
+            "resting": true
+          },
+          {
+            "id": 2,
+            "x": 0.17,
+            "y": 0.085,
+            "homeX": 0.17,
+            "homeY": 0.085,
+            "vx": 0,
+            "vy": 0,
+            "angle": 0,
+            "va": 0,
+            "down": false,
+            "resting": true
+          },
+          {
+            "id": 3,
+            "x": -0.34,
+            "y": 0.17,
+            "homeX": -0.34,
+            "homeY": 0.17,
+            "vx": 0,
+            "vy": 0,
+            "angle": 0,
+            "va": 0,
+            "down": false,
+            "resting": true
+          },
+          {
+            "id": 4,
+            "x": 0,
+            "y": 0.17,
+            "homeX": 0,
+            "homeY": 0.17,
+            "vx": 0,
+            "vy": 0,
+            "angle": 0,
+            "va": 0,
+            "down": false,
+            "resting": true
+          },
+          {
+            "id": 5,
+            "x": 0.34,
+            "y": 0.17,
+            "homeX": 0.34,
+            "homeY": 0.17,
+            "vx": 0,
+            "vy": 0,
+            "angle": 0,
+            "va": 0,
+            "down": false,
+            "resting": true
+          },
+          {
+            "id": 6,
+            "x": -0.51,
+            "y": 0.255,
+            "homeX": -0.51,
+            "homeY": 0.255,
+            "vx": 0,
+            "vy": 0,
+            "angle": 0,
+            "va": 0,
+            "down": false,
+            "resting": true
+          },
+          {
+            "id": 7,
+            "x": -0.17,
+            "y": 0.255,
+            "homeX": -0.17,
+            "homeY": 0.255,
+            "vx": 0,
+            "vy": 0,
+            "angle": 0,
+            "va": 0,
+            "down": false,
+            "resting": true
+          },
+          {
+            "id": 8,
+            "x": 0.17,
+            "y": 0.255,
+            "homeX": 0.17,
+            "homeY": 0.255,
+            "vx": 0,
+            "vy": 0,
+            "angle": 0,
+            "va": 0,
+            "down": false,
+            "resting": true
+          },
+          {
+            "id": 9,
+            "x": 0.51,
+            "y": 0.255,
+            "homeX": 0.51,
+            "homeY": 0.255,
+            "vx": 0,
+            "vy": 0,
+            "angle": 0,
+            "va": 0,
+            "down": false,
+            "resting": true
+          }
+        ]
       }
     },
     {
       "level": "4",
       "category": "independent mechanics",
-      "name": "mahjong-wash continues to advance from a real wrist path",
+      "name": "mahjong-wash requires extension then the side-correct arc before washing",
       "passed": true,
       "details": {
-        "progress": 0.14290293908803975,
-        "lastPoint": {
-          "x": 0.31,
-          "y": 0.4
+        "linearOnly": {
+          "progress": 0,
+          "lastPoint": null,
+          "rounds": 0,
+          "completed": false,
+          "readyForNextAt": 0
         },
-        "rounds": 0,
-        "completed": false,
-        "readyForNextAt": 0
+        "onArc": {
+          "progress": 0.14290293908803975,
+          "lastPoint": {
+            "x": 0.31,
+            "y": 0.4
+          },
+          "rounds": 0,
+          "completed": false,
+          "readyForNextAt": 0
+        }
       }
     },
     {
       "level": "4",
       "category": "independent mechanics",
-      "name": "bus-pay continues to require a real cursor at the precision target",
+      "name": "bus-pay taps once per ordered reach-then-arc cycle at the reader",
       "passed": true,
       "details": {
-        "targetIndex": 1,
-        "hitCount": 1,
-        "holdFrames": 0,
-        "armed": false,
-        "flashUntil": 4831.699999809265
+        "linearOnly": {
+          "targetIndex": 0,
+          "hitCount": 0,
+          "holdFrames": 0,
+          "armed": true,
+          "flashUntil": 0,
+          "beepCount": 0,
+          "beeped": false,
+          "successUntil": 0
+        },
+        "tapped": {
+          "targetIndex": 1,
+          "hitCount": 1,
+          "holdFrames": 0,
+          "armed": false,
+          "flashUntil": 7549.900000572205,
+          "beepCount": 1,
+          "beeped": true,
+          "successUntil": 8408.800000190735
+        },
+        "held": {
+          "targetIndex": 1,
+          "hitCount": 1,
+          "holdFrames": 0,
+          "armed": false,
+          "flashUntil": 7549.900000572205,
+          "beepCount": 1,
+          "beeped": true,
+          "successUntil": 8408.800000190735
+        }
       }
     },
     {
@@ -1479,27 +5604,122 @@
       "passed": true,
       "details": {
         "calibrated": true,
-        "progress": 0.943199764416,
+        "stage": "ready",
+        "reason": "calibrated",
+        "progress": 1,
+        "instantProgress": 1,
         "engaged": true,
+        "reachGate": true,
+        "returnReady": false,
         "shoulderFlexProgress": 1,
         "elbowExtensionProgress": 1,
-        "elbowAngle": 161.403384267591,
-        "fullExtensionAngle": 157.5,
+        "elbowAngle": 153.80780112703462,
+        "spanRatio": 0.976701371117024,
+        "worldSpan": null,
+        "radial": 2.1306548135535053,
+        "depthZ": -2.1584130274605866,
+        "depthSource": "image-z",
+        "weights": {
+          "angle": 0.39534883720930236,
+          "spanRatio": 0.45465116279069767,
+          "radial": 0.09642857142857143,
+          "depthZ": 0.05357142857142856
+        },
+        "separation": {
+          "angle": 63.80780112703462,
+          "spanRatio": 0.2604561030146203,
+          "worldSpan": null,
+          "radial": 1.2169262822294513,
+          "depthZ": -2.1584130274605866
+        },
+        "signalProgress": {
+          "angle": 1,
+          "spanRatio": 1,
+          "radial": 1,
+          "depthZ": 1
+        },
+        "endpoints": {
+          "flexed": {
+            "angle": 90,
+            "spanRatio": 0.7162452681024037,
+            "worldSpan": null,
+            "radial": 0.9137285313240541,
+            "depthZ": 0,
+            "lateral": -0.4193548387096775,
+            "shoulderBalance": null
+          },
+          "extended": {
+            "angle": 153.80780112703462,
+            "spanRatio": 0.976701371117024,
+            "worldSpan": null,
+            "radial": 2.1306548135535053,
+            "depthZ": -2.1584130274605866,
+            "lateral": -0.9564449944132198,
+            "shoulderBalance": null
+          }
+        },
+        "qualified": [
+          "angle",
+          "spanRatio",
+          "radial",
+          "depthZ"
+        ],
+        "lacking": [
+          {
+            "signal": "worldSpan",
+            "reason": "unavailable",
+            "separation": null,
+            "required": 0.08
+          }
+        ],
+        "manual": {
+          "flexed": false,
+          "extended": false
+        },
+        "retryCount": 0,
+        "captureCount": {
+          "flexed": 1,
+          "extended": 1
+        },
         "completionReady": true,
-        "movementConfirmFrames": 6,
-        "elbowMode": "active-extension",
-        "directionMode": "individualized",
-        "directionPeak": 2.0433638617375376,
-        "forwardScale": 0.26,
         "shoulderHike": false,
         "framingReady": true,
         "warning": "",
+        "guidance": {
+          "main": "",
+          "detail": "",
+          "en": ""
+        },
+        "diagnostics": "stage:ready calibrated:true framingReady:true progress:1.000 instant:1.000 engaged:true reachGate:true returnReady:false completionReady:true depthSource:image-z movementSeen:true shoulderHike:false reason:calibrated retries:0 manual:-- raw=angle:153.808 spanRatio:0.977 worldSpan:na radial:2.131 depthZ:-2.158 endpoints=angle:90.000>153.808 spanRatio:0.716>0.977 worldSpan:na>na radial:0.914>2.131 depthZ:0.000>-2.158 side:right arc:0.000 arcInstant:0.000 arcActive:false arcHold:false arcPaused:false arcReason:arc-idle retention:1.000 arcBaseline:-0.956 arcScale:0.300 lateral:-0.956 cycle:reached cycleOrdered:false cycleCount:0 stabilizer:snap-extended alpha:1.00 step:0.000 hold:0 dirRun:00 rejected:none rejectedFrames:6 filtered=angle:153.808 spanRatio:0.977 worldSpan:na radial:2.131 depthZ:-2.158 separation=angle:63.808/w0.40 spanRatio:0.260/w0.45 worldSpan:na/w0 radial:1.217/w0.10 depthZ:-2.158/w0.05 signalProgress=angle:1.000 spanRatio:1.000 worldSpan:na radial:1.000 depthZ:1.000",
+        "lateral": -0.9564449944132198,
+        "arcProgress": 0,
+        "arcInstant": 0,
+        "arcActive": false,
+        "arcHold": false,
+        "arcCalibrated": true,
+        "cyclePhase": "reached",
+        "cycleOrdered": false,
+        "cycleComplete": false,
+        "cycleCount": 0,
+        "stabilizer": {
+          "reason": "snap-extended",
+          "alpha": 1,
+          "step": 0,
+          "holdFrames": 0,
+          "direction": 0,
+          "directionRun": 0,
+          "rejected": [],
+          "rejectedFrames": 6,
+          "snapRun": 34
+        },
+        "pathGateOpen": false,
+        "side": "right",
         "wipeCleanPercent": 0,
         "wipeValidMovement": false,
         "wipeCompleted": false,
         "screenForward": {
           "x": 84.96,
-          "y": 286.6196204530176
+          "y": 262.4
         },
         "cursorY": 672.4
       }
@@ -1740,8 +5960,8 @@
         },
         "items": [
           {
-            "label": "糯米雞",
-            "type": "lotusrice",
+            "label": "叉燒包",
+            "type": "charsiu",
             "x": 259.6,
             "y": 344.4,
             "r": 77.88000000000001
@@ -1754,8 +5974,8 @@
             "r": 77.88000000000001
           },
           {
-            "label": "糯米雞",
-            "type": "lotusrice",
+            "label": "叉燒包",
+            "type": "charsiu",
             "x": 920.4,
             "y": 344.4,
             "r": 77.88000000000001
@@ -1820,8 +6040,8 @@
         },
         "items": [
           {
-            "label": "糯米雞",
-            "type": "lotusrice",
+            "label": "叉燒包",
+            "type": "charsiu",
             "x": 259.6,
             "y": 344.4,
             "r": 77.88000000000001
@@ -1834,8 +6054,8 @@
             "r": 77.88000000000001
           },
           {
-            "label": "糯米雞",
-            "type": "lotusrice",
+            "label": "叉燒包",
+            "type": "charsiu",
             "x": 920.4,
             "y": 344.4,
             "r": 77.88000000000001
@@ -1948,11 +6168,11 @@
             "r": 114
           },
           {
-            "label": "蝦餃",
-            "type": "hargau",
+            "label": "燒賣",
+            "type": "siumai",
             "x": 920.4,
             "y": 319.8,
-            "r": 114
+            "r": 99
           }
         ],
         "targets": [
@@ -2028,11 +6248,11 @@
             "r": 114
           },
           {
-            "label": "蝦餃",
-            "type": "hargau",
+            "label": "燒賣",
+            "type": "siumai",
             "x": 920.4,
             "y": 319.8,
-            "r": 114
+            "r": 99
           }
         ],
         "targets": [

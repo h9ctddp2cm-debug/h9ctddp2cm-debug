@@ -2,6 +2,33 @@
 
 Original prompt: Fix Level 6–7 interactions: make light clothes-peg press detection easier without claiming tool/force sensing; keep bare three-finger pinch held through transport until a stabilized reopen; enlarge Level 6–7 dim sum and steamers 1.5× without collisions; and make Home/Back/Stop safely return to level selection.
 
+## 2026-08-19 Level 4 抗抖動、有序弧線相位及遊戲玩法升級
+- **訊號 A（伸手／reach）**：在兩姿勢校準的融合進度之上加入抗抖動處理 — 每個訊號 5 格滾動中位數、以校準幅度為基準的離群格拒收、死區、方向確認、隨幅度自適應 EMA、每格最大變化限制，以及屈肘 0／伸直 1 兩端的吸附。反應速度保留：一次順暢伸手（20 格）仍可達到 0.8 以上，快速反向亦即時跟隨。
+- **訊號 B（肩外展／弧線）**：新增獨立的側向訊號 `lateral`，以患側方向鏡像計算（右患側向右為外、左患側鏡像），完全不進入 reach 融合，因此畫弧不會令點心物件左右滑動或抖動。弧線期間 reach 會被凍結（`arc-hold`），避免手臂投影變形被誤判為屈肘回收。
+- **最終遊戲分類**：直線屈伸 = 茶樓點心、保齡球；先伸直再肩外展畫弧 = 抹窗、洗麻雀、巴士拍卡。三個路徑遊戲共用 `level4PathGateOpen` / `level4MotionPathReady`：必須先達到參與者自己的校準伸直終點，之後才計算方向正確的弧線訊號。
+- **有序循環（Category 2）**：屈肘起點 → 伸直至個人終點 → 保持伸直下向外畫弧 → 沿弧線返回 → 屈肘回起點；`cyclePhase / cycleOrdered / cycleCount` 反映次序。若弧線期間手肘明顯屈曲（保留度低於個人校準幅度的 0.45），側向計分會暫停並歸零（`arc-paused-elbow-flexed`），不會誤給分。不要求解剖學上完全伸直。
+- **保齡球玩法**：真實感球道透視、會旋轉的保齡球沿球道滾動；撞瓶後以確定性 2D 物理令球瓶倒下及散開，settle 後自動重排。出球仍然必須完成穩定化的「伸直 → 屈肘收手」循環。
+- **巴士拍卡**：巴士車廂場景（車窗、吊環扶手、座椅、黃色扶手）加通用非品牌拍卡機（畫面顯示「請拍卡 TAP」／「已付款 PAID」）；有效拍卡時以 Web Audio 播放單一「嘟」聲並顯示簡短成功提示。音效在使用者互動時解鎖，不可用時靜默降級但仍計分。每次有效拍卡只響一次，需回到屈肘起點才重新武裝。
+- **示範 GIF**：`img/advanced/level4_bowling_illustrated.gif`、`level4_buspay_illustrated.gif`、`level4_mahjongwash_illustrated.gif` 依遊戲對應顯示（抹窗及點心維持原有 Level 4 前滑 GIF），以精簡 inline figure 顯示於設定頁，不覆蓋遊戲畫面，並隨 `img/` 一併打包及離線預快取。三個新素材均由 PIL 繪圖指令產生，不含真人影像。
+- **測試**：`tests/level4-stabilization-arc.test.mjs`（11 項：靜止抖動、單格 landmark 跳動、順暢伸屈不延遲、快速反向、右患側 45° 完整循環、左患側鏡像、弧線期間屈肘暫停、無伸直的純外展不計分、debug 文字、遊戲分類）及 `tests/level4-games-behavior.test.mjs`（7 項：球到瓶及倒瓶狀態、物理可重現、每次有效拍卡只一次「嘟」、無音效降級、GIF 對應與離線打包）。
+- **驗證結果**：`tools/checkjs.sh` 全部 OK；`node --test tests/*.mjs` 107 項／104 通過／0 失敗／3 項為原有 skip；Level 4–6 技術驗證 **143/143**（L4 65、L5 40、L6 31），`runtime_errors: []`；`scripts/build-dist.sh` 產生 `dist/public` 119 files。
+- **Cache**：service worker 升級至 `fthue-rehab-v22-20260819-level4-safe-gifs`。
+- Level 3 及 Level 5–7 邏輯未改動，相關測試與驗證項目全部維持通過。
+
+## 2026-08-19 Level 4 participant-specific two-pose elbow calibration
+
+- **Two-pose capture:** Level 4 no longer infers elbow range from one frame or from lowered thresholds. `level4-elbow-calibration.js` runs an explicit staged capture — framing check, supported flexed/start capture (any available range, not a fixed 90°), then an extended/end capture — each from multiple stable median-filtered samples (`minStableSamples` 3, up to 12, stability window 5).
+- **Signal fusion:** each endpoint stores five signals: normalized 2D elbow angle, 2D arm-span ratio `dist(shoulder,wrist)/(upperArm+forearm)`, MediaPipe world/3D span ratio, wrist-to-shoulder radial distance in shoulder-span units, and a depth signal from world Z or image Z. A signal is used only when the two endpoints separate it by at least its minimum (angle 12°, span 0.08, world span 0.08, radial 0.10, depth 0.06); its weight scales with the observed separation times a reliability prior, and supporting signals (radial, depth) are capped at 15% while any primary signal qualifies. Direction is learned from the endpoints, so a signal that decreases with extension still maps flexed to 0.
+- **Normalized progress:** the fused value is normalized flexed endpoint = 0 to extended endpoint = 1 regardless of sign, with a 0.12 dead zone, exponential smoothing (alpha 0.55), and hysteresis (engage 0.20/0.06, reach 0.62/0.28, return 0.18, complete 0.94) that stays responsive on iPad.
+- **No silent calibration:** if the two poses do not separate any signal, the controller enters a `retry` stage, names the signals that were too similar or unavailable, and shows concise Cantonese/English retry guidance instead of calibrating on noise. Holding only the start pose waits for the extended capture rather than failing.
+- **Therapist fallback:** two compact buttons (`記錄屈肘起點 / Mark start`, `記錄伸直終點 / Mark end`) mark the current pose as either endpoint when automatic capture struggles. No extra safety page or verbose text was added.
+- **One shared progress for all five games:** ordinary dim-sum transport keeps a fixed carry lane X and vertical Y; wipe-window, bowling, mahjong-wash and bus-pay keep their clinically coherent real-wrist mechanics but take their reach gate and return state from the same normalized progress. Elbow motion is never interpreted as horizontal movement.
+- **Diagnostics:** the debug panel and `render_game_to_text` hook now expose calibration stage, raw signals, both endpoints, per-signal separation and selected weights, per-signal and fused progress, depth source, reason, and shoulder-hike warning.
+- **Deterministic coverage:** `tests/level4-two-pose-calibration.test.mjs` adds 13 synthetic-pose tests, including a front-facing case where the 2D angle and 2D span are identical between the two poses and only the world/depth signals separate them, reversed signal direction, jitter, missing world landmarks, inadequate separation, manual fallback, shoulder hike, and the five game mappings.
+- **Verification:** `bash tools/checkjs.sh` passed (blocks 0–5). `node --test tests/*.mjs` passed 86/89 with 3 pre-existing skips, 0 failures. Level 4–6 technical validation passed **142/142** (Level 4: 64, Level 5: 40, Level 6: 31) with no runtime or console errors. `bash scripts/build-dist.sh` produced `dist/public built: 116 files, 68M` including the new module in the offline precache manifest.
+- **Cache:** service worker cache is `fthue-rehab-v20-20260819-level4-two-pose-calibration`.
+- **Bedside caveat:** all of the above is synthetic-pose software verification. On the real iPad, confirm framing (device upright on the same table, ~1 m, affected-side front angle), that shoulder, elbow and wrist stay visible over the forearm skateboard, that the participant's available extension produces visible endpoint separation, and re-run calibration if the seating, camera angle or lighting changes. No real-person QA media was created.
+
 ## 2026-08-19 Level 4 all-game vertical elbow mapping clarification
 
 - **Shared signal:** Level 4 now excludes screen X from the individualized reach-estimator vector. Its smoothed elbow progress is presented consistently as vertical on-screen forward movement: extension moves up; flexion returns down. A fixed-X vertical guide is visible in all five Level 4 games.
@@ -898,3 +925,7 @@ Original prompt: Fix Level 6–7 interactions: make light clothes-peg press dete
 - 手部 landmark 要求縮減至夾仔判定所需的拇指、食指、中指及掌部基準，減少工具遮擋無名指／小指時整體偵測失敗。
 - 驗證結果：手勢追蹤回歸 **28/28**、Level 4–7 技術驗證 **126/126**、inline JavaScript 及 diff formatting 通過。
 - Service Worker 升級至 v16，避免 iPad 繼續沿用舊夾仔偵測程式。
+2026-08-19 — Level 4 release media privacy
+- Replaced the three proposed scene GIFs with reproducible PIL-drawn illustrations generated by `tools/generate_level4_safe_gifs.py`.
+- The bowling, bus-card and mahjong assets contain no photographs, captured video, identifiable people or QA recordings.
+- Renamed the runtime assets from `*_real.gif` to `*_illustrated.gif` so the repository and audit trail describe their origin accurately.

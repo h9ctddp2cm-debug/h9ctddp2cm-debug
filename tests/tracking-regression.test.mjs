@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const publicSource = readFileSync(path.join(root, "index.html"), "utf8");
 const serviceWorkerSource = readFileSync(path.join(root, "service-worker.js"), "utf8");
+const calibrationSource = readFileSync(path.join(root, "level4-elbow-calibration.js"), "utf8");
 const level3Page = readFileSync(path.join(root, "sandbox/level3-bilateral/index.html"), "utf8");
 const level3App = readFileSync(path.join(root, "sandbox/level3-bilateral/diagnosticApp.js"), "utf8");
 const level3Engine = readFileSync(path.join(root, "sandbox/level3-bilateral/Level3BilateralSandbox.js"), "utf8");
@@ -38,7 +39,7 @@ test("portrait phones keep the camera inline in a compact preview instead of ful
   assert.match(publicSource, /height:min\(25dvh,210px\)/);
   assert.ok(publicSource.includes("videoEl.setAttribute('webkit-playsinline', '')"));
   assert.ok(publicSource.includes("videoEl.controls = false"));
-  assert.match(serviceWorkerSource, /fthue-rehab-v19-20260819-level4-vertical-all-games/);
+  assert.match(serviceWorkerSource, /fthue-rehab-v21-20260819-level4-stabilized-arc-games/);
 });
 
 test("Levels 3 and 4 can use Pose when tabletop hands occlude the finger model", () => {
@@ -65,31 +66,48 @@ test("Level 3 bilateral controller follows the selected affected side only", () 
   assert.ok(publicSource.includes("level3LateralState()"));
 });
 
-test("Level 4 calibrates elbow extension but lets the real wrist draw the wipe path", () => {
-  assert.ok(publicSource.includes("const elbowConfirmed = activeExtension || maintainedExtension"));
-  assert.ok(publicSource.includes("directionLearningEligible"));
-  assert.ok(publicSource.includes("level4Reach.forwardAxis = reachVector.map"));
-  assert.ok(publicSource.includes("let compoundProgress = level4Reach.engaged ? extensionProgress : 0"));
+test("Level 4 fuses several two-pose signals and lets the real wrist draw the wipe path", () => {
+  assert.ok(publicSource.includes('<script src="level4-elbow-calibration.js"></script>'));
+  assert.ok(publicSource.includes("const level4Controller = level4Calibration ? level4Calibration.createController() : null"));
+  assert.ok(publicSource.includes("level4Controller.update({"));
+  assert.ok(publicSource.includes("worldLm:worldLm || null"));
   assert.ok(publicSource.includes("The wipe cursor follows the real affected wrist"));
   assert.ok(publicSource.includes("updateLevel4Wipe(cursorX/cw, cursorY/ch, level4Motion)"));
-  assert.ok(publicSource.includes("baseline.wristRelativeZ-sample.wristRelativeZ"));
-  assert.ok(publicSource.includes("baseline.wristRelativeY-sample.wristRelativeY"));
-  assert.ok(publicSource.includes("sample.wristReachRadius-baseline.wristReachRadius"));
+  for (const key of ["angle", "spanRatio", "worldSpan", "radial", "depthZ"]) {
+    assert.ok(calibrationSource.includes(key), `${key} signal is fused`);
+  }
+  assert.ok(calibrationSource.includes("dist(shoulder,wrist)/(upperArm+forearm)"));
+  assert.ok(calibrationSource.includes("SIGNAL_KEYS"));
 });
 
-test("Level 4 ignores elbow jitter and gates wiping after deliberate extension", () => {
-  assert.ok(publicSource.includes("level4Reach.elbowAngleHistory.length > 5"));
-  assert.ok(publicSource.includes("elbowGain >= 6"));
-  assert.ok(publicSource.includes("level4Reach.movementConfirmFrames >= 3"));
-  assert.ok(publicSource.includes("motion.elbowExtensionProgress >= 0.35"));
-  assert.ok(publicSource.includes("setActionPrompt('慢慢伸直手肘', '再向外畫大弧')"));
+test("Level 4 weights each signal by the separation actually observed between the two poses", () => {
+  assert.ok(calibrationSource.includes("function evaluateEndpoints"));
+  assert.ok(calibrationSource.includes("minSeparation"));
+  assert.ok(calibrationSource.includes("strengthCap"));
+  assert.ok(calibrationSource.includes("supportShare"));
+  assert.ok(calibrationSource.includes("reliability"));
+  // Direction is learned, so a signal that decreases with extension still maps
+  // flexed -> 0 and extended -> 1.
+  assert.ok(calibrationSource.includes("const p = clamp01((value - from) / range);"));
 });
 
-test("Level 4 calibration accepts an already-extended bedside starting posture", () => {
-  assert.ok(publicSource.includes("elbowAngle >= 25 && elbowAngle <= 178"));
-  assert.ok(publicSource.includes("level4Reach.samples.length >= 10"));
-  assert.ok(publicSource.includes("baseline.elbowAngle >= 138"));
-  assert.ok(publicSource.includes("'maintained-extension'"));
+test("Level 4 refuses to calibrate silently when the two poses are too similar", () => {
+  assert.ok(calibrationSource.includes("stage = 'retry'"));
+  assert.ok(calibrationSource.includes("insufficient-separation"));
+  assert.ok(calibrationSource.includes("too-similar"));
+  assert.ok(calibrationSource.includes("RETRY_TEXT"));
+  assert.match(calibrationSource, /兩個姿勢分別不足 · 請重做/);
+  assert.ok(publicSource.includes("const guide = level4Reach.guidance();"));
+});
+
+test("Level 4 offers a compact two-button therapist fallback", () => {
+  assert.ok(publicSource.includes('id="btnLevel4MarkFlexed"'));
+  assert.ok(publicSource.includes('id="btnLevel4MarkExtended"'));
+  assert.ok(publicSource.includes("level4ManualCapture('flexed')"));
+  assert.ok(publicSource.includes("level4ManualCapture('extended')"));
+  assert.ok(calibrationSource.includes("function markFlexed"));
+  assert.ok(calibrationSource.includes("function markExtended"));
+  assert.ok(publicSource.includes("min-height:56px"));
 });
 
 test("Level 4 debug mode exposes bedside calibration and movement diagnostics without changing tracking", () => {
@@ -98,8 +116,11 @@ test("Level 4 debug mode exposes bedside calibration and movement diagnostics wi
   assert.ok(publicSource.includes('panel.id = "level4DebugPanel"'));
   assert.ok(publicSource.includes('toast.id = "level4CalibToast"'));
   assert.ok(publicSource.includes("const timeoutMs = 8000"));
-  assert.ok(publicSource.includes("' framingReady:' + level4Reach.framingReady"));
-  assert.ok(publicSource.includes("' elbowAngle:' + (Number.isFinite(level4Reach.elbowAngle)"));
+  assert.ok(publicSource.includes("level4Reach=' + level4Reach.diagnosticsText()"));
+  assert.ok(publicSource.includes("level4ReachGuide='"));
+  assert.ok(publicSource.includes('segment(reach, "endpoints")'));
+  assert.ok(publicSource.includes('segment(reach, "separation")'));
+  assert.ok(publicSource.includes('field(reach, "stage")'));
   assert.ok(publicSource.includes("window.__level4Diagnostics = { update, panel, toast }"));
 });
 
@@ -109,8 +130,8 @@ test("Level 4 accepts a table-occluded arm and does not require the opposite sho
     publicSource,
     /\[arm\.shoulder, arm\.elbow, arm\.wrist\]\.every\(level4PosePointUsable\)/
   );
-  assert.ok(publicSource.includes("const otherShoulderVisible = level4PosePointUsable"));
-  assert.ok(publicSource.includes("upperArmLength * 1.35"));
+  assert.ok(calibrationSource.includes("const otherShoulderVisible = pointUsable(arm.otherShoulder)"));
+  assert.ok(calibrationSource.includes("upper * 1.35"));
 });
 
 test("Level 3 visual themes share the standard lateral pickup and drop engine", () => {
@@ -137,10 +158,10 @@ test("Level 3 changes dim sum, mahjong and playing-card artwork after each compl
 });
 
 test("Level 4 shoulder hiking freezes transport and alerts the therapist", () => {
-  assert.ok(publicSource.includes("const shoulderHike = Number.isFinite(baseline.shoulderBalance)"));
-  assert.ok(publicSource.includes("(baseline.shoulderBalance-sample.shoulderBalance) > 0.035"));
-  assert.ok(publicSource.includes("compoundProgress = level4Reach.progress"));
-  assert.match(publicSource, /患側聳肩 · 請治療師即時糾正/);
+  assert.ok(calibrationSource.includes("hikeTolerance"));
+  assert.ok(calibrationSource.includes("state.shoulderHike"));
+  assert.match(calibrationSource, /患側聳肩 · 請治療師即時糾正/);
+  assert.ok(publicSource.includes("setActionPrompt('患側聳肩', '請治療師即時糾正')"));
   assert.ok(publicSource.includes("classList.toggle('level4-movement-alert'"));
 });
 
@@ -162,12 +183,13 @@ test("all items stay clear of targets and can be parked in blank space", () => {
 
 test("offline worker forces the current build instead of serving the stale game", () => {
   assert.ok(publicSource.includes('updateViaCache:"none"'));
-  assert.match(serviceWorkerSource, /fthue-rehab-v19-20260819-level4-vertical-all-games/);
+  assert.match(serviceWorkerSource, /fthue-rehab-v21-20260819-level4-stabilized-arc-games/);
 });
 
 test("Level 4 exposes deterministic compound-movement QA hooks", () => {
   assert.ok(publicSource.includes("setLevel4Pose(spec)"));
   assert.ok(publicSource.includes("level4ReachState()"));
+  assert.ok(publicSource.includes("level4ManualCapture(which)"));
   assert.ok(publicSource.includes("resetLevel4Reach()"));
   assert.ok(publicSource.includes("wipeLevel4At(nx, ny, valid)"));
   assert.ok(publicSource.includes("setActionPrompt('iPad 同枱直放 · 約 1 米', '患側肩・手肘・手腕全部入鏡')"));
@@ -194,8 +216,10 @@ test("Level 4 wipe-window is an independent activity and preserves the other Lev
 });
 
 test("Level 4 fog advances only with elbow-gated real wrist movement", () => {
-  assert.ok(publicSource.includes("motion.elbowExtensionProgress >= 0.35"));
-  assert.ok(publicSource.includes("&& !motion.shoulderHike"));
+  // Category 2: adequate stabilized extension first, then the side-correct arc.
+  assert.ok(publicSource.includes("function level4PathGateOpen(motion)"));
+  assert.ok(publicSource.includes("const valid = !!(motion?.engaged && level4PathGateOpen(motion))"));
+  assert.ok(publicSource.includes("if(!motion?.calibrated || motion.shoulderHike) return false"));
   assert.ok(publicSource.includes("if(distance < 0.006 || distance > 0.18) return"));
   assert.ok(publicSource.includes("updateLevel4Wipe(cursorX/cw, cursorY/ch, level4Motion)"));
   assert.ok(!publicSource.includes("mapped.y = ch * 0.82 - level4Motion.progress"));

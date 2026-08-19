@@ -19,6 +19,7 @@ mkdir -p "$DIST"
 # --- public entry point + media -------------------------------------------
 cp "$ROOT/index.html" "$DIST/index.html"
 cp "$ROOT/level4-three-games-module.js" "$DIST/level4-three-games-module.js"
+cp "$ROOT/level4-elbow-calibration.js" "$DIST/level4-elbow-calibration.js"
 cp -R "$ROOT/img" "$DIST/img"
 cp "$ROOT/manifest.webmanifest" "$DIST/manifest.webmanifest"
 cp "$ROOT/service-worker.js" "$DIST/service-worker.js"

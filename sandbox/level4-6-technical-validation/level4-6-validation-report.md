@@ -1,12 +1,12 @@
 # Level 4–6 Technical Validation Report
 
-Generated: 2026-08-19T11:24:21.792Z
+Generated: 2026-08-19T12:54:43.810Z
 
-Result: **PASS** (138/138 checks passed)
+Result: **PASS** (143/143 checks passed)
 
 | FTHUE level | Passed | Failed |
 |---|---:|---:|
-| 4 | 60 | 0 |
+| 4 | 65 | 0 |
 | 5 | 40 | 0 |
 | 6 | 31 | 0 |
 
@@ -55,7 +55,11 @@ This is reproducible software technical verification only. It does not establish
 - PASS | Level 5 | safety | malformed grasp landmarks fail safely
 - PASS | Level 6 | safety | malformed pinch landmarks fail safely
 - PASS | Level 4 | layout | targets remain forward of tabletop source items
-- PASS | Level 4 | compound movement | 90-degree supported start calibrates the reach controller
+- PASS | Level 4 | two-pose calibration | flexed then extended capture calibrates and returns to progress 0
+- PASS | Level 4 | two-pose calibration | holding only the start pose waits for the extended capture
+- PASS | Level 4 | two-pose calibration | insufficient endpoint separation requests a retry with diagnostics
+- PASS | Level 4 | two-pose calibration | therapist buttons mark both endpoints manually
+- PASS | Level 4 | two-pose calibration | manual calibration still returns to 0 at the flexed endpoint
 - PASS | Level 4 | drift guard | small elbow-angle jitter cannot move the object by itself
 - PASS | Level 4 | completion gate | partial elbow extension moves upward but cannot complete placement
 - PASS | Level 4 | compound movement | shoulder elevation alone cannot lift the game object
@@ -73,9 +77,10 @@ This is reproducible software technical verification only. It does not establish
 - PASS | Level 4 | elbow carry | held standard Level 4 item moves upward on elbow extension
 - PASS | Level 4 | elbow carry | held standard Level 4 item moves downward on elbow flexion
 - PASS | Level 4 | independent mechanics | wipe-window keeps the real wrist path rather than a carry lane
+- PASS | Level 4 | ordered arc cycle | shoulder abduction activates the lateral signal only after the calibrated extension, holds reach steady, pauses on elbow flexion and ends at the flexed start
 - PASS | Level 4 | independent mechanics | bowling continues to consume the reach-return progress cycle
-- PASS | Level 4 | independent mechanics | mahjong-wash continues to advance from a real wrist path
-- PASS | Level 4 | independent mechanics | bus-pay continues to require a real cursor at the precision target
+- PASS | Level 4 | independent mechanics | mahjong-wash requires extension then the side-correct arc before washing
+- PASS | Level 4 | independent mechanics | bus-pay taps once per ordered reach-then-arc cycle at the reader
 - PASS | Level 4 | table occlusion | affected elbow extension remains playable when the opposite shoulder is hidden
 - PASS | Level 4 | flow | dwell pickup acquires an item
 - PASS | Level 4 | flow | correct placement increments the correct count
