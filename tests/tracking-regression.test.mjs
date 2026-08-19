@@ -39,7 +39,7 @@ test("portrait phones keep the camera inline in a compact preview instead of ful
   assert.match(publicSource, /height:min\(25dvh,210px\)/);
   assert.ok(publicSource.includes("videoEl.setAttribute('webkit-playsinline', '')"));
   assert.ok(publicSource.includes("videoEl.controls = false"));
-  assert.match(serviceWorkerSource, /fthue-rehab-v23-20260819-level4-real-life-gifs-adaptive/);
+  assert.match(serviceWorkerSource, /fthue-rehab-v24-20260819-level4-live-arc-release/);
 });
 
 test("Levels 3 and 4 can use Pose when tabletop hands occlude the finger model", () => {
@@ -183,7 +183,7 @@ test("all items stay clear of targets and can be parked in blank space", () => {
 
 test("offline worker forces the current build instead of serving the stale game", () => {
   assert.ok(publicSource.includes('updateViaCache:"none"'));
-  assert.match(serviceWorkerSource, /fthue-rehab-v23-20260819-level4-real-life-gifs-adaptive/);
+  assert.match(serviceWorkerSource, /fthue-rehab-v24-20260819-level4-live-arc-release/);
 });
 
 test("Level 4 exposes deterministic compound-movement QA hooks", () => {
@@ -197,7 +197,9 @@ test("Level 4 exposes deterministic compound-movement QA hooks", () => {
 
 test("Level 4 wipe-window is an independent activity and preserves the other Level 4 games", () => {
   assert.ok(publicSource.includes("const level4Wipe = {"));
-  assert.match(publicSource, /cols:18,\s*rows:12/);
+  assert.match(publicSource, /cols:16,\s*rows:10/);
+  assert.match(publicSource, /const LEVEL4_WIPE_BOUNDS = \{left:0\.07, top:0\.18, right:0\.93, bottom:0\.90\}/);
+  assert.match(publicSource, /const radius = 1\.80/);
   assert.match(publicSource, /cleanPercent >= 88/);
   assert.doesNotMatch(
     publicSource.slice(
@@ -219,8 +221,9 @@ test("Level 4 fog advances only with elbow-gated real wrist movement", () => {
   // Category 2: adequate stabilized extension first, then the side-correct arc.
   assert.ok(publicSource.includes("function level4PathGateOpen(motion)"));
   assert.ok(publicSource.includes("const valid = !!(motion?.engaged && level4PathGateOpen(motion))"));
-  assert.ok(publicSource.includes("if(!motion?.calibrated || motion.shoulderHike) return false"));
-  assert.ok(publicSource.includes("if(distance < 0.006 || distance > 0.18) return"));
+  assert.ok(publicSource.includes("if(!motion?.calibrated || motion.gameReady !== true || motion.shoulderHike) return false"));
+  assert.ok(publicSource.includes("if(distance < 0.006 || distance > 0.18){"));
+  assert.ok(publicSource.includes("level4Wipe.lastPoint = point;"));
   assert.ok(publicSource.includes("updateLevel4Wipe(cursorX/cw, cursorY/ch, level4Motion)"));
   assert.ok(!publicSource.includes("mapped.y = ch * 0.82 - level4Motion.progress"));
 });

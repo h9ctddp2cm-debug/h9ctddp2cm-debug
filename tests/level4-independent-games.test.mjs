@@ -39,7 +39,8 @@ test('actual tracking and render loops connect all three independent games', () 
 test('bowling requires a reach-return cycle and bus pay requires stable frames', () => {
   assert.match(moduleJs, /game\.phase = 'return'/);
   assert.match(moduleJs, /if\(level4MotionReachGate\(motion\)\)/);
-  assert.match(moduleJs, /if\(level4MotionReturnReady\(motion\)\)/);
+  assert.match(moduleJs, /const clearFlexionReversal = game\.peak >= 0\.62/);
+  assert.match(moduleJs, /if\(clearFlexionReversal \|\| level4MotionReturnReady\(motion\)\)/);
   assert.match(moduleJs, /game\.holdFrames < 4/);
   assert.match(moduleJs, /game\.armed = false/);
 });

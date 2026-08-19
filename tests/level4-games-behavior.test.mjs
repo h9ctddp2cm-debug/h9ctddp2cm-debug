@@ -48,17 +48,17 @@ function loadGames({theme = 'bowling'} = {}){
 }
 
 const reached = {
-  calibrated:true, engaged:true, progress:0.95, reachGate:true,
+  calibrated:true, gameReady:true, engaged:true, progress:0.95, reachGate:true,
   returnReady:false, shoulderHike:false, cyclePhase:'reached',
   arcCalibrated:true, arcProgress:0, arcActive:false,
 };
 const flexedStart = {
-  calibrated:true, engaged:false, progress:0.05, reachGate:false,
+  calibrated:true, gameReady:true, engaged:false, progress:0.05, reachGate:false,
   returnReady:true, shoulderHike:false, cyclePhase:'start',
   arcCalibrated:true, arcProgress:0, arcActive:false,
 };
 const onArc = {
-  calibrated:true, engaged:true, progress:0.92, reachGate:true,
+  calibrated:true, gameReady:true, engaged:true, progress:0.92, reachGate:true,
   returnReady:false, shoulderHike:false, cyclePhase:'arc-out',
   arcCalibrated:true, arcProgress:0.7, arcActive:true,
 };
@@ -104,6 +104,32 @@ test('bowling releases on the reach-return cycle, rolls to the pins and topples 
   assert.equal(state.bowlingPhase, 'reach');
   assert.equal(Number(state.bowlingPinsDown), 0, 'a fresh rack should be standing');
   assert.equal(Number(state.bowlingRounds), 1);
+});
+
+test('bowling releases immediately on a clear stabilized flexion reversal', () => {
+  const game = loadGames({theme:'bowling'});
+  game.qa.reset();
+  game.qa.bowling(reached);
+  let state = parse(game.qa.bowling({...reached, progress:0.92}));
+  assert.equal(state.bowlingPhase, 'return', 'small endpoint jitter must not release the ball');
+  state = parse(game.qa.bowling({
+    ...reached, progress:0.82, reachGate:true, returnReady:false, cyclePhase:'reached',
+  }));
+  assert.equal(state.bowlingPhase, 'rolling',
+    'a clear flexion reversal should release without waiting for full return');
+});
+
+test('all standalone Level 4 scoring stays locked until the bedside preflight passes', () => {
+  const bowling = loadGames({theme:'bowling'});
+  bowling.qa.reset();
+  const lockedReach = {...reached, gameReady:false, preflightPassed:false};
+  assert.equal(parse(bowling.qa.bowling(lockedReach)).bowlingPhase, 'reach');
+
+  const bus = loadGames({theme:'buspay'});
+  bus.qa.reset();
+  for(let i = 0; i < 8; i++) bus.qa.bus({...onArc, gameReady:false}, 0.50, 0.43);
+  assert.equal(bus.log.scores.length, 0);
+  assert.equal(bus.log.beeps, 0);
 });
 
 test('bowling pin physics is reproducible for the same reach peak', () => {
@@ -159,6 +185,12 @@ test('bus pay still scores when Web Audio is unavailable', () => {
   assert.equal(Number(state.busHits), 1, 'silent devices must still register the tap');
   assert.equal(state.busBeeped, 'false');
   assert.equal(game.log.scores.length, 1);
+});
+
+test('path-game titles state extension, maintained extension, outward arc and dwell order', () => {
+  assert.match(source, /先伸肘 → 保持伸肘 → 向外畫大弧/);
+  assert.match(source, /先伸肘 → 向外畫弧 → 對準停穩拍卡/);
+  assert.match(html, /先伸肘 → 向外畫弧 → 停穩拍卡/);
 });
 
 test('a single beep helper is used and it degrades gracefully', () => {

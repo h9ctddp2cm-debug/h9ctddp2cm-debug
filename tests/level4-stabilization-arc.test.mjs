@@ -229,6 +229,21 @@ test('elbow flexion during the lateral arc pauses and resets lateral scoring', (
   assert.match(snap.arc.reason, /arc-paused-elbow-flexed/);
 });
 
+test('a noisy whole-arm projection cannot cancel a maintained extended elbow arc', () => {
+  const {controller, poses} = calibrated();
+  feed(controller, poses.extended, 10);
+  const imageLm = landmarks(poses.arcOut, 'right');
+  const noisyWorld = landmarks(poses.arcOutFlexed, 'right');
+  for(let i = 0; i < 10; i++){
+    controller.update({lm:imageLm, worldLm:noisyWorld, side:'right', mirrorX:true});
+  }
+  const snap = controller.snapshot();
+  assert.equal(snap.arc.paused, false,
+    'the calibrated 2D elbow angle must outrank a distorted world projection');
+  assert.equal(snap.arcActive, true,
+    'maintained elbow extension followed by outward abduction should activate');
+});
+
 test('lateral abduction alone, without a prior reach, never activates the arc', () => {
   const {controller, poses} = calibrated();
   feed(controller, poses.flexed, 10);

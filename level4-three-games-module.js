@@ -77,6 +77,7 @@ function level4PinsSettled(game){
 const level4MiniGames = {
   bowling:{
     phase:'reach', peak:0, armProgress:0, ballProgress:0, rollStartedAt:0,
+    lastArmProgress:0,
     pins:0, rounds:0, readyForNextAt:0,
     impactAt:0, physicsAt:0, pinBodies:level4NewPinBodies(),
   },
@@ -91,6 +92,7 @@ const level4MiniGames = {
   reset(){
     Object.assign(this.bowling, {
       phase:'reach', peak:0, armProgress:0, ballProgress:0, rollStartedAt:0,
+      lastArmProgress:0,
       pins:0, rounds:0, readyForNextAt:0,
       impactAt:0, physicsAt:0, pinBodies:level4NewPinBodies(),
     });
@@ -139,6 +141,13 @@ function level4MotionReturnReady(motion){
   return level4MotionProgress(motion) <= 0.18;
 }
 
+/* Calibration alone does not authorise scoring. The shared controller exposes
+   gameReady only after its live three-cycle bedside proof has passed; losing
+   tracking also drops it immediately. */
+function level4MotionGameplayReady(motion){
+  return !!(motion?.calibrated && motion.gameReady === true && !motion.shoulderHike);
+}
+
 function level4MotionArcProgress(motion){
   if(!motion) return 0;
   if(Number.isFinite(motion.arcProgress)) return level4Runtime.clamp01(motion.arcProgress);
@@ -146,14 +155,17 @@ function level4MotionArcProgress(motion){
 }
 /* Path games: adequate stabilized extension first, then the outward path. */
 function level4MotionPathReady(motion){
-  if(!motion?.calibrated || motion.shoulderHike) return false;
+  if(!level4MotionGameplayReady(motion)) return false;
   const extensionSeen = level4MotionReachGate(motion)
     || motion.cyclePhase === 'reached'
     || motion.cyclePhase === 'arc-out'
     || motion.cyclePhase === 'arc-return';
   if(!extensionSeen) return false;
-  if(!motion.arcCalibrated) return level4MotionProgress(motion) >= 0.35;
-  return motion.arcActive === true || level4MotionArcProgress(motion) >= 0.12;
+  if(!motion.arcCalibrated) return false;
+  const extensionMaintained = motion.arcPaused !== true
+    && (!Number.isFinite(motion.extensionRetention) || motion.extensionRetention >= 0.45);
+  return extensionMaintained
+    && (motion.arcActive === true || level4MotionArcProgress(motion) >= 0.12);
 }
 
 function updateLevel4Bowling(motion){
@@ -179,13 +191,14 @@ function updateLevel4Bowling(motion){
     if(game.readyForNextAt && now >= game.readyForNextAt && level4PinsSettled(game)){
       Object.assign(game, {
         phase:'reach', peak:0, armProgress:0, ballProgress:0, rollStartedAt:0,
+        lastArmProgress:0,
         pins:0, readyForNextAt:0, impactAt:0, physicsAt:0,
         pinBodies:level4NewPinBodies(),
       });
     }
     return;
   }
-  if(!motion?.calibrated || motion.shoulderHike) return;
+  if(!level4MotionGameplayReady(motion)) return;
   // Before release, the ball follows the shared vertical reach signal:
   // elbow extension raises it up the lane and flexion brings it back down.
   // Elbow motion is never interpreted as lane X.
@@ -197,14 +210,19 @@ function updateLevel4Bowling(motion){
   }
   if(game.phase === 'return'){
     game.peak = Math.max(game.peak, progress);
-    // A full reach must be followed by elbow flexion/return. A single noisy
-    // extension frame can never release the ball.
-    if(level4MotionReturnReady(motion)){
+    // The shared progress is already median-filtered and direction-confirmed.
+    // Release as soon as a clear flexion reversal is visible instead of waiting
+    // until the participant has returned almost completely to the start pose.
+    const clearFlexionReversal = game.peak >= 0.62
+      && progress <= game.peak - 0.08
+      && progress < game.lastArmProgress - 0.015;
+    if(clearFlexionReversal || level4MotionReturnReady(motion)){
       game.phase = 'rolling';
       game.rollStartedAt = now;
       game.ballProgress = 0;
     }
   }
+  game.lastArmProgress = progress;
 }
 
 function updateLevel4MahjongWash(motion, nx, ny){
@@ -255,7 +273,7 @@ function updateLevel4MahjongWash(motion, nx, ny){
 function updateLevel4BusPay(motion, nx, ny){
   if(!level4Runtime.isBusPay()) return;
   const game = level4MiniGames.bus;
-  if(!motion?.calibrated || motion.shoulderHike) return;
+  if(!level4MotionGameplayReady(motion)) return;
   // Re-arm at the calibrated flexed start, tap once the shared reach gate opens.
   if(level4MotionReturnReady(motion) || level4MotionProgress(motion) < 0.22){
     game.armed = true;
@@ -438,7 +456,7 @@ function renderLevel4MahjongWash(ctx,cw,ch){
   level4Runtime.roundedRect(ctx,x,y+h+18,w,20,10);ctx.fill();
   ctx.fillStyle='#f0b83f';
   level4Runtime.roundedRect(ctx,x,y+h+18,w*game.progress,20,10);ctx.fill();
-  level4DrawTitle(ctx,cw,'洗麻雀',game.completed?'完成':'伸肘畫大弧');
+  level4DrawTitle(ctx,cw,'洗麻雀',game.completed?'完成':'先伸肘 → 保持伸肘 → 向外畫大弧');
   level4Runtime.drawVerticalReachGuide(ctx,cw,ch);
   ctx.restore();
 }
@@ -521,7 +539,7 @@ function renderLevel4BusPay(ctx,cw,ch){
     ctx.textAlign='center'; ctx.textBaseline='middle';
     ctx.fillText('嘟 · 已拍卡',cw*.50,ch*.098);
   }
-  level4DrawTitle(ctx,cw,'巴士拍卡','伸肘後向外拍讀卡器');
+  level4DrawTitle(ctx,cw,'巴士拍卡','先伸肘 → 向外畫弧 → 對準停穩拍卡');
   level4Runtime.drawVerticalReachGuide(ctx,cw,ch);
   const cursor = level4Runtime.cursor();
   if(cursor.detected && cursor.x>=0){

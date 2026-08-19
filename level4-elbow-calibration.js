@@ -94,20 +94,31 @@
     reachExit: 0.28,
     returnAt: 0.18,
     completeAt: 0.94,
+    // ---- bedside proof after the two manual endpoint captures -------------
+    // Calibration establishes the participant-specific mapping. It does not
+    // unlock a game until the live device has proved that mapping three times
+    // in the intended flexed -> extended -> flexed order.
+    verificationCycles: 3,
+    verificationMotionDelta: 0.06,
+    verificationReverseDelta: 0.10,
+    verificationStallFrames: 150,
     attemptsBeforeRetry: 2,
     hikeTolerance: 0.035,
     // ---- signal B: shoulder-abduction / lateral arc --------------------
     // Baseline is captured with the extended endpoint; the scale is the larger
     // of a clinical floor and the excursion the participant actually produces.
-    arcMinScale: 0.30,
-    arcEnter: 0.35,
-    arcExit: 0.15,
+    // A 45-degree bedside camera compresses the visible lateral excursion.
+    // Keep the floor small enough to recognise a deliberate supported sweep,
+    // while the separate jitter band still rejects landmark shimmer.
+    arcMinScale: 0.18,
+    arcEnter: 0.28,
+    arcExit: 0.12,
     // Lateral excursion above this fraction freezes reach progress so the arc
     // cannot make a carried item slide or shake.
-    arcHold: 0.12,
+    arcHold: 0.07,
     arcHoldStep: 0.03,
     // Safety release: the reach freeze can never latch forever.
-    arcHoldMaxFrames: 90,
+    arcHoldMaxFrames: 240,
     // Category 2 requires the calibrated elbow extension to be MAINTAINED
     // through the lateral arc. Retention is measured on the elbow joint angle
     // alone, because a joint angle survives shoulder abduction while whole-arm
@@ -291,6 +302,16 @@
       captureCount: { flexed: 0, extended: 0 },
       depthSource: 'none',
       movementSeen: false,
+      // A calibrated mapping is deliberately distinct from a gameplay unlock.
+      // These values are exposed in snapshots for deterministic bedside QA.
+      preflightPassed: false,
+      verificationCount: 0,
+      verificationPhase: 'await-flexed',
+      verificationFailure: '',
+      verificationMoved: false,
+      verificationPeak: 0,
+      verificationTrough: 1,
+      verificationActiveFrames: 0,
       history: [],
       samples: [],
       // anti-jitter bookkeeping
@@ -358,6 +379,14 @@
       state.captureCount = { flexed: 0, extended: 0 };
       state.depthSource = 'none';
       state.movementSeen = false;
+      state.preflightPassed = false;
+      state.verificationCount = 0;
+      state.verificationPhase = 'await-flexed';
+      state.verificationFailure = '';
+      state.verificationMoved = false;
+      state.verificationPeak = 0;
+      state.verificationTrough = 1;
+      state.verificationActiveFrames = 0;
       state.history = [];
       state.samples = [];
       state.rawWindow = [];
@@ -679,6 +708,9 @@
       state.calibrated = true;
       state.stage = 'ready';
       state.reason = source === 'manual' ? 'calibrated-manual' : 'calibrated';
+      // The capture itself ends at the extended pose. Never credit that pose as
+      // a verification repetition: require a live return to flexed first.
+      resetVerification('');
       state.samples = [];
       state.attempts = 0;
       state.captureCount.extended += 1;
@@ -691,32 +723,35 @@
        participant actually produces, with a clinical floor. The arc only counts
        while extension is adequate (the shared reach gate is open). */
     /* Elbow retention during the lateral arc.
-       The elbow-local signals (joint angle, shoulder-to-wrist span ratio, world
-       span when depth is available) are normalised along the direction learned
-       at calibration: 0 at the captured flexed start, 1 at the participant's own
-       captured extended endpoint. Anatomical full extension is never required.
-       Values above 1 are capped, so a differently oriented but still-extended
-       elbow is not punished, while a pose folding back toward the flexed start
-       reads low and pauses lateral scoring. The most conservative surviving
-       signal wins: the clinical brief is to pause rather than falsely credit an
-       arc performed with the flexor synergy creeping back in. */
-    const RETENTION_KEYS = ['angle', 'spanRatio', 'worldSpan'];
+       Joint angle is the primary signal because it remains anatomically local
+       when the shoulder abducts. Whole-arm image/world projections can shorten
+       sharply at a 45-degree camera even though the elbow is still extended, so
+       they are fallbacks only when angle did not separate at calibration. */
+    const RETENTION_FALLBACK_KEYS = ['worldSpan', 'spanRatio'];
+    function normalizedRetention(key, signals) {
+      const flexed = state.endpoints.flexed;
+      const extended = state.endpoints.extended;
+      const from = flexed && flexed[key];
+      const to = extended && extended[key];
+      const now = signals && signals[key];
+      if (!Number.isFinite(from) || !Number.isFinite(to) || !Number.isFinite(now)) return null;
+      const span = to - from;
+      if (Math.abs(span) < 1e-6) return null;
+      return clamp01((now - from) / span);
+    }
     function angleRetention(signals) {
       const flexed = state.endpoints.flexed;
       const extended = state.endpoints.extended;
       if (!flexed || !extended || !signals) return null;
-      let worst = null;
-      for (const key of RETENTION_KEYS) {
-        const from = flexed[key];
-        const to = extended[key];
-        const now = signals[key];
-        if (!Number.isFinite(from) || !Number.isFinite(to) || !Number.isFinite(now)) continue;
-        const span = to - from;
-        if (Math.abs(span) < 1e-6) continue;
-        const value = clamp01((now - from) / span);
-        if (worst === null || value < worst) worst = value;
+      if (state.qualified.indexOf('angle') >= 0) {
+        return normalizedRetention('angle', signals);
       }
-      return worst;
+      for (const key of RETENTION_FALLBACK_KEYS) {
+        if (state.qualified.indexOf(key) < 0) continue;
+        const value = normalizedRetention(key, signals);
+        if (Number.isFinite(value)) return value;
+      }
+      return normalizedRetention('angle', signals);
     }
 
     function updateArc(signals) {
@@ -834,6 +869,119 @@
       else state.cyclePhase = state.progress < config.reachExit ? 'flexing' : 'arc-return';
     }
 
+    function resetVerification(reason) {
+      state.preflightPassed = false;
+      state.verificationCount = 0;
+      state.verificationPhase = 'await-flexed';
+      state.verificationFailure = reason || '';
+      state.verificationMoved = false;
+      state.verificationPeak = state.progress;
+      state.verificationTrough = state.progress;
+      state.verificationActiveFrames = 0;
+    }
+
+    function failVerification(reason) {
+      resetVerification(reason);
+      state.reason = 'verification-' + reason;
+    }
+
+    /* The proof sequence deliberately uses the already calibrated, sign-safe
+       0..1 progress. Therefore "extension" is always increasing regardless of
+       whether the raw 2D elbow angle rises or falls on this participant's
+       camera view. A player must first return from the captured extended pose
+       to the captured flexed pose, then complete three full cycles. */
+    function updateVerification() {
+      if (state.preflightPassed) return;
+      const progress = state.progress;
+      if (state.verificationPhase === 'await-flexed') {
+        // At auto-calibration the stabiliser may still hold its previous zero
+        // for one frame while the captured endpoint is already extended. Check
+        // the fused instantaneous mapping as well, so that calibration itself
+        // can never arm or count a verification cycle.
+        if (progress <= config.returnAt && state.instantProgress <= config.returnAt) {
+          state.verificationPhase = 'await-extended';
+          state.verificationMoved = false;
+          state.verificationPeak = progress;
+          state.verificationActiveFrames = 0;
+          state.reason = 'verification-await-extension';
+        }
+        return;
+      }
+
+      if (state.verificationPhase === 'await-extended') {
+        state.verificationPeak = Math.max(state.verificationPeak, progress);
+        if (progress >= config.returnAt + config.verificationMotionDelta) {
+          state.verificationMoved = true;
+          // The therapist has followed the retry instruction and begun a new
+          // correctly directed extension; clear the prior retry banner now.
+          state.verificationFailure = '';
+        }
+        if (state.verificationMoved) state.verificationActiveFrames += 1;
+        if (state.verificationMoved
+          && progress < state.verificationPeak - config.verificationReverseDelta) {
+          failVerification('reversed');
+          return;
+        }
+        if (state.verificationMoved
+          && state.verificationActiveFrames > config.verificationStallFrames) {
+          failVerification('stalled');
+          return;
+        }
+        if (state.reachGate && progress >= config.reachEnter) {
+          state.verificationPhase = 'await-flexed-return';
+          state.verificationMoved = false;
+          state.verificationTrough = progress;
+          state.verificationActiveFrames = 0;
+          state.reason = 'verification-await-flexion';
+        }
+        return;
+      }
+
+      if (state.verificationPhase === 'await-flexed-return') {
+        // Compare against the previous trough before accepting the new sample.
+        // Updating the trough first makes `progress <= trough - delta`
+        // impossible and would hide a stalled/reversed flexion return.
+        const previousTrough = state.verificationTrough;
+        if (progress <= previousTrough - config.verificationMotionDelta) {
+          state.verificationMoved = true;
+        }
+        state.verificationTrough = Math.min(previousTrough, progress);
+        if (state.verificationMoved) state.verificationActiveFrames += 1;
+        if (state.verificationMoved
+          && progress > state.verificationTrough + config.verificationReverseDelta) {
+          failVerification('reversed');
+          return;
+        }
+        if (state.verificationMoved
+          && state.verificationActiveFrames > config.verificationStallFrames) {
+          failVerification('stalled');
+          return;
+        }
+        if (state.returnReady && progress <= config.returnAt) {
+          state.verificationCount += 1;
+          state.verificationMoved = false;
+          state.verificationActiveFrames = 0;
+          if (state.verificationCount >= config.verificationCycles) {
+            state.preflightPassed = true;
+            state.verificationPhase = 'complete';
+            state.verificationFailure = '';
+            state.reason = 'preflight-passed';
+          } else {
+            state.verificationPhase = 'await-extended';
+            state.verificationPeak = progress;
+            state.reason = 'verification-await-extension';
+          }
+        }
+      }
+    }
+
+    function recognisedState() {
+      if (!state.framingReady || !Number.isFinite(state.progress)) return null;
+      if (state.progress <= config.returnAt) return '下方起點';
+      if (state.progress >= config.completeAt) return '上方終點';
+      return '伸肘中';
+    }
+
     function updateGates(signals) {
       const fused = fuse(signals);
       state.signalProgress = fused.perSignal;
@@ -878,6 +1026,7 @@
         && state.instantProgress >= config.completeAt
         && state.progress >= config.completeAt;
       updateCycle();
+      updateVerification();
     }
 
     function update(input) {
@@ -895,6 +1044,12 @@
             ? (state.stage === 'retry' ? 'retry' : 'capture-extended')
             : 'framing';
           state.reason = 'framing';
+        } else {
+          // A missing limb must never leave a game interactable. The completed
+          // proof remains recorded, but gameReady (snapshot) drops until live
+          // tracking is restored; an unfinished proof reports an explicit retry.
+          if (!state.preflightPassed) state.verificationFailure = 'tracking-missing';
+          state.reason = state.preflightPassed ? 'tracking-missing' : 'verification-tracking-missing';
         }
         return state;
       }
@@ -906,7 +1061,8 @@
       });
       if (!signals) {
         state.framingReady = false;
-        state.reason = 'unstable-landmarks';
+        if (!state.preflightPassed) state.verificationFailure = 'tracking-missing';
+        state.reason = state.calibrated ? 'verification-tracking-missing' : 'unstable-landmarks';
         return state;
       }
       state.framingReady = true;
@@ -1001,6 +1157,7 @@
       state.endpoints.flexed = candidate;
       state.endpoints.extended = null;
       state.calibrated = false;
+      resetVerification('');
       state.weights = {};
       state.qualified = [];
       state.samples = [];
@@ -1073,7 +1230,53 @@
           en: 'Extend the elbow, then hold',
         };
       }
-      return { main: '', detail: '', en: '' };
+      if (!state.preflightPassed) {
+        if (state.verificationFailure === 'tracking-missing') {
+          return {
+            main: '追蹤中斷 · 遊戲已鎖定',
+            detail: '請讓患側肩、肘、腕重回鏡頭，再由下方起點重試',
+            en: 'Tracking missing — game locked; reframe and retry from the lower start',
+          };
+        }
+        if (state.verificationFailure === 'reversed') {
+          return {
+            main: '次序反轉 · 遊戲已鎖定',
+            detail: '請回到下方起點，按「伸肘到上方 → 屈肘回下方」重試',
+            en: 'Sequence reversed — return to lower start and retry in order',
+          };
+        }
+        if (state.verificationFailure === 'stalled') {
+          return {
+            main: '動作停滯 · 遊戲已鎖定',
+            detail: '請回到下方起點，以連續伸肘及屈肘重試',
+            en: 'Movement stalled — return to lower start and retry continuously',
+          };
+        }
+        if (state.verificationPhase === 'await-flexed') {
+          return {
+            main: '預檢 0/' + config.verificationCycles + ' · 回到下方起點',
+            detail: '準備開始三次「下方 → 上方 → 下方」驗證',
+            en: 'Preflight 0/' + config.verificationCycles + ' — return to lower start',
+          };
+        }
+        if (state.verificationPhase === 'await-extended') {
+          return {
+            main: '預檢 ' + state.verificationCount + '/' + config.verificationCycles + ' · 伸肘到上方終點',
+            detail: '保持支撐，進度必須由下方起點向上增加',
+            en: 'Extend to upper end — progress must increase from lower start',
+          };
+        }
+        return {
+          main: '預檢 ' + state.verificationCount + '/' + config.verificationCycles + ' · 屈肘回下方起點',
+          detail: '完成本次後，重複同一順序直至 3/3',
+          en: 'Flex back to lower start — repeat the same order until 3/3',
+        };
+      }
+      return {
+        main: '預檢完成 · 可開始遊戲',
+        detail: '伸肘向上／屈肘向下',
+        en: 'Preflight complete — extend up, flex down',
+      };
     }
 
     function separationText() {
@@ -1098,6 +1301,12 @@
         'stage:' + state.stage,
         'calibrated:' + state.calibrated,
         'framingReady:' + state.framingReady,
+        'gameReady:' + (state.preflightPassed && state.framingReady),
+        'preflightPassed:' + state.preflightPassed,
+        'verification:' + state.verificationCount + '/' + config.verificationCycles,
+        'verificationPhase:' + state.verificationPhase,
+        'verificationFailure:' + (state.verificationFailure || 'none'),
+        'recognisedState:' + (recognisedState() || 'tracking-missing'),
         'progress:' + state.progress.toFixed(3),
         'instant:' + state.instantProgress.toFixed(3),
         'engaged:' + state.engaged,
@@ -1161,6 +1370,17 @@
           reason: state.reason,
           calibrated: state.calibrated,
           framingReady: state.framingReady,
+          gameReady: state.preflightPassed && state.framingReady,
+          preflightPassed: state.preflightPassed,
+          verification: {
+            required: config.verificationCycles,
+            count: state.verificationCount,
+            phase: state.verificationPhase,
+            failure: state.verificationFailure,
+            locked: !(state.preflightPassed && state.framingReady),
+          },
+          recognisedState: recognisedState(),
+          recognizedState: recognisedState(),
           progress: state.progress,
           instantProgress: state.instantProgress,
           engaged: state.engaged,

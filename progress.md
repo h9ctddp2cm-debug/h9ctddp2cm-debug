@@ -2,6 +2,16 @@
 
 Original prompt: Fix Level 6–7 interactions: make light clothes-peg press detection easier without claiming tool/force sensing; keep bare three-finger pinch held through transport until a stabilized reopen; enlarge Level 6–7 dim sum and steamers 1.5× without collisions; and make Home/Back/Stop safely return to level selection.
 
+## 2026-08-19 Level 4 巴士拍卡示範動作更新
+- 巴士拍卡設定頁及主題卡改用新的合成實景 GIF，清楚示範「屈肘下方起點 → 向前伸肘 → 保持伸肘向外畫弧 → 對準讀卡器拍卡」。
+- 最終 GIF 已裁走頭面，只保留肩以下動作、卡及無品牌讀卡器；alt text 明確標示為合成實景示範，不會當作真人臨床證據。
+
+## 2026-08-19 Level 4 即時保齡出波及 45° 外展弧線修正
+- **保齡球即時出波**：完成個人化伸肘終點後，只要共享平滑進度出現明確屈肘反向（較 peak 回落至少 0.08，並持續向下），立即釋放保齡球；不再等待幾乎完全返回屈肘起點。細小 endpoint 抖動仍不會誤出波，原有 `returnReady` 保留作後備。
+- **外展保持伸肘**：抹窗、洗麻雀及巴士拍卡在外展階段，以個人化 2D 手肘關節角作主要保持訊號。45° 鏡頭下會隨肩外展明顯變形的 `spanRatio/worldSpan` 只在肘角未能於校準中分離時作後備，不再以最差投影訊號錯誤否定有效外展。
+- **較短外展幅度**：外展弧線的參與者化最低 scale 由 0.30 調至 0.18、啟動門檻由 0.35 調至 0.28，配合獨立 deadband；同時延長 arc hold 上限，讓慢速 supported tabletop 大圈不會中途失效。
+- **回歸保障**：新增「world projection 失真但肘角仍伸直」及「明確開始屈肘即出波」兩項 deterministic tests；cache 更新至 `fthue-rehab-v24-20260819-level4-live-arc-release`。
+
 ## 2026-08-19 Level 4 抗抖動、有序弧線相位及遊戲玩法升級
 - **訊號 A（伸手／reach）**：在兩姿勢校準的融合進度之上加入抗抖動處理 — 每個訊號 5 格滾動中位數、以校準幅度為基準的離群格拒收、死區、方向確認、隨幅度自適應 EMA、每格最大變化限制，以及屈肘 0／伸直 1 兩端的吸附。反應速度保留：一次順暢伸手（20 格）仍可達到 0.8 以上，快速反向亦即時跟隨。
 - **訊號 B（肩外展／弧線）**：新增獨立的側向訊號 `lateral`，以患側方向鏡像計算（右患側向右為外、左患側鏡像），完全不進入 reach 融合，因此畫弧不會令點心物件左右滑動或抖動。弧線期間 reach 會被凍結（`arc-hold`），避免手臂投影變形被誤判為屈肘回收。
@@ -946,3 +956,13 @@ Original prompt: Fix Level 6–7 interactions: make light clothes-peg press dete
 - **驗證結果**：`bash tools/checkjs.sh` 全部 OK（blocks 0–6）；`node --check service-worker.js` OK；`node --test tests/adaptive-progression.test.mjs` **18/18**；全套 `node --test tests/*.mjs` **125 項／122 通過／0 失敗／3 項為原有 skip**（同時修正兩項原有 cache 版本失敗）；`bash scripts/build-dist.sh` 產生 `dist/public` 120 files；`git diff --check` 通過。
 - 無相機瀏覽器煙霧測試（headless，無人物截圖）確認：「有效連續成功 7/15」、無效試作保留連續數、15 次後出現治療師參考卡、接受後階段由 Level 5 更新至 Level 6 並重設連續數，`pageerror`／`console.error` 均為空。
 - Service Worker 升級至 `fthue-rehab-v23-20260819-level4-real-life-gifs-adaptive`。
+
+
+## 2026-08-19 Level 4 bedside preflight repair
+
+- After the therapist marks the supported flexed start and extended end, Level 4 stays locked until three live, ordered 下方起點 → 上方終點 → 下方起點 checks complete. Participant-specific endpoint calibration remains sign-safe: flexed maps to progress 0 and extended to progress 1 even if the raw 2D elbow-angle sign is inverted.
+- The calibration strip visibly shows the current raw 2D elbow angle (when tracked), normalised progress, exact recognised state (下方起點 / 伸肘中 / 上方終點) and the 0/3–3/3 verification count. Missing tracking, reversed order and stalled motion keep the game locked and show retry guidance. QA snapshots expose gameReady, preflight, verification and state fields.
+- Wipe-window, wash-mahjong and bus-pay require preflight pass plus extension → maintained extension → outward arc; bus-pay additionally requires target dwell. Wipe coverage is wider (16×10 grid, broader active region, 1.80-cell brush) while an updated movement anchor prevents stationary jitter accumulating. Bowling releases on a clear valid flexion reversal after extension.
+- Deterministic tests cover manual endpoint capture, three ordered cycles, inverted raw-angle direction, UI readouts, missing/reversed/stalled tracking, preflight gameplay lock, path wording and immediate bowling release. A flexion-return verifier bug was corrected so a genuine partial return can time out as stalled.
+- Validation: node --test tests/*.mjs = 130 passed, 0 failed, 3 skipped; bash tools/checkjs.sh; node --check level4-elbow-calibration.js; node --check level4-three-games-module.js; bash scripts/build-dist.sh (120 files, 71M); and git diff --check all passed.
+- Bedside caveat: software coverage is synthetic only. Confirm tracking, available elbow excursion and all three preflight cycles on the intended iPad, seating and lighting before clinical use. No real-person media was added or reviewed.

@@ -302,8 +302,8 @@ test('all five Level 4 games consume the same normalised progress', () => {
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   assert.match(html, /y:carry\.pickupY \+ \(carry\.targetY-carry\.pickupY\) \* progress/);
   assert.match(html, /const progress = clamp01\(level4Reach\.progress\)/);
-  assert.match(html, /level4Reach\.completionReady && level4Reach\.reachGate/);
-  assert.match(html, /level4Reach\.returnReady && !level4Reach\.engaged/);
+  assert.match(html, /level4Reach\.gameReady && level4Reach\.completionReady && level4Reach\.reachGate/);
+  assert.match(html, /level4Reach\.gameReady && level4Reach\.returnReady && !level4Reach\.engaged/);
   // wipe window is a Category 2 path game: extension first, then the arc.
   assert.match(html, /function level4PathGateOpen\(motion\)/);
   assert.match(html, /const valid = !!\(motion\?\.engaged && level4PathGateOpen\(motion\)\)/);
@@ -313,7 +313,8 @@ test('all five Level 4 games consume the same normalised progress', () => {
   assert.match(gamesSource, /function level4MotionReturnReady\(motion\)/);
   assert.match(gamesSource, /const progress = level4MotionProgress\(motion\)/);
   assert.match(gamesSource, /function level4MotionPathReady\(motion\)/);
-  assert.match(gamesSource, /level4MotionProgress\(motion\) >= 0\.35/);
+  assert.match(gamesSource, /function level4MotionGameplayReady\(motion\)/);
+  assert.match(gamesSource, /motion\.gameReady === true/);
   assert.match(gamesSource, /const onPath = level4MotionPathReady\(motion\)/);
   // Elbow extension is never mapped to horizontal movement.
   assert.doesNotMatch(gamesSource, /mapped\.x[\s\S]*motion\.progress/);
