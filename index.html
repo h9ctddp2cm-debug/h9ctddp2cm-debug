@@ -5024,7 +5024,9 @@ function detectWrist(videoEl){
   }
   if(results && results.landmarks && results.landmarks.length > 0){
     const lm = results.landmarks[0]; // 第一隻手
-    const required = state.gameType === 'pinch'
+    const required = isPegMode()
+      ? [0,2,4,5,8,9,12,17]
+      : state.gameType === 'pinch'
       ? [0,4,5,8,9,12,17]
       : isChopsticksMode()
         ? [0,5,8,9,13,17]
@@ -5044,6 +5046,14 @@ function detectWrist(videoEl){
     // palm center = average of landmarks 0,5,9,13,17
     const palmX = (lm[0].x + lm[5].x + lm[9].x + lm[13].x + lm[17].x) / 5;
     const palmY = (lm[0].y + lm[5].y + lm[9].y + lm[13].y + lm[17].y) / 5;
+    if(isPegMode()){
+      const peg = computePegPressState(lm, isGrasping);
+      return { detected:true, nx:interactionX(palmX), ny:palmY,
+        isGrasping:stabiliseDetectedGesture(peg.isPressing, 'peg'),
+        graspScore:peg.score,
+        isOpenPrep:!peg.isPressing, pegAperture:peg.aperture, lm,
+        source:'peg-aperture' };
+    }
     if(state.gameType === 'pinch'){
       // Bare-hand FTHUE 6/7: cursor is the centroid of thumb, index and middle fingertips.
       const pinch = computePinchState(lm, isGrasping);
@@ -5143,6 +5153,39 @@ function computeGraspScore(lm, isGraspingPrev){
       ? graspThresholds.personalGraspExit : graspThresholds.personalGraspEnter);
   }
   return { isGrasping, score, valid:true };
+}
+
+/* Clothes-peg mode needs a dedicated light-press signal. A peg may only move
+   the thumb and index/middle fingertips a short distance, so Level 5's
+   whole-hand curl rule misses clinically appropriate light presses. Measure
+   the smallest visible thumb-to-finger aperture relative to hand scale and
+   use the participant's relaxed/pressed calibration whenever available. */
+function computePegPressState(lm, isPressingPrev){
+  if(!hasFiniteHandLandmarks(lm, [0,4,5,8,9,12])){
+    return { isPressing:false, aperture:null, score:0, valid:false };
+  }
+  const distance = (a,b)=>Math.hypot(a.x-b.x, a.y-b.y, (a.z-b.z) * 0.20);
+  const handScale = Math.max(
+    distance(lm[0], lm[9]),
+    distance(lm[5], lm[9]) * 2.2,
+    0.001
+  );
+  const indexGap = distance(lm[4], lm[8]) / handScale;
+  const middleGap = distance(lm[4], lm[12]) / handScale;
+  const aperture = Math.min(indexGap, middleGap * 0.92);
+  const score = clamp01((0.98 - aperture) / 0.78);
+  const thresholds = research.active ? research : state;
+  const personal = Number.isFinite(thresholds.personalGraspEnter) &&
+    Number.isFinite(thresholds.personalGraspExit);
+  const enter = personal ? thresholds.personalGraspEnter : 0.24;
+  const exit = personal ? thresholds.personalGraspExit : 0.18;
+  const isPressing = personal
+    ? score >= (isPressingPrev ? exit : enter)
+    : aperture <= (isPressingPrev ? 0.50 : 0.43);
+  return {
+    isPressing,
+    aperture, score, valid:true
+  };
 }
 
 /* Three-finger pinch detection for bare-hand FTHUE 6/7.
@@ -5334,7 +5377,11 @@ function startCalibLoop(){
               // A clinically appropriate light pinch may use only part of the
               // available aperture. Do not require a near-tip-to-tip closure.
               ? value <= openMean - Math.max(0.020, openMean * 0.035)
-              : value >= openMean + 0.035;
+              : isPegMode()
+                // Pressing a low-resistance peg produces much less whole-hand
+                // change than a grasp. Accept a small but sustained difference.
+                ? value >= openMean + Math.max(0.010, openMean * 0.025)
+                : value >= openMean + 0.035;
             if(changedEnough){
               c.closedScores.push(value);
               if(!c.closedStart) c.closedStart = now;
@@ -5354,11 +5401,11 @@ function startCalibLoop(){
             c.openScores.length && c.closedScores.length){
           const openMean = medianValue(c.openScores);
           const closedMean = medianValue(c.closedScores);
-          const gap = Math.max(0.04, closedMean - openMean);
-          thresholds.personalGraspEnter = openMean + gap * 0.48;
+          const gap = Math.max(isPegMode() ? 0.012 : 0.04, closedMean - openMean);
+          thresholds.personalGraspEnter = openMean + gap * (isPegMode() ? 0.34 : 0.48);
           thresholds.personalGraspExit = Math.min(
-            thresholds.personalGraspEnter - 0.015,
-            openMean + gap * 0.38,
+            thresholds.personalGraspEnter - (isPegMode() ? 0.006 : 0.015),
+            openMean + gap * (isPegMode() ? 0.20 : 0.38),
           );
         }
         if(c.ready && state.gameType === 'pinch' &&
@@ -11968,6 +12015,16 @@ window.__qa = {
       const output = computeGraspScore(lm, !!previous);
       state.graspType = priorType;
       return output;
+    },
+    peg(aperture, previous=false){
+      const lm = Array.from({length:21}, ()=>({x:0,y:0,z:0}));
+      lm[0] = {x:0,y:0,z:0};
+      lm[5] = {x:0.24,y:0,z:0};
+      lm[9] = {x:1,y:0,z:0};
+      lm[4] = {x:0,y:0,z:0};
+      lm[8] = {x:Number(aperture),y:0,z:0};
+      lm[12] = {x:Number(aperture) / 0.92,y:0,z:0};
+      return computePegPressState(lm, !!previous);
     },
     invalid(kind='pinch'){
       const lm = Array.from({length:21}, ()=>({x:0,y:0,z:0}));

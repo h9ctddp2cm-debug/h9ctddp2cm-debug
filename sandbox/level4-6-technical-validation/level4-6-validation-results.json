@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-18T15:56:37.076Z",
+  "generated_at": "2026-08-19T10:20:19.372Z",
   "base_url": "http://127.0.0.1:4173",
   "scope": "Independent technical verification for FTHUE Levels 4, 5, and 6",
   "limitation": "Not clinical validation; Level 6 aperture detection does not measure pinch force.",
@@ -408,7 +408,7 @@
       "passed": true,
       "details": {
         "calibrated": true,
-        "progress": 0.4164248601803089,
+        "progress": 0.41072781697276667,
         "engaged": true,
         "shoulderFlexProgress": 1,
         "elbowExtensionProgress": 0.4257200359399831,
@@ -492,7 +492,7 @@
       "passed": true,
       "details": {
         "calibrated": true,
-        "progress": 0.005133213725829009,
+        "progress": 0.0031825925100139856,
         "engaged": true,
         "shoulderFlexProgress": 1,
         "elbowExtensionProgress": 0,
@@ -520,7 +520,7 @@
       "passed": true,
       "details": {
         "calibrated": true,
-        "progress": 0.000010267892433314629,
+        "progress": 0.00000636609330865507,
         "engaged": false,
         "shoulderFlexProgress": 0,
         "elbowExtensionProgress": 0,
@@ -648,8 +648,8 @@
             "r": 68.64
           },
           {
-            "label": "叉燒包",
-            "type": "charsiu",
+            "label": "糯米雞",
+            "type": "lotusrice",
             "x": 708,
             "y": 656,
             "r": 68.64
@@ -720,8 +720,8 @@
             "r": 68.64
           },
           {
-            "label": "叉燒包",
-            "type": "charsiu",
+            "label": "糯米雞",
+            "type": "lotusrice",
             "x": 708,
             "y": 656,
             "r": 68.64
@@ -819,15 +819,15 @@
         },
         "items": [
           {
-            "label": "叉燒包",
-            "type": "charsiu",
+            "label": "糯米雞",
+            "type": "lotusrice",
             "x": 259.6,
             "y": 344.4,
             "r": 77.88000000000001
           },
           {
-            "label": "叉燒包",
-            "type": "charsiu",
+            "label": "糯米雞",
+            "type": "lotusrice",
             "x": 590,
             "y": 442.8,
             "r": 77.88000000000001
@@ -898,15 +898,15 @@
         },
         "items": [
           {
-            "label": "叉燒包",
-            "type": "charsiu",
+            "label": "糯米雞",
+            "type": "lotusrice",
             "x": 259.6,
             "y": 344.4,
             "r": 77.88000000000001
           },
           {
-            "label": "叉燒包",
-            "type": "charsiu",
+            "label": "糯米雞",
+            "type": "lotusrice",
             "x": 590,
             "y": 442.8,
             "r": 77.88000000000001
@@ -1011,11 +1011,11 @@
         },
         "items": [
           {
-            "label": "蝦餃",
-            "type": "hargau",
+            "label": "燒賣",
+            "type": "siumai",
             "x": 259.6,
             "y": 344.4,
-            "r": 76
+            "r": 66
           },
           {
             "label": "燒賣",
@@ -1090,11 +1090,11 @@
         },
         "items": [
           {
-            "label": "蝦餃",
-            "type": "hargau",
+            "label": "燒賣",
+            "type": "siumai",
             "x": 259.6,
             "y": 344.4,
-            "r": 76
+            "r": 66
           },
           {
             "label": "燒賣",
