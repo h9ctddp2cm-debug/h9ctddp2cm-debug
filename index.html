@@ -167,6 +167,42 @@ html,body{
   box-shadow:inset 0 0 0 10px rgba(181,44,37,.92);
   animation:level4AlertPulse .72s ease-in-out infinite alternate;
 }
+/* Compact Level 4 two-pose calibration strip: two large therapist buttons plus
+   one guidance line and one live signal line. No extra page, no long text. */
+/* Compact Level 4 scenario demo: inline in the setup flow, never an overlay. */
+.level4-scenario-demo{
+  margin:8px auto 4px; padding:0; max-width:340px; text-align:center;
+}
+.level4-scenario-demo[hidden]{ display:none; }
+.level4-scenario-demo img{
+  width:100%; max-height:170px; object-fit:cover; border-radius:14px;
+  border:2px solid rgba(0,0,0,.10); background:#000;
+}
+.level4-scenario-demo figcaption{
+  margin-top:4px; font-size:13px; font-weight:800; color:#4a4034;
+}
+.level4-calib{
+  position:absolute; left:12px; top:12px; z-index:30;
+  display:none; flex-direction:column; gap:6px;
+  width:min(320px,calc(100% - 24px));
+  padding:8px 10px; border-radius:14px;
+  background:rgba(255,255,255,.94); border:1px solid rgba(26,107,90,.34);
+  box-shadow:0 3px 12px rgba(0,0,0,.18); color:#173f39;
+}
+.level4-calib.show{ display:flex; }
+.level4-calib-actions{ display:flex; gap:8px; }
+.level4-calib-actions button{
+  flex:1; min-height:56px; padding:10px 8px; cursor:pointer;
+  border:2px solid #145a4d; border-radius:12px; background:#e8f6f1;
+  color:#0C3F35; font:900 17px/1.2 inherit;
+}
+.level4-calib-actions button:active{ background:#c9ebe0; }
+.level4-calib-hint{ font-size:14px; font-weight:850; line-height:1.35; }
+.level4-calib-hint .en{ display:block; font-size:12px; font-weight:700; color:#4c625e; }
+.level4-calib-diag{
+  font-size:11px; font-weight:700; line-height:1.3; color:#4c625e;
+  white-space:pre-wrap; word-break:break-all;
+}
 .cook-motion-guide{
   position:absolute; top:248px; right:14px; z-index:23;
   display:none; width:clamp(118px,18vw,188px); aspect-ratio:4/3;
@@ -1262,6 +1298,12 @@ html,body{
     </div>
 
     <div class="context-strip" id="settingsContext">FTHUE Level 4 · 桌面中線</div>
+    <figure class="level4-scenario-demo" id="level4ScenarioDemo" hidden
+      data-testid="figure-level4-scenario-demo">
+      <img id="level4ScenarioDemoImg" alt="" loading="lazy" decoding="async"
+        data-testid="gif-level4-scenario">
+      <figcaption id="level4ScenarioDemoCaption">動作示範</figcaption>
+    </figure>
 
     <div class="card collapsible" data-accordion="affected-side">
       <h2><span>患側方向</span><span class="selected-preview" id="preview-affected-side">請選擇</span></h2>
@@ -1447,6 +1489,17 @@ html,body{
         data-testid="indicator-silent-recording">無聲錄影中 · 不錄頭部</div>
       <div class="trial-mode-indicator" id="trialModeIndicator" role="status" aria-live="polite"
         data-testid="indicator-trial-mode">試玩 · 不錄影／不提示</div>
+      <div class="level4-calib" id="level4CalibBar" role="group" aria-label="Level 4 校準"
+        data-testid="panel-level4-calibration">
+        <div class="level4-calib-actions">
+          <button type="button" id="btnLevel4MarkFlexed"
+            data-testid="button-level4-mark-flexed">記錄屈肘起點<br>Mark start</button>
+          <button type="button" id="btnLevel4MarkExtended"
+            data-testid="button-level4-mark-extended">記錄伸直終點<br>Mark end</button>
+        </div>
+        <div class="level4-calib-hint" id="level4CalibHint" role="status" aria-live="polite"></div>
+        <div class="level4-calib-diag" id="level4CalibDiag"></div>
+      </div>
       <div class="hud">
         <div class="hud-item"><span class="hud-label">得分</span><span class="hud-value" id="hudScore">0</span></div>
         <div class="hud-item"><span class="hud-label">正確</span><span class="hud-value" id="hudCorrect">0</span></div>
@@ -1958,6 +2011,9 @@ html,body{
 </div>
 
 <!-- MediaPipe loaded via ES module in JS -->
+<!-- Level 4 participant-specific two-pose elbow calibration (shared by all
+     five Level 4 games and by the deterministic Node tests). -->
+<script src="level4-elbow-calibration.js"></script>
 <script>
 (function(){
 "use strict";
@@ -3953,7 +4009,29 @@ function selectActivity(themeId){
   document.getElementById('settingsContext').textContent =
     currentLevel().tag + ' · ' + th.title + ' · ' + th.actionLabelFor(state.level);
   renderToolModeSettings();
+  renderLevel4ScenarioDemo();
   showScreen('start');
+}
+
+/* Compact, non-blocking demo: it sits in the normal setup flow above the
+   settings cards, never overlays the game canvas, and hides itself if the
+   asset is missing. */
+function renderLevel4ScenarioDemo(){
+  const figure = document.getElementById('level4ScenarioDemo');
+  const img = document.getElementById('level4ScenarioDemoImg');
+  const caption = document.getElementById('level4ScenarioDemoCaption');
+  if(!figure || !img) return;
+  const gif = String(state.level) === '4' ? level4ScenarioGif(state.theme) : null;
+  if(!gif){
+    figure.hidden = true;
+    img.removeAttribute('src');
+    return;
+  }
+  figure.hidden = false;
+  img.src = gif.src;
+  img.alt = gif.alt;
+  if(caption) caption.textContent = getTheme().actionLabelFor(state.level);
+  img.onerror = ()=>{ figure.hidden = true; };
 }
 
 function renderActivityLibrary(){
@@ -4558,6 +4636,13 @@ document.getElementById('btnRulesConfirm').addEventListener('click', ()=>{
   try{ window.speechSynthesis.cancel(); }catch(e){}
   startSelectedGame();
 });
+
+// Compact therapist fallback for Level 4: mark the current pose as the flexed
+// start or the extended end when automatic stable capture struggles bedside.
+document.getElementById('btnLevel4MarkFlexed')
+  .addEventListener('click', ()=>level4ManualCapture('flexed'));
+document.getElementById('btnLevel4MarkExtended')
+  .addEventListener('click', ()=>level4ManualCapture('extended'));
 
 // Retry：以相同活動及設定重玩（重新校準相機後即可開始）
 document.getElementById('btnRetry').addEventListener('click', async ()=>{
@@ -5873,6 +5958,25 @@ const BASE_THEME = {
 };
 function mkTheme(def){ return Object.assign(Object.create(BASE_THEME), def); }
 
+/* Level 4 scenario demonstrations. These privacy-safe illustrated GIFs are
+   generated from drawing primitives only, contain no captured human media,
+   and are stored locally for offline use. */
+const LEVEL4_SCENARIO_GIFS = {
+  dimsum:{src:'img/advanced/level4_lateral_forward_slide_v2.gif',
+    alt:'患側手肘由屈曲起始，前臂沿枱面向前滑'},
+  wipewindow:{src:'img/advanced/level4_lateral_forward_slide_v2.gif',
+    alt:'伸直手肘後向患側畫大弧抹窗'},
+  bowling:{src:'img/advanced/level4_bowling_illustrated.gif',
+    alt:'保齡球沿球道推出撞倒球瓶'},
+  mahjongwash:{src:'img/advanced/level4_mahjongwash_illustrated.gif',
+    alt:'單手前臂放在滑板上沿枱面畫弧洗麻雀'},
+  buspay:{src:'img/advanced/level4_buspay_illustrated.gif',
+    alt:'伸手向前在巴士讀卡器拍卡'},
+};
+function level4ScenarioGif(themeId = state.theme){
+  return LEVEL4_SCENARIO_GIFS[themeId] || null;
+}
+
 const THEMES = {
   wipewindow: mkTheme({
     id:'wipewindow', title:'抹窗擦霧',
@@ -5888,8 +5992,8 @@ const THEMES = {
     id:'bowling', title:'保齡球',
     goal:'幅度控制：推出再慢慢收回',
     itemWord:'保齡球', difficulty:'容易', targetStyle:'panel',
-    thumbnail:'img/advanced/level4_cartoon_side_forward.png',
-    thumbnailAlt:'患手沿桌面向前伸肘',
+    thumbnail:'img/advanced/level4_bowling_illustrated.gif',
+    thumbnailAlt:'保齡球沿球道撞倒球瓶',
     verbFor(){ return '向前伸肘再收手'; },
     actionLabelFor(){ return '完整向前伸肘及收手'; },
     categoriesFor(){ return []; },
@@ -5898,8 +6002,8 @@ const THEMES = {
     id:'mahjongwash', title:'洗麻雀',
     goal:'側向控制：沿枱面穩定掃動',
     itemWord:'麻雀', difficulty:'中等', targetStyle:'panel',
-    thumbnail:'img/advanced/real_mahjong_tiles.png',
-    thumbnailAlt:'沿桌面畫弧洗麻雀',
+    thumbnail:'img/advanced/level4_mahjongwash_illustrated.gif',
+    thumbnailAlt:'沿桌面畫大弧洗麻雀',
     verbFor(){ return '伸肘畫大弧'; },
     actionLabelFor(){ return '沿桌面連續畫大弧'; },
     categoriesFor(){ return []; },
@@ -5908,8 +6012,8 @@ const THEMES = {
     id:'buspay', title:'巴士拍卡',
     goal:'終點準確：伸到目標並停穩',
     itemWord:'讀卡器', difficulty:'中等', targetStyle:'panel',
-    thumbnail:'img/advanced/thumb_card_heart.png',
-    thumbnailAlt:'向前伸手拍卡',
+    thumbnail:'img/advanced/level4_buspay_illustrated.gif',
+    thumbnailAlt:'在巴士內向讀卡器拍卡',
     verbFor(){ return '伸肘拍卡'; },
     actionLabelFor(){ return '向前伸肘對準讀卡器'; },
     categoriesFor(){ return []; },
@@ -6303,6 +6407,25 @@ function playCorrectSound(){
     });
   }catch(e){}
 }
+/* Single short '嘟' confirmation used by 巴士拍卡. Degrades silently when Web
+   Audio is unavailable or still suspended. */
+function playBusTapBeep(){
+  try{
+    const ctx = getAudioCtx();
+    if(ctx.state === 'suspended' && typeof ctx.resume === 'function') ctx.resume();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.type = 'square';
+    o.frequency.setValueAtTime(1180, ctx.currentTime);
+    g.gain.setValueAtTime(0.0001, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.30, ctx.currentTime + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0008, ctx.currentTime + 0.18);
+    o.start(ctx.currentTime);
+    o.stop(ctx.currentTime + 0.20);
+    return true;
+  }catch(e){ return false; }
+}
 function playWrongSound(){
   try{
     const ctx = getAudioCtx();
@@ -6370,6 +6493,7 @@ function initGame(){
   level4Reach.reset();
   level4Wipe.reset();
   level4MiniGames.reset();
+  level4UpdateCalibrationBar();
   level3RoundVariant = null;
   level3PreviousVariantType = '';
   if(isLevel3Tabletop()) chooseLevel3RoundVariant();
@@ -7031,59 +7155,208 @@ function updateLevel3LateralController(lm, cw, ch){
   return level3Lateral;
 }
 
-/* ---------- Level 4 compound reach controller ----------
-   A single wrist/palm Y coordinate cannot distinguish true forward reach from
-   shoulder hiking. The Level 4 cursor therefore advances only when the
-   affected arm shows BOTH shoulder flexion and elbow extension relative to
-   the participant's supported starting posture. */
+/* ---------- Level 4 shared two-pose elbow controller ----------
+   Front-facing iPad views make a single 2D elbow angle unreliable, so Level 4
+   no longer guesses thresholds. `level4-elbow-calibration.js` captures the
+   participant's own supported flexed/start pose and extended/end pose, fuses
+   several scale-free signals (2D elbow angle, arm-span ratio, MediaPipe world
+   span, wrist-to-shoulder radial distance, image-space depth) using the
+   separation and direction observed at those endpoints, and emits ONE
+   normalised progress value: flexed = 0, extended = 1.
+
+   `level4Reach` is a live mirror of that controller state. Every Level 4 game
+   reads the same mirror, so extension always means forward/up progress and
+   flexion always means the return, and elbow motion is never interpreted as
+   horizontal cursor movement. */
+const level4Calibration = window.Level4ElbowCalibration || null;
+const level4Controller = level4Calibration ? level4Calibration.createController() : null;
 const level4Reach = {
-  baseline:null,
-  samples:[],
-  progress:0,
-  engaged:false,
-  peakElbowAngle:null,
-  peakShoulderFlexProgress:0,
-  shoulderFlexProgress:0,
-  elbowExtensionProgress:0,
-  elbowAngle:null,
-  elbowAngleHistory:[],
-  movementConfirmFrames:0,
-  fullExtensionAngle:null,
-  completionReady:false,
-  elbowMode:'waiting',
-  forwardAxis:null,
-  forwardAxisPeak:0,
-  forwardScale:0.12,
-  directionMode:'waiting',
-  shoulderHike:false,
-  framingReady:false,
-  warning:'',
+  stage:'framing',
+  reason:level4Controller ? 'framing' : 'calibration-module-missing',
   calibrated:false,
+  framingReady:false,
+  progress:0,
+  instantProgress:0,
+  engaged:false,
+  reachGate:false,
+  returnReady:true,
+  completionReady:false,
+  shoulderHike:false,
+  warning:'',
+  elbowAngle:null,
+  spanRatio:null,
+  worldSpan:null,
+  radial:null,
+  depthZ:null,
+  depthSource:'none',
+  weights:{},
+  separation:{},
+  signalProgress:{},
+  endpoints:{flexed:null, extended:null},
+  qualified:[],
+  lacking:[],
+  manual:{flexed:false, extended:false},
+  retryCount:0,
+  captureCount:{flexed:0, extended:0},
+  movementSeen:false,
+  // Signal B: shoulder-abduction / lateral arc. Only the path games
+  // (抹窗 wipewindow, 洗麻雀 mahjongwash, 巴士拍卡 buspay) consume it; 茶樓 dimsum and
+  // 保齡球 bowling use the linear flexion/extension progress alone.
+  lateral:null,
+  arcProgress:0,
+  arcInstant:0,
+  arcActive:false,
+  arcHold:false,
+  arcCalibrated:false,
+  arcBaseline:null,
+  arcScale:null,
+  cyclePhase:'start',
+  cycleOrdered:false,
+  cycleComplete:false,
+  cycleCount:0,
+  stabilizer:null,
+  side:'right',
+  // Legacy aliases: existing Level 4 consumers keep reading these names, but
+  // both now come from the same fused two-pose progress.
+  elbowExtensionProgress:0,
+  shoulderFlexProgress:0,
   reset(){
-    this.baseline = null;
-    this.samples = [];
-    this.progress = 0;
-    this.engaged = false;
-    this.peakElbowAngle = null;
-    this.peakShoulderFlexProgress = 0;
-    this.shoulderFlexProgress = 0;
-    this.elbowExtensionProgress = 0;
-    this.elbowAngle = null;
-    this.elbowAngleHistory = [];
-    this.movementConfirmFrames = 0;
-    this.fullExtensionAngle = null;
-    this.completionReady = false;
-    this.elbowMode = 'waiting';
-    this.forwardAxis = null;
-    this.forwardAxisPeak = 0;
-    this.forwardScale = 0.12;
-    this.directionMode = 'waiting';
-    this.shoulderHike = false;
-    this.framingReady = false;
-    this.warning = '';
-    this.calibrated = false;
-  }
+    if(level4Controller) level4Controller.reset();
+    level4SyncReachMirror();
+    level4UpdateCalibrationBar();
+    return this;
+  },
+  guidance(){
+    return level4Controller
+      ? level4Controller.guidance()
+      : {main:'校準模組未載入', detail:'請重新載入應用', en:'Calibration module missing · reload'};
+  },
+  diagnosticsText(){
+    return level4Controller ? level4Controller.toText() : 'level4Calibration=unavailable';
+  },
 };
+function level4SyncReachMirror(){
+  if(!level4Controller){
+    level4Reach.framingReady = false;
+    level4Reach.calibrated = false;
+    level4Reach.progress = 0;
+    level4Reach.instantProgress = 0;
+    level4Reach.elbowExtensionProgress = 0;
+    level4Reach.shoulderFlexProgress = 0;
+    level4Reach.reason = 'calibration-module-missing';
+    return level4Reach;
+  }
+  const snap = level4Controller.snapshot();
+  level4Reach.stage = snap.stage;
+  level4Reach.reason = snap.reason;
+  level4Reach.calibrated = snap.calibrated;
+  level4Reach.framingReady = snap.framingReady;
+  level4Reach.progress = snap.progress;
+  level4Reach.instantProgress = snap.instantProgress;
+  level4Reach.engaged = snap.engaged;
+  level4Reach.reachGate = snap.reachGate;
+  level4Reach.returnReady = snap.returnReady;
+  level4Reach.completionReady = snap.completionReady;
+  level4Reach.shoulderHike = snap.shoulderHike;
+  level4Reach.warning = snap.warning;
+  level4Reach.weights = snap.weights;
+  level4Reach.separation = snap.separation;
+  level4Reach.signalProgress = snap.signalProgress;
+  level4Reach.endpoints = snap.endpoints;
+  level4Reach.qualified = snap.qualified;
+  level4Reach.lacking = snap.lacking;
+  level4Reach.manual = snap.manual;
+  level4Reach.retryCount = snap.retryCount;
+  level4Reach.captureCount = snap.captureCount;
+  level4Reach.depthSource = snap.depthSource;
+  level4Reach.movementSeen = snap.movementSeen;
+  const signals = snap.signals || {};
+  level4Reach.elbowAngle = Number.isFinite(signals.angle) ? signals.angle : null;
+  level4Reach.spanRatio = Number.isFinite(signals.spanRatio) ? signals.spanRatio : null;
+  level4Reach.worldSpan = Number.isFinite(signals.worldSpan) ? signals.worldSpan : null;
+  level4Reach.radial = Number.isFinite(signals.radial) ? signals.radial : null;
+  level4Reach.depthZ = Number.isFinite(signals.depthZ) ? signals.depthZ : null;
+  level4Reach.elbowExtensionProgress = snap.instantProgress;
+  level4Reach.shoulderFlexProgress = snap.progress;
+  level4Reach.lateral = snap.lateral;
+  level4Reach.arcProgress = snap.arcProgress;
+  level4Reach.arcInstant = snap.arc ? snap.arc.instant : 0;
+  level4Reach.arcActive = snap.arcActive;
+  level4Reach.arcHold = snap.arc ? snap.arc.hold : false;
+  level4Reach.arcCalibrated = snap.arc ? snap.arc.calibrated : false;
+  level4Reach.arcBaseline = snap.arc ? snap.arc.baseline : null;
+  level4Reach.arcScale = snap.arc ? snap.arc.scale : null;
+  level4Reach.cyclePhase = snap.cycle ? snap.cycle.phase : 'start';
+  level4Reach.cycleOrdered = snap.cycle ? snap.cycle.ordered : false;
+  level4Reach.cycleComplete = snap.cycle ? snap.cycle.complete : false;
+  level4Reach.cycleCount = snap.cycle ? snap.cycle.count : 0;
+  level4Reach.stabilizer = snap.stabilizer || null;
+  level4Reach.side = snap.side || 'right';
+  return level4Reach;
+}
+/* Compact therapist fallback: mark the current pose as the flexed start or the
+   extended end when automatic stable capture struggles bedside. */
+function level4ManualCapture(which){
+  if(!level4Controller) return level4Reach;
+  if(which === 'extended') level4Controller.markExtended();
+  else level4Controller.markFlexed();
+  level4SyncReachMirror();
+  level4UpdateCalibrationBar();
+  researchLog('level4_manual_calibration', {
+    which,
+    stage:level4Reach.stage,
+    reason:level4Reach.reason,
+    calibrated:level4Reach.calibrated,
+  });
+  return level4Reach;
+}
+function level4CalibrationDiagnosticsLine(){
+  if(!level4Controller) return 'calibration module missing';
+  const lacking = (level4Reach.lacking || [])
+    .filter(entry => entry.reason === 'too-similar')
+    .map(entry => entry.signal + ' \u0394' + (Number.isFinite(entry.separation)
+      ? entry.separation.toFixed(2) : 'na'));
+  const unavailable = (level4Reach.lacking || [])
+    .filter(entry => entry.reason === 'unavailable')
+    .map(entry => entry.signal);
+  const weights = Object.keys(level4Reach.weights || {})
+    .map(key => key + ' ' + level4Reach.weights[key].toFixed(2));
+  return [
+    'stage ' + level4Reach.stage + ' · ' + level4Reach.reason,
+    'progress ' + level4Reach.progress.toFixed(2)
+      + ' · depth ' + level4Reach.depthSource,
+    weights.length ? 'weights ' + weights.join(' / ') : 'weights \u2014',
+    lacking.length ? 'no separation: ' + lacking.join(' / ') : '',
+    unavailable.length ? 'unavailable: ' + unavailable.join(' / ') : '',
+  ].filter(Boolean).join('\n');
+}
+function level4UpdateCalibrationBar(){
+  const bar = document.getElementById('level4CalibBar');
+  if(!bar) return;
+  const active = isLevel4Tabletop() && currentScreen === 'game';
+  bar.classList.toggle('show', active);
+  if(!active) return;
+  const hint = document.getElementById('level4CalibHint');
+  const diag = document.getElementById('level4CalibDiag');
+  const guide = level4Reach.guidance();
+  if(hint){
+    hint.innerHTML = level4Reach.calibrated
+      ? '<span>已校準 · 伸肘向前／屈肘收手</span>'
+        + '<span class="en">Calibrated · extend to advance, flex to return</span>'
+      : '<span>' + guide.main + (guide.detail ? ' · ' + guide.detail : '') + '</span>'
+        + '<span class="en">' + guide.en + '</span>';
+  }
+  if(diag) diag.textContent = level4Reach.calibrated && !level4DebugEnabled()
+    ? ''
+    : level4CalibrationDiagnosticsLine();
+}
+function level4DebugEnabled(){
+  try{
+    return new URLSearchParams(window.location.search).get('debug') === '1';
+  }catch(_error){
+    return false;
+  }
+}
 
 /* ---------- Level 4 wipe-window game ----------
    Progress is stored as a small logical grid. This avoids reading every canvas
@@ -7139,18 +7412,28 @@ function level4MarkFogPoint(nx, ny){
     researchLog('level4_wipe_complete', {clean_percent:level4Wipe.cleanPercent});
   }
 }
+/* Path games (抹窗 wipewindow, 洗麻雀 mahjongwash, 巴士拍卡 buspay) need the ordered
+   movement: adequate stabilized elbow extension first, then the side-correct
+   outward/abduction path. 茶樓 dimsum and 保齡球 bowling never use this gate. */
+function level4PathGateOpen(motion){
+  if(!motion?.calibrated || motion.shoulderHike) return false;
+  const extensionSeen = motion.reachGate
+    || motion.cyclePhase === 'reached'
+    || motion.cyclePhase === 'arc-out'
+    || motion.cyclePhase === 'arc-return';
+  if(!extensionSeen) return false;
+  if(!motion.arcCalibrated) return clamp01(motion.progress) >= 0.35;
+  return motion.arcActive || clamp01(motion.arcProgress) >= 0.12;
+}
 function updateLevel4Wipe(cursorNx, cursorNy, motion){
   if(!isLevel4WipeGame()) return;
   if(level4Wipe.completed){
     if(nowMs() >= level4Wipe.nextPaneAt) level4Wipe.reset();
     return;
   }
-  const valid = !!(
-    motion?.calibrated
-    && motion.engaged
-    && motion.elbowExtensionProgress >= 0.35
-    && !motion.shoulderHike
-  );
+  // Wiping counts only after the shared two-pose progress shows real elbow
+  // extension, and then while the side-correct outward path signal is moving.
+  const valid = !!(motion?.engaged && level4PathGateOpen(motion));
   level4Wipe.validMovement = valid;
   if(!valid){
     level4Wipe.lastPoint = null;
@@ -7209,223 +7492,32 @@ function level4Median(values){
   const mid = Math.floor(sorted.length/2);
   return sorted.length % 2 ? sorted[mid] : (sorted[mid-1]+sorted[mid])/2;
 }
-function updateLevel4ReachController(lm){
+function updateLevel4ReachController(lm, worldLm){
   const stage = document.querySelector('.game-stage');
   if(!isLevel4Tabletop()){
     stage?.classList.remove('level4-movement-alert');
     return level4Reach;
   }
-  const arm = affectedPoseArm(lm);
-  if(!arm){
+  if(!level4Controller){
     level4Reach.framingReady = false;
-    level4Reach.warning = '';
-    level4Reach.shoulderHike = false;
+    level4Reach.warning = '校準模組未載入 · calibration module missing';
     stage?.classList.remove('level4-movement-alert');
     return level4Reach;
   }
-  level4Reach.framingReady = true;
-  const measuredElbowAngle = level4JointAngle(arm.shoulder,arm.elbow,arm.wrist);
-  if(!Number.isFinite(measuredElbowAngle)) return level4Reach;
-  level4Reach.elbowAngleHistory.push(measuredElbowAngle);
-  if(level4Reach.elbowAngleHistory.length > 5) level4Reach.elbowAngleHistory.shift();
-  const elbowAngle = level4Median(level4Reach.elbowAngleHistory);
-  const otherShoulderVisible = level4PosePointUsable(arm.otherShoulder);
-  const upperArmLength = Math.hypot(
-    arm.shoulder.x-arm.elbow.x,
-    arm.shoulder.y-arm.elbow.y,
-    (arm.shoulder.z||0)-(arm.elbow.z||0)
-  );
-  const shoulderSpan = Math.max(0.05, otherShoulderVisible
-    ? Math.hypot(
-        arm.shoulder.x-arm.otherShoulder.x,
-        arm.shoulder.y-arm.otherShoulder.y
-      )
-    : upperArmLength * 1.35);
-  const sample = {
-    elbowAngle,
-    // Screen-space forward-reach proxy. Because the wrist is measured
-    // relative to the affected shoulder, shoulder hiking alone cannot create
-    // the gain that lifts the game object.
-    wristRelativeY:(arm.wrist.y-arm.shoulder.y)/shoulderSpan,
-    wristRelativeX:(arm.wrist.x-arm.shoulder.x)/shoulderSpan,
-    wristRelativeZ:((arm.wrist.z||0)-(arm.shoulder.z||0))/shoulderSpan,
-    wristReachRadius:Math.hypot(
-      arm.wrist.x-arm.shoulder.x,
-      arm.wrist.y-arm.shoulder.y,
-      (arm.wrist.z||0)-(arm.shoulder.z||0)
-    )/shoulderSpan,
-    shoulderBalance:otherShoulderVisible
-      ? arm.shoulder.y-arm.otherShoulder.y
-      : null,
-  };
-  level4Reach.elbowAngle = elbowAngle;
-
-  if(!level4Reach.baseline){
-    // Bedside starting posture varies. In particular, some patients already
-    // present with the elbow mostly extended. Reject only implausible/unstable
-    // joint solutions instead of repeatedly deleting valid calibration frames.
-    if(elbowAngle >= 25 && elbowAngle <= 178){
-      level4Reach.samples.push(sample);
-      if(level4Reach.samples.length > 24) level4Reach.samples.shift();
-    }
-    if(level4Reach.samples.length >= 10){
-      level4Reach.baseline = {
-        elbowAngle:level4Median(level4Reach.samples.map(v=>v.elbowAngle)),
-        wristRelativeX:level4Median(level4Reach.samples.map(v=>v.wristRelativeX)),
-        wristRelativeY:level4Median(level4Reach.samples.map(v=>v.wristRelativeY)),
-        wristRelativeZ:level4Median(level4Reach.samples.map(v=>v.wristRelativeZ)),
-        wristReachRadius:level4Median(level4Reach.samples.map(v=>v.wristReachRadius)),
-        shoulderBalance:level4Median(level4Reach.samples.map(v=>v.shoulderBalance)),
-      };
-      level4Reach.calibrated = true;
-      level4Reach.elbowMode = level4Reach.baseline.elbowAngle >= 138
-        ? 'maintained-extension'
-        : 'active-extension';
-      const baselineAngle = level4Reach.baseline.elbowAngle;
-      level4Reach.fullExtensionAngle = baselineAngle >= 138
-        ? Math.min(165, Math.max(150, baselineAngle + 8))
-        : Math.min(160, Math.max(
-            baselineAngle + 32,
-            baselineAngle + (165-baselineAngle) * 0.90
-          ));
-    }
-    level4Reach.progress = 0;
-    level4Reach.warning = '';
-    stage?.classList.remove('level4-movement-alert');
-    return level4Reach;
-  }
-
-  const baseline = level4Reach.baseline;
-  const elbowGain = elbowAngle-baseline.elbowAngle;
-  // Screen X is deliberately excluded. Level 4 interprets the elbow signal as
-  // vertical on-screen forward progress, never as horizontal cursor transport.
-  // Learn a participant/device-specific depth, height, and reach-radius vector
-  // from the first deliberate extension instead of assuming one fixed camera
-  // direction.
-  const reachVector = [
-    sample.wristRelativeY-baseline.wristRelativeY,
-    sample.wristRelativeZ-baseline.wristRelativeZ,
-    sample.wristReachRadius-baseline.wristReachRadius,
-  ];
-  const reachMagnitude = Math.hypot(...reachVector);
-  // MediaPipe Z becomes more negative as the hand reaches toward the camera.
-  // Use the stronger of screen-height and depth change so the side-on
-  // tabletop setup remains responsive without accepting shoulder elevation.
-  const forwardReachGain = Math.max(
-    baseline.wristRelativeY-sample.wristRelativeY,
-    baseline.wristRelativeZ-sample.wristRelativeZ,
-    sample.wristReachRadius-baseline.wristReachRadius
-  );
-  const fullExtensionAngle = Number.isFinite(level4Reach.fullExtensionAngle)
-    ? level4Reach.fullExtensionAngle
-    : Math.min(160, Math.max(baseline.elbowAngle + 32, 155));
-  const fullExtensionGain = Math.max(8, fullExtensionAngle-baseline.elbowAngle);
-  const extensionDeadZone = Math.min(5, fullExtensionGain * 0.20);
-  const extensionProgress = clamp01(
-    (elbowGain-extensionDeadZone) / Math.max(5, fullExtensionGain-extensionDeadZone)
-  );
-  const shoulderFlexProgress = clamp01((forwardReachGain-0.012)/0.24);
-  const shoulderHike = Number.isFinite(baseline.shoulderBalance)
-    && Number.isFinite(sample.shoulderBalance)
-    && (baseline.shoulderBalance-sample.shoulderBalance) > 0.035;
-  const startsExtended = baseline.elbowAngle >= 138;
-  // Front-facing iPads estimate depth less reliably than joint angles. Keep a
-  // dedicated elbow signal so flexing the elbow can always bring the object
-  // down even when the wrist still appears "forward" in screen/depth space.
-  const elbowCycleProgress = startsExtended
-    ? clamp01((elbowAngle-(baseline.elbowAngle-38))/38)
-    : extensionProgress;
-  const maintainedExtension = startsExtended
-    && elbowAngle >= Math.max(132, baseline.elbowAngle-8);
-  const activeExtension = elbowGain >= 6;
-  const elbowConfirmed = activeExtension || maintainedExtension;
-
-  // Learn/update the forward axis only while the elbow is extending or safely
-  // maintained in extension. Shoulder hiking is explicitly excluded, so it
-  // cannot teach the system a false "forward" direction.
-  const directionLearningEligible = !shoulderHike
-    && reachMagnitude >= 0.018
-    && (elbowGain >= 6 || maintainedExtension);
-  if(directionLearningEligible && reachMagnitude > level4Reach.forwardAxisPeak){
-    level4Reach.forwardAxis = reachVector.map(v=>v/reachMagnitude);
-    level4Reach.forwardAxisPeak = reachMagnitude;
-    level4Reach.forwardScale = Math.max(0.055, Math.min(0.26, reachMagnitude * 1.35));
-    level4Reach.directionMode = 'individualized';
-  }
-  const individualizedGain = level4Reach.forwardAxis
-    ? reachVector.reduce((sum,value,index)=>
-        sum + value * level4Reach.forwardAxis[index], 0)
-    : 0;
-  const individualizedProgress = level4Reach.forwardAxis
-    ? clamp01((individualizedGain-0.006) / Math.max(0.045, level4Reach.forwardScale-0.006))
-    : 0;
-  // Before the first reach has fully established an axis, show immediate
-  // provisional movement when elbow extension and real wrist displacement
-  // occur together. This prevents the first trial from appearing unresponsive.
-  const provisionalProgress = elbowConfirmed
-    ? clamp01((reachMagnitude-0.012) / 0.10)
-    : 0;
-  const cameraDirectionProgress = Math.max(
-    individualizedProgress,
-    provisionalProgress,
-    shoulderFlexProgress
-  );
-
-  level4Reach.elbowExtensionProgress = extensionProgress;
-  level4Reach.shoulderFlexProgress = cameraDirectionProgress;
-  level4Reach.shoulderHike = shoulderHike;
-  level4Reach.elbowMode = maintainedExtension ? 'maintained-extension' : 'active-extension';
-
-  // Outward transport starts only after forward shoulder motion is paired with
-  // either active elbow extension or a safely maintained already-extended arm.
-  // Once engaged, return transport follows the forward-reach signal only when
-  // elbow flexion is also evident, so shoulder elevation alone never drives it.
-  if(!shoulderHike && (elbowGain >= 6 || maintainedExtension)){
-    level4Reach.movementConfirmFrames = Math.min(6, level4Reach.movementConfirmFrames + 1);
-  }else if(elbowGain <= 3){
-    level4Reach.movementConfirmFrames = 0;
-  }else{
-    level4Reach.movementConfirmFrames = Math.max(0, level4Reach.movementConfirmFrames - 1);
-  }
-  if(!level4Reach.engaged
-      && elbowConfirmed
-      && level4Reach.movementConfirmFrames >= 3){
-    level4Reach.engaged = true;
-    level4Reach.peakElbowAngle = elbowAngle;
-    level4Reach.peakShoulderFlexProgress = cameraDirectionProgress;
-  }
-  if(level4Reach.engaged){
-    level4Reach.peakElbowAngle = Math.max(level4Reach.peakElbowAngle || elbowAngle, elbowAngle);
-    level4Reach.peakShoulderFlexProgress = Math.max(
-      level4Reach.peakShoulderFlexProgress,
-      cameraDirectionProgress
-    );
-  }
-  const returnElbowFlexion = level4Reach.engaged
-    && (level4Reach.peakElbowAngle-elbowAngle) >= 3;
-  // With the iPad directly in front on the same table, depth is too noisy to
-  // control transport reliably. The smoothed elbow angle is authoritative:
-  // extension lifts the object and flexion lowers it along the same scale.
-  let compoundProgress = level4Reach.engaged ? extensionProgress : 0;
-  if(returnElbowFlexion) compoundProgress = extensionProgress;
-  if(elbowGain <= 3 && level4Reach.progress <= 0.08){
-    level4Reach.engaged = false;
-    level4Reach.peakElbowAngle = null;
-    level4Reach.peakShoulderFlexProgress = 0;
-    level4Reach.movementConfirmFrames = 0;
-    compoundProgress = 0;
-  }
-  level4Reach.completionReady = level4Reach.engaged
-    && elbowAngle >= fullExtensionAngle-2
-    && extensionProgress >= 0.95;
-  if(shoulderHike){
-    compoundProgress = level4Reach.progress;
-    level4Reach.warning = '患側聳肩 · 請治療師即時糾正';
-  }else{
-    level4Reach.warning = '';
-    level4Reach.progress += 0.38 * (compoundProgress-level4Reach.progress);
-  }
-  stage?.classList.toggle('level4-movement-alert', shoulderHike && !isTrialMode());
+  // All fusion, staging, hysteresis and smoothing live in the shared module so
+  // the deterministic Node tests exercise exactly the bedside code path.
+  level4Controller.update({
+    lm,
+    worldLm:worldLm || null,
+    side:activeAffectedSide(),
+    // The lateral/abduction signal is measured in mirrored display space so
+    // "outward" always means the participant's own affected side.
+    mirrorX:state.mirrorX !== false,
+  });
+  level4SyncReachMirror();
+  level4UpdateCalibrationBar();
+  stage?.classList.toggle('level4-movement-alert',
+    level4Reach.shoulderHike && !isTrialMode());
   return level4Reach;
 }
 
@@ -7437,7 +7529,8 @@ function updateTracking(){
     grossPose = state.qaMode ? qaHand?.poseLm : (detectPose(gameVideo) || lastPoseLm);
   }
   const level3Motion = updateLevel3LateralController(grossPose, cw, ch);
-  const level4Motion = updateLevel4ReachController(grossPose);
+  const level4WorldPose = state.qaMode ? (qaHand?.poseWorldLm || null) : lastPoseWorldLm;
+  const level4Motion = updateLevel4ReachController(grossPose, level4WorldPose);
   // Levels 3–4 are driven by shoulder/elbow/wrist Pose only. Running the hand
   // model as well on every iPad frame halved the effective frame rate and made
   // the live game behave differently from the movement test.
@@ -7589,15 +7682,19 @@ function updateGameLogic(){
       return;
     }
     if(!level4Reach.calibrated){
-      setActionPrompt('保持屈肘起點', '準備伸肘');
+      // Two-pose capture / retry guidance comes from the shared controller so the
+      // wording always matches the stage it is actually in.
+      dwellTarget = null;
+      const guide = level4Reach.guidance();
+      setActionPrompt(guide.main, guide.detail);
       return;
     }
     if(isLevel4WipeGame()){
       dwellTarget = null;
       if(level4Wipe.completed){
         setActionPrompt('完成', '準備下一塊窗');
-      }else if(!level4Reach.engaged || level4Reach.elbowExtensionProgress < 0.35){
-        setActionPrompt('慢慢伸直手肘', '再向外畫大弧');
+      }else if(!level4Reach.engaged || !level4Reach.reachGate){
+        setActionPrompt('先伸直手肘', '再向患側畫弧');
       }else if(level4Wipe.validMovement){
         setActionPrompt('向外畫大弧', '已清潔 ' + level4Wipe.cleanPercent + '%');
       }else{
@@ -7646,8 +7743,9 @@ function updateGameLogic(){
       }
       // Pickup zone: 食物實際 radius + 80px tolerance（原本固定 120 → 現在對食物 size 自適應）
       // 對於顫抖病人：碰到食物邊邊也算抓到
+      // Pickup only at the participant's own calibrated flexed endpoint.
       const level4AtStart = !isLevel4Tabletop()
-        || (!level4Reach.engaged && level4Reach.progress <= 0.04);
+        || (level4Reach.returnReady && !level4Reach.engaged);
       const overFood = nearest && level4AtStart && nearestDist <= (nearest.r + 80);
       if(overFood && still){
         if(dwellTarget !== 'food'){
@@ -7704,8 +7802,9 @@ function updateGameLogic(){
           }
         }
       }
+      // Placement only once the calibrated extended endpoint is reached.
       const level4CanPlace = !isLevel4Tabletop()
-        || (level4Reach.completionReady && level4Reach.progress >= 0.94);
+        || (level4Reach.completionReady && level4Reach.reachGate);
       if(onPlate && level4CanPlace && still){
         if(dwellTarget !== 'plate'){
           dwellTarget = 'plate';
@@ -9220,6 +9319,10 @@ const carrier = {
    ================================================================== */
 let poseLandmarker = null, poseLoading = null, poseFailed = false;
 let lastPoseLm = null, lastPoseTs = 0;
+// MediaPipe world landmarks (metric, hip-centred) give a depth signal that a
+// front-facing iPad cannot recover from image-space coordinates alone. They are
+// optional: Level 4 calibration falls back to 2D signals when absent.
+let lastPoseWorldLm = null;
 let mpHandTs = 0, mpPoseTs = 0;
 function nextTs(which){
   const t = performance.now();
@@ -9270,6 +9373,8 @@ function detectPose(videoEl){
     const res = poseLandmarker.detectForVideo(videoEl, nextTs('pose'));
     if(res && res.landmarks && res.landmarks.length){
       lastPoseLm = res.landmarks[0];
+      lastPoseWorldLm = (res.worldLandmarks && res.worldLandmarks.length)
+        ? res.worldLandmarks[0] : null;
       lastPoseTs = nowMs();
       return lastPoseLm;
     }
@@ -11855,18 +11960,20 @@ window.render_game_to_text = function(){
       }
     }
     if(isLevel4Tabletop()){
-      lines.push('level4Reach=calibrated:' + level4Reach.calibrated +
-        ' framingReady:' + level4Reach.framingReady +
-        ' progress:' + level4Reach.progress.toFixed(3) +
-        ' engaged:' + level4Reach.engaged +
-        ' elbowAngle:' + (Number.isFinite(level4Reach.elbowAngle) ? level4Reach.elbowAngle.toFixed(1) : 'none') +
-        ' shoulderFlex:' + level4Reach.shoulderFlexProgress.toFixed(3) +
-        ' elbowExtension:' + level4Reach.elbowExtensionProgress.toFixed(3) +
-        ' elbowMode:' + level4Reach.elbowMode +
-        ' directionMode:' + level4Reach.directionMode +
-        ' directionPeak:' + level4Reach.forwardAxisPeak.toFixed(3) +
-        ' shoulderHike:' + level4Reach.shoulderHike +
-        ' warning:' + (level4Reach.warning || 'none'));
+      // One line per fact so render_game_to_text exposes the whole two-pose
+      // calibration story: stage, raw signals, endpoints, weights, progress.
+      lines.push('level4Reach=' + level4Reach.diagnosticsText());
+      lines.push('level4ReachGuide=' + [
+        'stage:' + level4Reach.stage,
+        'reason:' + level4Reach.reason,
+        'shoulderHike:' + level4Reach.shoulderHike,
+        'warning:' + (level4Reach.warning || 'none'),
+        'qualified:' + (level4Reach.qualified.join('|') || 'none'),
+        'lacking:' + ((level4Reach.lacking || [])
+          .map(entry => entry.signal + ':' + entry.reason).join('|') || 'none'),
+        'manual:' + (level4Reach.manual.flexed ? 'F' : '-')
+          + (level4Reach.manual.extended ? 'E' : '-'),
+      ].join(' '));
       if(isLevel4WipeGame()){
         lines.push('level4Wipe=clean:' + level4Wipe.cleanPercent +
           ' validMovement:' + level4Wipe.validMovement +
@@ -12135,27 +12242,77 @@ window.__qa = {
     lm[wristIndex] = point(spec.wrist, {x:0.58,y:0.48});
     lm[otherShoulderIndex] = point(spec.otherShoulder, {x:0.60,y:0.30});
     qaHand.poseLm = lm;
-    updateTracking();
+    // Optional synthetic world landmarks: pass spec.world = {shoulder, elbow,
+    // wrist, otherShoulder} to exercise the depth-aware fusion path.
+    if(spec.world){
+      const worldLm = Array.from({length:33}, ()=>({x:0,y:0,z:0,visibility:0.05}));
+      const worldPoint = (value, fallback)=>({
+        x:Number.isFinite(value?.x) ? value.x : fallback.x,
+        y:Number.isFinite(value?.y) ? value.y : fallback.y,
+        z:Number.isFinite(value?.z) ? value.z : fallback.z,
+        visibility:Number.isFinite(value?.visibility) ? value.visibility : 1,
+      });
+      worldLm[shoulderIndex] = worldPoint(spec.world.shoulder, {x:-0.16,y:-0.30,z:0});
+      worldLm[elbowIndex] = worldPoint(spec.world.elbow, {x:-0.16,y:-0.06,z:0});
+      worldLm[wristIndex] = worldPoint(spec.world.wrist, {x:-0.02,y:-0.06,z:0});
+      worldLm[otherShoulderIndex] = worldPoint(spec.world.otherShoulder, {x:0.16,y:-0.30,z:0});
+      qaHand.poseWorldLm = worldLm;
+    }else if(spec.clearWorld){
+      qaHand.poseWorldLm = null;
+    }
+    const frames = Math.max(1, Math.round(Number(spec.frames) || 1));
+    for(let i=0;i<frames;i++) updateTracking();
     return this.level4ReachState();
+  },
+  level4ManualCapture(which){
+    return level4ManualCapture(which === 'extended' ? 'extended' : 'flexed');
   },
   level4ReachState(){
     return {
       calibrated:level4Reach.calibrated,
+      stage:level4Reach.stage,
+      reason:level4Reach.reason,
       progress:level4Reach.progress,
+      instantProgress:level4Reach.instantProgress,
       engaged:level4Reach.engaged,
+      reachGate:level4Reach.reachGate,
+      returnReady:level4Reach.returnReady,
       shoulderFlexProgress:level4Reach.shoulderFlexProgress,
       elbowExtensionProgress:level4Reach.elbowExtensionProgress,
       elbowAngle:level4Reach.elbowAngle,
-      fullExtensionAngle:level4Reach.fullExtensionAngle,
+      spanRatio:level4Reach.spanRatio,
+      worldSpan:level4Reach.worldSpan,
+      radial:level4Reach.radial,
+      depthZ:level4Reach.depthZ,
+      depthSource:level4Reach.depthSource,
+      weights:level4Reach.weights,
+      separation:level4Reach.separation,
+      signalProgress:level4Reach.signalProgress,
+      endpoints:level4Reach.endpoints,
+      qualified:level4Reach.qualified,
+      lacking:level4Reach.lacking,
+      manual:level4Reach.manual,
+      retryCount:level4Reach.retryCount,
+      captureCount:level4Reach.captureCount,
       completionReady:level4Reach.completionReady,
-      movementConfirmFrames:level4Reach.movementConfirmFrames,
-      elbowMode:level4Reach.elbowMode,
-      directionMode:level4Reach.directionMode,
-      directionPeak:level4Reach.forwardAxisPeak,
-      forwardScale:level4Reach.forwardScale,
       shoulderHike:level4Reach.shoulderHike,
       framingReady:level4Reach.framingReady,
       warning:level4Reach.warning,
+      guidance:level4Reach.guidance(),
+      diagnostics:level4Reach.diagnosticsText(),
+      lateral:level4Reach.lateral,
+      arcProgress:level4Reach.arcProgress,
+      arcInstant:level4Reach.arcInstant,
+      arcActive:level4Reach.arcActive,
+      arcHold:level4Reach.arcHold,
+      arcCalibrated:level4Reach.arcCalibrated,
+      cyclePhase:level4Reach.cyclePhase,
+      cycleOrdered:level4Reach.cycleOrdered,
+      cycleComplete:level4Reach.cycleComplete,
+      cycleCount:level4Reach.cycleCount,
+      stabilizer:level4Reach.stabilizer,
+      pathGateOpen:level4PathGateOpen(level4Reach),
+      side:level4Reach.side,
       wipeCleanPercent:level4Wipe.cleanPercent,
       wipeValidMovement:level4Wipe.validMovement,
       wipeCompleted:level4Wipe.completed,
@@ -12648,6 +12805,28 @@ window.__level4GameRuntime = Object.freeze({
   isMahjongWash: isLevel4MahjongWashGame,
   isBusPay: isLevel4BusPayGame,
   reachProgress(){ return clamp01(level4Reach.progress); },
+  // Shared normalised reach/return gating: every Level 4 game uses these instead
+  // of its own thresholds, so extension always means forward progress.
+  reachMotion(){
+    return {
+      calibrated:level4Reach.calibrated,
+      progress:clamp01(level4Reach.progress),
+      engaged:level4Reach.engaged,
+      reachGate:level4Reach.reachGate,
+      returnReady:level4Reach.returnReady,
+      completionReady:level4Reach.completionReady,
+      shoulderHike:level4Reach.shoulderHike,
+      // Signal B for the three path games only.
+      arcProgress:clamp01(level4Reach.arcProgress),
+      arcActive:level4Reach.arcActive,
+      arcCalibrated:level4Reach.arcCalibrated,
+      cyclePhase:level4Reach.cyclePhase,
+      cycleOrdered:level4Reach.cycleOrdered,
+      cycleComplete:level4Reach.cycleComplete,
+      side:level4Reach.side,
+    };
+  },
+  beepTap: playBusTapBeep,
   drawVerticalReachGuide: drawLevel4VerticalReachGuide,
   cursor(){
     return {
@@ -12740,15 +12919,23 @@ window.__level4GameRuntime = Object.freeze({
     return match ? match[1] : "—";
   }
 
-  function diagnosis(reach) {
+  // Pull a whole `name=...` segment (raw signals, endpoints, separation/weights)
+  // out of the single-line Level 4 calibration diagnostics.
+  function segment(text, name) {
+    const match = text.match(new RegExp(name + "=(.*?)(?=\\s[A-Za-z]+=|$)"));
+    return match ? match[1].trim() : "—";
+  }
+
+  function diagnosis(reach, guide) {
     if (!reach) return "尚未收到 Level 4 動作資料";
-    if (field(reach, "calibrated") === "false") {
-      if (field(reach, "framingReady") === "false") {
-        return "未完整入鏡：檢查患側肩、手肘、手腕";
-      }
-      return "校準中：手臂保持穩定";
+    const stage = field(reach, "stage");
+    if (field(reach, "framingReady") === "false") {
+      return "未完整入鏡：檢查患側肩、手肘、手腕";
     }
     if (field(reach, "shoulderHike") === "true") return "患側聳肩：請治療師即時糾正";
+    if (stage === "capture-flexed") return "記錄屈肘起點：手臂放穩不動";
+    if (stage === "capture-extended") return "記錄伸直終點：慢慢伸直手肘到最遠";
+    if (stage === "retry") return "兩個姿勢分別不足：" + field(guide, "lacking");
     if (field(reach, "engaged") === "false") return "已校準：等待前伸配合伸肘";
     return "追蹤中";
   }
@@ -12765,16 +12952,25 @@ window.__level4GameRuntime = Object.freeze({
     }
 
     const reach = line(text, "level4Reach=");
+    const guide = line(text, "level4ReachGuide=");
     const wipe = line(text, "level4Wipe=");
     const calibrated = field(reach, "calibrated") === "true";
     panel.textContent = [
-      "Level 4 即時診斷",
-      "校準 " + field(reach, "calibrated") + "　入鏡 " + field(reach, "framingReady"),
-      "肘角 " + field(reach, "elbowAngle") + "°　啟動 " + field(reach, "engaged"),
-      "前伸 " + field(reach, "shoulderFlex") + "　伸肘 " + field(reach, "elbowExtension"),
-      "進度 " + field(reach, "progress") + "　聳肩 " + field(reach, "shoulderHike"),
+      "Level 4 兩姿勢校準診斷",
+      "階段 " + field(reach, "stage") + "　原因 " + field(reach, "reason"),
+      "校準 " + field(reach, "calibrated") + "　入鏡 " + field(reach, "framingReady")
+        + "　手動 " + field(reach, "manual"),
+      "進度 " + field(reach, "progress") + "　瞬時 " + field(reach, "instant")
+        + "　啟動 " + field(reach, "engaged"),
+      "到位 " + field(reach, "reachGate") + "　回位 " + field(reach, "returnReady")
+        + "　聳肩 " + field(reach, "shoulderHike"),
+      "訊號 " + segment(reach, "raw"),
+      "深度來源 " + field(reach, "depthSource"),
+      "終點 " + segment(reach, "endpoints"),
+      "分別／權重 " + segment(reach, "separation"),
+      "選用 " + field(guide, "qualified") + "　不足 " + field(guide, "lacking"),
       wipe ? "抹窗 " + field(wipe, "clean") + "%　有效 " + field(wipe, "validMovement") : "",
-      "判斷：" + diagnosis(reach)
+      "判斷：" + diagnosis(reach, guide)
     ].filter(Boolean).join("\n");
 
     if (!calibrated) {
