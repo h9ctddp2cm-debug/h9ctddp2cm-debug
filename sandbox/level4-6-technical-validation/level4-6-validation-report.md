@@ -1,12 +1,12 @@
 # Level 4–6 Technical Validation Report
 
-Generated: 2026-08-19T10:20:19.372Z
+Generated: 2026-08-19T11:24:21.792Z
 
-Result: **PASS** (126/126 checks passed)
+Result: **PASS** (138/138 checks passed)
 
 | FTHUE level | Passed | Failed |
 |---|---:|---:|
-| 4 | 48 | 0 |
+| 4 | 60 | 0 |
 | 5 | 40 | 0 |
 | 6 | 31 | 0 |
 
@@ -62,11 +62,23 @@ This is reproducible software technical verification only. It does not establish
 - PASS | Level 4 | compound movement | shoulder flexion plus elbow extension moves the object upward
 - PASS | Level 4 | compound movement | elbow flexion lowers the object while the wrist remains forward
 - PASS | Level 4 | compound movement | shoulder extension plus elbow flexion returns the object downward
+- PASS | Level 4 | vertical elbow mapping | dimsum maps extension upward and flexion downward without elbow-driven horizontal drift
+- PASS | Level 4 | vertical elbow mapping | wipewindow maps extension upward and flexion downward without elbow-driven horizontal drift
+- PASS | Level 4 | vertical elbow mapping | bowling maps extension upward and flexion downward without elbow-driven horizontal drift
+- PASS | Level 4 | vertical elbow mapping | mahjongwash maps extension upward and flexion downward without elbow-driven horizontal drift
+- PASS | Level 4 | vertical elbow mapping | buspay maps extension upward and flexion downward without elbow-driven horizontal drift
+- PASS | Level 4 | elbow carry | unheld Level 4 cursor remains the real wrist point for item selection
+- PASS | Level 4 | elbow carry | ordinary Level 4 pickup captures a stable carry lane
+- PASS | Level 4 | elbow carry | held standard Level 4 item keeps its fixed carry X across elbow extension
+- PASS | Level 4 | elbow carry | held standard Level 4 item moves upward on elbow extension
+- PASS | Level 4 | elbow carry | held standard Level 4 item moves downward on elbow flexion
+- PASS | Level 4 | independent mechanics | wipe-window keeps the real wrist path rather than a carry lane
+- PASS | Level 4 | independent mechanics | bowling continues to consume the reach-return progress cycle
+- PASS | Level 4 | independent mechanics | mahjong-wash continues to advance from a real wrist path
+- PASS | Level 4 | independent mechanics | bus-pay continues to require a real cursor at the precision target
 - PASS | Level 4 | table occlusion | affected elbow extension remains playable when the opposite shoulder is hidden
 - PASS | Level 4 | flow | dwell pickup acquires an item
 - PASS | Level 4 | flow | correct placement increments the correct count
-- PASS | Level 4 | flow | dwell pickup acquires an item
-- PASS | Level 4 | flow | wrong placement increments only the wrong count
 - PASS | Level 4 | tracking | brief tracking loss uses the 750 ms grace window
 - PASS | Level 4 | tracking | sustained tracking loss clears detection safely
 - PASS | Level 5 | flow | prepared gesture and hold acquire an item

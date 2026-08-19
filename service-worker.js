@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v17-20260819-level67-interactions";
+const CACHE_VERSION = "fthue-rehab-v19-20260819-level4-vertical-all-games";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

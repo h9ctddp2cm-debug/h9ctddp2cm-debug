@@ -272,6 +272,169 @@ try {
     level4Return.progress < 0.02 && level4Return.shoulderFlexProgress === 0
     && level4Return.elbowExtensionProgress === 0, level4Return);
 
+  // Every Level 4 theme shares one elbow interpretation: extension advances a
+  // fixed-X on-screen guide upward, and flexion returns it downward. The three
+  // path/precision games retain their real wrist input, but elbow motion itself
+  // cannot inject a horizontal cursor displacement.
+  for (const theme of ["dimsum", "wipewindow", "bowling", "mahjongwash", "buspay"]) {
+    await start(page, "4", theme);
+    for (let index = 0; index < 14; index += 1) {
+      await page.evaluate(pose => window.__qa.setLevel4Pose(pose), level4StartPose);
+    }
+    const fixedWristPoint = { x: 112, y: 156 };
+    await position(page, fixedWristPoint, false, true);
+    await advance(page, 80);
+    for (let index = 0; index < 10; index += 1) {
+      await page.evaluate(pose => window.__qa.setLevel4Pose(pose), level4ReachPose);
+    }
+    const extended = await page.evaluate(() => ({
+      reach: window.__qa.level4ReachState(),
+      transport: window.__qa.level4TransportState(),
+      bowling: {...window.__level4MiniGamesQA.state.bowling},
+    }));
+    for (let index = 0; index < 12; index += 1) {
+      await page.evaluate(pose => window.__qa.setLevel4Pose(pose), level4ForwardFlexedPose);
+    }
+    const flexed = await page.evaluate(() => ({
+      reach: window.__qa.level4ReachState(),
+      transport: window.__qa.level4TransportState(),
+      bowling: {...window.__level4MiniGamesQA.state.bowling},
+    }));
+    const bowlingMovesVertically = theme !== "bowling"
+      || (extended.bowling.armProgress > 0.80 && flexed.bowling.armProgress < 0.20);
+    check("4", "vertical elbow mapping",
+      `${theme} maps extension upward and flexion downward without elbow-driven horizontal drift`,
+      extended.reach.screenForward.y < flexed.reach.screenForward.y - 80
+      && Math.abs(extended.reach.screenForward.x - flexed.reach.screenForward.x) < 0.001
+      && Math.abs(extended.transport.rawCursor.x - fixedWristPoint.x) < 1
+      && Math.abs(flexed.transport.rawCursor.x - fixedWristPoint.x) < 1
+      && bowlingMovesVertically,
+      { fixedWristPoint, extended, flexed });
+  }
+
+  // Held ordinary Level 4 items use a virtual carry lane after selection.
+  // The raw wrist cursor remains available before pickup, then elbow progress
+  // alone drives vertical transport so front-facing camera X drift cannot pull
+  // an item sideways.
+  await start(page, "4", "dimsum", 300);
+  for (let index = 0; index < 14; index += 1) {
+    await page.evaluate(pose => window.__qa.setLevel4Pose(pose), level4StartPose);
+  }
+  const unheldProbe = await state(page);
+  const unheldRawPoint = {
+    x: Math.round(unheldProbe.items[0].x - 95),
+    y: Math.round(unheldProbe.items[0].y + 8),
+  };
+  await position(page, unheldRawPoint, false, true);
+  await advance(page, 80);
+  const unheldCursor = await page.evaluate(() => window.__qa.level4TransportState());
+  check("4", "elbow carry", "unheld Level 4 cursor remains the real wrist point for item selection",
+    unheldCursor.held === null
+    && Math.abs(unheldCursor.rawCursor.x - unheldRawPoint.x) < 1
+    && Math.abs(unheldCursor.rawCursor.y - unheldRawPoint.y) < 1
+    && Math.abs(unheldCursor.displayCursor.x - unheldRawPoint.x) < 1,
+    unheldCursor);
+
+  const pickup = (await state(page)).items[0];
+  await position(page, pickup, false, true);
+  await advance(page, 760);
+  const heldStart = await page.evaluate(() => window.__qa.level4TransportState());
+  check("4", "elbow carry", "ordinary Level 4 pickup captures a stable carry lane",
+    heldStart.held !== null && heldStart.carry !== null
+    && Math.abs(heldStart.held.x - heldStart.carry.laneX) < 0.001,
+    heldStart);
+
+  const leftDriftPoint = {
+    x: Math.max(20, Math.round(heldStart.rawCursor.x - 240)),
+    y: Math.round(heldStart.rawCursor.y),
+  };
+  await position(page, leftDriftPoint, false, true);
+  for (let index = 0; index < 10; index += 1) {
+    await page.evaluate(pose => window.__qa.setLevel4Pose(pose), level4ReachPose);
+  }
+  await advance(page, 120);
+  const heldExtended = await page.evaluate(() => window.__qa.level4TransportState());
+  check("4", "elbow carry", "held standard Level 4 item keeps its fixed carry X across elbow extension",
+    heldExtended.held !== null
+    && Math.abs(heldExtended.held.x - heldStart.carry.laneX) < 0.001
+    && heldExtended.rawCursor.x < heldStart.rawCursor.x - 100,
+    { heldStart, heldExtended });
+  check("4", "elbow carry", "held standard Level 4 item moves upward on elbow extension",
+    heldExtended.held.y < heldStart.held.y - 20
+    && heldExtended.reachProgress > heldStart.reachProgress + 0.50,
+    { heldStart, heldExtended });
+
+  for (let index = 0; index < 12; index += 1) {
+    await page.evaluate(pose => window.__qa.setLevel4Pose(pose), level4ForwardFlexedPose);
+  }
+  await advance(page, 120);
+  const heldFlexed = await page.evaluate(() => window.__qa.level4TransportState());
+  check("4", "elbow carry", "held standard Level 4 item moves downward on elbow flexion",
+    heldFlexed.held !== null
+    && Math.abs(heldFlexed.held.x - heldStart.carry.laneX) < 0.001
+    && heldFlexed.held.y > heldExtended.held.y + 20
+    && heldFlexed.reachProgress < heldExtended.reachProgress - 0.50,
+    { heldExtended, heldFlexed });
+
+  await start(page, "4", "wipewindow");
+  for (let index = 0; index < 14; index += 1) {
+    await page.evaluate(pose => window.__qa.setLevel4Pose(pose), level4StartPose);
+  }
+  const wipeRawPoint = { x: 318, y: 472 };
+  await position(page, wipeRawPoint, false, true);
+  for (let index = 0; index < 8; index += 1) {
+    await page.evaluate(pose => window.__qa.setLevel4Pose(pose), level4ReachPose);
+  }
+  await advance(page, 80);
+  const wipeCursor = await page.evaluate(() => window.__qa.level4TransportState());
+  check("4", "independent mechanics", "wipe-window keeps the real wrist path rather than a carry lane",
+    wipeCursor.standardTransport === false && wipeCursor.carry === null
+    && Math.abs(wipeCursor.displayCursor.x - wipeCursor.rawCursor.x) < 0.001
+    && Math.abs(wipeCursor.rawCursor.x - wipeRawPoint.x) < 1,
+    wipeCursor);
+
+  await start(page, "4", "bowling");
+  const bowlingCycle = await page.evaluate(() => {
+    window.__level4MiniGamesQA.reset();
+    window.__level4MiniGamesQA.bowling({
+      calibrated:true, shoulderHike:false, engaged:true, progress:.72, completionReady:false,
+    });
+    window.__level4MiniGamesQA.bowling({
+      calibrated:true, shoulderHike:false, engaged:true, progress:.12, completionReady:true,
+    });
+    return window.__level4MiniGamesQA.state.bowling;
+  });
+  check("4", "independent mechanics", "bowling continues to consume the reach-return progress cycle",
+    bowlingCycle.phase === "rolling" && bowlingCycle.peak >= .72, bowlingCycle);
+
+  await start(page, "4", "mahjongwash");
+  const mahjongPath = await page.evaluate(() => {
+    window.__level4MiniGamesQA.reset();
+    const motion = { calibrated:true, engaged:true, elbowExtensionProgress:.60, shoulderHike:false };
+    window.__level4MiniGamesQA.mahjong(motion, .24, .34);
+    window.__level4MiniGamesQA.mahjong(motion, .31, .40);
+    return window.__level4MiniGamesQA.state.mahjong;
+  });
+  check("4", "independent mechanics", "mahjong-wash continues to advance from a real wrist path",
+    mahjongPath.progress > 0 && mahjongPath.lastPoint?.x === .31, mahjongPath);
+
+  await start(page, "4", "buspay");
+  const busPrecision = await page.evaluate(() => {
+    window.__level4MiniGamesQA.reset();
+    const target = { x:.50, y:.43 };
+    const motion = {
+      calibrated:true, shoulderHike:false, engaged:true,
+      elbowExtensionProgress:.60, progress:.60,
+    };
+    for (let index = 0; index < 4; index += 1) {
+      window.__level4MiniGamesQA.bus(motion, target.x, target.y);
+    }
+    return window.__level4MiniGamesQA.state.bus;
+  });
+  check("4", "independent mechanics", "bus-pay continues to require a real cursor at the precision target",
+    busPrecision.hitCount === 1 && busPrecision.targetIndex === 1 && busPrecision.armed === false,
+    busPrecision);
+
   await start(page, "4");
   for (let index = 0; index < 14; index += 1) {
     await page.evaluate(pose => window.__qa.setLevel4Pose(pose), level4OccludedStartPose);
@@ -292,13 +455,18 @@ try {
       correct.after.correctCount === correct.before.correctCount + 1 && correct.after.held === null,
       { before: correct.before.correctCount, after: correct.after.correctCount });
 
-    await start(page, level);
-    const wrong = await performPlacement(page, level, false);
-    check(label, "flow", "wrong placement increments only the wrong count",
-      wrong.after.correctCount === wrong.before.correctCount &&
-      wrong.after.wrongCount === wrong.before.wrongCount + 1 &&
-      wrong.after.held === null,
-      { correct: wrong.after.correctCount, wrong: wrong.after.wrongCount });
+    // Level 4 deliberately uses the picked item's matching fixed carry lane:
+    // raw wrist X cannot steer a held item onto a different plate. Levels 5–7
+    // retain their independent free-cursor wrong-placement behaviour.
+    if (level !== "4") {
+      await start(page, level);
+      const wrong = await performPlacement(page, level, false);
+      check(label, "flow", "wrong placement increments only the wrong count",
+        wrong.after.correctCount === wrong.before.correctCount &&
+        wrong.after.wrongCount === wrong.before.wrongCount + 1 &&
+        wrong.after.held === null,
+        { correct: wrong.after.correctCount, wrong: wrong.after.wrongCount });
+    }
 
     await start(page, level);
     await page.evaluate(() => window.__qa.setHand(0.5, 0.5, false, true));

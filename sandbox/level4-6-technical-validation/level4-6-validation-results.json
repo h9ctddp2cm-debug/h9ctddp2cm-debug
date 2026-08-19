@@ -1,15 +1,15 @@
 {
-  "generated_at": "2026-08-19T10:20:19.372Z",
+  "generated_at": "2026-08-19T11:24:21.792Z",
   "base_url": "http://127.0.0.1:4173",
   "scope": "Independent technical verification for FTHUE Levels 4, 5, and 6",
   "limitation": "Not clinical validation; Level 6 aperture detection does not measure pinch force.",
   "summary": {
-    "total": 126,
-    "passed": 126,
+    "total": 138,
+    "passed": 138,
     "failed": 0,
     "by_level": {
       "4": {
-        "passed": 48,
+        "passed": 60,
         "failed": 0
       },
       "5": {
@@ -370,6 +370,10 @@
         "wipeCleanPercent": 0,
         "wipeValidMovement": false,
         "wipeCompleted": false,
+        "screenForward": {
+          "x": 84.96,
+          "y": 688.8
+        },
         "cursorY": 672.4
       }
     },
@@ -398,6 +402,10 @@
         "wipeCleanPercent": 0,
         "wipeValidMovement": false,
         "wipeCompleted": false,
+        "screenForward": {
+          "x": 84.96,
+          "y": 688.8
+        },
         "cursorY": 672.4
       }
     },
@@ -426,6 +434,10 @@
         "wipeCleanPercent": 0,
         "wipeValidMovement": false,
         "wipeCompleted": false,
+        "screenForward": {
+          "x": 84.96,
+          "y": 513.6656588428123
+        },
         "cursorY": 672.4
       }
     },
@@ -454,6 +466,10 @@
         "wipeCleanPercent": 0,
         "wipeValidMovement": false,
         "wipeCompleted": false,
+        "screenForward": {
+          "x": 84.96,
+          "y": 688.8
+        },
         "cursorY": 672.4
       }
     },
@@ -464,7 +480,7 @@
       "passed": true,
       "details": {
         "calibrated": true,
-        "progress": 0.96478385393792,
+        "progress": 0.9781659894415103,
         "engaged": true,
         "shoulderFlexProgress": 1,
         "elbowExtensionProgress": 1,
@@ -474,7 +490,7 @@
         "movementConfirmFrames": 6,
         "elbowMode": "active-extension",
         "directionMode": "individualized",
-        "directionPeak": 2.624836412710845,
+        "directionPeak": 2.5316111633466982,
         "forwardScale": 0.26,
         "shoulderHike": false,
         "framingReady": true,
@@ -482,6 +498,10 @@
         "wipeCleanPercent": 0,
         "wipeValidMovement": false,
         "wipeCompleted": false,
+        "screenForward": {
+          "x": 84.96,
+          "y": 271.71002210214
+        },
         "cursorY": 672.4
       }
     },
@@ -492,7 +512,7 @@
       "passed": true,
       "details": {
         "calibrated": true,
-        "progress": 0.0031825925100139856,
+        "progress": 0.005159981815999793,
         "engaged": true,
         "shoulderFlexProgress": 1,
         "elbowExtensionProgress": 0,
@@ -502,7 +522,7 @@
         "movementConfirmFrames": 0,
         "elbowMode": "active-extension",
         "directionMode": "individualized",
-        "directionPeak": 2.624836412710845,
+        "directionPeak": 2.5316111633466982,
         "forwardScale": 0.26,
         "shoulderHike": false,
         "framingReady": true,
@@ -510,6 +530,10 @@
         "wipeCleanPercent": 0,
         "wipeValidMovement": false,
         "wipeCompleted": false,
+        "screenForward": {
+          "x": 84.96,
+          "y": 686.5997837536577
+        },
         "cursorY": 672.4
       }
     },
@@ -520,7 +544,7 @@
       "passed": true,
       "details": {
         "calibrated": true,
-        "progress": 0.00000636609330865507,
+        "progress": 0.000010321436253073366,
         "engaged": false,
         "shoulderFlexProgress": 0,
         "elbowExtensionProgress": 0,
@@ -530,7 +554,7 @@
         "movementConfirmFrames": 0,
         "elbowMode": "active-extension",
         "directionMode": "individualized",
-        "directionPeak": 2.624836412710845,
+        "directionPeak": 2.5316111633466982,
         "forwardScale": 0.26,
         "shoulderHike": false,
         "framingReady": true,
@@ -538,7 +562,914 @@
         "wipeCleanPercent": 0,
         "wipeValidMovement": false,
         "wipeCompleted": false,
+        "screenForward": {
+          "x": 84.96,
+          "y": 688.7955989395816
+        },
         "cursorY": 672.4
+      }
+    },
+    {
+      "level": "4",
+      "category": "vertical elbow mapping",
+      "name": "dimsum maps extension upward and flexion downward without elbow-driven horizontal drift",
+      "passed": true,
+      "details": {
+        "fixedWristPoint": {
+          "x": 112,
+          "y": 156
+        },
+        "extended": {
+          "reach": {
+            "calibrated": true,
+            "progress": 0.96478385393792,
+            "engaged": true,
+            "shoulderFlexProgress": 1,
+            "elbowExtensionProgress": 1,
+            "elbowAngle": 161.403384267591,
+            "fullExtensionAngle": 157.5,
+            "completionReady": true,
+            "movementConfirmFrames": 6,
+            "elbowMode": "active-extension",
+            "directionMode": "individualized",
+            "directionPeak": 2.5316111633466982,
+            "forwardScale": 0.26,
+            "shoulderHike": false,
+            "framingReady": true,
+            "warning": "",
+            "wipeCleanPercent": 0,
+            "wipeValidMovement": false,
+            "wipeCompleted": false,
+            "screenForward": {
+              "x": 84.96,
+              "y": 277.4161646808709
+            },
+            "cursorY": 156
+          },
+          "transport": {
+            "standardTransport": true,
+            "held": null,
+            "rawCursor": {
+              "x": 112,
+              "y": 156
+            },
+            "displayCursor": {
+              "x": 112,
+              "y": 156
+            },
+            "reachProgress": 0.96478385393792,
+            "carry": null,
+            "controlled": null
+          },
+          "bowling": {
+            "phase": "reach",
+            "peak": 0,
+            "armProgress": 0,
+            "ballProgress": 0,
+            "rollStartedAt": 0,
+            "pins": 0,
+            "rounds": 0,
+            "readyForNextAt": 0
+          }
+        },
+        "flexed": {
+          "reach": {
+            "calibrated": true,
+            "progress": 0.005133213725829009,
+            "engaged": true,
+            "shoulderFlexProgress": 1,
+            "elbowExtensionProgress": 0,
+            "elbowAngle": 93.87882289203809,
+            "fullExtensionAngle": 157.5,
+            "completionReady": false,
+            "movementConfirmFrames": 0,
+            "elbowMode": "active-extension",
+            "directionMode": "individualized",
+            "directionPeak": 2.5316111633466982,
+            "forwardScale": 0.26,
+            "shoulderHike": false,
+            "framingReady": true,
+            "warning": "",
+            "wipeCleanPercent": 0,
+            "wipeValidMovement": false,
+            "wipeCompleted": false,
+            "screenForward": {
+              "x": 84.96,
+              "y": 686.6111976673064
+            },
+            "cursorY": 156
+          },
+          "transport": {
+            "standardTransport": true,
+            "held": null,
+            "rawCursor": {
+              "x": 112,
+              "y": 156
+            },
+            "displayCursor": {
+              "x": 112,
+              "y": 156
+            },
+            "reachProgress": 0.005133213725829009,
+            "carry": null,
+            "controlled": null
+          },
+          "bowling": {
+            "phase": "reach",
+            "peak": 0,
+            "armProgress": 0,
+            "ballProgress": 0,
+            "rollStartedAt": 0,
+            "pins": 0,
+            "rounds": 0,
+            "readyForNextAt": 0
+          }
+        }
+      }
+    },
+    {
+      "level": "4",
+      "category": "vertical elbow mapping",
+      "name": "wipewindow maps extension upward and flexion downward without elbow-driven horizontal drift",
+      "passed": true,
+      "details": {
+        "fixedWristPoint": {
+          "x": 112,
+          "y": 156
+        },
+        "extended": {
+          "reach": {
+            "calibrated": true,
+            "progress": 0.96478385393792,
+            "engaged": true,
+            "shoulderFlexProgress": 1,
+            "elbowExtensionProgress": 1,
+            "elbowAngle": 161.403384267591,
+            "fullExtensionAngle": 157.5,
+            "completionReady": true,
+            "movementConfirmFrames": 6,
+            "elbowMode": "active-extension",
+            "directionMode": "individualized",
+            "directionPeak": 2.5316111633466982,
+            "forwardScale": 0.26,
+            "shoulderHike": false,
+            "framingReady": true,
+            "warning": "",
+            "wipeCleanPercent": 0,
+            "wipeValidMovement": true,
+            "wipeCompleted": false,
+            "screenForward": {
+              "x": 84.96,
+              "y": 277.4161646808709
+            },
+            "cursorY": 156
+          },
+          "transport": {
+            "standardTransport": false,
+            "held": null,
+            "rawCursor": {
+              "x": 112,
+              "y": 156
+            },
+            "displayCursor": {
+              "x": 112,
+              "y": 156
+            },
+            "reachProgress": 0.96478385393792,
+            "carry": null,
+            "controlled": null
+          },
+          "bowling": {
+            "phase": "reach",
+            "peak": 0,
+            "armProgress": 0,
+            "ballProgress": 0,
+            "rollStartedAt": 0,
+            "pins": 0,
+            "rounds": 0,
+            "readyForNextAt": 0
+          }
+        },
+        "flexed": {
+          "reach": {
+            "calibrated": true,
+            "progress": 0.0031825925100139856,
+            "engaged": true,
+            "shoulderFlexProgress": 1,
+            "elbowExtensionProgress": 0,
+            "elbowAngle": 93.87882289203809,
+            "fullExtensionAngle": 157.5,
+            "completionReady": false,
+            "movementConfirmFrames": 0,
+            "elbowMode": "active-extension",
+            "directionMode": "individualized",
+            "directionPeak": 2.5316111633466982,
+            "forwardScale": 0.26,
+            "shoulderHike": false,
+            "framingReady": true,
+            "warning": "",
+            "wipeCleanPercent": 0,
+            "wipeValidMovement": false,
+            "wipeCompleted": false,
+            "screenForward": {
+              "x": 84.96,
+              "y": 687.44294255373
+            },
+            "cursorY": 156
+          },
+          "transport": {
+            "standardTransport": false,
+            "held": null,
+            "rawCursor": {
+              "x": 112,
+              "y": 156
+            },
+            "displayCursor": {
+              "x": 112,
+              "y": 156
+            },
+            "reachProgress": 0.0031825925100139856,
+            "carry": null,
+            "controlled": null
+          },
+          "bowling": {
+            "phase": "reach",
+            "peak": 0,
+            "armProgress": 0,
+            "ballProgress": 0,
+            "rollStartedAt": 0,
+            "pins": 0,
+            "rounds": 0,
+            "readyForNextAt": 0
+          }
+        }
+      }
+    },
+    {
+      "level": "4",
+      "category": "vertical elbow mapping",
+      "name": "bowling maps extension upward and flexion downward without elbow-driven horizontal drift",
+      "passed": true,
+      "details": {
+        "fixedWristPoint": {
+          "x": 112,
+          "y": 156
+        },
+        "extended": {
+          "reach": {
+            "calibrated": true,
+            "progress": 0.96478385393792,
+            "engaged": true,
+            "shoulderFlexProgress": 1,
+            "elbowExtensionProgress": 1,
+            "elbowAngle": 161.403384267591,
+            "fullExtensionAngle": 157.5,
+            "completionReady": true,
+            "movementConfirmFrames": 6,
+            "elbowMode": "active-extension",
+            "directionMode": "individualized",
+            "directionPeak": 2.5316111633466982,
+            "forwardScale": 0.26,
+            "shoulderHike": false,
+            "framingReady": true,
+            "warning": "",
+            "wipeCleanPercent": 0,
+            "wipeValidMovement": false,
+            "wipeCompleted": false,
+            "screenForward": {
+              "x": 84.96,
+              "y": 277.4161646808709
+            },
+            "cursorY": 156
+          },
+          "transport": {
+            "standardTransport": false,
+            "held": null,
+            "rawCursor": {
+              "x": 112,
+              "y": 156
+            },
+            "displayCursor": {
+              "x": 112,
+              "y": 156
+            },
+            "reachProgress": 0.96478385393792,
+            "carry": null,
+            "controlled": null
+          },
+          "bowling": {
+            "phase": "return",
+            "peak": 0.96478385393792,
+            "armProgress": 0.96478385393792,
+            "ballProgress": 0,
+            "rollStartedAt": 0,
+            "pins": 0,
+            "rounds": 0,
+            "readyForNextAt": 0
+          }
+        },
+        "flexed": {
+          "reach": {
+            "calibrated": true,
+            "progress": 0.008322551316128699,
+            "engaged": true,
+            "shoulderFlexProgress": 1,
+            "elbowExtensionProgress": 0,
+            "elbowAngle": 93.87882289203809,
+            "fullExtensionAngle": 157.5,
+            "completionReady": false,
+            "movementConfirmFrames": 0,
+            "elbowMode": "active-extension",
+            "directionMode": "individualized",
+            "directionPeak": 2.5316111633466982,
+            "forwardScale": 0.26,
+            "shoulderHike": false,
+            "framingReady": true,
+            "warning": "",
+            "wipeCleanPercent": 0,
+            "wipeValidMovement": false,
+            "wipeCompleted": false,
+            "screenForward": {
+              "x": 84.96,
+              "y": 685.2512641188026
+            },
+            "cursorY": 156
+          },
+          "transport": {
+            "standardTransport": false,
+            "held": null,
+            "rawCursor": {
+              "x": 112,
+              "y": 156
+            },
+            "displayCursor": {
+              "x": 112,
+              "y": 156
+            },
+            "reachProgress": 0.008322551316128699,
+            "carry": null,
+            "controlled": null
+          },
+          "bowling": {
+            "phase": "rolling",
+            "peak": 0.9916070063413166,
+            "armProgress": 0.14652318305653425,
+            "ballProgress": 0.005809524172828311,
+            "rollStartedAt": 2826.699999809265,
+            "pins": 0,
+            "rounds": 0,
+            "readyForNextAt": 0
+          }
+        }
+      }
+    },
+    {
+      "level": "4",
+      "category": "vertical elbow mapping",
+      "name": "mahjongwash maps extension upward and flexion downward without elbow-driven horizontal drift",
+      "passed": true,
+      "details": {
+        "fixedWristPoint": {
+          "x": 112,
+          "y": 156
+        },
+        "extended": {
+          "reach": {
+            "calibrated": true,
+            "progress": 0.96478385393792,
+            "engaged": true,
+            "shoulderFlexProgress": 1,
+            "elbowExtensionProgress": 1,
+            "elbowAngle": 161.403384267591,
+            "fullExtensionAngle": 157.5,
+            "completionReady": true,
+            "movementConfirmFrames": 6,
+            "elbowMode": "active-extension",
+            "directionMode": "individualized",
+            "directionPeak": 2.5316111633466982,
+            "forwardScale": 0.26,
+            "shoulderHike": false,
+            "framingReady": true,
+            "warning": "",
+            "wipeCleanPercent": 0,
+            "wipeValidMovement": false,
+            "wipeCompleted": false,
+            "screenForward": {
+              "x": 84.96,
+              "y": 277.4161646808709
+            },
+            "cursorY": 156
+          },
+          "transport": {
+            "standardTransport": false,
+            "held": null,
+            "rawCursor": {
+              "x": 112,
+              "y": 156
+            },
+            "displayCursor": {
+              "x": 112,
+              "y": 156
+            },
+            "reachProgress": 0.96478385393792,
+            "carry": null,
+            "controlled": null
+          },
+          "bowling": {
+            "phase": "reach",
+            "peak": 0,
+            "armProgress": 0,
+            "ballProgress": 0,
+            "rollStartedAt": 0,
+            "pins": 0,
+            "rounds": 0,
+            "readyForNextAt": 0
+          }
+        },
+        "flexed": {
+          "reach": {
+            "calibrated": true,
+            "progress": 0.008279376977143564,
+            "engaged": true,
+            "shoulderFlexProgress": 1,
+            "elbowExtensionProgress": 0,
+            "elbowAngle": 93.87882289203809,
+            "fullExtensionAngle": 157.5,
+            "completionReady": false,
+            "movementConfirmFrames": 0,
+            "elbowMode": "active-extension",
+            "directionMode": "individualized",
+            "directionPeak": 2.5316111633466982,
+            "forwardScale": 0.26,
+            "shoulderHike": false,
+            "framingReady": true,
+            "warning": "",
+            "wipeCleanPercent": 0,
+            "wipeValidMovement": false,
+            "wipeCompleted": false,
+            "screenForward": {
+              "x": 84.96,
+              "y": 685.2696736569459
+            },
+            "cursorY": 156
+          },
+          "transport": {
+            "standardTransport": false,
+            "held": null,
+            "rawCursor": {
+              "x": 112,
+              "y": 156
+            },
+            "displayCursor": {
+              "x": 112,
+              "y": 156
+            },
+            "reachProgress": 0.008279376977143564,
+            "carry": null,
+            "controlled": null
+          },
+          "bowling": {
+            "phase": "reach",
+            "peak": 0,
+            "armProgress": 0,
+            "ballProgress": 0,
+            "rollStartedAt": 0,
+            "pins": 0,
+            "rounds": 0,
+            "readyForNextAt": 0
+          }
+        }
+      }
+    },
+    {
+      "level": "4",
+      "category": "vertical elbow mapping",
+      "name": "buspay maps extension upward and flexion downward without elbow-driven horizontal drift",
+      "passed": true,
+      "details": {
+        "fixedWristPoint": {
+          "x": 112,
+          "y": 156
+        },
+        "extended": {
+          "reach": {
+            "calibrated": true,
+            "progress": 0.943199764416,
+            "engaged": true,
+            "shoulderFlexProgress": 1,
+            "elbowExtensionProgress": 1,
+            "elbowAngle": 161.403384267591,
+            "fullExtensionAngle": 157.5,
+            "completionReady": true,
+            "movementConfirmFrames": 6,
+            "elbowMode": "active-extension",
+            "directionMode": "individualized",
+            "directionPeak": 2.5316111633466982,
+            "forwardScale": 0.26,
+            "shoulderHike": false,
+            "framingReady": true,
+            "warning": "",
+            "wipeCleanPercent": 0,
+            "wipeValidMovement": false,
+            "wipeCompleted": false,
+            "screenForward": {
+              "x": 84.96,
+              "y": 286.6196204530176
+            },
+            "cursorY": 156
+          },
+          "transport": {
+            "standardTransport": false,
+            "held": null,
+            "rawCursor": {
+              "x": 112,
+              "y": 156
+            },
+            "displayCursor": {
+              "x": 112,
+              "y": 156
+            },
+            "reachProgress": 0.943199764416,
+            "carry": null,
+            "controlled": null
+          },
+          "bowling": {
+            "phase": "reach",
+            "peak": 0,
+            "armProgress": 0,
+            "ballProgress": 0,
+            "rollStartedAt": 0,
+            "pins": 0,
+            "rounds": 0,
+            "readyForNextAt": 0
+          }
+        },
+        "flexed": {
+          "reach": {
+            "calibrated": true,
+            "progress": 0.0050900393868438705,
+            "engaged": true,
+            "shoulderFlexProgress": 1,
+            "elbowExtensionProgress": 0,
+            "elbowAngle": 93.87882289203809,
+            "fullExtensionAngle": 157.5,
+            "completionReady": false,
+            "movementConfirmFrames": 0,
+            "elbowMode": "active-extension",
+            "directionMode": "individualized",
+            "directionPeak": 2.5316111633466982,
+            "forwardScale": 0.26,
+            "shoulderHike": false,
+            "framingReady": true,
+            "warning": "",
+            "wipeCleanPercent": 0,
+            "wipeValidMovement": false,
+            "wipeCompleted": false,
+            "screenForward": {
+              "x": 84.96,
+              "y": 686.6296072054497
+            },
+            "cursorY": 156
+          },
+          "transport": {
+            "standardTransport": false,
+            "held": null,
+            "rawCursor": {
+              "x": 112,
+              "y": 156
+            },
+            "displayCursor": {
+              "x": 112,
+              "y": 156
+            },
+            "reachProgress": 0.0050900393868438705,
+            "carry": null,
+            "controlled": null
+          },
+          "bowling": {
+            "phase": "reach",
+            "peak": 0,
+            "armProgress": 0,
+            "ballProgress": 0,
+            "rollStartedAt": 0,
+            "pins": 0,
+            "rounds": 0,
+            "readyForNextAt": 0
+          }
+        }
+      }
+    },
+    {
+      "level": "4",
+      "category": "elbow carry",
+      "name": "unheld Level 4 cursor remains the real wrist point for item selection",
+      "passed": true,
+      "details": {
+        "standardTransport": true,
+        "held": null,
+        "rawCursor": {
+          "x": 377,
+          "y": 664
+        },
+        "displayCursor": {
+          "x": 377,
+          "y": 664
+        },
+        "reachProgress": 0,
+        "carry": null,
+        "controlled": null
+      }
+    },
+    {
+      "level": "4",
+      "category": "elbow carry",
+      "name": "ordinary Level 4 pickup captures a stable carry lane",
+      "passed": true,
+      "details": {
+        "standardTransport": true,
+        "held": {
+          "id": 19,
+          "label": "叉燒包",
+          "x": 472,
+          "y": 656
+        },
+        "rawCursor": {
+          "x": 472,
+          "y": 656
+        },
+        "displayCursor": {
+          "x": 472,
+          "y": 656
+        },
+        "reachProgress": 0,
+        "carry": {
+          "pickupX": 472,
+          "laneX": 472,
+          "pickupY": 656,
+          "targetY": 352.6
+        },
+        "controlled": {
+          "x": 472,
+          "y": 656
+        }
+      }
+    },
+    {
+      "level": "4",
+      "category": "elbow carry",
+      "name": "held standard Level 4 item keeps its fixed carry X across elbow extension",
+      "passed": true,
+      "details": {
+        "heldStart": {
+          "standardTransport": true,
+          "held": {
+            "id": 19,
+            "label": "叉燒包",
+            "x": 472,
+            "y": 656
+          },
+          "rawCursor": {
+            "x": 472,
+            "y": 656
+          },
+          "displayCursor": {
+            "x": 472,
+            "y": 656
+          },
+          "reachProgress": 0,
+          "carry": {
+            "pickupX": 472,
+            "laneX": 472,
+            "pickupY": 656,
+            "targetY": 352.6
+          },
+          "controlled": {
+            "x": 472,
+            "y": 656
+          }
+        },
+        "heldExtended": {
+          "standardTransport": true,
+          "held": {
+            "id": 19,
+            "label": "叉燒包",
+            "x": 472,
+            "y": 355.14643427604454
+          },
+          "rawCursor": {
+            "x": 232,
+            "y": 656
+          },
+          "displayCursor": {
+            "x": 472,
+            "y": 355.14643427604454
+          },
+          "reachProgress": 0.9916070063413166,
+          "carry": {
+            "pickupX": 472,
+            "laneX": 472,
+            "pickupY": 656,
+            "targetY": 352.6
+          },
+          "controlled": {
+            "x": 472,
+            "y": 355.14643427604454
+          }
+        }
+      }
+    },
+    {
+      "level": "4",
+      "category": "elbow carry",
+      "name": "held standard Level 4 item moves upward on elbow extension",
+      "passed": true,
+      "details": {
+        "heldStart": {
+          "standardTransport": true,
+          "held": {
+            "id": 19,
+            "label": "叉燒包",
+            "x": 472,
+            "y": 656
+          },
+          "rawCursor": {
+            "x": 472,
+            "y": 656
+          },
+          "displayCursor": {
+            "x": 472,
+            "y": 656
+          },
+          "reachProgress": 0,
+          "carry": {
+            "pickupX": 472,
+            "laneX": 472,
+            "pickupY": 656,
+            "targetY": 352.6
+          },
+          "controlled": {
+            "x": 472,
+            "y": 656
+          }
+        },
+        "heldExtended": {
+          "standardTransport": true,
+          "held": {
+            "id": 19,
+            "label": "叉燒包",
+            "x": 472,
+            "y": 355.14643427604454
+          },
+          "rawCursor": {
+            "x": 232,
+            "y": 656
+          },
+          "displayCursor": {
+            "x": 472,
+            "y": 355.14643427604454
+          },
+          "reachProgress": 0.9916070063413166,
+          "carry": {
+            "pickupX": 472,
+            "laneX": 472,
+            "pickupY": 656,
+            "targetY": 352.6
+          },
+          "controlled": {
+            "x": 472,
+            "y": 355.14643427604454
+          }
+        }
+      }
+    },
+    {
+      "level": "4",
+      "category": "elbow carry",
+      "name": "held standard Level 4 item moves downward on elbow flexion",
+      "passed": true,
+      "details": {
+        "heldExtended": {
+          "standardTransport": true,
+          "held": {
+            "id": 19,
+            "label": "叉燒包",
+            "x": 472,
+            "y": 355.14643427604454
+          },
+          "rawCursor": {
+            "x": 232,
+            "y": 656
+          },
+          "displayCursor": {
+            "x": 472,
+            "y": 355.14643427604454
+          },
+          "reachProgress": 0.9916070063413166,
+          "carry": {
+            "pickupX": 472,
+            "laneX": 472,
+            "pickupY": 656,
+            "targetY": 352.6
+          },
+          "controlled": {
+            "x": 472,
+            "y": 355.14643427604454
+          }
+        },
+        "heldFlexed": {
+          "standardTransport": true,
+          "held": {
+            "id": 19,
+            "label": "叉燒包",
+            "x": 472,
+            "y": 655.6249442617298
+          },
+          "rawCursor": {
+            "x": 232,
+            "y": 656
+          },
+          "displayCursor": {
+            "x": 472,
+            "y": 655.6249442617298
+          },
+          "reachProgress": 0.0012361758018135571,
+          "carry": {
+            "pickupX": 472,
+            "laneX": 472,
+            "pickupY": 656,
+            "targetY": 352.6
+          },
+          "controlled": {
+            "x": 472,
+            "y": 655.6249442617298
+          }
+        }
+      }
+    },
+    {
+      "level": "4",
+      "category": "independent mechanics",
+      "name": "wipe-window keeps the real wrist path rather than a carry lane",
+      "passed": true,
+      "details": {
+        "standardTransport": false,
+        "held": null,
+        "rawCursor": {
+          "x": 318.00000000000006,
+          "y": 471.99999999999994
+        },
+        "displayCursor": {
+          "x": 318.00000000000006,
+          "y": 471.99999999999994
+        },
+        "reachProgress": 0.96478385393792,
+        "carry": null,
+        "controlled": null
+      }
+    },
+    {
+      "level": "4",
+      "category": "independent mechanics",
+      "name": "bowling continues to consume the reach-return progress cycle",
+      "passed": true,
+      "details": {
+        "phase": "rolling",
+        "peak": 0.72,
+        "armProgress": 0.12,
+        "ballProgress": 0,
+        "rollStartedAt": 4401.199999809265,
+        "pins": 0,
+        "rounds": 0,
+        "readyForNextAt": 0
+      }
+    },
+    {
+      "level": "4",
+      "category": "independent mechanics",
+      "name": "mahjong-wash continues to advance from a real wrist path",
+      "passed": true,
+      "details": {
+        "progress": 0.14290293908803975,
+        "lastPoint": {
+          "x": 0.31,
+          "y": 0.4
+        },
+        "rounds": 0,
+        "completed": false,
+        "readyForNextAt": 0
+      }
+    },
+    {
+      "level": "4",
+      "category": "independent mechanics",
+      "name": "bus-pay continues to require a real cursor at the precision target",
+      "passed": true,
+      "details": {
+        "targetIndex": 1,
+        "hitCount": 1,
+        "holdFrames": 0,
+        "armed": false,
+        "flashUntil": 4831.699999809265
       }
     },
     {
@@ -558,7 +1489,7 @@
         "movementConfirmFrames": 6,
         "elbowMode": "active-extension",
         "directionMode": "individualized",
-        "directionPeak": 2.1368428254479963,
+        "directionPeak": 2.0433638617375376,
         "forwardScale": 0.26,
         "shoulderHike": false,
         "framingReady": true,
@@ -566,6 +1497,10 @@
         "wipeCleanPercent": 0,
         "wipeValidMovement": false,
         "wipeCompleted": false,
+        "screenForward": {
+          "x": 84.96,
+          "y": 286.6196204530176
+        },
         "cursorY": 672.4
       }
     },
@@ -588,23 +1523,6 @@
     },
     {
       "level": "4",
-      "category": "flow",
-      "name": "dwell pickup acquires an item",
-      "passed": true,
-      "details": {}
-    },
-    {
-      "level": "4",
-      "category": "flow",
-      "name": "wrong placement increments only the wrong count",
-      "passed": true,
-      "details": {
-        "correct": 0,
-        "wrong": 1
-      }
-    },
-    {
-      "level": "4",
       "category": "tracking",
       "name": "brief tracking loss uses the 750 ms grace window",
       "passed": true,
@@ -613,189 +1531,192 @@
         "level": "4",
         "theme": "dimsum",
         "gameType": "dwell",
-        "score": 0,
-        "correctCount": 0,
-        "grabCount": 0,
-        "wrongCount": 0,
-        "timeLeft": 179,
-        "handDetected": true,
-        "detectionHeldGrace": true,
-        "held": null,
-        "paused": false,
-        "safetyBlocking": false,
-        "safety": {
-          "restCount": 0,
-          "restTotalSec": 0,
-          "restStartedAtMs": 0,
-          "stopReason": "",
-          "stoppedEarly": false,
-          "trackingFailureCount": 0,
-          "holdTimeoutCount": 0,
-          "releaseDelayCount": 0,
-          "repeatedReleaseDifficulty": 0,
-          "difficultyReducedCount": 0,
-          "compensationCounts": {},
-          "compensationPauseCount": 0,
-          "safetyAckLevel": "",
-          "safetyAckAtIso": ""
-        },
-        "items": [
-          {
-            "label": "叉燒包",
-            "type": "charsiu",
-            "x": 472,
-            "y": 656,
-            "r": 68.64
-          },
-          {
-            "label": "糯米雞",
-            "type": "lotusrice",
-            "x": 708,
-            "y": 656,
-            "r": 68.64
-          }
-        ],
-        "targets": [
-          {
-            "label": "叉燒包",
-            "type": "charsiu",
-            "x": 491.6,
-            "y": 352.6,
-            "w": 240,
-            "h": 177.6
-          },
-          {
-            "label": "糯米雞",
-            "type": "lotusrice",
-            "x": 688.4,
-            "y": 352.6,
-            "w": 240,
-            "h": 177.6
-          }
-        ]
-      }
-    },
-    {
-      "level": "4",
-      "category": "tracking",
-      "name": "sustained tracking loss clears detection safely",
-      "passed": true,
-      "details": {
-        "screen": "game",
-        "level": "4",
-        "theme": "dimsum",
-        "gameType": "dwell",
-        "score": 0,
-        "correctCount": 0,
-        "grabCount": 0,
-        "wrongCount": 0,
-        "timeLeft": 179,
-        "handDetected": false,
-        "detectionHeldGrace": false,
-        "held": null,
-        "paused": false,
-        "safetyBlocking": false,
-        "safety": {
-          "restCount": 0,
-          "restTotalSec": 0,
-          "restStartedAtMs": 0,
-          "stopReason": "",
-          "stoppedEarly": false,
-          "trackingFailureCount": 0,
-          "holdTimeoutCount": 0,
-          "releaseDelayCount": 0,
-          "repeatedReleaseDifficulty": 0,
-          "difficultyReducedCount": 0,
-          "compensationCounts": {},
-          "compensationPauseCount": 0,
-          "safetyAckLevel": "",
-          "safetyAckAtIso": ""
-        },
-        "items": [
-          {
-            "label": "叉燒包",
-            "type": "charsiu",
-            "x": 472,
-            "y": 656,
-            "r": 68.64
-          },
-          {
-            "label": "糯米雞",
-            "type": "lotusrice",
-            "x": 708,
-            "y": 656,
-            "r": 68.64
-          }
-        ],
-        "targets": [
-          {
-            "label": "叉燒包",
-            "type": "charsiu",
-            "x": 491.6,
-            "y": 352.6,
-            "w": 240,
-            "h": 177.6
-          },
-          {
-            "label": "糯米雞",
-            "type": "lotusrice",
-            "x": 688.4,
-            "y": 352.6,
-            "w": 240,
-            "h": 177.6
-          }
-        ]
-      }
-    },
-    {
-      "level": "5",
-      "category": "flow",
-      "name": "prepared gesture and hold acquire an item",
-      "passed": true,
-      "details": {}
-    },
-    {
-      "level": "5",
-      "category": "flow",
-      "name": "correct placement increments the correct count",
-      "passed": true,
-      "details": {
-        "before": 0,
-        "after": 1
-      }
-    },
-    {
-      "level": "5",
-      "category": "flow",
-      "name": "prepared gesture and hold acquire an item",
-      "passed": true,
-      "details": {}
-    },
-    {
-      "level": "5",
-      "category": "flow",
-      "name": "wrong placement increments only the wrong count",
-      "passed": true,
-      "details": {
-        "correct": 0,
-        "wrong": 1
-      }
-    },
-    {
-      "level": "5",
-      "category": "tracking",
-      "name": "brief tracking loss uses the 750 ms grace window",
-      "passed": true,
-      "details": {
-        "screen": "game",
-        "level": "5",
-        "theme": "dimsum",
-        "gameType": "grasp",
         "score": 0,
         "correctCount": 0,
         "grabCount": 0,
         "wrongCount": 0,
         "timeLeft": 180,
+        "running": true,
+        "handDetected": true,
+        "detectionHeldGrace": true,
+        "held": null,
+        "paused": false,
+        "safetyBlocking": false,
+        "safety": {
+          "restCount": 0,
+          "restTotalSec": 0,
+          "restStartedAtMs": 0,
+          "stopReason": "",
+          "stoppedEarly": false,
+          "trackingFailureCount": 0,
+          "holdTimeoutCount": 0,
+          "releaseDelayCount": 0,
+          "repeatedReleaseDifficulty": 0,
+          "difficultyReducedCount": 0,
+          "compensationCounts": {},
+          "compensationPauseCount": 0,
+          "safetyAckLevel": "",
+          "safetyAckAtIso": ""
+        },
+        "items": [
+          {
+            "label": "糯米雞",
+            "type": "lotusrice",
+            "x": 472,
+            "y": 656,
+            "r": 68.64
+          },
+          {
+            "label": "叉燒包",
+            "type": "charsiu",
+            "x": 708,
+            "y": 656,
+            "r": 68.64
+          }
+        ],
+        "targets": [
+          {
+            "label": "叉燒包",
+            "type": "charsiu",
+            "x": 491.6,
+            "y": 352.6,
+            "w": 240,
+            "h": 177.6
+          },
+          {
+            "label": "糯米雞",
+            "type": "lotusrice",
+            "x": 688.4,
+            "y": 352.6,
+            "w": 240,
+            "h": 177.6
+          }
+        ]
+      }
+    },
+    {
+      "level": "4",
+      "category": "tracking",
+      "name": "sustained tracking loss clears detection safely",
+      "passed": true,
+      "details": {
+        "screen": "game",
+        "level": "4",
+        "theme": "dimsum",
+        "gameType": "dwell",
+        "score": 0,
+        "correctCount": 0,
+        "grabCount": 0,
+        "wrongCount": 0,
+        "timeLeft": 179,
+        "running": true,
+        "handDetected": false,
+        "detectionHeldGrace": false,
+        "held": null,
+        "paused": false,
+        "safetyBlocking": false,
+        "safety": {
+          "restCount": 0,
+          "restTotalSec": 0,
+          "restStartedAtMs": 0,
+          "stopReason": "",
+          "stoppedEarly": false,
+          "trackingFailureCount": 0,
+          "holdTimeoutCount": 0,
+          "releaseDelayCount": 0,
+          "repeatedReleaseDifficulty": 0,
+          "difficultyReducedCount": 0,
+          "compensationCounts": {},
+          "compensationPauseCount": 0,
+          "safetyAckLevel": "",
+          "safetyAckAtIso": ""
+        },
+        "items": [
+          {
+            "label": "糯米雞",
+            "type": "lotusrice",
+            "x": 472,
+            "y": 656,
+            "r": 68.64
+          },
+          {
+            "label": "叉燒包",
+            "type": "charsiu",
+            "x": 708,
+            "y": 656,
+            "r": 68.64
+          }
+        ],
+        "targets": [
+          {
+            "label": "叉燒包",
+            "type": "charsiu",
+            "x": 491.6,
+            "y": 352.6,
+            "w": 240,
+            "h": 177.6
+          },
+          {
+            "label": "糯米雞",
+            "type": "lotusrice",
+            "x": 688.4,
+            "y": 352.6,
+            "w": 240,
+            "h": 177.6
+          }
+        ]
+      }
+    },
+    {
+      "level": "5",
+      "category": "flow",
+      "name": "prepared gesture and hold acquire an item",
+      "passed": true,
+      "details": {}
+    },
+    {
+      "level": "5",
+      "category": "flow",
+      "name": "correct placement increments the correct count",
+      "passed": true,
+      "details": {
+        "before": 0,
+        "after": 1
+      }
+    },
+    {
+      "level": "5",
+      "category": "flow",
+      "name": "prepared gesture and hold acquire an item",
+      "passed": true,
+      "details": {}
+    },
+    {
+      "level": "5",
+      "category": "flow",
+      "name": "wrong placement increments only the wrong count",
+      "passed": true,
+      "details": {
+        "correct": 0,
+        "wrong": 1
+      }
+    },
+    {
+      "level": "5",
+      "category": "tracking",
+      "name": "brief tracking loss uses the 750 ms grace window",
+      "passed": true,
+      "details": {
+        "screen": "game",
+        "level": "5",
+        "theme": "dimsum",
+        "gameType": "grasp",
+        "score": 0,
+        "correctCount": 0,
+        "grabCount": 0,
+        "wrongCount": 0,
+        "timeLeft": 179,
+        "running": true,
         "handDetected": true,
         "detectionHeldGrace": true,
         "held": null,
@@ -833,8 +1754,8 @@
             "r": 77.88000000000001
           },
           {
-            "label": "叉燒包",
-            "type": "charsiu",
+            "label": "糯米雞",
+            "type": "lotusrice",
             "x": 920.4,
             "y": 344.4,
             "r": 77.88000000000001
@@ -875,6 +1796,7 @@
         "grabCount": 0,
         "wrongCount": 0,
         "timeLeft": 179,
+        "running": true,
         "handDetected": false,
         "detectionHeldGrace": false,
         "held": null,
@@ -912,8 +1834,8 @@
             "r": 77.88000000000001
           },
           {
-            "label": "叉燒包",
-            "type": "charsiu",
+            "label": "糯米雞",
+            "type": "lotusrice",
             "x": 920.4,
             "y": 344.4,
             "r": 77.88000000000001
@@ -988,6 +1910,7 @@
         "grabCount": 0,
         "wrongCount": 0,
         "timeLeft": 179,
+        "running": true,
         "handDetected": true,
         "detectionHeldGrace": true,
         "held": null,
@@ -1011,43 +1934,43 @@
         },
         "items": [
           {
-            "label": "燒賣",
-            "type": "siumai",
+            "label": "蝦餃",
+            "type": "hargau",
             "x": 259.6,
-            "y": 344.4,
-            "r": 66
+            "y": 319.8,
+            "r": 114
           },
           {
-            "label": "燒賣",
-            "type": "siumai",
+            "label": "蝦餃",
+            "type": "hargau",
             "x": 590,
-            "y": 442.8,
-            "r": 66
+            "y": 410,
+            "r": 114
           },
           {
             "label": "蝦餃",
             "type": "hargau",
             "x": 920.4,
-            "y": 344.4,
-            "r": 76
+            "y": 319.8,
+            "r": 114
           }
         ],
         "targets": [
           {
             "label": "燒賣",
             "type": "siumai",
-            "x": 778.8000000000001,
-            "y": 705.8,
-            "w": 260,
-            "h": 192.4
+            "x": 295,
+            "y": 661.7,
+            "w": 390,
+            "h": 288.6
           },
           {
             "label": "蝦餃",
             "type": "hargau",
-            "x": 1026.6,
-            "y": 705.8,
-            "w": 260,
-            "h": 192.4
+            "x": 885,
+            "y": 661.7,
+            "w": 390,
+            "h": 288.6
           }
         ]
       }
@@ -1067,6 +1990,7 @@
         "grabCount": 0,
         "wrongCount": 0,
         "timeLeft": 179,
+        "running": true,
         "handDetected": false,
         "detectionHeldGrace": false,
         "held": null,
@@ -1090,43 +2014,43 @@
         },
         "items": [
           {
-            "label": "燒賣",
-            "type": "siumai",
+            "label": "蝦餃",
+            "type": "hargau",
             "x": 259.6,
-            "y": 344.4,
-            "r": 66
+            "y": 319.8,
+            "r": 114
           },
           {
-            "label": "燒賣",
-            "type": "siumai",
+            "label": "蝦餃",
+            "type": "hargau",
             "x": 590,
-            "y": 442.8,
-            "r": 66
+            "y": 410,
+            "r": 114
           },
           {
             "label": "蝦餃",
             "type": "hargau",
             "x": 920.4,
-            "y": 344.4,
-            "r": 76
+            "y": 319.8,
+            "r": 114
           }
         ],
         "targets": [
           {
             "label": "燒賣",
             "type": "siumai",
-            "x": 778.8000000000001,
-            "y": 705.8,
-            "w": 260,
-            "h": 192.4
+            "x": 295,
+            "y": 661.7,
+            "w": 390,
+            "h": 288.6
           },
           {
             "label": "蝦餃",
             "type": "hargau",
-            "x": 1026.6,
-            "y": 705.8,
-            "w": 260,
-            "h": 192.4
+            "x": 885,
+            "y": 661.7,
+            "w": 390,
+            "h": 288.6
           }
         ]
       }

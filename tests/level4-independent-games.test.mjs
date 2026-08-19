@@ -38,7 +38,7 @@ test('actual tracking and render loops connect all three independent games', () 
 
 test('bowling requires a reach-return cycle and bus pay requires stable frames', () => {
   assert.match(moduleJs, /game\.phase = 'return'/);
-  assert.match(moduleJs, /motion\.completionReady \|\| \(game\.peak >= 0\.68 && motion\.progress <= 0\.18\)/);
+  assert.match(moduleJs, /game\.peak >= 0\.68 && motion\.progress <= 0\.18/);
   assert.match(moduleJs, /game\.holdFrames < 4/);
   assert.match(moduleJs, /game\.armed = false/);
 });
@@ -54,6 +54,31 @@ test('wipe game reveals the mirrored live camera through visibly opaque fog', ()
   assert.match(html, /ctx\.scale\(-1,1\)/);
   assert.match(html, /const mist = 0\.88/);
   assert.match(html, /level4-selfie-window/);
+});
+
+test('ordinary Level 4 transport is lane-locked while standalone mechanics stay independent', () => {
+  assert.match(html, /function isLevel4StandardTransportGame\(\)/);
+  assert.match(html, /return isLevel4Tabletop\(\) && !isLevel4StandaloneGame\(\)/);
+  assert.match(html, /function beginLevel4StandardCarry\(item\)/);
+  assert.match(html, /const pickupX = item\.x/);
+  assert.match(html, /laneX:pickupFitsTarget \? pickupX : \(matchingTarget \? matchingTarget\.x : pickupX\)/);
+  assert.match(html, /y:carry\.pickupY \+ \(carry\.targetY-carry\.pickupY\) \* progress/);
+  assert.match(html, /function moveHeldItemWithController\(\)/);
+  assert.match(html, /beginLevel4StandardCarry\(nearest\)/);
+  assert.match(html, /const heldPoint = heldItemControlPoint\(\)/);
+  assert.match(html, /function displayCursorPoint\(\)/);
+  assert.match(html, /standardTransport:isLevel4StandardTransportGame\(\)/);
+  assert.match(html, /function level4VerticalReachPoint\(cw = gameCanvas\.width, ch = gameCanvas\.height\)/);
+  assert.match(html, /y:bottom \+ \(top-bottom\) \* clamp01\(level4Reach\.progress\)/);
+  assert.match(html, /fixed in X, so elbow motion can never be presented as left\/right movement/);
+  assert.match(html, /drawLevel4VerticalReachGuide\(ctx, cw, ch\)/);
+  assert.match(html, /reachProgress\(\)\{ return clamp01\(level4Reach\.progress\); \}/);
+  assert.match(moduleJs, /armProgress:0/);
+  assert.match(moduleJs, /game\.armProgress = level4Runtime\.clamp01\(motion\.progress\)/);
+  assert.match(moduleJs, /const verticalProgress = game\.phase === 'rolling' \? game\.ballProgress : game\.armProgress/);
+  assert.match(moduleJs, /level4Runtime\.drawVerticalReachGuide\(ctx,cw,ch\)/);
+  assert.match(moduleJs, /function updateLevel4MahjongWash\(motion, nx, ny\)/);
+  assert.match(moduleJs, /function updateLevel4BusPay\(motion, nx, ny\)/);
 });
 
 test('offline build ships and caches the new module', () => {

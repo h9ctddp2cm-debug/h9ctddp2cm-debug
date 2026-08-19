@@ -2,6 +2,23 @@
 
 Original prompt: Fix Level 6–7 interactions: make light clothes-peg press detection easier without claiming tool/force sensing; keep bare three-finger pinch held through transport until a stabilized reopen; enlarge Level 6–7 dim sum and steamers 1.5× without collisions; and make Home/Back/Stop safely return to level selection.
 
+## 2026-08-19 Level 4 all-game vertical elbow mapping clarification
+
+- **Shared signal:** Level 4 now excludes screen X from the individualized reach-estimator vector. Its smoothed elbow progress is presented consistently as vertical on-screen forward movement: extension moves up; flexion returns down. A fixed-X vertical guide is visible in all five Level 4 games.
+- **Dimsum and ordinary transport:** the unheld selection cursor remains the real affected-wrist position. Pickup locks the item and carry ring to its stable lane X, while `level4Reach.progress` alone controls carried Y.
+- **Independent mechanics preserved:** wipe-window and mahjong-wash retain their intrinsic real-wrist paths; bus-pay keeps its real precision cursor; bowling’s ball now visibly rises with extension and lowers with flexion before it can roll, and release requires the reach-return cycle.
+- **Deterministic coverage:** technical validation adds one extension/flexion, fixed-X regression assertion for each of dimsum, wipe-window, bowling, mahjong-wash and bus-pay, plus the existing unheld selection and held-item carry-lane checks.
+- **Cache and validation:** cache version is `fthue-rehab-v19-20260819-level4-vertical-all-games`. `bash scripts/build-dist.sh` passed (115 files, 68M); `bash tools/checkjs.sh` and `git diff --check` passed; focused Level 4 tests passed 36/36; full tests passed 72/72 with 3 skips; technical validation passed 138/138 (Level 4: 60, Level 5: 40, Level 6: 31).
+- **Bedside caveat:** this is synthetic-pose software verification only. Confirm the target front-facing iPad’s framing, illumination, complete shoulder–elbow–wrist visibility, practical extension range, and the readability of the vertical guide with the intended participant. No real-person QA media was created.
+
+## 2026-08-19 Level 4 elbow-controlled transport lane repair
+
+- **Standard Level 4 transport:** the real affected-wrist cursor remains available for selecting an unheld item. On pickup, the game records a stable carry lane (the pickup X when it is target-aligned, otherwise the matching target’s X for replenishment layouts) and moves the held item and visible carry ring only from the smoothed `level4Reach.progress`. Extension moves upward toward the target; flexion returns downward. Raw screen X/Y can no longer make a held standard Level 4 item drift sideways.
+- **Scope protection:** Level 3 and Levels 5–7 retain their prior controllers. Level 4 wipe-window and mahjong-wash keep real wrist paths, bowling still consumes reach progress, and bus-pay keeps its precision real-cursor target.
+- **Deterministic coverage:** source contracts cover the carry-lane controller and special-game routing. Runtime Level 4–6 validation explicitly checks unheld real-wrist selection, fixed held X across extension/flexion, upward/downward progress mapping, wipe/mahjong paths, bowling progress, and bus precision cursor.
+- **Cache:** bumped service worker cache to `fthue-rehab-v18-20260819-level4-elbow-lane` so installed iPads receive the controller repair.
+- **Bedside caveat:** verify the chosen carry lane and extension range using the target front-facing iPad, participant seating, lighting, and complete shoulder–elbow–wrist visibility. This automated work uses synthetic pose inputs only and contains no real-person media.
+
 ## 2026-08-19 Level 6–7 interaction, layout and navigation repair
 
 - **Clothes-peg:** calibration and runtime now use the same composite hand-aperture score (thumb-to-index and thumb-to-middle observable gaps). A smaller sustained calibrated change enters a press; separate lower exit threshold preserves hysteresis. All relevant copy states that the camera observes visible hand motion only, and does not identify a tool or measure force.
