@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v29-20260820-two-point-generation-idempotence";
+const CACHE_VERSION = "fthue-rehab-v30-20260821-chrome-update-takeover";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");
