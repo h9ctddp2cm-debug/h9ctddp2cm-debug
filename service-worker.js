@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v24-20260819-level4-live-arc-release";
+const CACHE_VERSION = "fthue-rehab-v29-20260820-two-point-generation-idempotence";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

@@ -101,6 +101,7 @@ self.__OFFLINE_ASSETS = [
   "./index.html",
   "./level4-elbow-calibration.js",
   "./level4-three-games-module.js",
+  "./level4-video-freshness.js",
   "./manifest.webmanifest",
   "./offline.html",
   "./sandbox/level3-bilateral/Level3BilateralDataCollector.js",
