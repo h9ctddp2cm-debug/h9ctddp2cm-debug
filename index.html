@@ -13949,9 +13949,28 @@ window.__level4GameRuntime = Object.freeze({
 </script>
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
+  const LEVEL_APP_BUILD = "v30-20260821-chrome-update-takeover";
+  const levelAppHadController = Boolean(navigator.serviceWorker.controller);
+  let levelAppReloading = false;
+
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (!levelAppHadController || levelAppReloading) return;
+    levelAppReloading = true;
+    window.location.reload();
+  });
+
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./service-worker.js", { updateViaCache:"none" })
-      .then((registration) => registration.update())
+    navigator.serviceWorker.register(`./service-worker.js?build=${LEVEL_APP_BUILD}`, { updateViaCache:"none" })
+      .then((registration) => {
+        const requestUpdate = () => registration.update().catch((error) => {
+          console.warn("[offline] Service worker update check failed:", error);
+        });
+        requestUpdate();
+        document.addEventListener("visibilitychange", () => {
+          if (document.visibilityState === "visible") requestUpdate();
+        });
+        window.addEventListener("pageshow", requestUpdate);
+      })
       .catch((error) => {
         console.warn("[offline] Service worker registration failed:", error);
       });

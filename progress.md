@@ -2,6 +2,11 @@
 
 Original prompt: Fix Level 6–7 interactions: make light clothes-peg press detection easier without claiming tool/force sensing; keep bare three-finger pinch held through transport until a stabilized reopen; enlarge Level 6–7 dim sum and steamers 1.5× without collisions; and make Home/Back/Stop safely return to level selection.
 
+## 2026-08-21 Chrome tablet update takeover
+- **原因**：公開網站已是 v29，但長時間開啟的 Chrome 分頁不會因新 service worker 完成安裝而自動重新載入，所以畫面可繼續執行記憶體內的舊 JavaScript。
+- **修正**：頁面現在監聽 `controllerchange`，新 worker 接管後只自動重新載入一次；分頁由背景返回前景或經 back-forward cache 恢復時，亦主動執行更新檢查。
+- **強制辨識新 worker**：註冊 URL 加入 v30 build query，並保持 `updateViaCache:"none"`；service-worker cache 升至 `fthue-rehab-v30-20260821-chrome-update-takeover`。
+
 ## 2026-08-19 Level 4 巴士拍卡示範動作更新
 - 巴士拍卡設定頁及主題卡改用新的合成實景 GIF，清楚示範「屈肘下方起點 → 向前伸肘 → 保持伸肘向外畫弧 → 對準讀卡器拍卡」。
 - 最終 GIF 已裁走頭面，只保留肩以下動作、卡及無品牌讀卡器；alt text 明確標示為合成實景示範，不會當作真人臨床證據。
