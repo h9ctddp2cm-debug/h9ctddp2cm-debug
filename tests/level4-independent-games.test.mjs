@@ -39,8 +39,9 @@ test('actual tracking and render loops connect all three independent games', () 
 test('bowling requires a reach-return cycle and bus pay requires stable frames', () => {
   assert.match(moduleJs, /game\.phase = 'return'/);
   assert.match(moduleJs, /if\(level4MotionReachGate\(motion\)\)/);
-  assert.match(moduleJs, /const clearFlexionReversal = game\.peak >= 0\.62/);
-  assert.match(moduleJs, /if\(clearFlexionReversal \|\| level4MotionReturnReady\(motion\)\)/);
+  assert.match(moduleJs, /const falling = game\.peak >= 0\.55 && perFrameDrop > 0\.004/);
+  assert.match(moduleJs, /const decisiveReversal = falling && dropFromPeak >= 0\.06/);
+  assert.match(moduleJs, /if\(decisiveReversal \|\| game\.reversalFrames >= 2 \|\| level4MotionReturnReady\(motion\)\)/);
   assert.match(moduleJs, /game\.holdFrames < 4/);
   assert.match(moduleJs, /game\.armed = false/);
 });
@@ -48,7 +49,10 @@ test('bowling requires a reach-return cycle and bus pay requires stable frames',
 test('mahjong graphics are deterministic and progress ignores shimmer', () => {
   assert.doesNotMatch(moduleJs, /Math\.random/);
   assert.match(moduleJs, /distance < 0\.007 \|\| distance > 0\.16/);
-  assert.match(moduleJs, /LEVEL4_MAHJONG_TILES/);
+  // Real tile faces, seeded (not Math.random) disorder, and a real reshuffle.
+  assert.match(moduleJs, /LEVEL4_MAHJONG_CODES/);
+  assert.match(moduleJs, /function level4MahjongShuffle/);
+  assert.match(moduleJs, /function level4Prng/);
 });
 
 test('wipe game reveals the mirrored live camera through visibly opaque fog', () => {
@@ -64,7 +68,10 @@ test('ordinary Level 4 transport is lane-locked while standalone mechanics stay 
   assert.match(html, /function beginLevel4StandardCarry\(item\)/);
   assert.match(html, /const pickupX = item\.x/);
   assert.match(html, /laneX:pickupFitsTarget \? pickupX : \(matchingTarget \? matchingTarget\.x : pickupX\)/);
-  assert.match(html, /y:carry\.pickupY \+ \(carry\.targetY-carry\.pickupY\) \* progress/);
+  // Canonical direction lock: the lane runs bottom (progress 0, flexed) to top
+  // (progress 1, extended), so elbow flexion can never lift the carried item.
+  assert.match(html, /y:bottomY \+ \(topY-bottomY\) \* progress/);
+  assert.match(html, /bottomY = Math\.max\(item\.level4Carry\.pickupY, item\.level4Carry\.targetY\)/);
   assert.match(html, /function moveHeldItemWithController\(\)/);
   assert.match(html, /beginLevel4StandardCarry\(nearest\)/);
   assert.match(html, /const heldPoint = heldItemControlPoint\(\)/);

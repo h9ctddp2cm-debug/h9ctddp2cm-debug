@@ -966,3 +966,84 @@ Original prompt: Fix Level 6–7 interactions: make light clothes-peg press dete
 - Deterministic tests cover manual endpoint capture, three ordered cycles, inverted raw-angle direction, UI readouts, missing/reversed/stalled tracking, preflight gameplay lock, path wording and immediate bowling release. A flexion-return verifier bug was corrected so a genuine partial return can time out as stalled.
 - Validation: node --test tests/*.mjs = 130 passed, 0 failed, 3 skipped; bash tools/checkjs.sh; node --check level4-elbow-calibration.js; node --check level4-three-games-module.js; bash scripts/build-dist.sh (120 files, 71M); and git diff --check all passed.
 - Bedside caveat: software coverage is synthetic only. Confirm tracking, available elbow excursion and all three preflight cycles on the intended iPad, seating and lighting before clinical use. No real-person media was added or reviewed.
+
+
+## 2026-08-19 Level 4 real-device repair (anchor lock, live camera, real mahjong)
+
+**Root causes found in the shipped code (from the therapist's on-device numeric traces; no recording was opened):**
+1. `evaluateEndpoints()` / `applyCandidate()` accepted a **support-only** calibration (`radial` / `depthZ`) when every elbow-intrinsic primary (`angle`, `spanRatio`, `worldSpan`) failed separation. On the real iPad the captured angle span was only 1–6°, so the two captures unlocked the games on wrist depth alone. Progress then snapped between 0 and 100, a flexed arm could read 1.00 and an extended arm 0.00, and the preflight reported "sequence reversed" repeatedly.
+2. `angleRetention()` fell back to the raw, unqualified angle, so the outward arc silently paused (`arcExtensionGate .45`) and 巴士拍卡 could never register a tap.
+3. There was no conflict detection between signals, no absolute per-frame angle-jump limit and no dropout hold: one 32° landmark glitch or a single lost frame changed the result.
+4. 保齡球 released only after a large return excursion (peak−0.08 plus a per-frame drop), which felt delayed. 保齡球 (`#1b1f2b`) and 巴士拍卡 (`#dfe6e6`) painted an opaque full-canvas background over the live patient view. 洗麻雀 drew white numbered rectangles in a tidy pattern with no sound.
+
+**A. Detection (level4-elbow-calibration.js)**
+- Endpoints and sign are captured **once** per signal by the two therapist captures and then frozen (`buildSignLock`, `state.locked`). Preflight and gameplay can never re-invert, re-learn or auto-recapture; only an explicit new 標記 releases the lock.
+- Canonical progress is forced by the clinical anchors: the flexed capture is exactly 0 and the extended capture exactly 1 (`anchorPriority ['angle','spanRatio','worldSpan']`, `anchorShare .72`, `anchorBound .22`, `anchorEndpointEpsilon .02`). There is **no dependence on anatomical full extension** — beyond the captured extension stays 1.
+- `requirePrimarySignal`: at least one qualified elbow-intrinsic primary is mandatory. A depth-only or support-only capture is refused with stage `retry`, reason `no-primary-signal` and 「未量到手肘動作 · 請調整鏡頭角度」 plus the 45° side-view instruction. `angleRetention()` no longer falls back to an unqualified raw angle; the arc reports `arc-blocked-no-retention-signal` instead.
+- World/depth can never overrule the anchor: a non-anchor signal disagreeing by more than `conflictTolerance .35` for `conflictFrames 10` is suppressed (`conflictReason = <key>-conflicts-angle-anchor`).
+- Dropout / outlier robustness: `maxAngleStepDeg 30` replaces a whole glitch sample with the last accepted one (reported as `angle-glitch`), `dropoutHoldFrames 8` holds the last valid progress on a short tracking loss (`tracking-dropout-hold`) instead of failing the cycle, and `verificationReverseFrames 3` debounces reversal before "sequence reversed" is shown. Three clinically correct cycles now always pass the preflight.
+
+**B. 點心 (index.html)** — the carry lane stores `bottomY = max(pickupY,targetY)` and `topY = min(...)`; the height is `bottomY + (topY-bottomY) * canonical progress`. X is locked to the lane. Flexion can therefore never move the item upward, even when the plate sits below the pickup slot.
+
+**C. 保齡球** — release now happens on the first stable reversal or return (`peak >= .55` with a per-frame drop, `dropFromPeak >= .035` for 2 frames, or `dropFromPeak >= .06` immediately), so there is no perceptible delay. Pins topple on impact and settle. The live camera is drawn first (dim 0.30) and the alley is composited at `globalAlpha .62` over `rgba(27,31,43,.26)`.
+
+**D. 巴士拍卡** — camera first (dim 0.22), bus interior and windows at `globalAlpha .62` over `rgba(223,230,230,.26)`, reader opaque. Flow is extend → hold extension → outward arc → reader dwell → one WebAudio 嘟. The arc uses the wrist lateral signal, and lateral excursion freezes reach rather than collapsing it to 0.
+
+**E. 洗麻雀** — real Hong Kong tile faces from the existing `img/advanced/mahjong_atlas.png` through `__level4GameRuntime.drawMahjongTile` (procedural engraved-ivory fallback only if the atlas has not loaded); no white numbered cards and no new copyrighted or real-person media. Per-round Fisher–Yates shuffle with stable randomised positions, rotations, scales and pile order (`level4Prng`, `level4MahjongShuffle`), reshuffled every third valid wash step and on each new round. Procedural WebAudio clacks (filtered noise burst) fire only during an active valid wash, with a ≥90 ms rate limit in both the module and `playMahjongShuffleClack()`. The camera is the bottom layer here too (dim 0.26) with a translucent table.
+
+**F. 抹窗** — unchanged and still enlarged: 16×10 grid, broader active region, 1.80-cell brush.
+
+**G. Housekeeping** — service worker cache version bumped to `fthue-rehab-v25-20260819-level4-anchor-camera-mahjong`; nothing was committed, pushed or published.
+
+**Validation**
+- `bash tools/checkjs.sh` OK (blocks 0–6); `node --check level4-elbow-calibration.js`; `node --check level4-three-games-module.js`.
+- `node --test tests/*.mjs` per file: adaptive-progression 18, cooking-level-guide 2, level4-bedside-preflight 4, level4-games-behavior 10, level4-independent-games 8, **level4-real-device-repair 25 (new)**, level4-stabilization-arc 12, level4-two-pose-calibration 13, level67-interactions 5, research-auth 14, tracking-regression 29, ui-layout 15 — 0 failures.
+- New deterministic coverage: clinical anchors 0/1, frozen sign lock, support-only capture refusal, world/depth conflict suppression, single-frame 32° angle outlier, one-frame dropout hold, three-cycle preflight pass, shallow-range rejection, 點心 Y direction and jitter-free linearity, immediate bowling release and pin settling, arc block without a retention signal, no reach collapse from lateral motion, camera-first render order plus opaque fallback for all three scenes, mahjong disorder/shuffle determinism and clack throttling.
+- `bash scripts/build-dist.sh` → `dist/public` 120 files; `git diff --check` clean.
+- Camera-free browser QA (headless, synthetic canvas capture stream fed into the app's own video element, no real person): `qa_app_scenes_with_synthetic_camera.png` shows the patient layer visible behind 保齡球, 巴士拍卡 and 洗麻雀; `qa_real_mahjong_tiles_from_app.png` shows the real 筒/索/萬/東南中發 faces rendered by the shipped tile renderer.
+
+**Real-device caveat** — all evidence above is synthetic. On the intended iPad, the therapist must still (1) place the camera roughly 45° to the side so the elbow angle separates the two captures, (2) confirm the calibration strip shows a qualified primary signal (no 「未量到手肘動作」), and (3) complete the three preflight cycles before clinical use.
+
+### 2026-08-20 QA artifact relocation (security review remediation)
+
+- The whole `qa/` tree (bedside/device captures, probes and visual-QA screenshots — 34 previously tracked files plus local ignored captures) was **moved out of the repository** to `/home/user/workspace/ych_rehab_qa_artifacts/qa/`, structure intact. Files were moved, never opened or copied, so participant/tester imagery is preserved untouched and was not inspected.
+- Generated local review artifacts were moved to `/home/user/workspace/ych_rehab_qa_artifacts/review-notes/` (`interface_text_audit_20260812.md`, `level4_elbow_transport_findings_20260819.md`, `level4_stabilized_arc_findings_20260819.md`, `level4_two_pose_calibration_findings_20260819.md`, `progress_repaired_20260819.md`, `level4_preflight_handoff_20260819.txt`, `qa_level4_transport_debug.mjs`). The camera-free synthetic render harness and its screenshots now live in `/home/user/workspace/ych_rehab_qa_artifacts/synthetic-render-qa/`.
+- `git rm -r --cached qa` removed all 34 tracked QA paths from version control (staged only; nothing committed, pushed or published). Only runtime source, tests, tools, docs and assets remain in the repository.
+- `.gitignore` now documents the external QA location and keeps `qa/`, `qa_*/` and generated findings/handoff/audit markdown ignored as a safety net.
+- `tools/visual_qa_login.mjs` writes to `/home/user/workspace/ych_rehab_qa_artifacts/qa/research-auth` (override with `QA_OUT_DIR`) instead of a repository path.
+- `scripts/build-dist.sh` gained two hard guards: the build fails if `qa/` exists inside the repository, and if any `qa` / `user-recordings` / `*-recording-recheck` path appears in `dist/public`. `qa` was also added to the banned-path list.
+- No test or build step referenced `qa/`, so the test suite is unaffected. Historical `qa/...` mentions in earlier progress entries now refer to the external artifacts directory.
+- Re-validation after the move: `bash tools/checkjs.sh` OK; `node --check` OK for both Level 4 modules, `tools/visual_qa_login.mjs` and `service-worker.js`; `node --test tests/*.mjs` 155 passed / 0 failed across 12 files; `bash scripts/build-dist.sh` → `dist/public` 120 files with no QA path present; `git diff --check` clean.
+
+### 2026-08-20 Level 4 真機失敗修正 v26（五段錄影逐格分析）
+
+治療師在私人預覽用真機測試 v25，**五段錄影全部失敗**。錄影只在倉庫外分析（`/home/user/workspace/ych_rehab_qa_artifacts/new-recordings-20260820/`，抽格 2 fps + debug 面板裁圖），任何病人影像都沒有進入倉庫或 `dist/`。下表只保留 app 自己 debug 面板顯示的數字。
+
+| 錄影 | 遊戲 | Debug 狀態 | 觀察數字 | 失敗關口 | 畫面 |
+|---|---|---|---|---|---|
+| 1 | 抹窗 | `stage ready · preflight-passed`、`weights angle 0.72 / radial 0.00`、驗證 3/3 | 肘角 80.9→175.5→99.4→145.8°，**進度全程 1.00 / 上方終點** | 標記幅度遠細於實際活動幅度 → 上限飽和，永遠見不到屈肘 | 鏡頭底層正常、清潔 16% |
+| 2 | 直線遊戲 | `verification-reversed` / `verification-await-extension`、`weights spanRatio 0.72`、`no separation: angle Δ10.76` | 進度 16/33/49/89/92/100% 與肘角完全脫節，驗證 0/3 | 肘角差 10.76° < 12° → 改由 `spanRatio` 主導 → 非單調 → 永久「次序反轉」 | 鏡頭正常 |
+| 3 | 弧線遊戲 | 驗證 1/3→2/3 | **反轉**：87.3°→100%，152.9/155.5/157.7°→0% | 兩次標記次序／透視倒轉，方向被凍結 | 鏡頭正常 |
+| 4 | 洗麻雀 | `verification-await-extension`→`verification-reversed`、遊戲鎖定 | 138–172° 都是 0%，114.8° 只有 7% | 下限飽和 + 反轉 | 真麻雀牌面正常 |
+| 5 | 點心 | `verification-await-extension` + 次序反轉、`no separation: spanRatio Δ-0.04 / worldSpan Δ-0.08`（負值＝標記倒轉） | 94–144° 全部 0%、下方起點、驗證 0/3 | 反轉 → 永遠拎唔起點心 | 鏡頭＋點心正常 |
+
+**根因（四項，全部有錄影數字支持）**
+
+1. **弧線凍結會鎖死進度。** 伸肘本身會令手腕側移，`arcInstant` 一過 0.07 就把 reach 凍結在當時的數值，之後每一格再凍結一次 → 抹窗停在 1.00、點心／洗麻雀停在 0.00，而肘角其實在 80° 範圍內來回。**修正**：伸肘弧出時不再凍結，而是改為只用肘角錨點計算（`arcAnchorOnly`）——側移只影響 `spanRatio`/`worldSpan`/`radial` 等全臂投影訊號，不影響肘關節角度。原本的凍結只保留給完全沒有肘角錨點的情況。
+2. **標記次序／透視倒轉被當成合法方向。** 肘角在解剖上是單調的（屈曲細、伸直大），所以現在對 `angle`/`spanRatio`/`worldSpan`/`radial` 做**解剖定向**（`angleAnatomicalOrientation`）：屈曲永遠是 0，伸直永遠是 1，`depthZ` 保留拍攝時的方向。定向只做一次，之後照樣凍結，不會自動反轉或重新標記。
+3. **標記幅度細過實際活動幅度 → 飽和。** `rangeExpansion`：中位數濾波後連續 4 格超出上端才擴闊上端，上限為標記幅度的 4 倍及 180°，**下端（屈曲錨點）永不移動**，所以 flexed = 0 的臨床錨點保持不變；單格 landmark 跳格不會擴闊。
+4. **投影訊號取代了肘角。** `requireAngleAnchor`：只要兩次標記都量到肘角，肘角就必須是錨點；肘角差 ≥5°（`angleCaptureFloorDeg`）可先作暫定錨點，但要靠真實活動幅度（`minLiveExcursionDeg` 12°）才計驗證週期（`verification-await-range`，不算失敗）；若肘角量到但完全分不開而其他訊號分得開，直接拒絕校正（`angle-no-separation`，指示把 iPad 移到患側約 45° 再重新標記），不會靜靜地解鎖一個與手肘無關的遊戲。
+
+**改動檔案**
+- `level4-elbow-calibration.js` — 解剖定向 + 範圍擴闊 + 肘角優先錨點 + 弧線改為錨點主導；新增 snapshot 欄位 `oriented`/`provisional`/`expansion`/`anchorRange`/`anchorRangeReady`/`arc.anchorOnly`；新增指引 `angle-no-separation`、`verification-await-range`。
+- `index.html` — 床邊 debug 行加上 `oriented`、`range`（未夠會標示）、`widened`、`arc anchor-only`。
+- `service-worker.js` — cache version → `fthue-rehab-v26-20260820-level4-anatomic-anchor-arc`（`tests/adaptive-progression.test.mjs`、`tests/tracking-regression.test.mjs` 同步更新）。
+- `tests/level4-recording-replay.test.mjs`（新，13 個測試）— 只用錄影中肉眼可見的數字重播五段軌跡，沒有任何影像或病人資料。
+- `tests/level4-two-pose-calibration.test.mjs`、`tests/level4-real-device-repair.test.mjs`、`tests/level4-bedside-preflight.test.mjs`、`tests/level4-stabilization-arc.test.mjs` — 四個舊測試原本斷言「凍結倒轉方向」及「投影訊號可以做錨點」，已按新的臨床規則改寫。
+
+**驗證**
+- `bash tools/checkjs.sh` OK；`node --check` OK（兩個 Level 4 模組、`service-worker.js`）。
+- 逐檔 `node --test`：adaptive-progression 18、cooking-level-guide 2、level4-bedside-preflight 4、level4-games-behavior 10、level4-independent-games 8、level4-real-device-repair 25、**level4-recording-replay 13（新）**、level4-stabilization-arc 12、level4-two-pose-calibration 13、level67-interactions 5、research-auth 14、tracking-regression 29、ui-layout 15 = **168 pass / 0 fail**。
+- 無鏡頭瀏覽器煙霧測試：頁面載入 0 個 console／page error。
+- `bash scripts/build-dist.sh` → `dist/public` 120 files / 76M；`git diff --check` clean。沒有 commit、push 或 publish。
+- Final verification: full Node suite 175 total / 172 pass / 0 fail / 3 skip; combined iPad+new iPhone recording replay 17/17; `tools/checkjs.sh`, `git diff --check`, and `scripts/build-dist.sh` passed. Built public package was checked for absent QA/recording media.

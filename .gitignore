@@ -3,12 +3,16 @@ node_modules/
 .env
 .env.*
 *.log
-
-# Local clinical QA captures may contain identifiable participant/tester imagery.
-qa/user-recordings/
-qa/level4-user-5789/
-qa/level4-recording-recheck/
 tools/__pycache__/
-# Local visual QA may contain identifiable bedside or device-test imagery.
-# Never stage or publish these captures; tracked historical QA files remain tracked.
+
+# QA, synthetic-render and local review artifacts must live OUTSIDE this
+# repository: /home/user/workspace/ych_rehab_qa_artifacts/
+# (qa/ = bedside and device captures, review-notes/ = generated findings).
+# These patterns stay as a safety net so a stray local capture can never be
+# staged again.
 qa/
+qa_*/
+*_findings_*.md
+*_handoff_*.md
+*_audit_*.md
+progress_repaired_*.md

@@ -13,15 +13,19 @@ Level 6 detects normalized thumb-index aperture. It does not measure pinch force
 
 ## Run
 
-Start the web app on a local HTTP server, then run:
+Start the built web app on a local HTTP server, then run:
 
 ```bash
+QA_OUT_DIR=/absolute/path/outside-the-repository \
 node run-level4-6-technical-validation.mjs http://127.0.0.1:4173
 ```
 
-The runner writes:
+With `QA_OUT_DIR`, the runner writes outside the source repository:
 
 - `level4-6-validation-results.json`
 - `level4-6-validation-report.md`
+
+If `QA_OUT_DIR` is omitted, it retains the historical sandbox-directory output
+for local compatibility.
 
 Any failed assertion exits with a non-zero status.

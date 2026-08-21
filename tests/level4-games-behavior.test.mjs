@@ -119,10 +119,10 @@ test('bowling releases immediately on a clear stabilized flexion reversal', () =
     'a clear flexion reversal should release without waiting for full return');
 });
 
-test('all standalone Level 4 scoring stays locked until the bedside preflight passes', () => {
+test('all standalone Level 4 scoring stays locked until the fresh calibrated controller is ready', () => {
   const bowling = loadGames({theme:'bowling'});
   bowling.qa.reset();
-  const lockedReach = {...reached, gameReady:false, preflightPassed:false};
+  const lockedReach = {...reached, gameReady:false};
   assert.equal(parse(bowling.qa.bowling(lockedReach)).bowlingPhase, 'reach');
 
   const bus = loadGames({theme:'buspay'});

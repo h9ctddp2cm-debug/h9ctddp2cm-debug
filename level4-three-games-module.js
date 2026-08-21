@@ -77,31 +77,33 @@ function level4PinsSettled(game){
 const level4MiniGames = {
   bowling:{
     phase:'reach', peak:0, armProgress:0, ballProgress:0, rollStartedAt:0,
-    lastArmProgress:0,
+    lastArmProgress:0, reversalFrames:0, lastConsumedGeneration:null,
     pins:0, rounds:0, readyForNextAt:0,
     impactAt:0, physicsAt:0, pinBodies:level4NewPinBodies(),
   },
   mahjong:{
-    progress:0, lastPoint:null, rounds:0, completed:false,
-    readyForNextAt:0,
+    progress:0, lastPoint:null, lastConsumedGeneration:null, rounds:0, completed:false,
+    readyForNextAt:0, layout:null, seed:0, washSteps:0, lastClackAt:0,
+    clackCount:0, shuffleCount:0,
   },
   bus:{
-    targetIndex:0, hitCount:0, holdFrames:0, armed:true,
+    targetIndex:0, hitCount:0, holdFrames:0, armed:true, lastConsumedGeneration:null,
     flashUntil:0, beepCount:0, beeped:false, successUntil:0,
   },
   reset(){
     Object.assign(this.bowling, {
       phase:'reach', peak:0, armProgress:0, ballProgress:0, rollStartedAt:0,
-      lastArmProgress:0,
+      lastArmProgress:0, reversalFrames:0, lastConsumedGeneration:null,
       pins:0, rounds:0, readyForNextAt:0,
       impactAt:0, physicsAt:0, pinBodies:level4NewPinBodies(),
     });
     Object.assign(this.mahjong, {
-      progress:0, lastPoint:null, rounds:0, completed:false,
-      readyForNextAt:0,
+      progress:0, lastPoint:null, lastConsumedGeneration:null, rounds:0, completed:false,
+      readyForNextAt:0, layout:null, seed:0, washSteps:0, lastClackAt:0,
+      clackCount:0, shuffleCount:0,
     });
     Object.assign(this.bus, {
-      targetIndex:0, hitCount:0, holdFrames:0, armed:true,
+      targetIndex:0, hitCount:0, holdFrames:0, armed:true, lastConsumedGeneration:null,
       flashUntil:0, beepCount:0, beeped:false, successUntil:0,
     });
   },
@@ -141,11 +143,28 @@ function level4MotionReturnReady(motion){
   return level4MotionProgress(motion) <= 0.18;
 }
 
-/* Calibration alone does not authorise scoring. The shared controller exposes
-   gameReady only after its live three-cycle bedside proof has passed; losing
-   tracking also drops it immediately. */
+/* A fresh calibrated two-point controller authorises scoring. There is no
+   repetition lock; stale or lost camera frames fail closed upstream by setting
+   gameReady false. */
 function level4MotionGameplayReady(motion){
-  return !!(motion?.calibrated && motion.gameReady === true && !motion.shoulderHike);
+  return !!(motion?.calibrated && motion.gameReady === true);
+}
+
+/* Every scoring/path update consumes a decoded generation at most once.  A
+   legacy test harness that supplies no generation still treats each explicit
+   call as a synthetic new frame, but production always provides both fields. */
+function level4AdmitGameGeneration(game, motion, clearPartial){
+  if(!level4MotionGameplayReady(motion)){
+    if(typeof clearPartial === 'function') clearPartial();
+    return false;
+  }
+  if(motion?.newFrame === false) return false;
+  const generation = motion?.frameGeneration;
+  if(Number.isFinite(generation)){
+    if(game.lastConsumedGeneration === generation) return false;
+    game.lastConsumedGeneration = generation;
+  }
+  return true;
 }
 
 function level4MotionArcProgress(motion){
@@ -156,21 +175,24 @@ function level4MotionArcProgress(motion){
 /* Path games: adequate stabilized extension first, then the outward path. */
 function level4MotionPathReady(motion){
   if(!level4MotionGameplayReady(motion)) return false;
-  const extensionSeen = level4MotionReachGate(motion)
-    || motion.cyclePhase === 'reached'
-    || motion.cyclePhase === 'arc-out'
-    || motion.cyclePhase === 'arc-return';
-  if(!extensionSeen) return false;
-  if(!motion.arcCalibrated) return false;
-  const extensionMaintained = motion.arcPaused !== true
-    && (!Number.isFinite(motion.extensionRetention) || motion.extensionRetention >= 0.45);
-  return extensionMaintained
+  // This gate is intentionally one-way only: angle progress remains wholly
+  // controlled by the captured two-point map while the outward movement merely
+  // permits an arc-game action after extension.
+  return level4MotionProgress(motion) >= 0.70
+    && motion.arcCalibrated === true
     && (motion.arcActive === true || level4MotionArcProgress(motion) >= 0.12);
 }
 
 function updateLevel4Bowling(motion){
   if(!level4Runtime.isBowling()) return;
   const game = level4MiniGames.bowling;
+  // A stale/lost pose must not complete a half-observed reach-return cycle.
+  if(!level4AdmitGameGeneration(game, motion, ()=>{
+    if(game.phase !== 'rolling'){
+      game.phase = 'reach'; game.peak = 0; game.armProgress = 0;
+      game.lastArmProgress = 0; game.reversalFrames = 0;
+    }
+  })) return;
   const now = level4Runtime.now();
   if(game.phase === 'rolling'){
     // The released ball rolls the length of the lane on its own timeline; the
@@ -191,14 +213,13 @@ function updateLevel4Bowling(motion){
     if(game.readyForNextAt && now >= game.readyForNextAt && level4PinsSettled(game)){
       Object.assign(game, {
         phase:'reach', peak:0, armProgress:0, ballProgress:0, rollStartedAt:0,
-        lastArmProgress:0,
+        lastArmProgress:0, reversalFrames:0, lastConsumedGeneration:null,
         pins:0, readyForNextAt:0, impactAt:0, physicsAt:0,
         pinBodies:level4NewPinBodies(),
       });
     }
     return;
   }
-  if(!level4MotionGameplayReady(motion)) return;
   // Before release, the ball follows the shared vertical reach signal:
   // elbow extension raises it up the lane and flexion brings it back down.
   // Elbow motion is never interpreted as lane X.
@@ -210,24 +231,111 @@ function updateLevel4Bowling(motion){
   }
   if(game.phase === 'return'){
     game.peak = Math.max(game.peak, progress);
-    // The shared progress is already median-filtered and direction-confirmed.
-    // Release as soon as a clear flexion reversal is visible instead of waiting
-    // until the participant has returned almost completely to the start pose.
-    const clearFlexionReversal = game.peak >= 0.62
-      && progress <= game.peak - 0.08
-      && progress < game.lastArmProgress - 0.015;
-    if(clearFlexionReversal || level4MotionReturnReady(motion)){
+    /* Immediate release (real-device repair).
+       The shared progress is already median/EMA-filtered from the captured
+       endpoint direction,
+       so waiting for a large return excursion only produced a perceptible delay
+       between the participant's flexion and the ball leaving the hand. Two
+       consecutive frames of a genuine reversal away from this cycle's peak are
+       enough: the peak must have cleared the reach gate region, the drop from
+       the peak must exceed the stabiliser dead-band, and progress must still be
+       falling this frame. A single noisy frame cannot release the ball. */
+    const dropFromPeak = game.peak - progress;
+    const perFrameDrop = game.lastArmProgress - progress;
+    const falling = game.peak >= 0.55 && perFrameDrop > 0.004;
+    // Two consecutive falling frames that have already cleared the stabiliser
+    // dead-band release the ball, and a single decisive reversal releases at
+    // once. Endpoint jitter (a ~0.03 wobble at the top) never releases.
+    game.reversalFrames = falling && dropFromPeak >= 0.035
+      ? game.reversalFrames + 1
+      : 0;
+    const decisiveReversal = falling && dropFromPeak >= 0.06;
+    if(decisiveReversal || game.reversalFrames >= 2 || level4MotionReturnReady(motion)){
       game.phase = 'rolling';
       game.rollStartedAt = now;
       game.ballProgress = 0;
+      game.reversalFrames = 0;
     }
   }
   game.lastArmProgress = progress;
 }
 
+/* ---- 洗麻雀 tiles: real faces, genuinely disordered, audible ------------
+   A seeded PRNG keeps every layout reproducible for tests while still looking
+   like a hand-swept tabletop: random face codes, random rotations, overlapping
+   but readable positions and no grid. `level4MahjongShuffle` re-permutes the
+   faces and re-randomises the placements, which is what a real wash does; the
+   previous renderer only contracted a fixed array inward. */
+const LEVEL4_MAHJONG_CODES = [
+  'p1','p2','p3','p4','p5','p6','p7','p8','p9',
+  's1','s2','s3','s4','s5','s6','s7','s8','s9',
+  'w1','w2','w3','w4','w5','w6','w7','w8','w9',
+  'E','S','W','N','C','F','B',
+];
+const LEVEL4_MAHJONG_TILE_COUNT = 9;
+function level4Prng(seed){
+  let s = (seed >>> 0) || 1;
+  return function next(){
+    // xorshift32: deterministic, dependency free.
+    s ^= s << 13; s >>>= 0;
+    s ^= s >>> 17;
+    s ^= s << 5; s >>>= 0;
+    return s / 4294967296;
+  };
+}
+function level4MahjongShuffle(game, seed){
+  const rand = level4Prng(seed);
+  const codes = LEVEL4_MAHJONG_CODES.slice();
+  // Fisher-Yates over the whole face list, then take the working tiles.
+  for(let i = codes.length - 1; i > 0; i--){
+    const j = Math.floor(rand() * (i + 1));
+    const tmp = codes[i]; codes[i] = codes[j]; codes[j] = tmp;
+  }
+  const tiles = [];
+  for(let i = 0; i < LEVEL4_MAHJONG_TILE_COUNT; i++){
+    tiles.push({
+      code: codes[i],
+      // Normalised table coordinates (-0.5..0.5). Deliberately clustered and
+      // overlapping rather than aligned, with full 360-degree orientations.
+      x: (rand() - 0.5) * 0.82,
+      y: (rand() - 0.5) * 0.74,
+      rot: (rand() - 0.5) * Math.PI * 1.9,
+      scale: 0.86 + rand() * 0.34,
+      lift: rand(),
+    });
+  }
+  game.layout = tiles;
+  game.seed = seed;
+  game.shuffleCount = (game.shuffleCount || 0) + 1;
+  return tiles;
+}
+function level4MahjongLayout(game){
+  if(!game.layout) level4MahjongShuffle(game, 0x5f3a91 ^ ((game.rounds || 0) * 2654435761));
+  return game.layout;
+}
+/* Procedural tile clacks, throttled. Only called from a valid wash step. */
+function level4MahjongClack(game, now){
+  // The first wash step of a round always sounds; after that a minimum 90 ms
+  // gap keeps a fast sweep from turning into a harsh continuous buzz.
+  const gap = now - game.lastClackAt;
+  if(game.lastClackAt && gap < 90) return false;
+  game.lastClackAt = now;
+  game.clackCount = (game.clackCount || 0) + 1;
+  if(typeof level4Runtime.mahjongClack === 'function'){
+    level4Runtime.mahjongClack();
+  }
+  return true;
+}
+
 function updateLevel4MahjongWash(motion, nx, ny){
   if(!level4Runtime.isMahjongWash()) return;
   const game = level4MiniGames.mahjong;
+  if(!level4AdmitGameGeneration(game, motion, ()=>{
+    // A wash percentage is a partial path credit, not durable state across a
+    // lost/stale pose. A completed round has already scored and is preserved.
+    game.lastPoint = null;
+    if(!game.completed){ game.progress = 0; game.washSteps = 0; }
+  })) return;
   const now = level4Runtime.now();
   if(game.completed){
     if(now >= game.readyForNextAt){
@@ -235,9 +343,13 @@ function updateLevel4MahjongWash(motion, nx, ny){
       game.completed = false;
       game.readyForNextAt = 0;
       game.lastPoint = null;
+      game.washSteps = 0;
+      // A new round starts from a genuinely different, freshly shuffled table.
+      level4MahjongShuffle(game, (game.seed * 1664525 + 1013904223 + game.rounds) >>> 0);
     }
     return;
   }
+  level4MahjongLayout(game);
   // 洗麻雀 is a path game: wash along the outward arc after extending.
   const valid = !!(motion?.engaged && level4MotionPathReady(motion));
   if(!valid || !Number.isFinite(nx) || !Number.isFinite(ny)){
@@ -260,6 +372,14 @@ function updateLevel4MahjongWash(motion, nx, ny){
   // repeated tabletop arcs, not time spent holding one pose.
   if(distance < 0.007 || distance > 0.16) return;
   game.progress = level4Runtime.clamp01(game.progress + distance*1.55);
+  // A valid wash step is the only thing that moves tiles or makes noise: the
+  // tiles are really re-permuted (never a tidy inward drift) and the clack is
+  // rate limited so a fast sweep cannot become a harsh buzz.
+  game.washSteps = (game.washSteps || 0) + 1;
+  if(game.washSteps % 3 === 0){
+    level4MahjongShuffle(game, (game.seed * 1103515245 + 12345 + game.washSteps) >>> 0);
+  }
+  level4MahjongClack(game, now);
   if(game.progress >= 1){
     game.completed = true;
     game.rounds += 1;
@@ -273,7 +393,8 @@ function updateLevel4MahjongWash(motion, nx, ny){
 function updateLevel4BusPay(motion, nx, ny){
   if(!level4Runtime.isBusPay()) return;
   const game = level4MiniGames.bus;
-  if(!level4MotionGameplayReady(motion)) return;
+  // Do not retain a dwell credit across a stale image or a pose dropout.
+  if(!level4AdmitGameGeneration(game, motion, ()=>{ game.holdFrames = 0; })) return;
   // Re-arm at the calibrated flexed start, tap once the shared reach gate opens.
   if(level4MotionReturnReady(motion) || level4MotionProgress(motion) < 0.22){
     game.armed = true;
@@ -305,6 +426,17 @@ function updateLevel4BusPay(motion, nx, ny){
     hit:game.hitCount,
     beeps:game.beepCount,
   });
+}
+
+/* ---- live camera backdrop -------------------------------------------------
+   Every Level 4 scene must keep the patient visible: the therapist needs to see
+   the arm, and the participant needs to see themselves. The runtime paints the
+   mirrored, cover-cropped camera frame first and every scene element is then
+   composited translucently on top. If the runtime hook or the video is not
+   available the scene falls back to its opaque colours so nothing disappears. */
+function level4DrawCameraBackdrop(ctx, cw, ch, dim){
+  if(typeof level4Runtime.drawCameraBackdrop !== 'function') return false;
+  return level4Runtime.drawCameraBackdrop(ctx, cw, ch, dim) === true;
 }
 
 function level4DrawTitle(ctx, cw, title, detail){
@@ -356,8 +488,13 @@ function renderLevel4Bowling(ctx,cw,ch){
     y:deckY+(foulY-deckY)*t,
     half:topHalf+(bottomHalf-topHalf)*t,
   });
-  ctx.fillStyle='#1b1f2b';
+  // Live camera first, then a translucent alley on top of the patient view.
+  const camera = level4DrawCameraBackdrop(ctx,cw,ch,0.30);
+  ctx.fillStyle = camera ? 'rgba(27,31,43,.26)' : '#1b1f2b';
   ctx.fillRect(0,0,cw,ch);
+  // The alley is deliberately see-through: the therapist has to keep watching
+  // the patient's trunk and elbow while the ball rolls.
+  if(camera) ctx.globalAlpha = 0.62;
   // gutters
   ctx.beginPath();
   ctx.moveTo(cw/2-topHalf*1.34,deckY); ctx.lineTo(cw/2+topHalf*1.34,deckY);
@@ -386,6 +523,7 @@ function renderLevel4Bowling(ctx,cw,ch){
   ctx.moveTo(cw/2-topHalf,deckY); ctx.lineTo(cw/2+topHalf,deckY);
   ctx.lineTo(cw/2+topHalf*1.1,deckY+ch*.10); ctx.lineTo(cw/2-topHalf*1.1,deckY+ch*.10);
   ctx.closePath(); ctx.fill();
+  ctx.globalAlpha = 1;
 
   // --- pins (deterministic physics bodies) -------------------------------
   for(const pin of game.pinBodies){
@@ -428,29 +566,72 @@ function renderLevel4Bowling(ctx,cw,ch){
   ctx.restore();
 }
 
-const LEVEL4_MAHJONG_TILES = [
-  [-.31,-.12,-.14],[-.12,-.19,.10],[.08,-.15,-.08],[.28,-.11,.13],
-  [-.27,.13,.07],[-.08,.17,-.12],[.13,.13,.12],[.31,.16,-.06],
-];
+/* Realistic tile face. The real Hong Kong tile atlas is used when the runtime
+   exposes it; otherwise an engraved ivory tile with a carved suit glyph is drawn
+   procedurally. Never a plain white numbered card. */
+function level4DrawMahjongTile(ctx, code, tileW){
+  if(typeof level4Runtime.drawMahjongTile === 'function'
+    && level4Runtime.drawMahjongTile(ctx, code, 0, 0, tileW) !== false){
+    return;
+  }
+  const h = tileW * 176 / 132;
+  // Ivory body with a bevelled edge and a green-jade back edge.
+  const body = ctx.createLinearGradient(-tileW/2, -h/2, tileW/2, h/2);
+  body.addColorStop(0, '#fbf6e4');
+  body.addColorStop(0.55, '#f2ead2');
+  body.addColorStop(1, '#ded3b4');
+  ctx.fillStyle = body;
+  level4Runtime.roundedRect(ctx, -tileW/2, -h/2, tileW, h, tileW*0.16); ctx.fill();
+  ctx.strokeStyle = 'rgba(120,104,66,.75)'; ctx.lineWidth = Math.max(1.5, tileW*0.06);
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,.55)';
+  level4Runtime.roundedRect(ctx, -tileW/2+tileW*0.10, -h/2+tileW*0.10,
+    tileW*0.80, h - tileW*0.20, tileW*0.12); ctx.fill();
+  const honor = code.length === 1;
+  ctx.fillStyle = honor ? '#a8322b' : (code[0] === 's' ? '#1d6b4c' : '#26456e');
+  ctx.font = '800 ' + Math.round(tileW*0.52) + 'px "PingFang TC","Noto Sans TC",serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const glyph = honor
+    // 白板 is genuinely blank on a real tile.
+    ? ({E:'東',S:'南',W:'西',N:'北',C:'中',F:'發',B:''}[code] || '中')
+    : '一二三四五六七八九'[Math.max(0, parseInt(code.slice(1), 10) - 1)];
+  ctx.fillText(glyph, 0, -h*0.10);
+  if(!honor){
+    ctx.font = '700 ' + Math.round(tileW*0.30) + 'px "PingFang TC","Noto Sans TC",serif';
+    ctx.fillText({p:'筒',s:'索',w:'萬'}[code[0]] || '', 0, h*0.24);
+  }
+}
 
 function renderLevel4MahjongWash(ctx,cw,ch){
   const game=level4MiniGames.mahjong;
   const x=cw*.14,y=ch*.23,w=cw*.72,h=ch*.58;
   ctx.save();
-  ctx.fillStyle='rgba(25,112,91,.88)';
+  // Live camera first: the therapist must be able to see the patient's trunk and
+  // arm behind the table, exactly as in 抹窗.
+  const live = level4DrawCameraBackdrop(ctx,cw,ch,0.26);
+  if(!live){
+    ctx.fillStyle='#0f2f28';
+    ctx.fillRect(0,0,cw,ch);
+  }
+  // The mahjong table stays translucent so the patient is never lost.
+  ctx.fillStyle='rgba(25,112,91,.82)';
   level4Runtime.roundedRect(ctx,x,y,w,h,26);ctx.fill();
   ctx.strokeStyle='rgba(255,255,255,.80)';ctx.lineWidth=5;ctx.stroke();
-  LEVEL4_MAHJONG_TILES.forEach((tile,i)=>{
-    const spread=1-game.progress*.34;
-    const tx=cw/2+tile[0]*w*spread;
-    const ty=y+h/2+tile[1]*h*spread;
-    ctx.save();ctx.translate(tx,ty);ctx.rotate(tile[2]*spread);
-    ctx.fillStyle='#fffdf5';
-    level4Runtime.roundedRect(ctx,-20,-28,40,56,7);ctx.fill();
-    ctx.strokeStyle='#c9b98e';ctx.lineWidth=3;ctx.stroke();
-    ctx.fillStyle=i%2?'#b33a31':'#196752';
-    ctx.font='800 22px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText(String(i%4+1),0,0);ctx.restore();
+  const tiles = level4MahjongLayout(game);
+  const tileW = Math.min(w, h) * 0.19;
+  // Draw in "lift" order so overlapping tiles look piled, not stacked in a grid.
+  tiles.slice().sort((a,b) => a.lift - b.lift).forEach(tile => {
+    const tx = cw/2 + tile.x*w;
+    const ty = y + h/2 + tile.y*h;
+    ctx.save();
+    ctx.translate(tx,ty);
+    ctx.rotate(tile.rot);
+    ctx.scale(tile.scale, tile.scale);
+    ctx.shadowColor = 'rgba(0,0,0,.35)';
+    ctx.shadowBlur = tileW*0.35;
+    ctx.shadowOffsetY = tileW*0.10;
+    level4DrawMahjongTile(ctx, tile.code, tileW);
+    ctx.restore();
   });
   ctx.fillStyle='rgba(255,255,255,.86)';
   level4Runtime.roundedRect(ctx,x,y+h+18,w,20,10);ctx.fill();
@@ -469,7 +650,13 @@ function renderLevel4BusPay(ctx,cw,ch){
   const flashing=now<game.flashUntil;
   ctx.save();
   // --- bus interior ------------------------------------------------------
-  ctx.fillStyle='#dfe6e6'; ctx.fillRect(0,0,cw,ch);
+  // Live camera first: the bus interior is a translucent overlay so the patient
+  // and the real room stay visible behind it.
+  const camera = level4DrawCameraBackdrop(ctx,cw,ch,0.22);
+  ctx.fillStyle = camera ? 'rgba(223,230,230,.26)' : '#dfe6e6';
+  ctx.fillRect(0,0,cw,ch);
+  // Translucent interior: the patient stays visible behind the bus.
+  if(camera) ctx.globalAlpha = 0.62;
   // ceiling and side windows
   ctx.fillStyle='#eef3f3'; ctx.fillRect(0,0,cw,ch*.16);
   ctx.fillStyle='#9fc6d8';
@@ -495,6 +682,8 @@ function renderLevel4BusPay(ctx,cw,ch){
   level4Runtime.roundedRect(ctx,cw*.65,ch*.73,cw*.28,ch*.08,10); ctx.fill();
   // yellow pole beside the door
   ctx.fillStyle='#e8c33d'; ctx.fillRect(cw*.955,ch*.16,cw*.014,ch*.62);
+  // The fare reader itself stays fully opaque: it is the interaction target.
+  ctx.globalAlpha = 1;
 
   // --- generic contactless fare reader (no logos) ------------------------
   const rw=Math.min(cw*.26,ch*.30), rh=rw*1.12;
@@ -555,7 +744,10 @@ function level4MiniGamesText(){
     ' bowlingPhase:'+b.phase+' bowlingPeak:'+b.peak.toFixed(3)+' bowlingRounds:'+b.rounds+
     ' bowlingBall:'+b.ballProgress.toFixed(3)+' bowlingPinsDown:'+level4PinsDown(b)+
     ' bowlingPinsSettled:'+level4PinsSettled(b)+
+    ' bowlingReversalFrames:'+b.reversalFrames+
     ' mahjongProgress:'+m.progress.toFixed(3)+' mahjongRounds:'+m.rounds+
+    ' mahjongShuffles:'+(m.shuffleCount||0)+' mahjongClacks:'+(m.clackCount||0)+
+    ' mahjongTiles:'+((m.layout&&m.layout.length)||0)+
     ' busHits:'+p.hitCount+' busTarget:'+p.targetIndex+' busArmed:'+p.armed+
     ' busBeeps:'+p.beepCount+' busBeeped:'+p.beeped;
 }
@@ -571,5 +763,13 @@ window.__level4MiniGamesQA = {
     updateLevel4BusPay(motion,nx,ny);
     return level4MiniGamesText();
   },
+  // Deterministic hooks for the synthetic (camera-free) QA harness.
+  mahjongLayout(){
+    return level4MahjongLayout(level4MiniGames.mahjong).map(t => Object.assign({}, t));
+  },
+  mahjongShuffle(seed){
+    return level4MahjongShuffle(level4MiniGames.mahjong, seed >>> 0).map(t => Object.assign({}, t));
+  },
+  drawCameraBackdrop(ctx,cw,ch,dim){ return level4DrawCameraBackdrop(ctx,cw,ch,dim); },
   state:level4MiniGames,
 };

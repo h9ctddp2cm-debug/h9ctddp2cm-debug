@@ -199,13 +199,13 @@ html,body{
 .level4-calib-actions button:active{ background:#c9ebe0; }
 .level4-calib-hint{ font-size:14px; font-weight:850; line-height:1.35; }
 .level4-calib-hint .en{ display:block; font-size:12px; font-weight:700; color:#4c625e; }
-.level4-preflight-readouts{
+  .level4-live-readouts{
   display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:5px 8px;
   padding:7px 8px; border-radius:10px; background:#edf7f3; color:#254c44;
   font-size:12px; font-weight:800; font-variant-numeric:tabular-nums;
 }
-.level4-preflight-readouts span{ min-width:0; }
-.level4-preflight-readouts b{ color:#0b3e34; font-weight:950; white-space:nowrap; }
+  .level4-live-readouts span{ min-width:0; }
+  .level4-live-readouts b{ color:#0b3e34; font-weight:950; white-space:nowrap; }
 .level4-calib-diag{
   font-size:11px; font-weight:700; line-height:1.3; color:#4c625e;
   white-space:pre-wrap; word-break:break-all;
@@ -1527,11 +1527,11 @@ html,body{
             data-testid="button-level4-mark-extended">記錄伸直終點<br>Mark end</button>
         </div>
         <div class="level4-calib-hint" id="level4CalibHint" role="status" aria-live="polite"></div>
-        <div class="level4-preflight-readouts" aria-label="Level 4 預檢即時讀數">
-          <span>2D 肘角 <b id="level4RawElbowAngle">—</b></span>
+        <div class="level4-live-readouts" aria-label="Level 4 兩點肘角即時讀數">
+          <span>原始肘角 <b id="level4RawElbowAngle">—</b></span>
+          <span>濾波肘角 <b id="level4FilteredElbowAngle">—</b></span>
           <span>進度 <b id="level4NormalizedProgress">0%</b></span>
-          <span>狀態 <b id="level4RecognisedState">—</b></span>
-          <span>驗證 <b id="level4VerificationCount">0/3</b></span>
+          <span>狀態 <b id="level4RecognisedState">未就緒</b></span>
         </div>
         <div class="level4-calib-diag" id="level4CalibDiag"></div>
       </div>
@@ -2065,6 +2065,7 @@ html,body{
 <!-- Level 4 participant-specific two-pose elbow calibration (shared by all
      five Level 4 games and by the deterministic Node tests). -->
 <script src="level4-elbow-calibration.js"></script>
+<script src="level4-video-freshness.js"></script>
 <script src="fthue-adaptive-progression.js"></script>
 <script>
 (function(){
@@ -2621,6 +2622,9 @@ function cameraErrorCopy(err){
   }
   if(name === 'UnsupportedError'){
     return '此瀏覽器不支援相機功能。請改用 Safari 或 Chrome 最新版本，並確認使用 https 網址。';
+  }
+  if(name === 'PlaybackError'){
+    return '相機預覽未能保持播放，因此沒有使用舊畫面作追蹤。請按「重新嘗試」回到校準並重新開始。';
   }
   return '未能啟動相機。請檢查相機權限及連接，然後按「重新嘗試」；如仍然不成功，可以先返回上一頁。';
 }
@@ -4584,6 +4588,117 @@ function updateRulesForActivity(){
 
 let rulesStartTimer = 0;
 let gameStartInProgress = false;
+// `play()` has to begin inside an iOS user gesture.  Rules are often read aloud
+// first, so the later TTS/timer callback is no longer a gesture on Safari.
+let gameCameraPrime = null;
+
+function configureInlineCameraVideo(videoEl){
+  if(!videoEl) return;
+  videoEl.playsInline = true;
+  videoEl.setAttribute('playsinline', '');
+  videoEl.setAttribute('webkit-playsinline', '');
+  videoEl.muted = true;
+  videoEl.controls = false;
+}
+
+function videoHasLiveFrame(videoEl){
+  return !!(videoEl
+    && videoEl.readyState >= 2
+    && !videoEl.paused
+    && !videoEl.ended
+    && videoEl.videoWidth > 0
+    && videoEl.videoHeight > 0);
+}
+
+// iPhone Safari can leave the camera element in a superficially "playing"
+// state while its decoded image is frozen.  This monitor records actual frame
+// advances (rVFC first, currentTime/playback-quality fallback) and is the
+// production admission authority for Level 3/4 pose data.
+const level4VideoFreshness = window.Level4VideoFreshness
+  ? window.Level4VideoFreshness.createFrameMonitor({maxAgeMs:750, now:nowMs})
+  : null;
+function level4FrameStatus(videoEl){
+  if(state.qaMode) return {
+    fresh:true, generation:qaFrameGeneration, ageMs:0, maxAgeMs:0, reason:'qa-injected',
+    source:'qa', callbackSeen:false, usingVideoFrameCallback:false, newFrame:true,
+  };
+  if(!level4VideoFreshness) return {
+    fresh:false, generation:0, ageMs:null, maxAgeMs:750,
+    reason:'freshness-monitor-missing', source:'none',
+    callbackSeen:false, usingVideoFrameCallback:false,
+  };
+  return level4VideoFreshness.poll(videoEl, nowMs());
+}
+
+function primeGameCameraPlayback(){
+  if(state.qaMode || !state.stream) return null;
+  const videoEl = document.getElementById('gameVideo');
+  if(!videoEl) return null;
+  configureInlineCameraVideo(videoEl);
+  if(videoEl.srcObject !== state.stream) videoEl.srcObject = state.stream;
+  try{
+    // Do not await before this call: iPhone Safari records this invocation as
+    // the user activation that authorises the later rules-screen transition.
+    return Promise.resolve(videoEl.play()).then(()=>true, ()=>false);
+  }catch(err){
+    return Promise.resolve(false);
+  }
+}
+
+function waitForLiveCameraFrame(videoEl, timeoutMs = 1800){
+  // Do not treat `playing`/readyState as success. The camera must present
+  // several advancing decoded frames so the first pose cannot come from a
+  // frozen Safari surface.
+  level4VideoFreshness?.start(videoEl);
+  resetGamePoseFrameAdmission();
+  const decodedReady = ()=>{
+    const frame = level4FrameStatus(videoEl);
+    return frame.fresh && frame.generation >= 3;
+  };
+  if(decodedReady()) return Promise.resolve(true);
+  return new Promise(resolve=>{
+    if(!videoEl){ resolve(false); return; }
+    let settled = false;
+    const finish = ok=>{
+      if(settled) return;
+      settled = true;
+      clearTimeout(timer);
+      clearInterval(pollTimer);
+      videoEl.removeEventListener('playing', check);
+      videoEl.removeEventListener('loadeddata', check);
+      videoEl.removeEventListener('error', failed);
+      resolve(ok);
+    };
+    const check = ()=>{
+      if(decodedReady()) finish(true);
+    };
+    const failed = ()=> finish(false);
+    const timer = setTimeout(()=>finish(decodedReady()), timeoutMs);
+    // `requestVideoFrameCallback` is preferred, but old Safari has neither it
+    // nor reliable events for every presentation. Polling currentTime and
+    // playback quality supplies the documented fallback.
+    const pollTimer = setInterval(check, 50);
+    videoEl.addEventListener('playing', check, {once:true});
+    videoEl.addEventListener('loadeddata', check, {once:true});
+    videoEl.addEventListener('error', failed, {once:true});
+  });
+}
+
+async function ensureGameCameraPlayback(prime){
+  const videoEl = document.getElementById('gameVideo');
+  if(!videoEl || !state.stream) return false;
+  configureInlineCameraVideo(videoEl);
+  if(videoEl.srcObject !== state.stream) videoEl.srcObject = state.stream;
+  const primed = prime ? await prime : false;
+  if(!primed || videoEl.paused){
+    try{
+      await videoEl.play();
+    }catch(err){
+      return false;
+    }
+  }
+  return waitForLiveCameraFrame(videoEl);
+}
 
 async function startSelectedGame(){
   if(gameStartInProgress) return;
@@ -4593,9 +4708,20 @@ async function startSelectedGame(){
   showScreen('game');
   await new Promise(r => requestAnimationFrame(r));
   if(state.stream){
-    const gameVideo = document.getElementById('gameVideo');
-    gameVideo.srcObject = state.stream;
-    await gameVideo.play().catch(()=>{});
+    const prime = gameCameraPrime;
+    gameCameraPrime = null;
+    const cameraReady = await ensureGameCameraPlayback(prime);
+    if(!cameraReady){
+      cameraErrorContext = {
+        retry: ()=> enterCalibrationFlow(),
+        back: ()=>{ stopCalibLoop(); stopCamera(); renderActivityLibrary(); showScreen('library'); },
+      };
+      showScreen('calib');
+      renderCalibLevelBrief();
+      showCameraError({ name:'PlaybackError' }, cameraErrorContext);
+      gameStartInProgress = false;
+      return;
+    }
   } else if(!state.qaMode){
     // No stream yet: try again, and on failure fall back to the calibration screen
     // with the in-page camera error (never an indefinite blank waiting state).
@@ -4620,6 +4746,9 @@ async function startSelectedGame(){
 document.getElementById('btnStartGame').addEventListener('click', ()=>{
   // 開始前先到 rules screen（不 stop camera，保留 stream）
   stopCalibLoop();
+  // Must happen synchronously in this click. Do not move this into TTS onend:
+  // that callback loses iPhone Safari's playback permission.
+  gameCameraPrime = primeGameCameraPlayback();
   updateRulesForActivity();
   showScreen('rules');
   const text = window.__CURRENT_RULES_CANTONESE || RULES_CANTONESE;
@@ -4871,6 +5000,12 @@ const RULES_CANTONESE = '遊戲規則。拿起物件，放去相同的目標位�
 document.getElementById('btnRulesConfirm').addEventListener('click', ()=>{
   clearTimeout(rulesStartTimer);
   try{ window.speechSynthesis.cancel(); }catch(e){}
+  const confirmPrime = primeGameCameraPlayback();
+  // Either user-gesture attempt is sufficient. Keep an already successful
+  // Start-click prime if a second Safari `play()` call is rejected.
+  gameCameraPrime = confirmPrime && gameCameraPrime
+    ? Promise.all([gameCameraPrime, confirmPrime]).then(results=>results.some(Boolean))
+    : (confirmPrime || gameCameraPrime);
   startSelectedGame();
 });
 
@@ -5300,11 +5435,7 @@ async function startCamera(videoElId){
   try{
     // iOS may promote a camera-backed video to its native fullscreen player
     // unless inline playback is asserted both in markup and at runtime.
-    videoEl.playsInline = true;
-    videoEl.setAttribute('playsinline', '');
-    videoEl.setAttribute('webkit-playsinline', '');
-    videoEl.muted = true;
-    videoEl.controls = false;
+    configureInlineCameraVideo(videoEl);
     if(state.stream){
       state.stream.getTracks().forEach(t=>t.stop());
       state.stream = null;
@@ -5334,6 +5465,12 @@ async function startCamera(videoElId){
     state.stream = stream;
     videoEl.srcObject = stream;
     await videoEl.play().catch(()=>{});
+    if(videoElId === 'gameVideo'){
+      // This is also used by the no-stream recovery path, which otherwise
+      // reaches initGame without calling ensureGameCameraPlayback().
+      const decodedReady = await waitForLiveCameraFrame(videoEl);
+      if(!decodedReady) return false;
+    }
     hideCameraError();
     return true;
   }catch(err){
@@ -5344,6 +5481,8 @@ async function startCamera(videoElId){
   }
 }
 function stopCamera(){
+  level4VideoFreshness?.stop();
+  resetGamePoseFrameAdmission();
   if(state.stream){
     state.stream.getTracks().forEach(t=>t.stop());
     state.stream = null;
@@ -6550,14 +6689,27 @@ function beginLevel4StandardCarry(item){
     pickupY:item.y,
     targetY:matchingTarget ? matchingTarget.y : gameCanvas.height * 0.43,
   };
+  // Canonical direction lock (real-device repair). The carried item's height is
+  // driven only by canonical progress: 0 = the lower (flexed) end of the lane,
+  // 1 = the upper (extended) end. Storing the endpoints as bottom/top rather
+  // than pickup/target means flexion can never lift the item, whatever the
+  // relative screen positions of the source slot and the plate.
+  item.level4Carry.bottomY = Math.max(item.level4Carry.pickupY, item.level4Carry.targetY);
+  item.level4Carry.topY = Math.min(item.level4Carry.pickupY, item.level4Carry.targetY);
 }
 function level4StandardCarryPoint(item = heldItem){
   if(!item || !isLevel4StandardTransportGame() || !item.level4Carry) return null;
   const carry = item.level4Carry;
   const progress = clamp01(level4Reach.progress);
+  const bottomY = Number.isFinite(carry.bottomY)
+    ? carry.bottomY : Math.max(carry.pickupY, carry.targetY);
+  const topY = Number.isFinite(carry.topY)
+    ? carry.topY : Math.min(carry.pickupY, carry.targetY);
   return {
     x:carry.laneX,
-    y:carry.pickupY + (carry.targetY-carry.pickupY) * progress,
+    // progress 0 -> bottom of the lane, 1 -> top of the lane. Elbow flexion
+    // always lowers the dim sum; extension always raises it.
+    y:bottomY + (topY-bottomY) * progress,
   };
 }
 function moveHeldItemWithController(){
@@ -6662,6 +6814,85 @@ function playBusTapBeep(){
     g.gain.exponentialRampToValueAtTime(0.0008, ctx.currentTime + 0.18);
     o.start(ctx.currentTime);
     o.stop(ctx.currentTime + 0.20);
+    return true;
+  }catch(e){ return false; }
+}
+/* Procedural 麻雀 tile clack for 洗麻雀. Short filtered-noise impact plus a dry
+   click, generated entirely with Web Audio: no media file, no copyright, no real
+   person. Rate limited here as well as in the game module so a fast wash cannot
+   become a harsh continuous buzz. */
+let mahjongClackAt = 0;
+let mahjongClackNoise = null;
+function mahjongClackBuffer(ctx){
+  if(mahjongClackNoise && mahjongClackNoise.sampleRate === ctx.sampleRate){
+    return mahjongClackNoise.buffer;
+  }
+  const len = Math.floor(ctx.sampleRate * 0.09);
+  const buffer = ctx.createBuffer(1, len, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  // Deterministic pseudo-noise with a fast decay: sounds like tile on tile.
+  let s = 0x2f6e2b1;
+  for(let i = 0; i < len; i++){
+    s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0;
+    const n = (s / 4294967296) * 2 - 1;
+    data[i] = n * Math.pow(1 - i / len, 5.5);
+  }
+  mahjongClackNoise = { sampleRate: ctx.sampleRate, buffer };
+  return buffer;
+}
+function playMahjongShuffleClack(){
+  const stamp = nowMs();
+  // Minimum 90 ms between clacks: repeated but never a buzz.
+  if(stamp - mahjongClackAt < 90) return false;
+  mahjongClackAt = stamp;
+  try{
+    const ctx = getAudioCtx();
+    if(ctx.state === 'suspended' && typeof ctx.resume === 'function') ctx.resume();
+    const src = ctx.createBufferSource();
+    src.buffer = mahjongClackBuffer(ctx);
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = 1650 + (stamp % 7) * 60;
+    bp.Q.value = 1.4;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.16, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0008, ctx.currentTime + 0.10);
+    src.connect(bp); bp.connect(g); g.connect(ctx.destination);
+    src.start(ctx.currentTime);
+    src.stop(ctx.currentTime + 0.12);
+    return true;
+  }catch(e){ return false; }
+}
+/* Live camera as the bottom layer of a Level 4 scene. Mirrored cover crop so it
+   matches the selfie view the patient already sees, optionally dimmed, with the
+   scene composited translucently on top. Returns false when no video frame is
+   available so the caller can fall back to its opaque background. */
+function drawLevel4CameraBackdrop(ctx, cw, ch, dim){
+  try{
+    if(!(gameVideo && gameVideo.readyState >= 2
+      && gameVideo.videoWidth && gameVideo.videoHeight)) return false;
+    const sourceRatio = gameVideo.videoWidth/gameVideo.videoHeight;
+    const targetRatio = cw/ch;
+    let sx=0, sy=0, sw=gameVideo.videoWidth, sh=gameVideo.videoHeight;
+    if(sourceRatio > targetRatio){
+      sw = sh*targetRatio;
+      sx = (gameVideo.videoWidth-sw)/2;
+    }else{
+      sh = sw/targetRatio;
+      sy = (gameVideo.videoHeight-sh)/2;
+    }
+    ctx.save();
+    ctx.translate(cw,0);
+    ctx.scale(-1,1);
+    ctx.drawImage(gameVideo,sx,sy,sw,sh,0,0,cw,ch);
+    ctx.restore();
+    const shade = Math.max(0, Math.min(0.75, Number(dim) || 0));
+    if(shade > 0){
+      ctx.save();
+      ctx.fillStyle = 'rgba(8,12,16,' + shade.toFixed(3) + ')';
+      ctx.fillRect(0,0,cw,ch);
+      ctx.restore();
+    }
     return true;
   }catch(e){ return false; }
 }
@@ -7297,6 +7528,10 @@ let detectionHeldGrace = false; // 現正在 grace window 內（偵測 miss 但�
 
 // QA-only：以 hook 注入的虛擬手部位置（不需相機）
 let qaHand = null;   // { nx, ny, isGrasping }
+// Synthetic tests use the same contract as a decoded camera frame: one pose
+// injection normally advances generation once; an explicit generation can
+// deliberately exercise duplicate RAF handling.
+let qaFrameGeneration = 0;
 function readHand(){
   if(state.qaMode){
     if(!qaHand) return { detected:false };
@@ -7394,19 +7629,17 @@ function updateLevel3LateralController(lm, cw, ch){
   return level3Lateral;
 }
 
-/* ---------- Level 4 shared two-pose elbow controller ----------
-   Front-facing iPad views make a single 2D elbow angle unreliable, so Level 4
-   no longer guesses thresholds. `level4-elbow-calibration.js` captures the
-   participant's own supported flexed/start pose and extended/end pose, fuses
-   several scale-free signals (2D elbow angle, arm-span ratio, MediaPipe world
-   span, wrist-to-shoulder radial distance, image-space depth) using the
-   separation and direction observed at those endpoints, and emits ONE
-   normalised progress value: flexed = 0, extended = 1.
+/* ---------- Level 4 shared two-point elbow controller ----------
+   The therapist labels a fresh flexed/start pose (0) and a fresh extended/end
+   pose (1). `level4-elbow-calibration.js` maps the current 2D elbow angle
+   directly between those two captured angles; capture order supplies the sign.
+   It has no fusion, automatic reorientation, widening, signal takeover,
+   relearning, or repetition/preflight phase.
 
    `level4Reach` is a live mirror of that controller state. Every Level 4 game
-   reads the same mirror, so extension always means forward/up progress and
-   flexion always means the return, and elbow motion is never interpreted as
-   horizontal cursor movement. */
+   reads the same angle progress, so extension always means forward/up progress
+   and flexion always means return. The separately reported lateral signal is
+   consumed only by path games and never changes angle progress. */
 const level4Calibration = window.Level4ElbowCalibration || null;
 const level4Controller = level4Calibration ? level4Calibration.createController() : null;
 const level4Reach = {
@@ -7415,9 +7648,6 @@ const level4Reach = {
   calibrated:false,
   framingReady:false,
   gameReady:false,
-  preflightPassed:false,
-  verification:{required:3,count:0,phase:'await-flexed',failure:'',locked:true},
-  recognisedState:null,
   progress:0,
   instantProgress:0,
   engaged:false,
@@ -7427,21 +7657,14 @@ const level4Reach = {
   shoulderHike:false,
   warning:'',
   elbowAngle:null,
-  spanRatio:null,
-  worldSpan:null,
-  radial:null,
-  depthZ:null,
-  depthSource:'none',
-  weights:{},
+  imageAspect:1,
   separation:{},
-  signalProgress:{},
   endpoints:{flexed:null, extended:null},
   qualified:[],
   lacking:[],
   manual:{flexed:false, extended:false},
   retryCount:0,
   captureCount:{flexed:0, extended:0},
-  movementSeen:false,
   // Signal B: shoulder-abduction / lateral arc. Only the path games
   // (抹窗 wipewindow, 洗麻雀 mahjongwash, 巴士拍卡 buspay) consume it; 茶樓 dimsum and
   // 保齡球 bowling use the linear flexion/extension progress alone.
@@ -7449,22 +7672,17 @@ const level4Reach = {
   arcProgress:0,
   arcInstant:0,
   arcActive:false,
-  arcHold:false,
-  arcPaused:false,
-  extensionRetention:null,
   arcCalibrated:false,
   arcBaseline:null,
-  arcScale:null,
-  cyclePhase:'start',
-  cycleOrdered:false,
-  cycleComplete:false,
-  cycleCount:0,
   stabilizer:null,
+  filtered:null,
+  frame:{
+    fresh:false, generation:0, ageMs:null, maxAgeMs:750,
+    reason:'awaiting-decoded-frame', source:'none', newFrame:false,
+  },
+  // True only for the first controller admission of a fresh decoded image.
+  newFrame:false,
   side:'right',
-  // Legacy aliases: existing Level 4 consumers keep reading these names, but
-  // both now come from the same fused two-pose progress.
-  elbowExtensionProgress:0,
-  shoulderFlexProgress:0,
   reset(){
     if(level4Controller) level4Controller.reset();
     level4SyncReachMirror();
@@ -7485,11 +7703,8 @@ function level4SyncReachMirror(){
     level4Reach.framingReady = false;
     level4Reach.calibrated = false;
     level4Reach.gameReady = false;
-    level4Reach.preflightPassed = false;
     level4Reach.progress = 0;
     level4Reach.instantProgress = 0;
-    level4Reach.elbowExtensionProgress = 0;
-    level4Reach.shoulderFlexProgress = 0;
     level4Reach.reason = 'calibration-module-missing';
     return level4Reach;
   }
@@ -7499,9 +7714,6 @@ function level4SyncReachMirror(){
   level4Reach.calibrated = snap.calibrated;
   level4Reach.framingReady = snap.framingReady;
   level4Reach.gameReady = snap.gameReady;
-  level4Reach.preflightPassed = snap.preflightPassed;
-  level4Reach.verification = snap.verification || level4Reach.verification;
-  level4Reach.recognisedState = snap.recognisedState || null;
   level4Reach.progress = snap.progress;
   level4Reach.instantProgress = snap.instantProgress;
   level4Reach.engaged = snap.engaged;
@@ -7510,40 +7722,27 @@ function level4SyncReachMirror(){
   level4Reach.completionReady = snap.completionReady;
   level4Reach.shoulderHike = snap.shoulderHike;
   level4Reach.warning = snap.warning;
-  level4Reach.weights = snap.weights;
   level4Reach.separation = snap.separation;
-  level4Reach.signalProgress = snap.signalProgress;
   level4Reach.endpoints = snap.endpoints;
   level4Reach.qualified = snap.qualified;
   level4Reach.lacking = snap.lacking;
   level4Reach.manual = snap.manual;
   level4Reach.retryCount = snap.retryCount;
   level4Reach.captureCount = snap.captureCount;
-  level4Reach.depthSource = snap.depthSource;
-  level4Reach.movementSeen = snap.movementSeen;
+  level4Reach.imageAspect = snap.imageAspect || 1;
   const signals = snap.signals || {};
-  level4Reach.elbowAngle = Number.isFinite(signals.angle) ? signals.angle : null;
-  level4Reach.spanRatio = Number.isFinite(signals.spanRatio) ? signals.spanRatio : null;
-  level4Reach.worldSpan = Number.isFinite(signals.worldSpan) ? signals.worldSpan : null;
-  level4Reach.radial = Number.isFinite(signals.radial) ? signals.radial : null;
-  level4Reach.depthZ = Number.isFinite(signals.depthZ) ? signals.depthZ : null;
-  level4Reach.elbowExtensionProgress = snap.instantProgress;
-  level4Reach.shoulderFlexProgress = snap.progress;
+  level4Reach.elbowAngle = Number.isFinite(snap.rawAngle) ? snap.rawAngle
+    : (Number.isFinite(signals.angle) ? signals.angle : null);
   level4Reach.lateral = snap.lateral;
   level4Reach.arcProgress = snap.arcProgress;
   level4Reach.arcInstant = snap.arc ? snap.arc.instant : 0;
   level4Reach.arcActive = snap.arcActive;
-  level4Reach.arcHold = snap.arc ? snap.arc.hold : false;
-  level4Reach.arcPaused = snap.arc ? snap.arc.paused : false;
-  level4Reach.extensionRetention = snap.arc ? snap.arc.extensionRetention : null;
   level4Reach.arcCalibrated = snap.arc ? snap.arc.calibrated : false;
   level4Reach.arcBaseline = snap.arc ? snap.arc.baseline : null;
-  level4Reach.arcScale = snap.arc ? snap.arc.scale : null;
-  level4Reach.cyclePhase = snap.cycle ? snap.cycle.phase : 'start';
-  level4Reach.cycleOrdered = snap.cycle ? snap.cycle.ordered : false;
-  level4Reach.cycleComplete = snap.cycle ? snap.cycle.complete : false;
-  level4Reach.cycleCount = snap.cycle ? snap.cycle.count : 0;
   level4Reach.stabilizer = snap.stabilizer || null;
+  level4Reach.filtered = snap.filtered || null;
+  level4Reach.frame = snap.frame || level4Reach.frame;
+  level4Reach.newFrame = snap.newFrame === true;
   level4Reach.side = snap.side || 'right';
   return level4Reach;
 }
@@ -7551,6 +7750,22 @@ function level4SyncReachMirror(){
    extended end when automatic stable capture struggles bedside. */
 function level4ManualCapture(which){
   if(!level4Controller) return level4Reach;
+  const frame = level4FrameStatus(gameVideo);
+  const hasCurrentPose = state.qaMode || lastPoseFrameGeneration === frame.generation;
+  if(!frame.fresh || !hasCurrentPose){
+    // A therapist mark must describe the image currently on screen. Never
+    // capture endpoint data from a cached pose after a Safari frame freeze or
+    // from an older decoded frame after an inference miss.
+    level4Controller.update({
+      frameFresh:!!frame.fresh,
+      frameGeneration:frame.generation,
+      frameStale:!frame.fresh,
+      frame,
+    });
+    level4SyncReachMirror();
+    level4UpdateCalibrationBar();
+    return level4Reach;
+  }
   if(which === 'extended') level4Controller.markExtended();
   else level4Controller.markFlexed();
   level4SyncReachMirror();
@@ -7565,23 +7780,27 @@ function level4ManualCapture(which){
 }
 function level4CalibrationDiagnosticsLine(){
   if(!level4Controller) return 'calibration module missing';
-  const lacking = (level4Reach.lacking || [])
-    .filter(entry => entry.reason === 'too-similar')
-    .map(entry => entry.signal + ' \u0394' + (Number.isFinite(entry.separation)
-      ? entry.separation.toFixed(2) : 'na'));
-  const unavailable = (level4Reach.lacking || [])
-    .filter(entry => entry.reason === 'unavailable')
-    .map(entry => entry.signal);
-  const weights = Object.keys(level4Reach.weights || {})
-    .map(key => key + ' ' + level4Reach.weights[key].toFixed(2));
+  const endpoints = ['flexed', 'extended'].map(which => {
+    const point = level4Reach.endpoints && level4Reach.endpoints[which];
+    return point && Number.isFinite(point.angle) ? which + ' ' + point.angle.toFixed(1) + '°' : which + ' —';
+  }).join(' / ');
+  const filtered = level4Reach.filtered && Number.isFinite(level4Reach.filtered.angle)
+    ? level4Reach.filtered.angle.toFixed(1) + '°' : '—';
+  const frame = level4Reach.frame || {};
   return [
-    'stage ' + level4Reach.stage + ' · ' + level4Reach.reason,
-    'progress ' + level4Reach.progress.toFixed(2)
-      + ' · depth ' + level4Reach.depthSource,
-    weights.length ? 'weights ' + weights.join(' / ') : 'weights \u2014',
-    lacking.length ? 'no separation: ' + lacking.join(' / ') : '',
-    unavailable.length ? 'unavailable: ' + unavailable.join(' / ') : '',
-  ].filter(Boolean).join('\n');
+    'state ' + (level4Reach.gameReady ? 'READY' : 'NOT READY') + ' · ' + level4Reach.reason,
+    'captured ' + endpoints + ' · Δ ' + (Number.isFinite(level4Reach.separation?.angle)
+      ? level4Reach.separation.angle.toFixed(1) + '°' : '—'),
+    'raw ' + (Number.isFinite(level4Reach.elbowAngle) ? level4Reach.elbowAngle.toFixed(1) + '°' : '—')
+      + ' · filtered ' + filtered + ' · progress ' + level4Reach.progress.toFixed(2),
+    'frame ' + (frame.fresh ? 'FRESH' : 'STALE') + ' gen ' + (frame.generation ?? '—')
+      + ' new ' + (level4Reach.newFrame ? 'YES' : 'NO')
+      + ' age ' + (Number.isFinite(frame.ageMs) ? Math.round(frame.ageMs) + 'ms' : '—')
+      + ' · ' + (frame.source || 'none') + ' · ' + (frame.reason || 'unknown'),
+    'arc lateral ' + (Number.isFinite(level4Reach.lateral) ? level4Reach.lateral.toFixed(3) : '—')
+      + ' · progress ' + Number(level4Reach.arcProgress || 0).toFixed(2)
+      + ' · ' + (level4Reach.arcActive ? 'active' : 'waiting'),
+  ].join('\n');
 }
 function level4UpdateCalibrationBar(){
   const bar = document.getElementById('level4CalibBar');
@@ -7592,17 +7811,16 @@ function level4UpdateCalibrationBar(){
   const hint = document.getElementById('level4CalibHint');
   const diag = document.getElementById('level4CalibDiag');
   const guide = level4Reach.guidance();
-  const verification = level4Reach.verification || {required:3,count:0};
   const rawAngle = document.getElementById('level4RawElbowAngle');
+  const filteredAngle = document.getElementById('level4FilteredElbowAngle');
   const normalised = document.getElementById('level4NormalizedProgress');
   const recognised = document.getElementById('level4RecognisedState');
-  const verificationCount = document.getElementById('level4VerificationCount');
   if(rawAngle) rawAngle.textContent = Number.isFinite(level4Reach.elbowAngle)
     ? level4Reach.elbowAngle.toFixed(1) + '°' : '—';
+  if(filteredAngle) filteredAngle.textContent = Number.isFinite(level4Reach.filtered?.angle)
+    ? level4Reach.filtered.angle.toFixed(1) + '°' : '—';
   if(normalised) normalised.textContent = Math.round(clamp01(level4Reach.progress)*100) + '%';
-  if(recognised) recognised.textContent = level4Reach.recognisedState || '追蹤未就緒';
-  if(verificationCount) verificationCount.textContent =
-    verification.count + '/' + verification.required;
+  if(recognised) recognised.textContent = level4Reach.gameReady ? '已就緒' : '未就緒';
   if(hint){
     hint.innerHTML = '<span>' + guide.main + (guide.detail ? ' · ' + guide.detail : '') + '</span>'
       + '<span class="en">' + guide.en + '</span>';
@@ -7627,6 +7845,7 @@ const level4Wipe = {
   cleaned:0,
   cleanPercent:0,
   lastPoint:null,
+  lastConsumedGeneration:null,
   validMovement:false,
   completed:false,
   nextPaneAt:0,
@@ -7635,6 +7854,7 @@ const level4Wipe = {
     this.cleaned = 0;
     this.cleanPercent = 0;
     this.lastPoint = null;
+    this.lastConsumedGeneration = null;
     this.validMovement = false;
     this.completed = false;
     this.nextPaneAt = 0;
@@ -7679,18 +7899,29 @@ function level4MarkFogPoint(nx, ny){
    movement: adequate stabilized elbow extension first, then the side-correct
    outward/abduction path. 茶樓 dimsum and 保齡球 bowling never use this gate. */
 function level4PathGateOpen(motion){
-  if(!motion?.calibrated || motion.gameReady !== true || motion.shoulderHike) return false;
-  const extensionSeen = motion.reachGate
-    || motion.cyclePhase === 'reached'
-    || motion.cyclePhase === 'arc-out'
-    || motion.cyclePhase === 'arc-return';
-  if(!extensionSeen) return false;
-  if(!motion.arcCalibrated || motion.arcPaused) return false;
-  if(Number.isFinite(motion.extensionRetention) && motion.extensionRetention < 0.45) return false;
-  return motion.arcActive || clamp01(motion.arcProgress) >= 0.12;
+  if(!motion?.calibrated || motion.gameReady !== true) return false;
+  // Arc eligibility is deliberately additive: extension gates lateral work,
+  // while lateral activity never freezes or rewrites the direct angle map.
+  return clamp01(motion.progress) >= 0.70
+    && motion.arcCalibrated === true
+    && (motion.arcActive === true || clamp01(motion.arcProgress) >= 0.12);
 }
 function updateLevel4Wipe(cursorNx, cursorNy, motion){
   if(!isLevel4WipeGame()) return;
+  // Wipe path distance is admitted once per decoded frame, just like the
+  // controller. Lost/stale frames explicitly discard the partial path anchor.
+  if(!(motion?.calibrated && motion.gameReady === true)){
+    // Clean cells are partial path credit until a pane completes. Do not bridge
+    // a stale image or pose-loss interval with a retained wipe path.
+    if(!level4Wipe.completed) level4Wipe.reset();
+    else level4Wipe.lastPoint = null;
+    return;
+  }
+  if(motion.newFrame === false) return;
+  if(Number.isFinite(motion.frameGeneration)){
+    if(level4Wipe.lastConsumedGeneration === motion.frameGeneration) return;
+    level4Wipe.lastConsumedGeneration = motion.frameGeneration;
+  }
   if(level4Wipe.completed){
     if(nowMs() >= level4Wipe.nextPaneAt) level4Wipe.reset();
     return;
@@ -7761,7 +7992,15 @@ function level4Median(values){
   const mid = Math.floor(sorted.length/2);
   return sorted.length % 2 ? sorted[mid] : (sorted[mid-1]+sorted[mid])/2;
 }
-function updateLevel4ReachController(lm, worldLm){
+function level4VideoAspect(videoEl){
+  const width = Number(videoEl && videoEl.videoWidth);
+  const height = Number(videoEl && videoEl.videoHeight);
+  const aspect = width / height;
+  // Use the actual camera frame, not screen size or CSS object-fit geometry:
+  // MediaPipe's normalised image x/y coordinates are relative to this source.
+  return Number.isFinite(aspect) && aspect >= 0.25 && aspect <= 4 ? aspect : 1;
+}
+function updateLevel4ReachController(lm, worldLm, frame){
   const stage = document.querySelector('.game-stage');
   if(!isLevel4Tabletop()){
     stage?.classList.remove('level4-movement-alert');
@@ -7773,15 +8012,27 @@ function updateLevel4ReachController(lm, worldLm){
     stage?.classList.remove('level4-movement-alert');
     return level4Reach;
   }
-  // All fusion, staging, hysteresis and smoothing live in the shared module so
-  // the deterministic Node tests exercise exactly the bedside code path.
+  // Freshness, capture admission, the fixed median/EMA, and endpoint
+  // hysteresis live in the shared module so deterministic tests exercise the
+  // same direct-angle path as bedside runtime.
   level4Controller.update({
     lm,
     worldLm:worldLm || null,
+    frameFresh:!!frame?.fresh,
+    frameGeneration:frame?.generation,
+    frameStale:!frame?.fresh,
+    // QA calls deliberately represent injected synthetic frames. Production
+    // admission derives newFrame exclusively from the decoded generation.
+    newFrame:state.qaMode === true,
+    frame,
     side:activeAffectedSide(),
     // The lateral/abduction signal is measured in mirrored display space so
     // "outward" always means the participant's own affected side.
     mirrorX:state.mirrorX !== false,
+    // Normalised MediaPipe x/y units have different pixel scales whenever the
+    // live source is portrait or non-square. This keeps iPhone and iPad elbow
+    // geometry identical in physical image space, regardless of CSS layout.
+    imageAspect:level4VideoAspect(gameVideo),
   });
   level4SyncReachMirror();
   level4UpdateCalibrationBar();
@@ -7794,12 +8045,27 @@ function updateTracking(){
   const cw = gameCanvas.width, ch = gameCanvas.height;
   const now = nowMs();
   let grossPose = null;
+  const frame = level4FrameStatus(gameVideo);
+  const productionFrameFresh = !state.qaMode && frame.fresh;
+  let detectedPose = null;
   if(isGrossTabletop()){
-    grossPose = state.qaMode ? qaHand?.poseLm : (detectPose(gameVideo) || lastPoseLm);
+    // Fail closed on a stale decoded image. Cached landmarks are only allowed
+    // from the exact decoded-frame generation currently admitted; never carry
+    // a last good pose across a frozen Safari camera surface.
+    if(state.qaMode){
+      grossPose = qaHand?.poseLm;
+    }else if(productionFrameFresh){
+      detectedPose = detectPose(gameVideo, frame.generation);
+      grossPose = detectedPose
+        || (lastPoseFrameGeneration === frame.generation ? lastPoseLm : null);
+    }
   }
   const level3Motion = updateLevel3LateralController(grossPose, cw, ch);
-  const level4WorldPose = state.qaMode ? (qaHand?.poseWorldLm || null) : lastPoseWorldLm;
-  const level4Motion = updateLevel4ReachController(grossPose, level4WorldPose);
+  const level4WorldPose = state.qaMode
+    ? (qaHand?.poseWorldLm || null)
+    : (productionFrameFresh && lastPoseFrameGeneration === frame.generation
+      ? lastPoseWorldLm : null);
+  const level4Motion = updateLevel4ReachController(grossPose, level4WorldPose, frame);
   // Levels 3–4 are driven by shoulder/elbow/wrist Pose only. Running the hand
   // model as well on every iPad frame halved the effective frame rate and made
   // the live game behave differently from the movement test.
@@ -7858,16 +8124,6 @@ function updateTracking(){
     }
     cursorX = dotEmaX;
     cursorY = dotEmaY;
-    if(isLevel4WipeGame()){
-      updateLevel4Wipe(cursorX/cw, cursorY/ch, level4Motion);
-    }
-    if(isLevel4BowlingGame()) updateLevel4Bowling(level4Motion);
-    if(isLevel4MahjongWashGame()) updateLevel4MahjongWash(
-      level4Motion, cursorX/cw, cursorY/ch
-    );
-    if(isLevel4BusPayGame()) updateLevel4BusPay(
-      level4Motion, cursorX/cw, cursorY/ch
-    );
     posHistory.push({ t: now, x: cursorX, y: cursorY });
     // Phase-specific cursor path length (research metrics)
     if(research.active && research.phaseMetrics && lastPathX >= 0 && cursorX >= 0){
@@ -7915,6 +8171,13 @@ function updateTracking(){
     detectedGestureState = {mode:'', stable:false, candidate:false, candidateAt:0};
     if(!heldItem) gripActive = false;
   }
+  // Invoke every standalone game for every tracking pass, including stale or
+  // pose-lost admissions, so their partial dwell/path credits fail closed. The
+  // motion packet itself allows one and only one fresh decoded generation.
+  if(isLevel4WipeGame()) updateLevel4Wipe(cursorX/cw, cursorY/ch, level4Motion);
+  if(isLevel4BowlingGame()) updateLevel4Bowling(level4Motion);
+  if(isLevel4MahjongWashGame()) updateLevel4MahjongWash(level4Motion, cursorX/cw, cursorY/ch);
+  if(isLevel4BusPayGame()) updateLevel4BusPay(level4Motion, cursorX/cw, cursorY/ch);
 }
 
 function dist(x1,y1,x2,y2){
@@ -7944,27 +8207,35 @@ function updateGameLogic(){
   }
   if(isLevel4Tabletop()){
     if(!level4Reach.framingReady){
-      dwellTarget = null;
+      dwellTarget = null; dwellStartTime = 0; dwellActive = false; lastDwellPct = 0;
       setActionPrompt('iPad 同枱直放 · 約 1 米', '患側肩・手肘・手腕全部入鏡');
       return;
     }
     if(level4Reach.warning && !isTrialMode()){
-      dwellTarget = null;
+      dwellTarget = null; dwellStartTime = 0; dwellActive = false; lastDwellPct = 0;
       setActionPrompt('患側聳肩', '請治療師即時糾正');
       return;
     }
     if(!level4Reach.calibrated){
       // Two-pose capture / retry guidance comes from the shared controller so the
       // wording always matches the stage it is actually in.
-      dwellTarget = null;
+      dwellTarget = null; dwellStartTime = 0; dwellActive = false; lastDwellPct = 0;
       const guide = level4Reach.guidance();
       setActionPrompt(guide.main, guide.detail);
       return;
     }
     if(!level4Reach.gameReady){
-      dwellTarget = null;
+      dwellTarget = null; dwellStartTime = 0; dwellActive = false; lastDwellPct = 0;
       const guide = level4Reach.guidance();
       setActionPrompt(guide.main, guide.detail);
+      return;
+    }
+    // Same decoded image may be painted by several RAF passes. Do not let a
+    // static image advance the standard dimsum dwell or any game transition.
+    if(!level4Reach.newFrame){
+      // Preserve a valid partial dwell but do not advance its timer or score
+      // from a duplicate RAF pass. Stale/pose-lost branches above clear it.
+      setActionPrompt('等待新相機畫面', '同一相機影像只會計算一次');
       return;
     }
     if(isLevel4WipeGame()){
@@ -9610,6 +9881,18 @@ let lastPoseLm = null, lastPoseTs = 0;
 // front-facing iPad cannot recover from image-space coordinates alone. They are
 // optional: Level 4 calibration falls back to 2D signals when absent.
 let lastPoseWorldLm = null;
+// A cached pose is usable only for the exact decoded video-frame generation
+// that produced it. `attempt` is distinct so an unsuccessful new inference can
+// never fall back to the prior generation.
+let lastPoseFrameGeneration = -1;
+let lastPoseAttemptFrameGeneration = -1;
+function resetGamePoseFrameAdmission(){
+  lastPoseLm = null;
+  lastPoseWorldLm = null;
+  lastPoseTs = 0;
+  lastPoseFrameGeneration = -1;
+  lastPoseAttemptFrameGeneration = -1;
+}
 let mpHandTs = 0, mpPoseTs = 0;
 function nextTs(which){
   const t = performance.now();
@@ -9654,8 +9937,12 @@ async function ensurePoseLandmarker(){
     return null;
   }
 }
-function detectPose(videoEl){
+function detectPose(videoEl, frameGeneration){
   if(!poseLandmarker || !videoEl || videoEl.readyState < 2) return null;
+  if(Number.isFinite(frameGeneration)){
+    if(lastPoseAttemptFrameGeneration === frameGeneration) return null;
+    lastPoseAttemptFrameGeneration = frameGeneration;
+  }
   try{
     const res = poseLandmarker.detectForVideo(videoEl, nextTs('pose'));
     if(res && res.landmarks && res.landmarks.length){
@@ -9663,6 +9950,7 @@ function detectPose(videoEl){
       lastPoseWorldLm = (res.worldLandmarks && res.worldLandmarks.length)
         ? res.worldLandmarks[0] : null;
       lastPoseTs = nowMs();
+      if(Number.isFinite(frameGeneration)) lastPoseFrameGeneration = frameGeneration;
       return lastPoseLm;
     }
   }catch(e){ /* 忽略單幀失敗 */ }
@@ -12266,6 +12554,11 @@ window.render_game_to_text = function(){
           .map(entry => entry.signal + ':' + entry.reason).join('|') || 'none'),
         'manual:' + (level4Reach.manual.flexed ? 'F' : '-')
           + (level4Reach.manual.extended ? 'E' : '-'),
+        'frame:' + (level4Reach.frame?.fresh ? 'fresh' : 'stale')
+          + ' gen:' + (level4Reach.frame?.generation ?? 'na')
+          + ' age:' + (Number.isFinite(level4Reach.frame?.ageMs)
+            ? Math.round(level4Reach.frame.ageMs) : 'na')
+          + ' reason:' + (level4Reach.frame?.reason || 'unknown'),
       ].join(' '));
       if(isLevel4WipeGame()){
         lines.push('level4Wipe=clean:' + level4Wipe.cleanPercent +
@@ -12429,6 +12722,7 @@ window.__qa = {
     if(opts.dwellMs) state.dwellMs = opts.dwellMs;
     if(opts.affectedSide) state.affectedSide = opts.affectedSide;
     qaHand = null;
+    qaFrameGeneration = 0;
     showScreen('game');
     resizeGameCanvas();
     initGame();
@@ -12535,8 +12829,8 @@ window.__qa = {
     lm[wristIndex] = point(spec.wrist, {x:0.58,y:0.48});
     lm[otherShoulderIndex] = point(spec.otherShoulder, {x:0.60,y:0.30});
     qaHand.poseLm = lm;
-    // Optional synthetic world landmarks: pass spec.world = {shoulder, elbow,
-    // wrist, otherShoulder} to exercise the depth-aware fusion path.
+    // Optional synthetic world landmarks remain available to other pose QA
+    // hooks; the Level 4 two-point controller intentionally ignores them.
     if(spec.world){
       const worldLm = Array.from({length:33}, ()=>({x:0,y:0,z:0,visibility:0.05}));
       const worldPoint = (value, fallback)=>({
@@ -12554,7 +12848,26 @@ window.__qa = {
       qaHand.poseWorldLm = null;
     }
     const frames = Math.max(1, Math.round(Number(spec.frames) || 1));
-    for(let i=0;i<frames;i++) updateTracking();
+    const suppliedGeneration = Number(spec.generation);
+    for(let i=0;i<frames;i++){
+      // `frames` means distinct synthetic decoded frames by default. Supplying
+      // generation deliberately repeats the same image, allowing duplicate RAF
+      // admission tests without a separate code path.
+      qaFrameGeneration = Number.isFinite(suppliedGeneration)
+        ? suppliedGeneration
+        : qaFrameGeneration + 1;
+      updateTracking();
+      // A synthetic pose represents one complete decoded-frame game tick:
+      // production performs tracking and game logic together in gameLoop.
+      // Keeping the same ordering here lets QA exercise the first admitted
+      // generation, rather than a later duplicate update caused by
+      // advanceTime().  The controller/game admission gates still make a
+      // supplied repeated generation idempotent.
+      if(state.running && !state.paused && currentScreen === 'game'){
+        if(usesAdvancedThemeModule()){ advUpdate(); advRender(); }
+        else { updateGameLogic(); renderGame(); }
+      }
+    }
     return this.level4ReachState();
   },
   level4ManualCapture(which){
@@ -12564,9 +12877,6 @@ window.__qa = {
     return {
       calibrated:level4Reach.calibrated,
       gameReady:level4Reach.gameReady,
-      preflightPassed:level4Reach.preflightPassed,
-      verification:{...level4Reach.verification},
-      recognisedState:level4Reach.recognisedState,
       stage:level4Reach.stage,
       reason:level4Reach.reason,
       progress:level4Reach.progress,
@@ -12574,17 +12884,8 @@ window.__qa = {
       engaged:level4Reach.engaged,
       reachGate:level4Reach.reachGate,
       returnReady:level4Reach.returnReady,
-      shoulderFlexProgress:level4Reach.shoulderFlexProgress,
-      elbowExtensionProgress:level4Reach.elbowExtensionProgress,
       elbowAngle:level4Reach.elbowAngle,
-      spanRatio:level4Reach.spanRatio,
-      worldSpan:level4Reach.worldSpan,
-      radial:level4Reach.radial,
-      depthZ:level4Reach.depthZ,
-      depthSource:level4Reach.depthSource,
-      weights:level4Reach.weights,
       separation:level4Reach.separation,
-      signalProgress:level4Reach.signalProgress,
       endpoints:level4Reach.endpoints,
       qualified:level4Reach.qualified,
       lacking:level4Reach.lacking,
@@ -12601,14 +12902,9 @@ window.__qa = {
       arcProgress:level4Reach.arcProgress,
       arcInstant:level4Reach.arcInstant,
       arcActive:level4Reach.arcActive,
-      arcHold:level4Reach.arcHold,
-      arcPaused:level4Reach.arcPaused,
-      extensionRetention:level4Reach.extensionRetention,
       arcCalibrated:level4Reach.arcCalibrated,
-      cyclePhase:level4Reach.cyclePhase,
-      cycleOrdered:level4Reach.cycleOrdered,
-      cycleComplete:level4Reach.cycleComplete,
-      cycleCount:level4Reach.cycleCount,
+      newFrame:level4Reach.newFrame,
+      frame:level4Reach.frame,
       stabilizer:level4Reach.stabilizer,
       pathGateOpen:level4PathGateOpen(level4Reach),
       side:level4Reach.side,
@@ -13126,26 +13422,33 @@ window.__level4GameRuntime = Object.freeze({
     return {
       calibrated:level4Reach.calibrated,
       gameReady:level4Reach.gameReady,
-      preflightPassed:level4Reach.preflightPassed,
+      newFrame:level4Reach.newFrame,
+      frameGeneration:level4Reach.frame?.generation,
+      frameFresh:level4Reach.frame?.fresh === true,
       progress:clamp01(level4Reach.progress),
       engaged:level4Reach.engaged,
       reachGate:level4Reach.reachGate,
       returnReady:level4Reach.returnReady,
       completionReady:level4Reach.completionReady,
-      shoulderHike:level4Reach.shoulderHike,
       // Signal B for the three path games only.
       arcProgress:clamp01(level4Reach.arcProgress),
       arcActive:level4Reach.arcActive,
-      arcPaused:level4Reach.arcPaused,
-      extensionRetention:level4Reach.extensionRetention,
       arcCalibrated:level4Reach.arcCalibrated,
-      cyclePhase:level4Reach.cyclePhase,
-      cycleOrdered:level4Reach.cycleOrdered,
-      cycleComplete:level4Reach.cycleComplete,
       side:level4Reach.side,
     };
   },
   beepTap: playBusTapBeep,
+  // Live camera as the bottom layer of a Level 4 scene: the patient must stay
+  // visible in 保齡球 and 巴士拍卡 just as in 抹窗 and 點心.
+  drawCameraBackdrop: drawLevel4CameraBackdrop,
+  // Real Hong Kong tile faces from the existing atlas (no white numbered cards).
+  drawMahjongTile(ctx, code, x, y, tileW){
+    try{
+      drawTile(ctx, code, x, y, tileW);
+      return true;
+    }catch(e){ return false; }
+  },
+  mahjongClack: playMahjongShuffleClack,
   drawVerticalReachGuide: drawLevel4VerticalReachGuide,
   cursor(){
     return {
@@ -13566,25 +13869,32 @@ window.__level4GameRuntime = Object.freeze({
     return match ? match[1] : "—";
   }
 
-  // Pull a whole `name=...` segment (raw signals, endpoints, separation/weights)
-  // out of the single-line Level 4 calibration diagnostics.
-  function segment(text, name) {
-    const match = text.match(new RegExp(name + "=(.*?)(?=\\s[A-Za-z]+=|$)"));
-    return match ? match[1].trim() : "—";
+  function between(text, start, end) {
+    const from = text.indexOf(start);
+    if (from < 0) return "—";
+    const to = end ? text.indexOf(end, from + start.length) : -1;
+    return text.slice(from + start.length, to < 0 ? undefined : to).trim();
   }
 
   function diagnosis(reach, guide) {
     if (!reach) return "尚未收到 Level 4 動作資料";
     const stage = field(reach, "stage");
+    if (field(reach, "frame") === "stale") {
+      return "相機畫面已過時：暫停計分，等待新解碼畫面";
+    }
+    if (field(reach, "reason") === "pose-lost") {
+      return "畫面新鮮但未見完整手臂：暫停計分，終點不會改變";
+    }
     if (field(reach, "framingReady") === "false") {
       return "未完整入鏡：檢查患側肩、手肘、手腕";
     }
-    if (field(reach, "shoulderHike") === "true") return "患側聳肩：請治療師即時糾正";
     if (stage === "capture-flexed") return "記錄屈肘起點：手臂放穩不動";
     if (stage === "capture-extended") return "記錄伸直終點：慢慢伸直手肘到最遠";
-    if (stage === "retry") return "兩個姿勢分別不足：" + field(guide, "lacking");
-    if (field(reach, "engaged") === "false") return "已校準：等待前伸配合伸肘";
-    return "追蹤中";
+    if (field(reach, "reason") === "angle-separation-too-small") {
+      return "兩個姿勢肘角太接近：重拍伸肘終點";
+    }
+    if (field(reach, "ready") === "true") return "已就緒：肘角直接控制進度";
+    return "等待可用的新鮮姿勢";
   }
 
   function update() {
@@ -13603,19 +13913,16 @@ window.__level4GameRuntime = Object.freeze({
     const wipe = line(text, "level4Wipe=");
     const calibrated = field(reach, "calibrated") === "true";
     panel.textContent = [
-      "Level 4 兩姿勢校準診斷",
+      "Level 4 兩點肘角診斷",
       "階段 " + field(reach, "stage") + "　原因 " + field(reach, "reason"),
-      "校準 " + field(reach, "calibrated") + "　入鏡 " + field(reach, "framingReady")
-        + "　手動 " + field(reach, "manual"),
+      "校準 " + field(reach, "calibrated") + "　就緒 " + field(reach, "ready")
+        + "　入鏡 " + field(reach, "framingReady"),
+      "影格 " + between(reach, "frame:", " rawAngle:"),
+      "肘角 " + between(reach, "rawAngle:", " progress:"),
       "進度 " + field(reach, "progress") + "　瞬時 " + field(reach, "instant")
         + "　啟動 " + field(reach, "engaged"),
-      "到位 " + field(reach, "reachGate") + "　回位 " + field(reach, "returnReady")
-        + "　聳肩 " + field(reach, "shoulderHike"),
-      "訊號 " + segment(reach, "raw"),
-      "深度來源 " + field(reach, "depthSource"),
-      "終點 " + segment(reach, "endpoints"),
-      "分別／權重 " + segment(reach, "separation"),
-      "選用 " + field(guide, "qualified") + "　不足 " + field(guide, "lacking"),
+      "終點 " + between(reach, "captured:", " lateral:"),
+      "弧線 " + between(reach, "lateral:", " controller:"),
       wipe ? "抹窗 " + field(wipe, "clean") + "%　有效 " + field(wipe, "validMovement") : "",
       "判斷：" + diagnosis(reach, guide)
     ].filter(Boolean).join("\n");

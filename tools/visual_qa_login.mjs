@@ -3,7 +3,11 @@
 import { chromium } from 'playwright';
 import fs from 'node:fs';
 
-const OUT = '/home/user/workspace/ych_rehab_games_advanced/qa/research-auth';
+// QA captures are written OUTSIDE the repository. Visual QA output may contain
+// bedside or device-test imagery, so it must never land in a tracked path.
+// Override with QA_OUT_DIR when running elsewhere.
+const OUT = process.env.QA_OUT_DIR
+  || '/home/user/workspace/ych_rehab_qa_artifacts/qa/research-auth';
 fs.mkdirSync(OUT, { recursive: true });
 
 const viewports = [

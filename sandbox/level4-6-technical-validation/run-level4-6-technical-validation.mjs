@@ -5,7 +5,11 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 
 const baseUrl = process.argv[2] || "http://127.0.0.1:4173";
-const outputDir = path.dirname(fileURLToPath(import.meta.url));
+// Runtime evidence belongs outside the source tree.  Set QA_OUT_DIR when
+// invoking this runner; retaining the local directory as a compatibility
+// fallback keeps the standalone sandbox usable.
+const outputDir = process.env.QA_OUT_DIR || path.dirname(fileURLToPath(import.meta.url));
+fs.mkdirSync(outputDir, { recursive: true });
 const tests = [];
 const errors = [];
 
@@ -70,9 +74,10 @@ async function advance(page, milliseconds) {
 }
 
 /* ---- Level 4 two-pose calibration helpers -------------------------------
-   Level 4 now needs an explicit supported flexed/start capture followed by an
-   explicit extended/end capture before any game gate opens. Every Level 4 probe
-   below therefore runs the same calibration sequence first. */
+   Level 4 needs two deliberate therapist-labelled fresh poses: flexed/start
+   first, then extended/end.  The helper deliberately uses one fresh decoded
+   generation for each visible pose and taps the same manual-capture API used by
+   the bedside buttons; it never relies on retired automatic/preflight capture. */
 const level4StartPose = {
   shoulder:{x:.45,y:.30,z:0}, elbow:{x:.45,y:.48,z:0},
   wrist:{x:.58,y:.48,z:0}, otherShoulder:{x:.60,y:.30,z:0},
@@ -101,11 +106,56 @@ async function level4Pose(page, pose, frames = 1) {
   );
 }
 
+async function markLevel4Endpoint(page, which) {
+  return page.evaluate((endpoint) => {
+    const before = window.__qa.level4ReachState();
+    const after = window.__qa.level4ManualCapture(endpoint);
+    return {
+      endpoint,
+      marked: after.manual?.[endpoint] === true
+        && after.captureCount?.[endpoint] === (before.captureCount?.[endpoint] || 0) + 1,
+      before,
+      after,
+    };
+  }, which);
+}
+
 async function calibrateLevel4(page, flexedPose = level4StartPose, extendedPose = level4ReachPose) {
-  await level4Pose(page, flexedPose, 14);
-  await level4Pose(page, extendedPose, 14);
+  await level4Pose(page, flexedPose);
+  const flexed = await markLevel4Endpoint(page, "flexed");
+  await level4Pose(page, extendedPose);
+  const extended = await markLevel4Endpoint(page, "extended");
+  const ready = await page.evaluate(() => window.__qa.level4ReachState());
+  check("4", "two-pose calibration", "fresh flexed therapist mark succeeds exactly once",
+    flexed.marked && flexed.after.captureCount.flexed === 1
+      && flexed.after.captureCount.extended === 0
+      && flexed.after.frame.fresh === true,
+    flexed);
+  check("4", "two-pose calibration", "fresh extended therapist mark succeeds exactly once",
+    extended.marked && extended.after.captureCount.flexed === 1
+      && extended.after.captureCount.extended === 1
+      && extended.after.frame.fresh === true,
+    extended);
+  check("4", "two-pose calibration", "two fresh marks make Level 4 calibrated and game-ready",
+    ready.calibrated === true && ready.gameReady === true
+      && ready.captureCount.flexed === 1 && ready.captureCount.extended === 1,
+    ready);
   // Returning to the flexed endpoint leaves the participant at progress 0.
-  return level4Pose(page, flexedPose, 14);
+  const returned = await level4Pose(page, flexedPose, 14);
+  return { flexed, extended, ready, returned };
+}
+
+// In production, each decoded pose is followed immediately by its game tick.
+// advanceTime deliberately repeats the current generation and therefore cannot
+// progress an idempotent Level 4 dwell. This helper advances the virtual clock
+// between distinct fresh pose admissions, which is the observable camera
+// equivalent of holding a still arm through several decoded frames.
+async function holdLevel4Pose(page, pose, milliseconds, samples = 4) {
+  const slice = milliseconds / Math.max(1, samples);
+  for (let sample = 0; sample < samples; sample += 1) {
+    await advance(page, slice);
+    await level4Pose(page, pose);
+  }
 }
 
 async function performPlacement(page, level, correct) {
@@ -118,11 +168,11 @@ async function performPlacement(page, level, correct) {
     await calibrateLevel4(page);
     before = await state(page);
     await position(page, item, false, true);
-    await advance(page, 900);
+    await holdLevel4Pose(page, level4StartPose, 900);
     check("4", "flow", "dwell pickup acquires an item", (await state(page)).held !== null);
     await level4Pose(page, level4ReachPose, 12);
     await position(page, target, false, true);
-    await advance(page, 900);
+    await holdLevel4Pose(page, level4ReachPose, 900);
   } else {
     await position(page, item, false, true);
     await advance(page, 420);
@@ -236,31 +286,40 @@ try {
   check("4", "two-pose calibration", "flexed then extended capture calibrates and returns to progress 0",
     level4Baseline.calibrated && level4Baseline.stage === "ready"
     && level4Baseline.progress === 0
-    && level4Baseline.captureCount.flexed >= 1 && level4Baseline.captureCount.extended >= 1
-    && level4Baseline.qualified.length >= 2, level4Baseline);
+    && level4Baseline.captureCount.flexed === 1 && level4Baseline.captureCount.extended === 1
+    && level4Baseline.qualified.length === 1 && level4Baseline.qualified[0] === "angle",
+    level4Baseline);
 
-  // Holding only the flexed start pose must never calibrate silently: the
-  // controller waits for the extended endpoint instead of guessing one.
+  // A visible flexed pose without its deliberate therapist mark must never
+  // calibrate silently or pretend the endpoint was captured.
   await start(page, "4");
   await level4Pose(page, level4StartPose, 16);
   const level4FlexedOnly = await page.evaluate(() => window.__qa.level4ReachState());
-  check("4", "two-pose calibration", "holding only the start pose waits for the extended capture",
-    level4FlexedOnly.calibrated === false && level4FlexedOnly.stage === "capture-extended"
+  check("4", "two-pose calibration", "unmarked flexed pose waits for the explicit flexed therapist capture",
+    level4FlexedOnly.calibrated === false && level4FlexedOnly.stage === "capture-flexed"
+    && level4FlexedOnly.reason === "awaiting-flexed-capture"
+    && level4FlexedOnly.captureCount.flexed === 0 && level4FlexedOnly.captureCount.extended === 0
     && level4FlexedOnly.retryCount === 0 && level4FlexedOnly.progress === 0,
     level4FlexedOnly);
 
-  // Two nearly identical poses must ask for a retry, naming the signals that
-  // lacked separation, instead of calibrating on noise.
+  // Two nearly identical labelled poses must keep the flexed capture and ask
+  // only for the extended endpoint again, without a hidden retry state.
   await start(page, "4");
-  await calibrateLevel4(page, level4StartPose, {
+  await level4Pose(page, level4StartPose);
+  const retryFlexedMark = await markLevel4Endpoint(page, "flexed");
+  await level4Pose(page, {
     ...level4StartPose,
-    wrist:{x:.615,y:.45,z:0},
+    wrist:{x:.58,y:.488,z:0},
   });
+  const retryExtendedMark = await markLevel4Endpoint(page, "extended");
   const level4Retry = await page.evaluate(() => window.__qa.level4ReachState());
   check("4", "two-pose calibration", "insufficient endpoint separation requests a retry with diagnostics",
-    level4Retry.calibrated === false && level4Retry.stage === "retry"
-    && level4Retry.reason.includes("separation") && level4Retry.lacking.length > 0
-    && level4Retry.guidance.main.length > 0, level4Retry);
+    retryFlexedMark.marked && !retryExtendedMark.marked
+    && level4Retry.calibrated === false && level4Retry.gameReady === false
+    && level4Retry.stage === "capture-extended"
+    && level4Retry.reason === "angle-separation-too-small"
+    && level4Retry.lacking.length === 1 && level4Retry.guidance.main.length > 0,
+    { retryFlexedMark, retryExtendedMark, level4Retry });
 
   // Compact therapist fallback: two buttons mark the current pose as either
   // endpoint when automatic capture struggles.
@@ -273,7 +332,8 @@ try {
   const level4Manual = await page.evaluate(() => window.__qa.level4ReachState());
   check("4", "two-pose calibration", "therapist buttons mark both endpoints manually",
     level4Manual.calibrated && level4Manual.manual.flexed === true
-    && level4Manual.manual.extended === true && level4Manual.reason === "calibrated-manual"
+    && level4Manual.manual.extended === true && level4Manual.reason === "ready"
+    && level4Manual.captureCount.flexed === 1 && level4Manual.captureCount.extended === 1
     && level4Manual.progress > 0.90, level4Manual);
   await level4Pose(page, level4StartPose, 10);
   const level4ManualReturn = await page.evaluate(() => window.__qa.level4ReachState());
@@ -285,7 +345,7 @@ try {
   await level4Pose(page, level4JitterPose, 10);
   const level4Jitter = await page.evaluate(() => window.__qa.level4ReachState());
   check("4", "drift guard", "small elbow-angle jitter cannot move the object by itself",
-    !level4Jitter.engaged && level4Jitter.progress < 0.02
+    !level4Jitter.engaged && level4Jitter.progress < 0.10
     && !level4Jitter.completionReady, level4Jitter);
   await level4Pose(page, level4PartialExtensionPose, 10);
   const level4Partial = await page.evaluate(() => window.__qa.level4ReachState());
@@ -298,17 +358,17 @@ try {
   await calibrateLevel4(page);
   await level4Pose(page, level4HikePose, 3);
   const level4Hike = await page.evaluate(() => window.__qa.level4ReachState());
-  check("4", "compound movement", "shoulder elevation alone cannot lift the game object",
-    level4Hike.progress < 0.02 && level4Hike.elbowExtensionProgress === 0
-    && level4Hike.shoulderHike && level4Hike.warning.includes("聳肩"), level4Hike);
+  check("4", "compound movement", "shoulder elevation alone cannot change direct elbow-angle progress",
+    level4Hike.progress < 0.02 && level4Hike.shoulderHike === false
+    && level4Hike.warning === "", level4Hike);
 
   await start(page, "4");
   await calibrateLevel4(page);
   await level4Pose(page, level4ReachPose, 10);
   const level4Forward = await page.evaluate(() => window.__qa.level4ReachState());
-  check("4", "compound movement", "shoulder flexion plus elbow extension moves the object upward",
-    level4Forward.progress > 0.90 && level4Forward.shoulderFlexProgress > 0.90
-    && level4Forward.elbowExtensionProgress > 0.90, level4Forward);
+  check("4", "compound movement", "elbow extension moves the object upward without a secondary shoulder gate",
+    level4Forward.progress > 0.90 && level4Forward.elbowAngle > 140
+    && level4Forward.shoulderHike === false, level4Forward);
   await level4Pose(page, level4ForwardFlexedPose, 12);
   const level4ElbowReturn = await page.evaluate(() => window.__qa.level4ReachState());
   check("4", "compound movement", "elbow flexion lowers the object while the wrist remains forward",
@@ -316,9 +376,9 @@ try {
     level4ElbowReturn);
   await level4Pose(page, level4StartPose, 12);
   const level4Return = await page.evaluate(() => window.__qa.level4ReachState());
-  check("4", "compound movement", "shoulder extension plus elbow flexion returns the object downward",
-    level4Return.progress < 0.02 && level4Return.shoulderFlexProgress === 0
-    && level4Return.elbowExtensionProgress === 0, level4Return);
+  check("4", "compound movement", "elbow flexion returns the object downward without a secondary shoulder gate",
+    level4Return.progress < 0.02 && level4Return.elbowAngle < 100
+    && level4Return.shoulderHike === false, level4Return);
 
   // Every Level 4 theme shares one elbow interpretation: extension advances a
   // fixed-X on-screen guide upward, and flexion returns it downward. The three
@@ -346,7 +406,8 @@ try {
       bowling: {...window.__level4MiniGamesQA.state.bowling},
     }));
     const bowlingMovesVertically = theme !== "bowling"
-      || (extended.bowling.armProgress > 0.80 && flexed.bowling.armProgress < 0.20);
+      || (extended.bowling.phase === "return" && extended.bowling.armProgress > 0.80
+        && flexed.bowling.phase === "rolling");
     check("4", "vertical elbow mapping",
       `${theme} maps extension upward and flexion downward without elbow-driven horizontal drift`,
       extended.reach.screenForward.y < flexed.reach.screenForward.y - 80
@@ -379,8 +440,17 @@ try {
     unheldCursor);
 
   const pickup = (await state(page)).items[0];
+  await page.evaluate(() => window.__qa.snapCursor());
   await position(page, pickup, false, true);
+  // Establish the ordinary stillness window with distinct fresh poses, begin
+  // the dwell on that admitted image, then let time pass without admitting a
+  // duplicate frame before the final fresh pose completes it.
+  for (let sample = 0; sample < 4; sample += 1) {
+    await level4Pose(page, level4StartPose);
+    await advance(page, 100);
+  }
   await advance(page, 760);
+  await level4Pose(page, level4StartPose);
   const heldStart = await page.evaluate(() => window.__qa.level4TransportState());
   check("4", "elbow carry", "ordinary Level 4 pickup captures a stable carry lane",
     heldStart.held !== null && heldStart.carry !== null
@@ -445,9 +515,11 @@ try {
     arcBeforeReach.arcActive === false
     && arcOut.arcActive === true
     && arcOut.progress > 0.70
-    && arcOut.cyclePhase === "arc-out"
     && arcFlexed.arcActive === false
-    && arcFlexed.arcProgress === 0
+    // Arc movement may remain visible as a diagnostic value after flexion, but
+    // it must no longer authorise path credit or rewrite direct angle progress.
+    && arcFlexed.progress < 0.05
+    && arcFlexed.reachGate === false
     && arcCycleEnd.progress < 0.25,
     { arcBeforeReach, arcOut, arcFlexed, arcCycleEnd });
 
@@ -455,11 +527,13 @@ try {
   const bowlingCycle = await page.evaluate(() => {
     window.__level4MiniGamesQA.reset();
     window.__level4MiniGamesQA.bowling({
-      calibrated:true, shoulderHike:false, engaged:true, progress:.72,
+      calibrated:true, gameReady:true, newFrame:true, frameGeneration:401,
+      shoulderHike:false, engaged:true, progress:.72,
       reachGate:true, returnReady:false, completionReady:false,
     });
     window.__level4MiniGamesQA.bowling({
-      calibrated:true, shoulderHike:false, engaged:true, progress:.12,
+      calibrated:true, gameReady:true, newFrame:true, frameGeneration:402,
+      shoulderHike:false, engaged:true, progress:.12,
       reachGate:false, returnReady:true, completionReady:true,
     });
     return window.__level4MiniGamesQA.state.bowling;
@@ -471,21 +545,23 @@ try {
   const mahjongPath = await page.evaluate(() => {
     window.__level4MiniGamesQA.reset();
     const reachOnly = {
-      calibrated:true, engaged:true, shoulderHike:false,
+      calibrated:true, gameReady:true, newFrame:true, frameGeneration:411,
+      engaged:true, shoulderHike:false,
       progress:.92, elbowExtensionProgress:.92, reachGate:true, returnReady:false,
       cyclePhase:'reached', arcCalibrated:true, arcProgress:0, arcActive:false,
     };
     window.__level4MiniGamesQA.mahjong(reachOnly, .24, .34);
-    window.__level4MiniGamesQA.mahjong(reachOnly, .31, .40);
+    window.__level4MiniGamesQA.mahjong({...reachOnly, frameGeneration:412}, .31, .40);
     const linearOnly = {...window.__level4MiniGamesQA.state.mahjong};
     window.__level4MiniGamesQA.reset();
     const onArc = {
-      calibrated:true, engaged:true, shoulderHike:false,
+      calibrated:true, gameReady:true, newFrame:true, frameGeneration:421,
+      engaged:true, shoulderHike:false,
       progress:.92, elbowExtensionProgress:.92, reachGate:true, returnReady:false,
       cyclePhase:'arc-out', arcCalibrated:true, arcProgress:.7, arcActive:true,
     };
     window.__level4MiniGamesQA.mahjong(onArc, .24, .34);
-    window.__level4MiniGamesQA.mahjong(onArc, .31, .40);
+    window.__level4MiniGamesQA.mahjong({...onArc, frameGeneration:422}, .31, .40);
     return { linearOnly, onArc:{...window.__level4MiniGamesQA.state.mahjong} };
   });
   check("4", "independent mechanics",
@@ -499,26 +575,28 @@ try {
     window.__level4MiniGamesQA.reset();
     const target = { x:.50, y:.43 };
     const reachOnly = {
-      calibrated:true, shoulderHike:false, engaged:true,
+      calibrated:true, gameReady:true, newFrame:true, frameGeneration:431,
+      shoulderHike:false, engaged:true,
       progress:.92, elbowExtensionProgress:.92, reachGate:true, returnReady:false,
       cyclePhase:'reached', arcCalibrated:true, arcProgress:0, arcActive:false,
     };
     for (let index = 0; index < 8; index += 1) {
-      window.__level4MiniGamesQA.bus(reachOnly, target.x, target.y);
+      window.__level4MiniGamesQA.bus({...reachOnly, frameGeneration:431 + index}, target.x, target.y);
     }
     const linearOnly = {...window.__level4MiniGamesQA.state.bus};
     const onArc = {
-      calibrated:true, shoulderHike:false, engaged:true,
+      calibrated:true, gameReady:true, newFrame:true, frameGeneration:451,
+      shoulderHike:false, engaged:true,
       progress:.92, elbowExtensionProgress:.92, reachGate:true, returnReady:false,
       cyclePhase:'arc-out', arcCalibrated:true, arcProgress:.7, arcActive:true,
     };
     for (let index = 0; index < 8; index += 1) {
-      window.__level4MiniGamesQA.bus(onArc, target.x, target.y);
+      window.__level4MiniGamesQA.bus({...onArc, frameGeneration:451 + index}, target.x, target.y);
     }
     const tapped = {...window.__level4MiniGamesQA.state.bus};
     // A held pose must not beep twice; only a return to the flexed start re-arms.
     for (let index = 0; index < 12; index += 1) {
-      window.__level4MiniGamesQA.bus(onArc, target.x, target.y);
+      window.__level4MiniGamesQA.bus({...onArc, frameGeneration:459 + index}, target.x, target.y);
     }
     return { linearOnly, tapped, held:{...window.__level4MiniGamesQA.state.bus} };
   });

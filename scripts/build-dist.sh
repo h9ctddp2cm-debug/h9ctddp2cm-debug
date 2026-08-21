@@ -20,6 +20,7 @@ mkdir -p "$DIST"
 cp "$ROOT/index.html" "$DIST/index.html"
 cp "$ROOT/level4-three-games-module.js" "$DIST/level4-three-games-module.js"
 cp "$ROOT/level4-elbow-calibration.js" "$DIST/level4-elbow-calibration.js"
+cp "$ROOT/level4-video-freshness.js" "$DIST/level4-video-freshness.js"
 cp "$ROOT/fthue-adaptive-progression.js" "$DIST/fthue-adaptive-progression.js"
 cp -R "$ROOT/img" "$DIST/img"
 
@@ -63,7 +64,16 @@ if find "$DIST" \( -name '*.test.js' -o -name '*.R' -o -name 'README.md' \
   fail "excluded artifact found in dist/public"
 fi
 
-for banned in research assessor.html researcher.html intervention.html mode.js research-common.js; do
+# QA and local review artifacts live outside the repository entirely; assert that
+# neither the source tree nor the build output can carry them.
+if [ -e "$ROOT/qa" ]; then
+  fail "qa/ exists inside the repository - QA artifacts belong in ../ych_rehab_qa_artifacts/"
+fi
+if find "$DIST" -name 'qa' -o -name 'user-recordings' -o -name '*-recording-recheck' | grep -q .; then
+  fail "QA capture path leaked into dist/public"
+fi
+
+for banned in research assessor.html researcher.html intervention.html mode.js research-common.js qa; do
   if find "$DIST" -name "$banned" | grep -q .; then fail "banned path $banned in dist/public"; fi
 done
 
