@@ -932,12 +932,16 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
 .level-select.has-shoulder-demos{ grid-template-columns:minmax(145px,.75fr) minmax(330px,1.25fr); }
 .level-motion.shoulder-demos{ grid-template-columns:1fr 1fr; gap:10px; align-items:start; }
 .level-motion.shoulder-demos figure{
-  overflow:hidden; border:1px solid rgba(26,107,90,.2); border-radius:14px; background:#f7f3ea;
+  display:grid; grid-template-rows:auto minmax(64px,auto); overflow:hidden;
+  border:1px solid rgba(26,107,90,.2); border-radius:14px; background:#f7f3ea;
 }
-.level-motion.shoulder-demos img{ aspect-ratio:220/190; object-fit:contain; }
+.level-motion.shoulder-demos img{
+  aspect-ratio:220/190; object-fit:contain; background:#f7f3ea;
+}
 .level-motion.shoulder-demos figcaption{
-  display:flex; min-height:54px; align-items:center; justify-content:center;
-  padding:7px 6px 8px; margin:0; background:#fff; font-size:12px; line-height:1.28;
+  position:relative; z-index:1; display:flex; min-height:64px; align-items:center; justify-content:center;
+  padding:8px 7px 9px; margin:0; border-top:1px solid rgba(26,107,90,.16);
+  background:#fff; font-size:12px; line-height:1.3;
 }
 .level-details{ border-top:1px solid var(--border); margin:0 18px; }
 .level-details summary{
@@ -1107,7 +1111,7 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
           <div class="level-copy">
             <span class="lv-tag">FTHUE Level 2</span>
             <h3>桌面承托訓練</h3>
-            <p class="lv-action">雙手患側外滑｜患臂承托滑動</p>
+            <p class="lv-action">兩級檯面承托訓練｜外展／內收 → 前伸畫圈</p>
           </div>
           <div class="level-motion single">
             <figure>
@@ -1127,8 +1131,8 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
         <details class="level-details">
           <summary>詳情</summary>
           <p class="lv-note">
-            <span class="lv-line">所有活動均在檯面承托下進行；由職業治療師選擇合適玩法</span>
-            <span class="lv-line">包括好手帶患手向患側外滑，以及患臂承托的伸肘／水平外展活動</span>
+            <span class="lv-line">容易：肩水平外展（向外滑）</span>
+            <span class="lv-line">較難：肩屈曲及伸肘前伸，再作肩水平外展／內收畫圈</span>
             <span class="lv-line">鏡頭只追蹤治療師選定的患側手臂；不會自動判定 FTHUE Level</span>
           </p>
         </details>
@@ -1164,8 +1168,8 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
         <details class="level-details">
           <summary>詳情</summary>
           <p class="lv-note">
-            <span class="lv-line">患臂離開桌面，每個物件按畫面由 0°、10° 或 20° 穩定起步</span>
-            <span class="lv-line">每個物件使用 0°／10°／20° 起點；治療師選擇 30°／40°／50°／60° 目標</span>
+            <span class="lv-line">患臂離開桌面，每個物件均由 0° 穩定起步</span>
+            <span class="lv-line">治療師選擇 30°／40°／50°／60° 目標</span>
             <span class="lv-line">角度只屬相機訓練估算；FTHUE Level 必須由職業治療師選擇</span>
           </p>
         </details>
@@ -1201,7 +1205,7 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
         <details class="level-details">
           <summary>詳情</summary>
           <p class="lv-note">
-            <span class="lv-line">患臂離開桌面，每個物件按畫面由 0°、10° 或 20° 穩定起步</span>
+            <span class="lv-line">患臂離開桌面，每個物件均由 0° 穩定起步</span>
             <span class="lv-line">慢慢主動抬高手臂至治療師選定的 60° 或以上目標</span>
             <span class="lv-line">相機不量度抓握或捏力；FTHUE Level 必須由職業治療師選擇</span>
           </p>
@@ -1463,9 +1467,9 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
       <p class="lead">選擇遊戲</p>
     </div>
     <details class="level4-session-picker" id="level4SessionPicker" hidden>
-      <summary id="level4SessionSummary">Level 2 承托遊戲 · 顯示 5 款</summary>
+      <summary id="level4SessionSummary">Level 2 承托遊戲 · 2 款</summary>
       <div class="level4-session-options" id="level4SessionOptions">
-        <button type="button" data-level4-session-theme="bilateral">雙手外滑</button>
+        <button type="button" data-level4-session-theme="bilateral">檯面肩水平外展</button>
         <button type="button" data-level4-session-theme="tsuenwan">荃灣街景</button>
         <button type="button" data-level4-session-theme="dimsum">點心</button>
         <button type="button" data-level4-session-theme="wipewindow">抹窗</button>
@@ -2316,7 +2320,7 @@ const state = {
   personalPinchEnter:null, personalPinchExit:null, personalPinchOpen:null,
   mirrorX:true,
   sessionMode:'training', // training | trial
-  level4SessionThemes:['bilateral','tsuenwan','dimsum','flowers','laundry','cards','mahjong','wipewindow','bowling','mahjongwash','buspay'],
+  level4SessionThemes:['bilateral','mahjongwash'],
   level4RotationIndex:0,
   /* Adaptive progression: the app-side TRAINING stage/band only. The clinical
      FTHUE level stays with the therapist and is never changed automatically. */
@@ -4244,7 +4248,7 @@ function renderPilotLanguage(){
 /* ==================== 級別資料 ==================== */
 const LEVELS = {
   '2': { id:'2', tag:'FTHUE Level 2', name:'桌面承托訓練', gameType:'dwell',
-         actionLabel:'由職業治療師選擇雙手外滑或患臂承托活動' },
+         actionLabel:'先選較容易的肩水平外展向外滑，或較難的前伸後畫圈' },
   '3': { id:'3', tag:'FTHUE Level 3', name:'肩屈曲 30–60°', gameType:'dwell',
          actionLabel:'持續握住物件，患臂肩屈曲至治療師選定目標；不偵測抓放' },
   '4': { id:'4', tag:'FTHUE Level 4', name:'肩屈曲 60° 或以上', gameType:'dwell',
@@ -4918,9 +4922,9 @@ function updateRulesForActivity(){
   const actionCue = state.level === '2'
     ? '桌面承托 → 按遊戲方向移動 → 返回'
     : (state.level === '3'
-      ? shoulderModeCue+'隨機起點 0°／10°／20° → 治療師選定 30°／40°／50°／60° 目標 → 返回'
+      ? shoulderModeCue+'0° 起點 → 治療師選定 30°／40°／50°／60° 目標 → 返回 0°'
       : (state.level === '4'
-        ? shoulderModeCue+'隨機起點 0°／10°／20° → 治療師選定 60° 或以上目標 → 返回'
+        ? shoulderModeCue+'0° 起點 → 治療師選定 60° 或以上目標 → 返回 0°'
     : (state.level === '67'
       ? level67ToolProfile().actionCue
       : '張手 → 輕握 → 放手')));
@@ -5936,7 +5940,9 @@ async function ensureHandLandmarker(){
         delegate: isAppleTouchDevice() ? "CPU" : "GPU"
       },
       runningMode: "VIDEO",
-      numHands: 1,
+      // Level 5 must not silently follow a therapist's or unaffected hand.
+      // Ask for both candidates, then admit only the configured anatomical side.
+      numHands: 2,
       minHandDetectionConfidence: 0.20,
       minHandPresenceConfidence: 0.18,
       minTrackingConfidence: 0.18
@@ -5967,6 +5973,36 @@ function hasFiniteHandLandmarks(lm, indices){
   });
 }
 
+function mediaPipeAnatomicalHand(results, index, inputMirrored=false){
+  const groups = results && (results.handednesses || results.handedness);
+  const category = Array.isArray(groups?.[index]) ? groups[index][0] : null;
+  const raw = String(category?.categoryName || category?.displayName || '').toLowerCase();
+  if(raw !== 'left' && raw !== 'right') return null;
+  // Current MediaPipe Tasks Hand Landmarker labels an unmirrored decoded
+  // camera frame with the participant's anatomical side. Only swap when the
+  // pixels supplied to inference were themselves mirrored. Our selfie effect
+  // is CSS-only and detectForVideo() receives the raw, unmirrored <video>.
+  return inputMirrored ? (raw === 'left' ? 'right' : 'left') : raw;
+}
+function selectedAffectedHandIndex(results, inputMirrored=false){
+  const landmarks = Array.isArray(results?.landmarks) ? results.landmarks : [];
+  const affected = activeAffectedSide();
+  let selected = -1;
+  let selectedConfidence = -Infinity;
+  for(let index=0; index<landmarks.length; index++){
+    if(mediaPipeAnatomicalHand(results, index, inputMirrored) !== affected) continue;
+    const groups = results.handednesses || results.handedness;
+    const confidence = Number(groups?.[index]?.[0]?.score);
+    if(selected < 0 || (Number.isFinite(confidence) && confidence > selectedConfidence)){
+      selected = index;
+      selectedConfidence = Number.isFinite(confidence) ? confidence : selectedConfidence;
+    }
+  }
+  // Missing/unknown handedness fails closed. Falling back to result 0 would let
+  // an unaffected or assisting hand acquire and release Level 5 objects.
+  return selected;
+}
+
 // 偵測食指尖位置，回傳 {detected, nx, ny}（nx/ny 已經鏡像處理，範圍 0-1）
 function detectWrist(videoEl){
   if(!videoEl || videoEl.readyState < 2){
@@ -5981,7 +6017,12 @@ function detectWrist(videoEl){
     }
   }
   if(results && results.landmarks && results.landmarks.length > 0){
-    const lm = results.landmarks[0]; // 第一隻手
+    // CSS scaleX(-1) mirrors presentation, not the CanvasImageSource passed to
+    // Hand Landmarker. Keep inference mirroring explicit so display settings
+    // can never swap the selected anatomical hand.
+    const selectedHandIndex = selectedAffectedHandIndex(results, false);
+    if(selectedHandIndex < 0) return { detected:false, reason:'affected-hand-not-detected' };
+    const lm = results.landmarks[selectedHandIndex];
     const required = isPegMode()
       ? [0,2,4,5,8,9,12,17]
       : state.gameType === 'pinch'
@@ -6104,16 +6145,24 @@ function computeGraspScore(lm, isGraspingPrev){
   const openCount = fingerExtensionRatios.filter(value => value >= 1.72).length;
   // Enter only when at least two fingers curl. Once holding, two visibly
   // reopened fingers are enough for a limited-extension stroke hand.
+  const visibleGrasp = curledCount >= 2;
+  const visibleRelease = openCount >= 2;
   let isGrasping = isGraspingPrev ? openCount < 2 : curledCount >= 2;
   const graspThresholds = research.active ? research : state;
   const usePersonalGrasp = (!research.active || research.stratum === '5' || isPegMode()) &&
     Number.isFinite(graspThresholds.personalGraspEnter) &&
     Number.isFinite(graspThresholds.personalGraspExit);
   if(usePersonalGrasp){
-    isGrasping = score >= (isGraspingPrev
-      ? graspThresholds.personalGraspExit : graspThresholds.personalGraspEnter);
+    // Personal calibration improves sensitivity, but camera foreshortening can
+    // shift the aggregate palm-distance score during reach/transport. Do not let
+    // that aggregate override two directly visible curled or reopened fingers.
+    // This keeps a limited-range affected hand usable without weakening the
+    // two-finger entry/release rule.
+    isGrasping = isGraspingPrev
+      ? (!visibleRelease && score >= graspThresholds.personalGraspExit)
+      : (visibleGrasp || score >= graspThresholds.personalGraspEnter);
   }
-  return { isGrasping, score, valid:true };
+  return { isGrasping, score, curledCount, openCount, valid:true };
 }
 
 /* Clothes-peg mode observes visible hand motion only; it neither identifies a
@@ -6822,12 +6871,12 @@ const THEMES = {
     }));},
   }),
   bilateral: mkTheme({
-    id:'bilateral', title:'雙手患側外滑',
-    goal:'好手帶患手，在毛巾上由中央向患側外滑',
+    id:'bilateral', title:'檯面肩水平外展',
+    goal:'容易：前臂承托，由中線向患側外滑',
     itemWord:'點心', difficulty:'容易', targetStyle:'steamer',
-    thumbnail:'img/siumai.png', thumbnailAlt:'桌面承托雙手患側外滑點心遊戲',
-    verbFor(){ return '雙手及前臂承托 → 好手帶患手向患側外滑 → 返回中央'; },
-    actionLabelFor(){ return '只追蹤已選患側手腕；好手可協助，但不會成為相機控制手'; },
+    thumbnail:'img/siumai.png', thumbnailAlt:'檯面承托肩水平外展向外滑點心遊戲',
+    verbFor(){ return '前臂承托 → 由中線向患側外滑（肩水平外展）'; },
+    actionLabelFor(){ return '容易：向患側外滑；返回中線只作重設'; },
     categoriesFor(){ return [
       { type:'siumai', itemLabel:'燒賣', targetLabel:'燒賣', img:imgSiumai,
         targetImg:imgSteamerSiumai, scale:.66, color:'#1A6B5A' },
@@ -6854,13 +6903,13 @@ const THEMES = {
     categoriesFor(){ return []; },
   }),
   mahjongwash: mkTheme({
-    id:'mahjongwash', title:'洗麻雀',
-    goal:'手臂保持枱面高度：屈肘開始 → 伸肘向前 → 肩水平外展',
+    id:'mahjongwash', title:'檯面前伸後畫圈',
+    goal:'較難：肩屈曲及伸肘前伸，再作肩水平外展／內收畫圈',
     itemWord:'麻雀', difficulty:'中等', targetStyle:'panel',
     thumbnail:'img/advanced/level4_mahjongwash_real_life.gif',
-    thumbnailAlt:'實景示範：沿桌面畫大弧洗麻雀',
-    verbFor(){ return '屈肘開始 → 伸肘向前 → 肩水平外展'; },
-    actionLabelFor(){ return '手臂保持枱面高度；向前伸肘後，肩水平外展洗麻雀'; },
+    thumbnailAlt:'實景示範：檯面前伸後作肩水平外展及內收畫圈',
+    verbFor(){ return '肩屈曲＋伸肘前伸 → 肩水平外展／內收畫圈'; },
+    actionLabelFor(){ return '較難：檯面前伸後畫圈；只追蹤已選患側手臂'; },
     categoriesFor(){ return []; },
   }),
   buspay: mkTheme({
@@ -7048,9 +7097,9 @@ function themeAvailableForLevel(themeId, level = state.level){
 }
 function availableThemeOrder(level = state.level){
   if(level === '2'){
-    // Level 2 owns every tabletop-supported activity: the inherited bilateral
-    // themes plus the former supported elbow/horizontal-path games.
-    return ['bilateral','tsuenwan','dimsum','flowers','laundry','cards','mahjong','wipewindow','bowling','mahjongwash','buspay'];
+    // Two concise graded tabletop activities: easier horizontal movement,
+    // followed by harder supported forward reach plus circular movement.
+    return ['bilateral','mahjongwash'];
   }
   if(level === '3' || level === '4'){
     // Same visual choices, different OT-selected shoulder-flexion band.
@@ -7063,24 +7112,15 @@ function availableThemeOrder(level = state.level){
 }
 function visibleThemeOrder(level = state.level){
   if(level !== '2') return availableThemeOrder(level);
-  const allowed = new Set(availableThemeOrder(level));
-  const selected = state.level4SessionThemes.filter(id=>allowed.has(id));
-  return selected.length ? selected : ['dimsum'];
+  return availableThemeOrder(level);
 }
 
 function renderLevel4SessionPicker(){
   const picker = document.getElementById('level4SessionPicker');
   if(!picker) return;
-  const isLevel2 = state.level === '2';
-  picker.hidden = !isLevel2;
-  if(!isLevel2) return;
-  const selected = visibleThemeOrder('2');
-  document.getElementById('level4SessionSummary').textContent =
-    'Level 2 承托遊戲 · 顯示 ' + selected.length + ' 款';
-  document.getElementById('level4SessionMessage').textContent = '按下可顯示／隱藏';
-  picker.querySelectorAll('[data-level4-session-theme]').forEach(button=>{
-    button.setAttribute('aria-pressed', selected.includes(button.dataset.level4SessionTheme) ? 'true' : 'false');
-  });
+  // Exactly two activities are always shown, so a visibility picker would
+  // only duplicate controls and make the Level 2 library harder to scan.
+  picker.hidden = true;
 }
 
 function getTheme(){ return THEMES[state.theme] || THEMES.dimsum; }
@@ -7504,6 +7544,7 @@ function initGame(){
   posHistory = [];
   trackingPointHistory = [];
   level3Lateral.reset();
+  level2LateralLastTargetHit = 0;
   level4Reach.reset();
   if(shoulderFlexionController){
     shoulderFlexionController.reset(state.level,state.shoulderTargetDeg);
@@ -8165,19 +8206,33 @@ const level3Lateral = {
   samples:[],
   progress:0,
   calibrated:false,
+  phase:'outward',
+  targetFrames:0,
+  returnFrames:0,
+  targetHits:0,
+  newFrame:false,
   reset(){
     this.baselineX = null;
     this.samples = [];
     this.progress = 0;
     this.calibrated = false;
+    this.phase = 'outward';
+    this.targetFrames = 0;
+    this.returnFrames = 0;
+    this.targetHits = 0;
+    this.newFrame = false;
   }
 };
 function updateLevel3LateralController(lm, cw, ch){
   if(!isLevel3Tabletop()) return level3Lateral;
+  level3Lateral.newFrame = false;
   const wrist=lm?.[activeAffectedSide()==='left'?15:16];
   if(!level4PosePointUsable(wrist)){
+    level3Lateral.targetFrames = 0;
+    level3Lateral.returnFrames = 0;
     return level3Lateral;
   }
+  level3Lateral.newFrame = true;
   const midpoint = cameraPointToCanvas(
     interactionX(wrist.x),
     wrist.y,
@@ -8197,6 +8252,24 @@ function updateLevel3LateralController(lm, cw, ch){
   const outwardPixels = affectedSideSign() * (midpoint.x-level3Lateral.baselineX);
   const targetProgress = clamp01((outwardPixels-cw*0.012)/(cw*0.22));
   level3Lateral.progress += 0.38 * (targetProgress-level3Lateral.progress);
+  if(level3Lateral.phase === 'outward'){
+    level3Lateral.returnFrames = 0;
+    level3Lateral.targetFrames = level3Lateral.progress >= 0.84
+      ? level3Lateral.targetFrames + 1 : 0;
+    if(level3Lateral.targetFrames >= 2){
+      level3Lateral.targetFrames = 0;
+      level3Lateral.phase = 'return';
+      level3Lateral.targetHits += 1;
+    }
+  }else{
+    level3Lateral.targetFrames = 0;
+    level3Lateral.returnFrames = level3Lateral.progress <= 0.16
+      ? level3Lateral.returnFrames + 1 : 0;
+    if(level3Lateral.returnFrames >= 2){
+      level3Lateral.returnFrames = 0;
+      level3Lateral.phase = 'outward';
+    }
+  }
   return level3Lateral;
 }
 
@@ -9070,6 +9143,7 @@ function pickupContactRadius(itemRadius, tremorMargin=52){
 
 let lastDwellPct = 0;
 let dwellActive = false;
+let level2LateralLastTargetHit = 0;
 
 function updateGameLogic(){
   // Research rest blocks and single-cognitive blocks disable all hand-game interaction.
@@ -9079,7 +9153,11 @@ function updateGameLogic(){
   }
   if(isLevel3Tabletop() && !level3Lateral.calibrated){
     dwellTarget = null;
-    setActionPrompt('雙手置中', '準備向患側外滑');
+    setActionPrompt('患手置中', '準備向外滑');
+    return;
+  }
+  if(isLevel3Tabletop()){
+    updateLevel2LateralGame();
     return;
   }
   if(isShoulderFlexionLevel()){
@@ -9308,6 +9386,53 @@ function updateGameLogic(){
   }
 }
 
+/* Level 2 easy mode is a supported outward shoulder-horizontal-abduction task.
+   The selected affected wrist directly drives one large object from midline to
+   the affected side. There is no virtual pickup, dwell, grasp or release.
+   Returning to midline only rearms the next outward repetition. */
+function updateLevel2LateralGame(){
+  dwellTarget=null;dwellStartTime=0;dwellActive=false;lastDwellPct=0;
+  heldItem=null;gripActive=false;isGrasping=false;
+
+  let item=foods.find(food=>!food.removed);
+  if(!item){
+    spawnInitialFoods();
+    item=foods.find(food=>!food.removed);
+  }
+  const cw=gameCanvas.width,ch=gameCanvas.height;
+  const centreX=cw*.50;
+  const travel=cw*.29;
+  const y=ch*.72;
+  if(item){
+    item.x=centreX+affectedSideSign()*travel*clamp01(level3Lateral.progress);
+    item.y=y;
+    item.baseX=item.x;
+    item.baseY=item.y;
+    item.held=false;
+  }
+
+  if(level3Lateral.targetHits!==level2LateralLastTargetHit){
+    level2LateralLastTargetHit=level3Lateral.targetHits;
+    score+=10;correctCount++;wrongStreak=0;
+    triggerFeedback(true);
+    adaptiveNoteTrial('level2_horizontal_abduction','success');
+    researchLog('level2_horizontal_abduction_target',{
+      affected_side:activeAffectedSide(),
+      progress:Number(level3Lateral.progress.toFixed(3)),
+    });
+    updateHUD();
+    showLevelUpBanner();
+  }
+
+  if(!level3Lateral.newFrame){
+    setActionPrompt('等待鏡頭','');
+  }else if(level3Lateral.phase==='return'){
+    setActionPrompt('好！返回中線','');
+  }else{
+    setActionPrompt('向患側外滑','');
+  }
+}
+
 /* Levels 3–4 are shoulder-flexion practice, not virtual grasp-and-release.
    The patient keeps holding an OT-selected real object (or the selected 1 lb
    stick mode). A single large screen object follows the camera-estimated lift
@@ -9435,6 +9560,16 @@ function updateGraspLogic(){
     );
     basicOpenStart = 0; basicGraspStart = 0; basicGraspCandidate = '';
     basicContactCandidate = ''; basicContactUntil = 0;
+    return;
+  }
+  if(detectionHeldGrace){
+    // Keep the last cursor visible through a brief detector miss, but never let
+    // stale landmarks accrue pickup or release dwell. In particular, the 750 ms
+    // tracking grace is longer than Level 5's 650 ms drop dwell.
+    basicOpenStart = 0; basicGraspStart = 0; basicGraspCandidate = '';
+    basicGraspArmed = false; basicContactCandidate = ''; basicContactUntil = 0;
+    releaseDwellStart = 0; releaseDwellPlate = null;
+    setActionPrompt('鏡頭對準', '患手掌心及指尖入鏡');
     return;
   }
 
@@ -13443,7 +13578,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <script src="level4-three-games-module.js"></script>
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v49-20260826-offline-release";
+  const LEVEL_APP_BUILD = "v55-20260826-level2-outward-abduction";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

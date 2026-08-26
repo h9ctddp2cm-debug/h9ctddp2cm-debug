@@ -155,16 +155,10 @@
       return mode==='assisted-stick'?'assisted-stick':'active';
     }
     function defaultTarget(level){ return String(level)==='4'?60:40; }
-    function startChoices(level,target){
-      const pool=[0,10,20];
-      return pool.filter(value=>value<=Number(target)-10);
-    }
-    function nextRandomStart(previous){
-      const pool=startChoices(state.level,state.selectedTargetDeg);
-      const alternatives=pool.length>1?pool.filter(value=>value!==previous):pool;
-      state.seed=(state.seed*1664525+1013904223)>>>0;
-      return alternatives[Math.floor((state.seed/4294967296)*alternatives.length)]??pool[0]??0;
-    }
+    // Level 3 and 4 always begin from the participant-specific camera zero.
+    // A single fixed start is easier to acquire reliably than asking the
+    // tracker to distinguish prescribed 10° or 20° starting positions.
+    function startChoices(){ return [0]; }
     function reset(level,targetDeg) {
       Object.assign(state,{level:String(level||'3'),phase:'anchor',reason:'awaiting-patient',
         calibrated:false,gameReady:false,framingReady:false,
@@ -173,7 +167,7 @@
         exerciseMode:normalizeExerciseMode(state.exerciseMode||(options&&options.exerciseMode)),
         trackingTarget:'selected-anatomical-affected-arm',unaffectedHandFallback:false,
         preSamples:[],anchor:null,samples:[],baseline:null,maximum:null,trainingMin:null,trainingMax:null,
-        seed:0x5f3759df,selectedStartDeg:0,
+        selectedStartDeg:0,
         selectedTargetDeg:Number(targetDeg)||defaultTarget(level||'3'),peakEstimatedAngle:null,
         targetReached:false,repetitions:0,cycleArmed:false,targetStableFrames:0,returnStableFrames:0,
         holdDurationMs:Math.max(0,Number(options&&options.holdDurationMs)||0),
@@ -185,7 +179,7 @@
         signalSource:'image-2d-relative',progress:0,newFrame:false,compensation:null,
         anchorJumpFrames:0,shoulderHikeFrames:0,trunkLeanFrames:0,
         frame:{fresh:false,generation:null,ageMs:null,reason:'awaiting-decoded-frame'}});
-      state.selectedStartDeg=nextRandomStart(null);
+      state.selectedStartDeg=0;
       return snapshot();
     }
     reset(options && options.level);
@@ -354,7 +348,7 @@
           state.repetitions+=1;state.cycleArmed=false;state.targetStableFrames=0;
           state.holdStartedAtMs=null;state.holdRemainingSec=null;state.holdComplete=false;
           state.holdAtTarget=false;state.holdInterrupted=false;
-          state.selectedStartDeg=nextRandomStart(state.selectedStartDeg);
+          state.selectedStartDeg=0;
           state.trainingMin=state.selectedStartDeg;
           state.prescribedExcursionDeg=state.selectedTargetDeg-state.selectedStartDeg;
           state.progress=clamp01((state.estimatedAngle-state.trainingMin)/(state.trainingMax-state.trainingMin));
@@ -429,9 +423,7 @@
         : [30,40,50,60];
       if(!allowed.includes(value))return false;
       state.selectedTargetDeg=value;
-      if(!startChoices(state.level,value).includes(state.selectedStartDeg)){
-        state.selectedStartDeg=nextRandomStart(state.selectedStartDeg);
-      }
+      state.selectedStartDeg=0;
       if(state.calibrated){
         state.trainingMin=state.selectedStartDeg;
         state.trainingMax=value;
