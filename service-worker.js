@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v30-20260821-chrome-update-takeover";
+const CACHE_VERSION = "fthue-rehab-v49-20260826-offline-release";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

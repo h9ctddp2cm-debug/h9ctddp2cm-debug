@@ -1,11 +1,12 @@
 /* FTHUE Level 4 independent games.
    Movement taxonomy (final):
      linear flexion <-> extension only : 茶樓 dimsum, 保齡球 bowling
-     extension then outward/circular path : 抹窗 wipewindow, 洗麻雀 mahjongwash,
-                                            巴士拍卡 buspay
+     extension/forward then shoulder-horizontal-abduction phase :
+                                            抹窗 wipewindow, 洗麻雀 mahjongwash, 巴士拍卡 buspay
    Signal A (reach) is the shared stabilized two-pose progress. Signal B (the
-   side-correct lateral/abduction path) is separate and is only consumed by the
-   three path games, after adequate extension.
+   shoulder-horizontal-abduction range) is separate and is only consumed by the
+   three path games, after adequate extension. Its admitted screen direction is
+   consistently left-to-right as range increases, irrespective of side/mirror.
    All three games consume ONE normalised elbow signal produced by the shared
    two-pose calibration (flexed endpoint = 0, extended endpoint = 1) together
    with its hysteresis gates. They never re-threshold raw joint angles and never
@@ -76,43 +77,47 @@ function level4PinsSettled(game){
 
 const level4MiniGames = {
   bowling:{
-    phase:'reach', peak:0, armProgress:0, ballProgress:0, rollStartedAt:0,
-    lastArmProgress:0, reversalFrames:0, lastConsumedGeneration:null,
+    phase:'await-start', peak:0, armProgress:0, ballProgress:0, rollStartedAt:0,
+    lastArmProgress:0, reversalFrames:0, lastConsumedGeneration:null, returnSeen:false,
     pins:0, rounds:0, readyForNextAt:0,
     impactAt:0, physicsAt:0, pinBodies:level4NewPinBodies(),
   },
   mahjong:{
-    progress:0, lastPoint:null, lastConsumedGeneration:null, rounds:0, completed:false,
+    phase:'forward', progress:0, sweepProgress:0, clockwiseAngle:0, horizontalBaseline:0,
+    lastPoint:null, lastConsumedGeneration:null, rounds:0, completed:false,
     readyForNextAt:0, layout:null, seed:0, washSteps:0, lastClackAt:0,
     clackCount:0, shuffleCount:0,
   },
   bus:{
-    targetIndex:0, hitCount:0, holdFrames:0, armed:true, lastConsumedGeneration:null,
+    phase:'forward', targetIndex:0, hitCount:0, holdFrames:0, armed:true, returnComplete:false, horizontalBaseline:0,
+    lastConsumedGeneration:null,
     flashUntil:0, beepCount:0, beeped:false, successUntil:0,
   },
   reset(){
     Object.assign(this.bowling, {
-      phase:'reach', peak:0, armProgress:0, ballProgress:0, rollStartedAt:0,
-      lastArmProgress:0, reversalFrames:0, lastConsumedGeneration:null,
+      phase:'await-start', peak:0, armProgress:0, ballProgress:0, rollStartedAt:0,
+      lastArmProgress:0, reversalFrames:0, lastConsumedGeneration:null, returnSeen:false,
       pins:0, rounds:0, readyForNextAt:0,
       impactAt:0, physicsAt:0, pinBodies:level4NewPinBodies(),
     });
     Object.assign(this.mahjong, {
-      progress:0, lastPoint:null, lastConsumedGeneration:null, rounds:0, completed:false,
+      phase:'forward', progress:0, sweepProgress:0, clockwiseAngle:0, horizontalBaseline:0,
+      lastPoint:null, lastConsumedGeneration:null, rounds:0, completed:false,
       readyForNextAt:0, layout:null, seed:0, washSteps:0, lastClackAt:0,
       clackCount:0, shuffleCount:0,
     });
     Object.assign(this.bus, {
-      targetIndex:0, hitCount:0, holdFrames:0, armed:true, lastConsumedGeneration:null,
+      phase:'forward', targetIndex:0, hitCount:0, holdFrames:0, armed:true, returnComplete:false, horizontalBaseline:0,
+      lastConsumedGeneration:null,
       flashUntil:0, beepCount:0, beeped:false, successUntil:0,
     });
   },
 };
 
-const LEVEL4_BUS_TARGETS = [
-  {x:0.50,y:0.43}, {x:0.43,y:0.37}, {x:0.57,y:0.38},
-  {x:0.48,y:0.50},
-];
+// The reader is at the left end of the approved horizontal range. After a
+// successful tap, increasing horizontal-abduction range moves the card
+// left-to-right back toward its start position before the next round.
+const LEVEL4_BUS_TARGETS = [{x:0.10,y:0.43}];
 
 const level4Runtime = window.__level4GameRuntime;
 
@@ -158,12 +163,18 @@ function level4AdmitGameGeneration(game, motion, clearPartial){
     if(typeof clearPartial === 'function') clearPartial();
     return false;
   }
-  if(motion?.newFrame === false) return false;
   const generation = motion?.frameGeneration;
+  // A decoded generation is the authority. `newFrame` is intentionally only a
+  // fallback for legacy generation-less harnesses because a duplicate RAF can
+  // clear that transient flag after the already-admitted generation has been
+  // rendered. Each game retains its own consumed generation, so no duplicate can
+  // advance an ordered phase.
   if(Number.isFinite(generation)){
     if(game.lastConsumedGeneration === generation) return false;
     game.lastConsumedGeneration = generation;
+    return true;
   }
+  if(motion?.newFrame === false) return false;
   return true;
 }
 
@@ -172,12 +183,13 @@ function level4MotionArcProgress(motion){
   if(Number.isFinite(motion.arcProgress)) return level4Runtime.clamp01(motion.arcProgress);
   return 0;
 }
-/* Path games: adequate stabilized extension first, then the outward path. */
+/* Path games: adequate stabilized extension/forward reach first, then an
+   admitted shoulder-horizontal-abduction range. */
 function level4MotionPathReady(motion){
   if(!level4MotionGameplayReady(motion)) return false;
   // This gate is intentionally one-way only: angle progress remains wholly
-  // controlled by the captured two-point map while the outward movement merely
-  // permits an arc-game action after extension.
+  // controlled by the captured two-point map while horizontal movement merely
+  // permits the game's second phase after extension.
   return level4MotionProgress(motion) >= 0.70
     && motion.arcCalibrated === true
     && (motion.arcActive === true || level4MotionArcProgress(motion) >= 0.12);
@@ -186,14 +198,24 @@ function level4MotionPathReady(motion){
 function updateLevel4Bowling(motion){
   if(!level4Runtime.isBowling()) return;
   const game = level4MiniGames.bowling;
-  // A stale/lost pose must not complete a half-observed reach-return cycle.
+  // A stale/lost pose cannot complete a half-observed cycle. A committed ball
+  // keeps rolling, but only a later distinct flexed return may re-arm it.
   if(!level4AdmitGameGeneration(game, motion, ()=>{
     if(game.phase !== 'rolling'){
-      game.phase = 'reach'; game.peak = 0; game.armProgress = 0;
-      game.lastArmProgress = 0; game.reversalFrames = 0;
+      game.phase = 'await-start'; game.peak = 0; game.armProgress = 0;
+      game.lastArmProgress = 0; game.reversalFrames = 0; game.returnSeen = false;
     }
   })) return;
   const now = level4Runtime.now();
+  const progress = level4MotionProgress(motion);
+  game.armProgress = progress;
+  if(game.phase === 'await-start'){
+    if(level4MotionReturnReady(motion)){
+      game.phase = 'forward';
+      game.returnSeen = true;
+    }
+    return;
+  }
   if(game.phase === 'rolling'){
     // The released ball rolls the length of the lane on its own timeline; the
     // arm is free to rest during the roll.
@@ -212,50 +234,29 @@ function updateLevel4Bowling(motion){
     if(game.impactAt) level4StepPinBodies(game, now);
     if(game.readyForNextAt && now >= game.readyForNextAt && level4PinsSettled(game)){
       Object.assign(game, {
-        phase:'reach', peak:0, armProgress:0, ballProgress:0, rollStartedAt:0,
-        lastArmProgress:0, reversalFrames:0, lastConsumedGeneration:null,
+        phase:'await-return', peak:0, armProgress:progress, ballProgress:0, rollStartedAt:0,
+        lastArmProgress:progress, reversalFrames:0,
         pins:0, readyForNextAt:0, impactAt:0, physicsAt:0,
         pinBodies:level4NewPinBodies(),
       });
     }
     return;
   }
-  // Before release, the ball follows the shared vertical reach signal:
-  // elbow extension raises it up the lane and flexion brings it back down.
-  // Elbow motion is never interpreted as lane X.
-  const progress = level4MotionProgress(motion);
-  game.armProgress = progress;
-  if(level4MotionReachGate(motion)){
-    game.phase = 'return';
-    game.peak = Math.max(game.peak, progress);
-  }
-  if(game.phase === 'return'){
-    game.peak = Math.max(game.peak, progress);
-    /* Immediate release (real-device repair).
-       The shared progress is already median/EMA-filtered from the captured
-       endpoint direction,
-       so waiting for a large return excursion only produced a perceptible delay
-       between the participant's flexion and the ball leaving the hand. Two
-       consecutive frames of a genuine reversal away from this cycle's peak are
-       enough: the peak must have cleared the reach gate region, the drop from
-       the peak must exceed the stabiliser dead-band, and progress must still be
-       falling this frame. A single noisy frame cannot release the ball. */
-    const dropFromPeak = game.peak - progress;
-    const perFrameDrop = game.lastArmProgress - progress;
-    const falling = game.peak >= 0.55 && perFrameDrop > 0.004;
-    // Two consecutive falling frames that have already cleared the stabiliser
-    // dead-band release the ball, and a single decisive reversal releases at
-    // once. Endpoint jitter (a ~0.03 wobble at the top) never releases.
-    game.reversalFrames = falling && dropFromPeak >= 0.035
-      ? game.reversalFrames + 1
-      : 0;
-    const decisiveReversal = falling && dropFromPeak >= 0.06;
-    if(decisiveReversal || game.reversalFrames >= 2 || level4MotionReturnReady(motion)){
-      game.phase = 'rolling';
-      game.rollStartedAt = now;
-      game.ballProgress = 0;
-      game.reversalFrames = 0;
+  if(game.phase === 'await-return'){
+    if(level4MotionReturnReady(motion)){
+      game.phase = 'forward';
+      game.returnSeen = true;
     }
+    return;
+  }
+  // Flexed start → one elbow-extension/forward throw. Holding or jittering
+  // around the endpoint cannot create another roll, because `await-return`
+  // remains locked until a fresh returned-start frame is admitted.
+  if(game.phase === 'forward' && level4MotionReachGate(motion)){
+    game.peak = Math.max(game.peak, progress);
+    game.phase = 'rolling';
+    game.rollStartedAt = now;
+    game.ballProgress = 0;
   }
   game.lastArmProgress = progress;
 }
@@ -340,6 +341,13 @@ function updateLevel4MahjongWash(motion, nx, ny){
   if(game.completed){
     if(now >= game.readyForNextAt){
       game.progress = 0;
+      game.sweepProgress = 0;
+      game.clockwiseAngle = 0;
+      game.horizontalBaseline = 0;
+      // A completed wash is preserved, but never auto-repeats while the arm is
+      // held forward.  A distinct returned flexed/lower frame is required
+      // before the next elbow-forward phase can begin.
+      game.phase = 'await-return';
       game.completed = false;
       game.readyForNextAt = 0;
       game.lastPoint = null;
@@ -349,9 +357,32 @@ function updateLevel4MahjongWash(motion, nx, ny){
     }
     return;
   }
+  if(game.phase === 'await-return'){
+    if(level4MotionReturnReady(motion)){
+      game.phase = 'forward';
+      game.horizontalBaseline = 0;
+    }
+    game.lastPoint = null;
+    return;
+  }
+  // A returned elbow position closes an unfinished horizontal sweep. The
+  // remaining tiles stay as-is, but a new extension is required to resume the
+  // tabletop forward → clockwise horizontal-abduction cycle.
+  if(game.phase === 'sweep' && level4MotionReturnReady(motion)){
+    game.phase = 'forward';
+    game.horizontalBaseline = 0;
+    game.lastPoint = null;
+    return;
+  }
   level4MahjongLayout(game);
-  // 洗麻雀 is a path game: wash along the outward arc after extending.
-  const valid = !!(motion?.engaged && level4MotionPathReady(motion));
+  // 屈肘開始 → 伸肘向前 → 肩水平外展: never admit an early lateral trace.
+  if(game.phase === 'forward' && level4MotionReachGate(motion)){
+    game.phase = 'sweep';
+    game.horizontalBaseline = Number.isFinite(motion?.abductionProgress)
+      ? level4Runtime.clamp01(motion.abductionProgress) : 0;
+    game.lastPoint = null;
+  }
+  const valid = !!(game.phase === 'sweep' && motion?.engaged && level4MotionPathReady(motion));
   if(!valid || !Number.isFinite(nx) || !Number.isFinite(ny)){
     game.lastPoint = null;
     return;
@@ -368,10 +399,13 @@ function updateLevel4MahjongWash(motion, nx, ny){
   const dy = point.y-game.lastPoint.y;
   const distance = Math.hypot(dx,dy);
   game.lastPoint = point;
-  // Ignore camera shimmer and implausible jumps. Progress reflects actual
-  // repeated tabletop arcs, not time spent holding one pose.
+  // The horizontal range must grow left-to-right. Camera shimmer, reverse
+  // traces, and implausible jumps do not advance the clockwise wash.
   if(distance < 0.007 || distance > 0.16) return;
-  game.progress = level4Runtime.clamp01(game.progress + distance*1.55);
+  if(dx <= 0) return;
+  game.sweepProgress = level4Runtime.clamp01(game.sweepProgress + dx/0.80);
+  game.progress = game.sweepProgress;
+  game.clockwiseAngle += dx * Math.PI * 2.4;
   // A valid wash step is the only thing that moves tiles or makes noise: the
   // tiles are really re-permuted (never a tidy inward drift) and the clack is
   // rate limited so a fast sweep cannot become a harsh buzz.
@@ -380,7 +414,7 @@ function updateLevel4MahjongWash(motion, nx, ny){
     level4MahjongShuffle(game, (game.seed * 1103515245 + 12345 + game.washSteps) >>> 0);
   }
   level4MahjongClack(game, now);
-  if(game.progress >= 1){
+  if(game.progress >= .96){
     game.completed = true;
     game.rounds += 1;
     game.readyForNextAt = now+1100;
@@ -393,30 +427,53 @@ function updateLevel4MahjongWash(motion, nx, ny){
 function updateLevel4BusPay(motion, nx, ny){
   if(!level4Runtime.isBusPay()) return;
   const game = level4MiniGames.bus;
-  // Do not retain a dwell credit across a stale image or a pose dropout.
-  if(!level4AdmitGameGeneration(game, motion, ()=>{ game.holdFrames = 0; })) return;
-  // Re-arm at the calibrated flexed start, tap once the shared reach gate opens.
-  if(level4MotionReturnReady(motion) || level4MotionProgress(motion) < 0.22){
-    game.armed = true;
+  // Do not retain a dwell or uncompleted horizontal-return credit across a stale
+  // image or pose dropout; a committed payment remains visible and scored.
+  if(!level4AdmitGameGeneration(game, motion, ()=>{
     game.holdFrames = 0;
+    if(game.phase !== 'return-horizontal') game.phase = 'forward';
+  })) return;
+  if(game.phase === 'forward'){
+    if(level4MotionReachGate(motion)){
+      game.phase = 'pay';
+      game.holdFrames = 0;
+    }
     return;
   }
-  if(!game.armed || !motion.engaged) return;
+  if(game.phase === 'return-horizontal'){
+    const rawRange = Number.isFinite(motion?.abductionProgress)
+      ? level4Runtime.clamp01(motion.abductionProgress) : level4MotionArcProgress(motion);
+    const range = level4Runtime.clamp01((rawRange - (game.horizontalBaseline || 0))
+      / Math.max(.08, 1 - (game.horizontalBaseline || 0)));
+    if(range >= .85){
+      game.returnComplete = true;
+      if(level4MotionReturnReady(motion)){
+        game.phase = 'forward';
+        game.armed = true;
+        game.returnComplete = false;
+      }
+    }
+    return;
+  }
+  if(game.phase !== 'pay' || !game.armed || !motion.engaged) return;
   const target = LEVEL4_BUS_TARGETS[game.targetIndex];
   const near = Number.isFinite(nx) && Number.isFinite(ny)
     && Math.hypot(nx-target.x, ny-target.y) <= 0.13;
-  // 巴士拍卡 is a path game: extension first, then the outward path brings the
-  // hand to the fare reader, where a short dwell taps the card.
-  const onPath = level4MotionPathReady(motion);
-  game.holdFrames = near && onPath ? game.holdFrames+1 : Math.max(0,game.holdFrames-1);
+  // Payment is at the forward/extended reader. Horizontal abduction begins only
+  // after this dwell completes, so it cannot substitute for elbow extension.
+  const onReader = level4MotionProgress(motion) >= .70;
+  game.holdFrames = near && onReader ? game.holdFrames+1 : Math.max(0,game.holdFrames-1);
   if(game.holdFrames < 4) return;
   game.hitCount += 1;
   game.targetIndex = (game.targetIndex+1)%LEVEL4_BUS_TARGETS.length;
   game.flashUntil = level4Runtime.now()+900;
   game.holdFrames = 0;
   game.armed = false;
-  // Exactly one '嘟' per valid tap: the game is disarmed until the arm returns
-  // to the calibrated flexed start, so a held pose cannot beep twice.
+  game.phase = 'return-horizontal';
+  game.horizontalBaseline = Number.isFinite(motion?.abductionProgress)
+    ? level4Runtime.clamp01(motion.abductionProgress) : 0;
+  // Exactly one '嘟' per valid tap: the game is disarmed until horizontal return
+  // is complete and a fresh flexed start frame has also arrived.
   game.beepCount += 1;
   game.beeped = typeof level4Runtime.beepTap === 'function'
     ? level4Runtime.beepTap() !== false
@@ -561,7 +618,8 @@ function renderLevel4Bowling(ctx,cw,ch){
   const pinsDown=level4PinsDown(game);
   level4DrawTitle(ctx,cw,'保齡球',
     game.impactAt ? ('倒 '+pinsDown+' 支')
-      : game.phase==='return'?'屈肘收手':game.phase==='rolling'?'出球':'向前伸肘');
+      : game.phase==='await-return' ? '屈肘返回'
+      : game.phase==='rolling' ? '出球' : '屈肘開始 → 伸肘向前');
   level4Runtime.drawVerticalReachGuide(ctx,cw,ch);
   ctx.restore();
 }
@@ -619,13 +677,15 @@ function renderLevel4MahjongWash(ctx,cw,ch){
   ctx.strokeStyle='rgba(255,255,255,.80)';ctx.lineWidth=5;ctx.stroke();
   const tiles = level4MahjongLayout(game);
   const tileW = Math.min(w, h) * 0.19;
+  const washAngle = game.phase === 'sweep' ? game.clockwiseAngle : 0;
   // Draw in "lift" order so overlapping tiles look piled, not stacked in a grid.
   tiles.slice().sort((a,b) => a.lift - b.lift).forEach(tile => {
-    const tx = cw/2 + tile.x*w;
-    const ty = y + h/2 + tile.y*h;
+    const cos=Math.cos(washAngle), sin=Math.sin(washAngle);
+    const tx = cw/2 + (tile.x*cos - tile.y*sin)*w;
+    const ty = y + h/2 + (tile.x*sin + tile.y*cos)*h;
     ctx.save();
     ctx.translate(tx,ty);
-    ctx.rotate(tile.rot);
+    ctx.rotate(tile.rot + washAngle);
     ctx.scale(tile.scale, tile.scale);
     ctx.shadowColor = 'rgba(0,0,0,.35)';
     ctx.shadowBlur = tileW*0.35;
@@ -637,8 +697,13 @@ function renderLevel4MahjongWash(ctx,cw,ch){
   level4Runtime.roundedRect(ctx,x,y+h+18,w,20,10);ctx.fill();
   ctx.fillStyle='#f0b83f';
   level4Runtime.roundedRect(ctx,x,y+h+18,w*game.progress,20,10);ctx.fill();
-  level4DrawTitle(ctx,cw,'洗麻雀',game.completed?'完成':'先伸肘 → 保持伸肘 → 向外畫大弧');
+  level4DrawTitle(ctx,cw,'洗麻雀',game.completed?'完成':'屈肘開始 → 伸肘向前 → 肩水平外展');
   level4Runtime.drawVerticalReachGuide(ctx,cw,ch);
+  const cursor = level4Runtime.cursor();
+  if(cursor.detected && cursor.x >= 0 && cursor.y >= 0){
+    ctx.beginPath(); ctx.arc(cursor.x,cursor.y,28,0,Math.PI*2);
+    ctx.strokeStyle='#f0b83f'; ctx.lineWidth=6; ctx.stroke();
+  }
   ctx.restore();
 }
 
@@ -728,7 +793,9 @@ function renderLevel4BusPay(ctx,cw,ch){
     ctx.textAlign='center'; ctx.textBaseline='middle';
     ctx.fillText('嘟 · 已拍卡',cw*.50,ch*.098);
   }
-  level4DrawTitle(ctx,cw,'巴士拍卡','先伸肘 → 向外畫弧 → 對準停穩拍卡');
+  level4DrawTitle(ctx,cw,'巴士拍卡',game.phase==='return-horizontal'
+    ? '肩水平外展：由左至右返回'
+    : '屈肘開始 → 伸肘向前 → 肩水平外展');
   level4Runtime.drawVerticalReachGuide(ctx,cw,ch);
   const cursor = level4Runtime.cursor();
   if(cursor.detected && cursor.x>=0){
@@ -745,10 +812,10 @@ function level4MiniGamesText(){
     ' bowlingBall:'+b.ballProgress.toFixed(3)+' bowlingPinsDown:'+level4PinsDown(b)+
     ' bowlingPinsSettled:'+level4PinsSettled(b)+
     ' bowlingReversalFrames:'+b.reversalFrames+
-    ' mahjongProgress:'+m.progress.toFixed(3)+' mahjongRounds:'+m.rounds+
+    ' mahjongPhase:'+m.phase+' mahjongProgress:'+m.progress.toFixed(3)+' mahjongRounds:'+m.rounds+
     ' mahjongShuffles:'+(m.shuffleCount||0)+' mahjongClacks:'+(m.clackCount||0)+
     ' mahjongTiles:'+((m.layout&&m.layout.length)||0)+
-    ' busHits:'+p.hitCount+' busTarget:'+p.targetIndex+' busArmed:'+p.armed+
+    ' busPhase:'+p.phase+' busHits:'+p.hitCount+' busTarget:'+p.targetIndex+' busArmed:'+p.armed+
     ' busBeeps:'+p.beepCount+' busBeeped:'+p.beeped;
 }
 
