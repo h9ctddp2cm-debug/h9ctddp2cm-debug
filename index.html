@@ -2560,9 +2560,46 @@ function affectedSelectionZone(){
     y:ch * 0.78, w, h,
   };
 }
+function level2HorizontalWipeLane(cw = gameCanvas.width, ch = gameCanvas.height){
+  const startX = cw * 0.50;
+  const endX = startX + affectedSideSign() * cw * 0.29;
+  return {startX, endX, y:ch * 0.72};
+}
 function drawLevel4MidlineGuide(ctx){
   if(!isLevel4Tabletop()) return;
   const cw = gameCanvas.width, ch = gameCanvas.height;
+  if(isLevel2HorizontalAbduction()){
+    const lane = level2HorizontalWipeLane(cw, ch);
+    const direction = Math.sign(lane.endX - lane.startX) || 1;
+    const laneHeight = Math.min(190, ch * 0.24);
+    const laneLeft = Math.min(lane.startX, lane.endX) - 42;
+    const laneWidth = Math.abs(lane.endX - lane.startX) + 84;
+    const arrowStartX = lane.startX + direction * 12;
+    const arrowTipX = lane.startX + (lane.endX-lane.startX) * 0.56;
+    ctx.save();
+    ctx.fillStyle = 'rgba(26,107,90,0.10)';
+    ctx.strokeStyle = 'rgba(26,107,90,0.72)';
+    ctx.lineWidth = 4;
+    ctx.setLineDash([14,10]);
+    rrPath(ctx, laneLeft, lane.y-laneHeight/2, laneWidth, laneHeight, 24);
+    ctx.fill(); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.moveTo(arrowStartX, lane.y);
+    ctx.lineTo(arrowTipX, lane.y);
+    ctx.strokeStyle = '#1A6B5A';
+    ctx.lineWidth = 7;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(arrowTipX + direction * 20, lane.y);
+    ctx.lineTo(arrowTipX - direction * 10, lane.y-18);
+    ctx.lineTo(arrowTipX - direction * 10, lane.y+18);
+    ctx.closePath();
+    ctx.fillStyle = '#1A6B5A';
+    ctx.fill();
+    ctx.restore();
+    return;
+  }
   const top = ch * 0.34, bottom = ch * 0.95;
   const width = Math.min(390, cw * 0.56);
   ctx.save();
@@ -7697,11 +7734,11 @@ function setupTargets(){
     const tw = Math.min(cw * 0.30, 250);
     const th = tw * (style === 'steamer' ? 0.74 : 0.62);
     const category = cats[0];
+    const lane = level2HorizontalWipeLane(cw, ch);
     targets = [{
       type:category.type, label:category.targetLabel, img:category.targetImg || category.img || null,
       drawIcon:category.drawIcon || null, style,
-      x:affectedSideSign() > 0 ? cw * 0.79 : cw * 0.21,
-      y:ch * 0.72, w:tw, h:th,
+      x:lane.endX, y:lane.y, w:tw, h:th,
       color:category.color || '#1A6B5A',
     }];
     return;
@@ -9373,13 +9410,10 @@ function updateLevel2LateralGame(){
     spawnInitialFoods();
     item=foods.find(food=>!food.removed);
   }
-  const cw=gameCanvas.width,ch=gameCanvas.height;
-  const centreX=cw*.50;
-  const travel=cw*.29;
-  const y=ch*.72;
+  const lane=level2HorizontalWipeLane();
   if(item){
-    item.x=centreX+affectedSideSign()*travel*clamp01(level3Lateral.progress);
-    item.y=y;
+    item.x=lane.startX+(lane.endX-lane.startX)*clamp01(level3Lateral.progress);
+    item.y=lane.y;
     item.baseX=item.x;
     item.baseY=item.y;
     item.held=false;
@@ -13572,7 +13606,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <script src="level4-three-games-module.js"></script>
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v57-20260826-level2-horizontal-abduction-clean-ui";
+  const LEVEL_APP_BUILD = "v58-20260826-level2-horizontal-wipe-lane";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

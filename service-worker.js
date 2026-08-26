@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v57-20260826-level2-horizontal-abduction-clean-ui";
+const CACHE_VERSION = "fthue-rehab-v58-20260826-level2-horizontal-wipe-lane";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");
