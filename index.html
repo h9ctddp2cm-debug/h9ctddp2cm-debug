@@ -8243,8 +8243,8 @@ function readGrossPoseHand(lm){
 
 /* ---------- Level 2 selected-arm shoulder-horizontal-abduction controller ---
    Progress is selected wrist displacement relative to the torso's outward axis
-   and shoulder span. Selected elbow displacement only confirms coherent upper-
-   limb motion; elbow angle is never calculated or used. Display mirroring is
+   and shoulder span. The selected elbow must remain visible but does not gate
+   progress; elbow angle is never calculated or used. Display mirroring is
    deliberately absent from this anatomical controller. */
 const level2AbductionApi=window.Level2HorizontalAbductionController||null;
 const level2AbductionController=level2AbductionApi
@@ -9397,8 +9397,8 @@ function updateGameLogic(){
 }
 
 /* Level 2 is a supported outward shoulder-horizontal-abduction task.
-   Torso-relative selected wrist progress drives one object; selected elbow
-   displacement permissively confirms upper-limb movement. There is no virtual
+   Torso-relative selected wrist progress drives one object. The selected elbow
+   remains a visibility landmark only. There is no virtual
    pickup, dwell, grasp, release, second-hand, elbow-angle or circular gate.
    Returning to midline only rearms the next outward repetition. */
 function updateLevel2LateralGame(){
@@ -9438,8 +9438,6 @@ function updateLevel2LateralGame(){
       setActionPrompt('暫停：患側肩、肘、腕及軀幹要入鏡','');
     }else if(reason.startsWith('torso-')){
       setActionPrompt('暫停：身體保持正中','');
-    }else if(reason==='upper-limb-incoherent'){
-      setActionPrompt('暫停：由肩帶動患臂向外','');
     }else{
       setActionPrompt('等待新相機畫面','');
     }
@@ -13606,7 +13604,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <script src="level4-three-games-module.js"></script>
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v58-20260826-level2-horizontal-wipe-lane";
+  const LEVEL_APP_BUILD = "v59-20260826-level2-real-slide-tracking";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

@@ -14,9 +14,6 @@
     endpointFrames:2,
     maxTorsoTranslation:.14,
     maxTorsoLean:.12,
-    minElbowFraction:.32,
-    minElbowOutward:.12,
-    maxElbowLead:.20,
     smoothing:.42,
   });
 
@@ -169,14 +166,6 @@
         return reject('torso-lean',generation);
       }
       const wristDelta=pose.wrist-state.baseline.wrist;
-      const elbowDelta=pose.elbow-state.baseline.elbow;
-      const coherent=elbowDelta>=config.minElbowOutward&&
-        elbowDelta>=wristDelta*config.minElbowFraction&&
-        elbowDelta<=wristDelta+config.maxElbowLead;
-      if((wristDelta>config.minElbowOutward&&!coherent)||
-        (elbowDelta>config.minElbowOutward&&wristDelta<=config.minElbowOutward)){
-        return reject('upper-limb-incoherent',generation);
-      }
       state.instantProgress=clamp01(wristDelta/config.outwardSpan);
       state.progress+=config.smoothing*(state.instantProgress-state.progress);
       state.valid=true;
