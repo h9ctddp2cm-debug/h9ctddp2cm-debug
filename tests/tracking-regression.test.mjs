@@ -39,7 +39,7 @@ test("portrait phones keep the camera inline in a compact preview instead of ful
   assert.match(publicSource, /height:min\(25dvh,210px\)/);
   assert.ok(publicSource.includes("videoEl.setAttribute('webkit-playsinline', '')"));
   assert.ok(publicSource.includes("videoEl.controls = false"));
-  assert.match(serviceWorkerSource, /fthue-rehab-v30-20260821-chrome-update-takeover/);
+  assert.match(serviceWorkerSource, /fthue-rehab-v49-20260826-offline-release/);
 });
 
 test("Levels 3 and 4 can use Pose when tabletop hands occlude the finger model", () => {
@@ -49,28 +49,31 @@ test("Levels 3 and 4 can use Pose when tabletop hands occlude the finger model",
   assert.match(publicSource, /activeAffectedSide\(\)\s*===\s*'left'\s*\?\s*15\s*:\s*16/);
 });
 
-test("Level 3 opens the shared activity library instead of the diagnostic redirect", () => {
+test("Levels 2–4 open the shared activity library with supported games confined to Level 2", () => {
+  assert.match(publicSource, /'2':\s*\{\s*id:'2'/);
   assert.match(publicSource, /'3':\s*\{\s*id:'3'/);
   assert.match(publicSource, /beginSessionMode\('3',\s*'training'\)/);
   assert.doesNotMatch(publicSource, /window\.location\.href\s*=\s*'sandbox\/level3-bilateral/);
   assert.match(publicSource, /const THEME_ORDER = \['wipewindow','bowling','mahjongwash','buspay','flowers','dimsum','laundry','cards','mahjong','cooking'\]/);
-  assert.match(publicSource, /if\(\['wipewindow','bowling','mahjongwash','buspay'\]\.includes\(themeId\)\) return level === '4'/);
+  assert.match(publicSource, /if\(\['wipewindow','bowling','mahjongwash','buspay'\]\.includes\(themeId\)\) return level === '2'/);
 });
 
-test("Level 3 bilateral controller follows the selected affected side only", () => {
+test("Level 2 bilateral controller follows only the selected anatomical affected wrist", () => {
   assert.match(publicSource, /function updateLevel3LateralController\(lm,\s*cw,\s*ch\)/);
-  assert.match(publicSource, /interactionX\(\(leftWrist\.x\+rightWrist\.x\)\/2\)/);
+  assert.match(publicSource, /const wrist=lm\?\.\[activeAffectedSide\(\)==='left'\?15:16\]/);
+  assert.match(publicSource, /interactionX\(wrist\.x\)/);
   assert.match(publicSource, /const outwardPixels = affectedSideSign\(\) \* \(midpoint\.x-level3Lateral\.baselineX\)/);
   assert.match(publicSource, /mapped\.x = cw \* 0\.50 \+ affectedSideSign\(\) \* level3Motion\.progress/);
   assert.ok(publicSource.includes("setLevel3Pose(spec)"));
   assert.ok(publicSource.includes("level3LateralState()"));
 });
 
-test("Level 4 uses one observable two-point angle signal while the real wrist draws the wipe path", () => {
+test("Level 4 uses one observable two-point elbow signal with an independent shoulder-abduction path axis", () => {
   assert.ok(publicSource.includes('<script src="level4-elbow-calibration.js"></script>'));
   assert.ok(publicSource.includes("const level4Controller = level4Calibration ? level4Calibration.createController() : null"));
-  assert.ok(publicSource.includes("level4Controller.update({"));
-  assert.ok(publicSource.includes("updateLevel4Wipe(cursorX/cw, cursorY/ch, level4Motion)"));
+  assert.ok(publicSource.includes("level4Controller.update(level4Packet);"));
+  assert.ok(publicSource.includes("const level4PathPoint = level4PathControlPoint(cw, ch, level4OrderedHorizontalProgress());"));
+  assert.ok(publicSource.includes("updateLevel4Wipe(level4PathPoint.x/cw, level4PathPoint.y/ch, level4Motion)"));
   assert.match(calibrationSource, /const SIGNAL_KEYS = \['angle'\]/);
   assert.match(calibrationSource, /signed-angle-capture-order/);
   assert.ok(!calibrationSource.includes('worldSpanRatio'));
@@ -124,10 +127,14 @@ test("Level 4 accepts a table-occluded arm without requiring the opposite should
   assert.match(calibrationSource, /return \[arm\.shoulder, arm\.elbow, arm\.wrist\]\.every\(pointUsable\)/);
 });
 
-test("Level 3 visual themes share the standard lateral pickup and drop engine", () => {
+test("Levels 3 and 4 use shoulder-flexion-only play without virtual pickup or release", () => {
   assert.match(publicSource, /function usesAdvancedThemeModule\(id\)/);
   assert.match(publicSource, /return !isGrossTabletop\(\) && isAdvTheme\(id\)/);
   assert.match(publicSource, /if\(usesAdvancedThemeModule\(\)\)\{ advUpdate\(\); advRender\(\); \}/);
+  assert.match(publicSource, /function updateShoulderFlexionGame\(\)/);
+  assert.match(publicSource, /updateShoulderFlexionGame\(\);\s*return;/);
+  assert.match(publicSource, /No hand contact, pickup dwell, grip, plate overlap, or release/);
+  assert.match(publicSource, /graspDetection:false releaseDetection:false/);
 });
 
 test("Level 3 changes dim sum, mahjong and playing-card artwork after each completed round", () => {
@@ -147,10 +154,11 @@ test("Level 3 changes dim sum, mahjong and playing-card artwork after each compl
   assert.ok(publicSource.includes("setupTargets();"));
 });
 
-test("Level 4 does not use shoulder hike as a hidden runtime gate", () => {
-  assert.doesNotMatch(calibrationSource, /hikeTolerance/);
-  assert.match(calibrationSource, /shoulderHike: false/);
-  assert.ok(publicSource.includes("classList.toggle('level4-movement-alert'"));
+test("Level 4 omits shoulder flexion/elevation and admits horizontal observation only for path games", () => {
+  assert.doesNotMatch(calibrationSource, /hikeTolerance|shoulderHike|shoulderFlexion|shoulderElevation/);
+  assert.ok(publicSource.includes('enableHorizontalAbduction:isLevel4HorizontalPathGame()'));
+  assert.ok(publicSource.includes('function isLevel4HorizontalPathGame()'));
+  assert.ok(publicSource.includes('horizontalReading.hidden = !horizontalEnabled'));
 });
 
 test("all items stay clear of targets and can be parked in blank space", () => {
@@ -170,9 +178,11 @@ test("all items stay clear of targets and can be parked in blank space", () => {
 });
 
 test("offline worker forces the current build instead of serving the stale game", () => {
+  const manifest = JSON.parse(readFileSync(path.join(root, "manifest.webmanifest"), "utf8"));
   assert.ok(publicSource.includes('updateViaCache:"none"'));
-  assert.match(serviceWorkerSource, /fthue-rehab-v30-20260821-chrome-update-takeover/);
-  assert.ok(publicSource.includes('const LEVEL_APP_BUILD = "v30-20260821-chrome-update-takeover"'));
+  assert.match(serviceWorkerSource, /fthue-rehab-v49-20260826-offline-release/);
+  assert.ok(publicSource.includes('const LEVEL_APP_BUILD = "v49-20260826-offline-release"'));
+  assert.equal(manifest.start_url, "./index.html?build=v49-20260826-offline-release");
   assert.ok(publicSource.includes('const levelAppHadController = Boolean(navigator.serviceWorker.controller)'));
   assert.ok(publicSource.includes('if (!levelAppHadController || levelAppReloading) return'));
   assert.ok(publicSource.includes('navigator.serviceWorker.addEventListener("controllerchange"'));
@@ -189,7 +199,7 @@ test("Level 4 exposes deterministic compound-movement QA hooks", () => {
   assert.ok(publicSource.includes("setActionPrompt('iPad 同枱直放 · 約 1 米', '患側肩・手肘・手腕全部入鏡')"));
 });
 
-test("Level 4 wipe-window is an independent activity and preserves the other Level 4 games", () => {
+test("Level 2 wipe-window is an independent supported activity and preserves the other supported games", () => {
   assert.ok(publicSource.includes("const level4Wipe = {"));
   assert.match(publicSource, /cols:16,\s*rows:10/);
   assert.match(publicSource, /const LEVEL4_WIPE_BOUNDS = \{left:0\.07, top:0\.18, right:0\.93, bottom:0\.90\}/);
@@ -205,18 +215,19 @@ test("Level 4 wipe-window is an independent activity and preserves the other Lev
   assert.ok(publicSource.includes("return !isGrossTabletop() && isAdvTheme(id)"));
   assert.match(publicSource, /function isLevel4WipeGame\(\)\{\s*return isLevel4Tabletop\(\) && state\.theme === 'wipewindow'/);
   assert.match(publicSource, /if\(isLevel4WipeGame\(\)\)\{\s*renderLevel4WipeGame/);
-  assert.match(publicSource, /if\(\['wipewindow','bowling','mahjongwash','buspay'\]\.includes\(themeId\)\) return level === '4'/);
+  assert.match(publicSource, /if\(\['wipewindow','bowling','mahjongwash','buspay'\]\.includes\(themeId\)\) return level === '2'/);
   for (const id of ["flowers", "dimsum", "laundry", "cards", "mahjong"]) {
     assert.ok(publicSource.includes(`${id}: mkTheme({`), `${id} remains registered`);
   }
 });
 
-test("Level 4 fog advances only after fresh calibrated extension and outward wrist movement", () => {
+test("Level 4 fog advances only after fresh calibrated extension and horizontal-abduction sweep", () => {
   assert.ok(publicSource.includes("function level4PathGateOpen(motion)"));
-  assert.ok(publicSource.includes("const valid = !!(motion?.engaged && level4PathGateOpen(motion))"));
+  assert.ok(publicSource.includes("const valid = !!(level4Wipe.phase === 'sweep' && motion?.engaged && level4PathGateOpen(motion))"));
   assert.ok(publicSource.includes("if(!motion?.calibrated || motion.gameReady !== true) return false"));
-  assert.ok(publicSource.includes("if(distance < 0.006 || distance > 0.18){"));
-  assert.ok(publicSource.includes("updateLevel4Wipe(cursorX/cw, cursorY/ch, level4Motion)"));
+  assert.ok(publicSource.includes("if(dx <= 0 || distance < 0.006 || distance > 0.18){"));
+  assert.ok(publicSource.includes("const level4PathPoint = level4PathControlPoint(cw, ch, level4OrderedHorizontalProgress());"));
+  assert.ok(publicSource.includes("updateLevel4Wipe(level4PathPoint.x/cw, level4PathPoint.y/ch, level4Motion)"));
   assert.ok(!publicSource.includes("mapped.y = ch * 0.82 - level4Motion.progress"));
 });
 

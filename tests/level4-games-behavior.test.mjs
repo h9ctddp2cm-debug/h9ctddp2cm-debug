@@ -72,13 +72,12 @@ function parse(text){
   return out;
 }
 
-test('bowling releases on the reach-return cycle, rolls to the pins and topples them', () => {
+test('bowling uses a flexed start then one forward throw, rolls to the pins and requires return to re-arm', () => {
   const game = loadGames({theme:'bowling'});
   game.qa.reset();
-  // Extension raises the ball up the lane; the release needs the return.
-  game.qa.bowling(reached);
-  assert.equal(parse(game.qa.bowling(reached)).bowlingPhase, 'return');
-  let state = parse(game.qa.bowling({...reached, progress:0.12, reachGate:false, returnReady:true, engaged:false}));
+  game.qa.bowling(flexedStart);
+  assert.equal(parse(game.qa.bowling(reached)).bowlingPhase, 'rolling');
+  let state = parse(game.qa.bowling(reached));
   assert.equal(state.bowlingPhase, 'rolling');
   assert.equal(Number(state.bowlingPinsDown), 0, 'pins must not fall before the ball arrives');
 
@@ -101,29 +100,26 @@ test('bowling releases on the reach-return cycle, rolls to the pins and topples 
   // Physics settles deterministically and a new rack is set up.
   for(let i = 0; i < 40; i++){ game.advance(40); game.qa.bowling(flexedStart); }
   state = parse(game.qa.bowling(flexedStart));
-  assert.equal(state.bowlingPhase, 'reach');
+  assert.equal(state.bowlingPhase, 'forward');
   assert.equal(Number(state.bowlingPinsDown), 0, 'a fresh rack should be standing');
   assert.equal(Number(state.bowlingRounds), 1);
 });
 
-test('bowling releases immediately on a clear stabilized flexion reversal', () => {
+test('bowling ignores endpoint jitter after one forward throw until a flexed return', () => {
   const game = loadGames({theme:'bowling'});
   game.qa.reset();
-  game.qa.bowling(reached);
-  let state = parse(game.qa.bowling({...reached, progress:0.92}));
-  assert.equal(state.bowlingPhase, 'return', 'small endpoint jitter must not release the ball');
-  state = parse(game.qa.bowling({
-    ...reached, progress:0.82, reachGate:true, returnReady:false, cyclePhase:'reached',
-  }));
-  assert.equal(state.bowlingPhase, 'rolling',
-    'a clear flexion reversal should release without waiting for full return');
+  game.qa.bowling(flexedStart);
+  let state = parse(game.qa.bowling(reached));
+  assert.equal(state.bowlingPhase, 'rolling');
+  state = parse(game.qa.bowling({...reached, progress:.82}));
+  assert.equal(state.bowlingPhase, 'rolling', 'endpoint jitter cannot duplicate a throw');
 });
 
 test('all standalone Level 4 scoring stays locked until the fresh calibrated controller is ready', () => {
   const bowling = loadGames({theme:'bowling'});
   bowling.qa.reset();
   const lockedReach = {...reached, gameReady:false};
-  assert.equal(parse(bowling.qa.bowling(lockedReach)).bowlingPhase, 'reach');
+  assert.equal(parse(bowling.qa.bowling(lockedReach)).bowlingPhase, 'await-start');
 
   const bus = loadGames({theme:'buspay'});
   bus.qa.reset();
@@ -136,9 +132,8 @@ test('bowling pin physics is reproducible for the same reach peak', () => {
   const run = () => {
     const game = loadGames({theme:'bowling'});
     game.qa.reset();
+    game.qa.bowling(flexedStart);
     game.qa.bowling(reached);
-    game.qa.bowling(reached);
-    game.qa.bowling({...reached, progress:0.12, reachGate:false, returnReady:true, engaged:false});
     game.advance(1100);
     game.qa.bowling(flexedStart);
     game.advance(80);
@@ -147,29 +142,29 @@ test('bowling pin physics is reproducible for the same reach peak', () => {
   assert.equal(run(), run());
 });
 
-test('bus pay beeps exactly once per valid tap and re-arms only at the flexed start', () => {
+test('bus pay beeps once after forward payment and re-arms only after horizontal then flexed return', () => {
   const game = loadGames({theme:'buspay'});
   game.qa.reset();
-  const target = {x:0.50, y:0.43};
-  // Extension alone at the reader is not enough: the path signal must be active.
-  for(let i = 0; i < 8; i++) game.qa.bus({...reached, arcActive:false, arcProgress:0}, target.x, target.y);
-  assert.equal(game.log.beeps, 0, 'a linear reach must not pay the fare');
+  const target = {x:0.10, y:0.43};
+  game.qa.bus(flexedStart,target.x,.84);
+  game.qa.bus(reached,target.x,target.y);
 
   let state;
-  for(let i = 0; i < 8; i++) state = parse(game.qa.bus(onArc, target.x, target.y));
+  for(let i = 0; i < 4; i++) state = parse(game.qa.bus(reached, target.x, target.y));
   assert.equal(game.log.beeps, 1, 'exactly one beep per valid tap');
   assert.equal(Number(state.busHits), 1);
   assert.equal(Number(state.busBeeps), 1);
   assert.equal(state.busArmed, 'false');
 
   // Dwelling at the reader must not beep again while disarmed.
-  for(let i = 0; i < 20; i++) game.qa.bus(onArc, target.x, target.y);
+  for(let i = 0; i < 20; i++) game.qa.bus(reached, target.x, target.y);
   assert.equal(game.log.beeps, 1, 'held pose must not repeat the beep');
 
-  // Returning to the calibrated flexed start re-arms one further tap.
-  for(let i = 0; i < 4; i++) game.qa.bus(flexedStart, 0.2, 0.8);
-  const next = LEVEL4_NEXT_TARGET;
-  for(let i = 0; i < 8; i++) state = parse(game.qa.bus(onArc, next.x, next.y));
+  // Horizontal return precedes a fresh flexed return.
+  game.qa.bus({...reached,abductionProgress:.95,arcProgress:.95,arcActive:true}, .85, target.y);
+  game.qa.bus({...flexedStart,abductionProgress:.95,arcProgress:.95,arcActive:true}, .85, .84);
+  game.qa.bus(reached,target.x,target.y);
+  for(let i = 0; i < 4; i++) state = parse(game.qa.bus(reached, target.x, target.y));
   assert.equal(game.log.beeps, 2);
   assert.equal(Number(state.busHits), 2);
 });
@@ -181,16 +176,18 @@ test('bus pay still scores when Web Audio is unavailable', () => {
   game.log.audioAvailable = false;
   game.qa.reset();
   let state;
-  for(let i = 0; i < 8; i++) state = parse(game.qa.bus(onArc, 0.50, 0.43));
+  game.qa.bus(flexedStart,.1,.84);
+  game.qa.bus(reached,.1,.43);
+  for(let i = 0; i < 4; i++) state = parse(game.qa.bus(reached, .1, .43));
   assert.equal(Number(state.busHits), 1, 'silent devices must still register the tap');
   assert.equal(state.busBeeped, 'false');
   assert.equal(game.log.scores.length, 1);
 });
 
-test('path-game titles state extension, maintained extension, outward arc and dwell order', () => {
-  assert.match(source, /先伸肘 → 保持伸肘 → 向外畫大弧/);
-  assert.match(source, /先伸肘 → 向外畫弧 → 對準停穩拍卡/);
-  assert.match(html, /先伸肘 → 向外畫弧 → 停穩拍卡/);
+test('path-game titles state the ordered forward then shoulder-horizontal-abduction contract', () => {
+  assert.match(source, /屈肘開始 → 伸肘向前 → 肩水平外展/);
+  assert.match(source, /肩水平外展：由左至右返回/);
+  assert.match(html, /手臂保持枱面高度/);
 });
 
 test('a single beep helper is used and it degrades gracefully', () => {

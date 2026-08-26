@@ -292,8 +292,16 @@ test('dist/public contains no research files and no plaintext passcode', { skip:
     }
   }
   const indexHtml = fs.readFileSync(path.join(dist, 'index.html'), 'utf8');
-  assert.match(indexHtml, /__PORT_5000__/, 'Research Mode must target the backend placeholder URL');
-  assert.match(indexHtml, /\/research\/login/);
+  assert.doesNotMatch(
+    indexHtml,
+    /__PORT_5000__|localhost:5000|\/research\/login|applyInterventionDeepLink|role=.intervention|window\.__qa|window\.advanceTime|qaSyntheticHand|render_game_to_text/,
+  );
+  assert.doesNotMatch(indexHtml, /btnResearchMode/);
+  assert.equal(
+    fs.existsSync(path.join(dist, 'sandbox')),
+    false,
+    'Public/offline release must exclude research and QA sandbox pages',
+  );
 });
 
 test('repository source contains no plaintext passcode', { skip: !PASSCODE }, async () => {

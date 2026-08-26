@@ -1,0 +1,54 @@
+{
+  "retrieved": "2026-08-25",
+  "purpose": "Offline photo-card objects and matching targets in FTHUE Levels 2–4",
+  "images": [
+    {
+      "local_path": "img/advanced/tsuenwan_chuen_lung.jpg",
+      "title": "Chuen Lung Street (Tsuen Wan, Hong Kong)",
+      "author": "Mk2010",
+      "license": "CC BY-SA 3.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Chuen_Lung_Street_(Tsuen_Wan,_Hong_Kong).jpg"
+    },
+    {
+      "local_path": "img/advanced/tsuenwan_market_street.jpg",
+      "title": "Tsuen Wan Market Street in February 2024",
+      "author": "姒姓賢寧",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Tsuen_Wan_Market_Street_in_February_2024.jpg"
+    },
+    {
+      "local_path": "img/advanced/tsuenwan_downtown.jpg",
+      "title": "Tsuen Wan downtown street scene, December 2023",
+      "author": "MAUOSREEGU DAVMUR",
+      "license": "CC0 1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "source_url": "https://commons.wikimedia.org/wiki/File:HK_TW_%E8%8D%83%E7%81%A3_Tsuen_Wan_%E5%B8%82%E5%8D%80_downtown_city_%E8%A1%97%E6%99%AF_scene_December_2023_R12S_17.jpg"
+    },
+    {
+      "local_path": "img/advanced/tsuenwan_skyline.jpg",
+      "title": "Tsuen Wan Skyline 2010",
+      "author": "WiNG",
+      "license": "CC BY-SA 3.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Tsuen_Wan_Skyline_2010.jpg"
+    },
+    {
+      "local_path": "img/advanced/tsuenwan_plaza.jpg",
+      "title": "Tsuen Wan Plaza (Hong Kong)",
+      "author": "Mk2010",
+      "license": "CC BY-SA 3.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Tsuen_Wan_Plaza_(Hong_Kong).jpg"
+    },
+    {
+      "local_path": "img/advanced/tsuenwan_tak_wah_park.jpg",
+      "title": "Tak Wah Park 201106",
+      "author": "Wing1990hk",
+      "license": "CC BY 3.0",
+      "license_url": "https://creativecommons.org/licenses/by/3.0/",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Tak_Wah_Park_201106.jpg"
+    }
+  ]
+}

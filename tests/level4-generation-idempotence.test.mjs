@@ -64,13 +64,17 @@ test('four duplicate calls for one decoded generation leave the direct angle fil
 
 test('bus dwell and score consume one generation once, while four new generations satisfy the dwell', () => {
   const game = loadGames('buspay');
-  const target = {x:.50,y:.43};
+  const target = {x:.10,y:.43};
   game.qa.reset();
-  for(let i=0; i<4; i++) game.qa.bus(motion(700), target.x, target.y);
+  // Elbow-only forward reach opens the payment phase; no reader dwell may be
+  // credited before that ordered transition.
+  game.qa.bus(motion(699,{progress:.05,engaged:false,reachGate:false,returnReady:true}), target.x, .84);
+  game.qa.bus(motion(700), target.x, target.y);
+  for(let i=0; i<4; i++) game.qa.bus(motion(701), target.x, target.y);
   assert.equal(game.qa.state.bus.holdFrames, 1);
   assert.equal(game.qa.state.bus.hitCount, 0);
   assert.equal(game.log.scores.length, 0);
-  for(const generation of [701,702,703]) game.qa.bus(motion(generation), target.x, target.y);
+  for(const generation of [702,703,704]) game.qa.bus(motion(generation), target.x, target.y);
   assert.equal(game.qa.state.bus.hitCount, 1);
   assert.equal(game.log.scores.length, 1);
   assert.equal(game.log.beeps, 1);
@@ -78,14 +82,16 @@ test('bus dwell and score consume one generation once, while four new generation
 
 test('stale or pose-lost admissions reset partial bus and mahjong path credit without endpoint-like game mutation', () => {
   const bus = loadGames('buspay');
-  const target = {x:.50,y:.43};
+  const target = {x:.10,y:.43};
   bus.qa.reset();
-  bus.qa.bus(motion(801), target.x, target.y);
+  bus.qa.bus(motion(800,{progress:.05,engaged:false,reachGate:false,returnReady:true}), target.x, .84);
+  bus.qa.bus(motion(801), target.x, target.y); // forward -> pay
   bus.qa.bus(motion(802), target.x, target.y);
+  bus.qa.bus(motion(803), target.x, target.y);
   assert.equal(bus.qa.state.bus.holdFrames, 2);
-  bus.qa.bus(motion(803, {gameReady:false, newFrame:false}), target.x, target.y);
-  assert.equal(bus.qa.state.bus.holdFrames, 0);
   bus.qa.bus(motion(804, {gameReady:false, newFrame:false}), target.x, target.y);
+  assert.equal(bus.qa.state.bus.holdFrames, 0);
+  bus.qa.bus(motion(805, {gameReady:false, newFrame:false}), target.x, target.y);
   assert.equal(bus.qa.state.bus.holdFrames, 0);
   assert.equal(bus.qa.state.bus.hitCount, 0);
 
@@ -102,7 +108,7 @@ test('stale or pose-lost admissions reset partial bus and mahjong path credit wi
   assert.equal(mahjong.qa.state.mahjong.progress, 0);
 });
 
-test('arc updates never change linear progress, and duplicate linear bowling calls do not duplicate a transition or score', () => {
+test('horizontal updates never change linear progress, and duplicate bowling generations do not duplicate a transition or score', () => {
   const controller = calibration.createController();
   capture(controller, 148.5, 61.5);
   const make = (generation, lateral) => ({
@@ -116,14 +122,13 @@ test('arc updates never change linear progress, and duplicate linear bowling cal
 
   const bowling = loadGames('bowling');
   bowling.qa.reset();
+  bowling.qa.bowling(motion(919, {progress:.05,engaged:false,reachGate:false,returnReady:true,arcActive:false,arcProgress:0}));
   for(let i=0; i<4; i++) bowling.qa.bowling(motion(920, {arcActive:false, arcProgress:0}));
-  assert.equal(bowling.qa.state.bowling.phase, 'return');
-  assert.equal(bowling.qa.state.bowling.reversalFrames, 0);
-  assert.equal(bowling.log.scores.length, 0);
-  // A distinct fresh generation containing an actual return makes exactly one release.
-  bowling.qa.bowling(motion(921, {progress:.82, arcActive:false, arcProgress:0}));
   assert.equal(bowling.qa.state.bowling.phase, 'rolling');
-  for(let i=0; i<4; i++) bowling.qa.bowling(motion(921, {progress:.82, arcActive:false, arcProgress:0}));
+  assert.equal(bowling.qa.state.bowling.rounds, 0);
+  assert.equal(bowling.log.scores.length, 0);
+  // Further duplicate frames cannot restart the committed roll or score it.
+  for(let i=0; i<4; i++) bowling.qa.bowling(motion(920, {progress:.82, arcActive:false, arcProgress:0}));
   assert.equal(bowling.qa.state.bowling.phase, 'rolling');
   assert.equal(bowling.log.scores.length, 0);
 });

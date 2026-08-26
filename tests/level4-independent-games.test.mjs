@@ -9,19 +9,19 @@ const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const moduleJs = fs.readFileSync(path.join(root, 'level4-three-games-module.js'), 'utf8');
 const build = fs.readFileSync(path.join(root, 'scripts/build-dist.sh'), 'utf8');
 
-test('Level 4 presents five complementary games while preserving other themes', () => {
+test('Level 2 presents inherited bilateral and supported tabletop games while preserving other themes', () => {
   for (const id of ['bowling', 'mahjongwash', 'buspay']) {
     assert.match(html, new RegExp(`${id}: mkTheme`));
   }
-  assert.match(html, /return \['dimsum','wipewindow','bowling','mahjongwash','buspay'\]/);
+  assert.match(html, /return \['bilateral','tsuenwan','dimsum','flowers','laundry','cards','mahjong','wipewindow','bowling','mahjongwash','buspay'\]/);
   assert.match(html, /\['wipewindow','bowling','mahjongwash','buspay'\]\.includes\(themeId\)/);
 });
 
-test('Level 4 library shows all five games by default and allows independent visibility choices', () => {
-  assert.match(html, /level4SessionThemes:\['dimsum','wipewindow','bowling','mahjongwash','buspay'\]/);
+test('Level 2 library shows all supported games by default and allows independent visibility choices', () => {
+  assert.match(html, /level4SessionThemes:\['bilateral','tsuenwan','dimsum','flowers','laundry','cards','mahjong','wipewindow','bowling','mahjongwash','buspay'\]/);
   assert.match(html, /function visibleThemeOrder\(level = state\.level\)/);
   assert.match(html, /return selected\.length \? selected : \['dimsum'\]/);
-  assert.match(html, /Level 4 遊戲 · 顯示/);
+  assert.match(html, /Level 2 承托遊戲 · 顯示/);
   assert.doesNotMatch(html, /每節最多 2 款/);
   assert.match(html, /id="btnLevel4AutoRotate"/);
   assert.match(html, /if\(current\[0\] === all\[start\] && current\[1\] === all\[\(start\+1\)%all\.length\]\)/);
@@ -29,21 +29,22 @@ test('Level 4 library shows all five games by default and allows independent vis
 
 test('actual tracking and render loops connect all three independent games', () => {
   assert.match(html, /updateLevel4Bowling\(level4Motion\)/);
-  assert.match(html, /updateLevel4MahjongWash\(\s*level4Motion, cursorX\/cw, cursorY\/ch/);
-  assert.match(html, /updateLevel4BusPay\(\s*level4Motion, cursorX\/cw, cursorY\/ch/);
+  assert.match(html, /const level4PathPoint = level4PathControlPoint\(cw, ch, level4OrderedHorizontalProgress\(\)\)/);
+  assert.match(html, /updateLevel4MahjongWash\(\s*level4Motion, level4PathPoint\.x\/cw, level4PathPoint\.y\/ch/);
+  assert.match(html, /updateLevel4BusPay\(\s*level4Motion, level4PathPoint\.x\/cw, level4PathPoint\.y\/ch/);
   assert.match(html, /renderLevel4Bowling\(ctx, cw, ch\)/);
   assert.match(html, /renderLevel4MahjongWash\(ctx, cw, ch\)/);
   assert.match(html, /renderLevel4BusPay\(ctx, cw, ch\)/);
 });
 
-test('bowling requires a reach-return cycle and bus pay requires stable frames', () => {
-  assert.match(moduleJs, /game\.phase = 'return'/);
-  assert.match(moduleJs, /if\(level4MotionReachGate\(motion\)\)/);
-  assert.match(moduleJs, /const falling = game\.peak >= 0\.55 && perFrameDrop > 0\.004/);
-  assert.match(moduleJs, /const decisiveReversal = falling && dropFromPeak >= 0\.06/);
-  assert.match(moduleJs, /if\(decisiveReversal \|\| game\.reversalFrames >= 2 \|\| level4MotionReturnReady\(motion\)\)/);
+test('bowling requires an explicit fresh flexed return and bus pay has ordered dwell and return phases', () => {
+  assert.match(moduleJs, /game\.phase = 'await-start'/);
+  assert.match(moduleJs, /game\.phase = 'await-return'/);
+  assert.match(moduleJs, /if\(game\.phase === 'forward' && level4MotionReachGate\(motion\)\)/);
+  assert.match(moduleJs, /if\(level4MotionReturnReady\(motion\)\)\{\s*game\.phase = 'forward'/);
   assert.match(moduleJs, /game\.holdFrames < 4/);
   assert.match(moduleJs, /game\.armed = false/);
+  assert.match(moduleJs, /game\.phase = 'return-horizontal'/);
 });
 
 test('mahjong graphics are deterministic and progress ignores shimmer', () => {
@@ -79,7 +80,9 @@ test('ordinary Level 4 transport is lane-locked while standalone mechanics stay 
   assert.match(html, /standardTransport:isLevel4StandardTransportGame\(\)/);
   assert.match(html, /function level4VerticalReachPoint\(cw = gameCanvas\.width, ch = gameCanvas\.height\)/);
   assert.match(html, /y:bottom \+ \(top-bottom\) \* clamp01\(level4Reach\.progress\)/);
-  assert.match(html, /fixed in X, so elbow motion can never be presented as left\/right movement/);
+  assert.match(html, /function level4PathControlPoint\(cw = gameCanvas\.width, ch = gameCanvas\.height, horizontalProgress = 0\)/);
+  assert.match(html, /level4Calibration\.pathCoordinates\(level4Reach\.progress, horizontalProgress/);
+  assert.match(html, /function level4OrderedHorizontalProgress\(\)/);
   assert.match(html, /drawLevel4VerticalReachGuide\(ctx, cw, ch\)/);
   assert.match(html, /reachProgress\(\)\{ return clamp01\(level4Reach\.progress\); \}/);
   assert.match(moduleJs, /armProgress:0/);

@@ -30,6 +30,27 @@ export function armAtAngle(degrees, lateral = 0) {
   };
 }
 
+// A full patient pose for automatic-calibration tests.  The selected arm may
+// foreshorten or extend independently while this torso stays stable; helpers
+// can replace/move the torso explicitly to exercise fail-closed continuity.
+export function poseForArm(arm, side = 'right', torso = {}) {
+  const lm = Array.from({length:33}, () => ({x:.5, y:.5, visibility:.05}));
+  const left = side === 'left';
+  lm[left ? 11 : 12] = {...arm.shoulder};
+  lm[left ? 13 : 14] = {...arm.elbow};
+  lm[left ? 15 : 16] = {...arm.wrist};
+  lm[left ? 12 : 11] = {...arm.otherShoulder, visibility:1};
+  const shoulderMidX = ((arm.shoulder.x || .5) + (arm.otherShoulder.x || .68)) / 2 + (torso.dx || 0);
+  const shoulderY = ((arm.shoulder.y || .3) + (arm.otherShoulder.y || .3)) / 2 + (torso.dy || 0);
+  const hipY = shoulderY + (torso.height || .38);
+  const halfSpan = Math.abs((arm.shoulder.x || .5) - (arm.otherShoulder.x || .68)) / 2 || .09;
+  lm[11] = lm[11].visibility >= 1 ? lm[11] : {x:shoulderMidX-halfSpan,y:shoulderY,visibility:1};
+  lm[12] = lm[12].visibility >= 1 ? lm[12] : {x:shoulderMidX+halfSpan,y:shoulderY,visibility:1};
+  lm[23] = {x:shoulderMidX-halfSpan*.9,y:hipY,visibility:1};
+  lm[24] = {x:shoulderMidX+halfSpan*.9,y:hipY,visibility:1};
+  return lm;
+}
+
 export function feed(controller, degrees, { frames = 5, generation = 1, fresh = true, lateral = 0, aspect = 1 } = {}) {
   let snap;
   for (let index = 0; index < frames; index++) {

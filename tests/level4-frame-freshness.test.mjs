@@ -25,6 +25,6 @@ test('pose dropouts and stale frames fail closed without changing captured endpo
     frame:{fresh:true,generation:81,ageMs:15,reason:'fresh-decoded-frame',source:'test'} });
   const dropout = controller.snapshot();
   assert.equal(dropout.gameReady, false);
-  assert.equal(dropout.reason, 'pose-lost');
+  assert.equal(dropout.reason, 'selected-arm-lost');
   assert.deepEqual(dropout.endpoints, before);
 });

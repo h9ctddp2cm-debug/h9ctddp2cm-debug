@@ -1,11 +1,11 @@
 /**
- * Layout regression tests for the Level 3–4 inline GIF demonstrations and
+ * Layout regression tests for the Level 3–4 paired SVG demonstrations and
  * the single in-game prompt safe strip.
  *
  * These guard the fixes for the therapist report that instruction text
  * overlapped / blocked the view on portrait iPhone and iPad:
  *
- *   1. Level 3–4 render direct 16:9 looping GIFs inside their cards;
+ *   1. Level 3–4 render paired active / active-assisted SVG demonstrations;
  *   2. Level 5–6 expose no instruction-video controls;
  *   3. in-game prompts live in one non-overlapping safe strip (#promptZone),
  *      never stack on each other and never reach the bottom target band;
@@ -63,7 +63,7 @@ function overlaps(a, b) {
 }
 
 for (const vp of VIEWPORTS) {
-  test(`inline Level 3–4 GIF layout — ${vp.name}`, async (t) => {
+  test(`inline Level 3–4 demonstration layout — ${vp.name}`, async (t) => {
     if (!browser) return t.skip('playwright unavailable');
     await withPage(vp, async (page) => {
       const result = await page.evaluate(() => {
@@ -74,27 +74,48 @@ for (const vp of VIEWPORTS) {
           return { left: r.left, top: r.top, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
         };
         return {
-          gifs: ['3', '4'].map(level => {
-            const img = document.querySelector(`[data-testid="gif-level-${level}"]`);
+          level2: (() => {
+            const img = document.querySelector('[data-testid="gif-level-2"]');
             return {
-              level,
-              rect: rect(`[data-testid="gif-level-${level}"]`),
+              rect: rect('[data-testid="gif-level-2"]'),
               src: img?.getAttribute('src') || '',
               alt: img?.getAttribute('alt') || '',
             };
-          }),
+          })(),
+          demos: ['3', '4'].flatMap(level => ['active', 'assisted'].map(kind => {
+            const selector = `[data-testid="demo-level-${level}-${kind}"]`;
+            const img = document.querySelector(selector);
+            return {
+              level,
+              kind,
+              rect: rect(selector),
+              src: img?.getAttribute('src') || '',
+              alt: img?.getAttribute('alt') || '',
+            };
+          })),
           videoButtons: document.querySelectorAll('.instruction-play,[data-video-src]').length,
           instructionVideoElements: document.querySelectorAll(
             '#instructionVideo,.video-modal video,[data-testid="video-instruction"]'
           ).length,
         };
       });
-      for (const gif of result.gifs) {
-        assert.ok(gif.rect, `Level ${gif.level} GIF is present`);
-        assert.ok(gif.src.endsWith('.gif'), `Level ${gif.level} uses a GIF`);
-        assert.ok(gif.alt.length > 0, `Level ${gif.level} GIF has alt text`);
-        assert.ok(Math.abs(gif.rect.width / gif.rect.height - 16 / 9) < 0.03,
-          `Level ${gif.level} GIF should be 16:9`);
+      assert.ok(result.level2.rect, 'Level 2 GIF is present');
+      assert.ok(/\.(gif|png)$/.test(result.level2.src), 'Level 2 uses an instructional image');
+      assert.ok(result.level2.alt.length > 0, 'Level 2 GIF has alt text');
+      assert.ok(Math.abs(result.level2.rect.width / result.level2.rect.height - 16 / 9) < 0.03,
+        'Level 2 GIF should be 16:9');
+      for (const demo of result.demos) {
+        assert.ok(demo.rect, `Level ${demo.level} ${demo.kind} demonstration is present`);
+        assert.ok(/\.svg$/.test(demo.src), `Level ${demo.level} ${demo.kind} uses deterministic SVG`);
+        assert.ok(demo.alt.length > 0, `Level ${demo.level} ${demo.kind} has alt text`);
+        assert.ok(Math.abs(demo.rect.width / demo.rect.height - 220 / 190) < 0.03,
+          `Level ${demo.level} ${demo.kind} demonstration keeps its stable aspect ratio`);
+      }
+      for (const level of ['3', '4']) {
+        const active = result.demos.find(item => item.level === level && item.kind === 'active');
+        const assisted = result.demos.find(item => item.level === level && item.kind === 'assisted');
+        assert.ok(active.rect.left < assisted.rect.left,
+          `Level ${level} active demonstration stays to the left of active-assisted demonstration`);
       }
       assert.equal(result.videoButtons, 0, 'no instruction-video buttons remain');
       assert.equal(result.instructionVideoElements, 0, 'no instruction-video players remain');
@@ -167,7 +188,8 @@ test('critical test IDs and safety hooks preserved', async (t) => {
   await withPage(VIEWPORTS[0], async (page) => {
     const found = await page.evaluate(() => {
       const ids = [
-        'gif-level-3', 'gif-level-4',
+        'demo-level-3-active', 'demo-level-3-assisted',
+        'demo-level-4-active', 'demo-level-4-assisted',
         'gif-level-6-clothes-peg', 'gif-level-6-chopsticks',
         'button-mode-trial-3', 'button-mode-training-3',
         'button-mode-trial-4', 'button-mode-training-4',
@@ -187,6 +209,71 @@ test('critical test IDs and safety hooks preserved', async (t) => {
   });
 });
 
+
+test('Level 2 linear supported games render no shoulder-horizontal-abduction patient row or wording', async (t) => {
+  const linearReadyText = '屈肘開始 → 伸肘向上／向前 → 屈肘返回';
+  assert.match(PAGE_SOURCE, /id="level4ShoulderAbductionReading" hidden/);
+  assert.match(PAGE_SOURCE, /\.level4-reading\[hidden\]\{\s*display:none !important;\s*\}/);
+  assert.match(PAGE_SOURCE, /function level4PatientReadyGuidance\(\)/);
+  if (!browser) return t.skip('playwright unavailable');
+
+  for (const theme of ['dimsum', 'bowling']) {
+    await withPage(VIEWPORTS[2], async (page) => {
+      const patientState = await page.evaluate((selectedTheme) => {
+        const flex = { shoulder:{x:.45,y:.30}, elbow:{x:.45,y:.48}, wrist:{x:.58,y:.48}, otherShoulder:{x:.60,y:.30} };
+        const reach = { shoulder:{x:.45,y:.30}, elbow:{x:.54,y:.35}, wrist:{x:.74,y:.36}, otherShoulder:{x:.60,y:.30} };
+        window.__qa.startGame({level:'2', theme:selectedTheme, affectedSide:'right', duration:300});
+        window.__qa.setLevel4Pose(flex);
+        window.__qa.level4ManualCapture('flexed');
+        window.__qa.setLevel4Pose(reach);
+        window.__qa.level4ManualCapture('extended');
+        const row = document.getElementById('level4ShoulderAbductionReading');
+        const hint = document.getElementById('level4CalibHint');
+        return {
+          hidden: row.hidden,
+          display: getComputedStyle(row).display,
+          patientText: document.getElementById('level4CalibBar').innerText,
+          hint: hint.innerText,
+        };
+      }, theme);
+      assert.equal(patientState.hidden, true, `${theme}: horizontal-abduction row has hidden state`);
+      assert.equal(patientState.display, 'none', `${theme}: horizontal-abduction row is not rendered`);
+      assert.match(patientState.hint, new RegExp(linearReadyText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `${theme}: only elbow-repeat instruction remains`);
+      assert.doesNotMatch(patientState.patientText, /Shoulder horizontal-abduction range|肩水平外展範圍|abduction moves left\/right/i);
+    });
+  }
+});
+
+test('Level 2 supported path games render shoulder-horizontal-abduction row and ordered guidance', async (t) => {
+  if (!browser) return t.skip('playwright unavailable');
+  for (const theme of ['wipewindow', 'mahjongwash', 'buspay']) {
+    await withPage(VIEWPORTS[2], async (page) => {
+      const patientState = await page.evaluate((selectedTheme) => {
+        const flex = { shoulder:{x:.45,y:.30}, elbow:{x:.45,y:.48}, wrist:{x:.58,y:.48}, otherShoulder:{x:.60,y:.30} };
+        const reach = { shoulder:{x:.45,y:.30}, elbow:{x:.54,y:.35}, wrist:{x:.74,y:.36}, otherShoulder:{x:.60,y:.30} };
+        window.__qa.startGame({level:'2', theme:selectedTheme, affectedSide:'right', duration:300});
+        window.__qa.setLevel4Pose(flex);
+        window.__qa.level4ManualCapture('flexed');
+        window.__qa.setLevel4Pose(reach);
+        window.__qa.level4ManualCapture('extended');
+        const row = document.getElementById('level4ShoulderAbductionReading');
+        return {
+          hidden: row.hidden,
+          display: getComputedStyle(row).display,
+          hint: document.getElementById('level4CalibHint').innerText,
+          height: row.getBoundingClientRect().height,
+          clipped: row.getBoundingClientRect().bottom > document.querySelector('.game-stage').getBoundingClientRect().bottom + 1,
+        };
+      }, theme);
+      assert.equal(patientState.hidden, false, `${theme}: horizontal-abduction row is enabled`);
+      assert.notEqual(patientState.display, 'none', `${theme}: horizontal-abduction row is rendered`);
+      assert.ok(patientState.height >= 38, `${theme}: path-only row retains a readable patient touch/read height`);
+      assert.equal(patientState.clipped, false, `${theme}: path-only row stays within the game stage`);
+      assert.match(patientState.hint, /肩水平外展/, `${theme}: ordered path guidance stays visible`);
+    });
+  }
+});
+
 test('every FTHUE level offers trial and training modes with accessible controls', async (t) => {
   if (!browser) return t.skip('playwright unavailable');
   for (const vp of VIEWPORTS) {
@@ -204,8 +291,8 @@ test('every FTHUE level offers trial and training modes with accessible controls
           };
         })
       ));
-      assert.equal(controls.length, 8, `${vp.name}: four levels should each have trial and training controls`);
-      for (const level of ['3', '4', '5', '67']) {
+      assert.equal(controls.length, 10, `${vp.name}: five level entries should each have trial and training controls`);
+      for (const level of ['2', '3', '4', '5', '67']) {
         assert.deepEqual(
           controls.filter(control => control.level === level).map(control => control.mode).sort(),
           ['training', 'trial'],
@@ -299,11 +386,11 @@ test('Level 4 safety gate uses the approved three-item wording', async (t) => {
         noteHidden: document.getElementById('safetyLevelNote')?.hidden,
       };
     });
-    assert.equal(copy.title, '開始前安全確認（FTHUE Level 4）');
+    assert.equal(copy.title, '開始前確認（FTHUE Level 4）');
     assert.deepEqual(copy.items, [
-      '治療師全程監督，疼痛／手緊／代償 → 立即停止。',
-      '坐穩，患手放在滑板上（離身 10–15 cm，不貼腹），身體保持正中，不聳肩，緩慢向前滑。',
-      '先試 3 次，無痛才正式做；動作慢、穩，不追次數，隨時可休息或停止。',
+      '治療師全程監督。',
+      '坐穩，患臂離桌，抬至目標。',
+      '先試 3 次；慢、穩。',
     ]);
     assert.equal(copy.supervisionHidden, true, 'duplicate supervision line is hidden');
     assert.equal(copy.noteHidden, true, 'duplicate Level 4 note is hidden');
@@ -324,13 +411,13 @@ test('Level 5 safety gate uses the approved five-item wording', async (t) => {
         noteHidden: document.getElementById('safetyLevelNote')?.hidden,
       };
     });
-    assert.equal(copy.title, '開始前安全確認（FTHUE Level 5）');
+    assert.equal(copy.title, '開始前確認（FTHUE Level 5）');
     assert.deepEqual(copy.items, [
-      '坐穩，伸出患手、輕輕合手、張開手。',
-      '身體保持正中，避免過度側彎。',
-      '先試 3 次，無痛才正式做。',
-      '動作慢、穩，不追次數，隨時可休息或停止。',
-      '治療師全程監督，疼痛／手緊／代償 → 立即停止。',
+      '坐穩；伸手、輕合、張手。',
+      '身體保持正中。',
+      '先試 3 次。',
+      '慢、穩；可休息。',
+      '治療師全程監督。',
     ]);
     assert.equal(copy.supervisionHidden, true, 'duplicate supervision line is hidden');
     assert.equal(copy.noteHidden, true, 'duplicate Level 5 note is hidden');
@@ -351,24 +438,25 @@ test('Level 6–7 safety gate uses the approved five-item wording', async (t) =>
         noteHidden: document.getElementById('safetyLevelNote')?.hidden,
       };
     });
-    assert.equal(copy.title, '開始前安全確認（FTHUE Level 6–7）');
+    assert.equal(copy.title, '開始前確認（FTHUE Level 6–7）');
     assert.deepEqual(copy.items, [
-      '坐穩，伸出患手、手指輕捏、張開手指',
-      '身體保持正中，避免過度側彎。',
-      '先試 3 次，無痛才正式做。',
-      '動作慢、穩，不追次數，隨時可休息或停止。',
-      '治療師全程監督，疼痛／手緊／代償 → 立即停止。',
+      '坐穩；伸手、輕捏、張手。',
+      '身體保持正中。',
+      '先試 3 次。',
+      '慢、穩；可休息。',
+      '治療師全程監督。',
     ]);
     assert.equal(copy.supervisionHidden, true, 'duplicate supervision line is hidden');
     assert.equal(copy.noteHidden, true, 'duplicate Level 6–7 note is hidden');
   });
 });
 
-test('final FTHUE Level 3–7 movement wording is consistent', async (t) => {
+test('final FTHUE Level 2–7 movement wording is consistent', async (t) => {
   if (!browser) return t.skip('playwright unavailable');
   await withPage(VIEWPORTS[1], async (page) => {
     const copy = await page.evaluate(() => ({
       headings: [...document.querySelectorAll('.level-card h3')].map(el => el.textContent.trim()),
+      level2: window.SAFETY_LEVEL_NOTES?.['2'] || '',
       level3: window.SAFETY_LEVEL_NOTES?.['3'] || '',
       level4: window.SAFETY_LEVEL_NOTES?.['4'] || '',
       level5: window.SAFETY_LEVEL_NOTES?.['5'] || '',
@@ -376,21 +464,59 @@ test('final FTHUE Level 3–7 movement wording is consistent', async (t) => {
     }));
 
     assert.deepEqual(copy.headings, [
-      '雙手外側滑動',
-      '患手向前滑動',
+      '桌面承托訓練',
+      '肩屈曲 30–60°',
+      '肩屈曲 60° 或以上',
       '患手握放練習',
       '患手捏放練習',
     ]);
-    assert.match(copy.level3, /好手帶動患手.*向患側/);
-    assert.match(copy.level3, /肩外展及外側滑動/);
-    assert.match(copy.level3, /毛巾須隨手移動/);
-    assert.match(copy.level3, /軀幹保持正中/);
-    assert.match(copy.level4, /患手放在.*滑板/);
-    assert.match(copy.level4, /避免聳肩/);
-    assert.match(copy.level5, /伸出患手、輕輕合手、張開手/);
-    assert.match(copy.level5, /避免過度側彎/);
-    assert.match(copy.level67, /三指輕捏、夾仔或筷子/);
-    assert.match(copy.level67, /手臂離桌/);
-    assert.match(copy.level67, /身體保持正中/);
+    assert.match(copy.level2, /手臂放桌面/);
+    assert.match(copy.level2, /肩、肘、腕及路徑入鏡/);
+    assert.match(copy.level3, /患臂離桌/);
+    assert.match(copy.level3, /軀幹及全臂入鏡/);
+    assert.match(copy.level4, /患臂離桌/);
+    assert.match(copy.level4, /軀幹及全臂入鏡/);
+    assert.match(copy.level5, /伸手、輕合、張手/);
+    assert.match(copy.level67, /按玩法捏放/);
   });
 });
+
+for (const vp of [VIEWPORTS[0], VIEWPORTS[2]]) {
+  test(`Level 4 hands-free calibration panel is usable and unclipped — ${vp.name}`, async (t) => {
+    if (!browser) return t.skip('playwright unavailable');
+    await withPage(vp, async (page) => {
+      await page.evaluate(() => {
+        // Stage the visible countdown state without depending on the app's
+        // IIFE-private QA variables. The click/state contract is covered by
+        // level4-auto-calibration.test.mjs; this test is specifically the
+        // responsive patient-facing layout at its densest state.
+        document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+        document.getElementById('screen-game').classList.add('active');
+        document.getElementById('level4CalibBar').classList.add('show');
+        document.getElementById('level4AutoProgress').hidden = false;
+        document.getElementById('level4AutoProgress').textContent = '請等候 3 秒 · 治療師請退後，病人保持承托屈肘';
+        document.getElementById('btnLevel4AutoCancel').hidden = false;
+      });
+      const view = await page.evaluate(() => {
+        const r = id => { const x=document.getElementById(id).getBoundingClientRect(); return {left:x.left,right:x.right,top:x.top,bottom:x.bottom,width:x.width,height:x.height}; };
+        const bar=r('level4CalibBar'); const stage=document.querySelector('.game-stage').getBoundingClientRect();
+        const details=document.querySelector('[data-testid="details-level4-therapist"]');
+        return {
+          bar, stage, auto:r('btnLevel4AutoCancel'), progress:r('level4AutoProgress'),
+          readings:[...document.querySelectorAll('.level4-reading')].filter(card => getComputedStyle(card).display !== 'none').map(card => {
+            const x = card.getBoundingClientRect();
+            return {left:x.left,right:x.right,top:x.top,bottom:x.bottom,width:x.width,height:x.height};
+          }),
+          progressText:document.getElementById('level4AutoProgress').textContent.trim(),
+          detailsOpen:details.open, cancelHidden:document.getElementById('btnLevel4AutoCancel').hidden,
+          xOverflow:document.documentElement.scrollWidth > document.documentElement.clientWidth,
+        };
+      });
+      assert.ok(view.bar.width > 0 && view.bar.left >= view.stage.left && view.bar.right <= view.stage.right + .5);
+      assert.ok(view.auto.height >= 44, 'large cancel touch target while automatic calibration runs');
+      assert.ok(view.progress.height >= 36 && /請等候/.test(view.progressText), 'plain withdrawal countdown is visible');
+      assert.equal(view.readings.length, 2, 'generic/unselected Level 4 hides path-only horizontal reading'); assert.ok(view.readings.every(x=>x.height >= 38));
+      assert.equal(view.detailsOpen, false); assert.equal(view.cancelHidden, false); assert.equal(view.xOverflow, false);
+    });
+  });
+}

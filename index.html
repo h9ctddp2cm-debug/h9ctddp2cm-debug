@@ -29,6 +29,39 @@ html,body{
   touch-action:none;
 }
 #app{ position:fixed; inset:0; width:100%; height:100%; overflow:hidden; }
+.language-switcher{
+  position:fixed; top:max(10px,env(safe-area-inset-top)); right:max(10px,env(safe-area-inset-right));
+  z-index:250; font-size:15px;
+}
+.language-button{
+  width:44px; height:44px; display:grid; place-items:center; padding:0;
+  border:2px solid rgba(15,74,61,.32); border-radius:50%; color:var(--teal-dark);
+  background:rgba(255,255,255,.96); box-shadow:0 3px 12px rgba(44,24,16,.16); cursor:pointer;
+}
+.language-button svg{ width:22px; height:22px; }
+.language-menu{
+  position:absolute; top:50px; right:0; width:176px; padding:6px;
+  background:#fff; border:1.5px solid var(--border); border-radius:13px;
+  box-shadow:0 8px 24px rgba(44,24,16,.18);
+}
+.language-menu[hidden]{ display:none; }
+.language-menu button{
+  width:100%; min-height:44px; padding:10px 12px; border:0; border-radius:9px;
+  background:transparent; color:var(--text); text-align:left; font:750 15px/1.2 inherit; cursor:pointer;
+}
+.language-menu button.selected{ background:rgba(26,107,90,.12); color:var(--teal-dark); }
+.language-menu button.selected::after{ content:'✓'; float:right; font-weight:900; }
+.language-menu button:focus-visible,.language-button:focus-visible{ outline:3px solid #D4A017; outline-offset:2px; }
+html[data-app-language="zh-Hant"] [lang="en"],
+html[data-app-language="zh-Hant"] .en,
+html[data-app-language="en"] [lang="en"],
+html[data-app-language="en"] .en{ display:none !important; }
+html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-inset-top) + 58px)); }
+.research-lang{ display:none !important; }
+@media (max-width:600px) and (orientation:portrait){
+  html[data-screen="game"] .language-switcher{ top:max(76px,calc(env(safe-area-inset-top) + 66px)); }
+  .language-menu{ width:164px; }
+}
 .screen{
   position:absolute; inset:0; width:100%; height:100%;
   display:none; flex-direction:column;
@@ -75,6 +108,7 @@ html,body{
 }
 
 .option-row{ display:flex; gap:10px; flex-wrap:wrap; }
+#targetHoldOptions[hidden],#dwellOptions[hidden]{ display:none !important; }
 .option-btn{
   flex:1; min-width:130px; padding:14px 10px; border-radius:12px;
   border:2px solid var(--border); background:var(--bg); color:var(--text);
@@ -167,8 +201,9 @@ html,body{
   box-shadow:inset 0 0 0 10px rgba(181,44,37,.92);
   animation:level4AlertPulse .72s ease-in-out infinite alternate;
 }
-/* Compact Level 4 two-pose calibration strip: two large therapist buttons plus
-   one guidance line and one live signal line. No extra page, no long text. */
+/* Level 4 patient-facing calibration strip: only three large readings are
+   visible by default; rapidly changing engineering values remain in collapsed
+   therapist details. */
 /* Compact Level 4 scenario demo: inline in the setup flow, never an overlay. */
 .level4-scenario-demo{
   margin:8px auto 4px; padding:0; max-width:340px; text-align:center;
@@ -182,33 +217,57 @@ html,body{
   margin-top:4px; font-size:13px; font-weight:800; color:#4a4034;
 }
 .level4-calib{
-  position:absolute; left:12px; top:12px; z-index:30;
+  position:absolute; left:12px; top:96px; z-index:42;
   display:none; flex-direction:column; gap:6px;
-  width:min(320px,calc(100% - 24px));
-  padding:8px 10px; border-radius:14px;
-  background:rgba(255,255,255,.94); border:1px solid rgba(26,107,90,.34);
-  box-shadow:0 3px 12px rgba(0,0,0,.18); color:#173f39;
+  width:min(268px,calc(100% - 24px)); max-height:calc(100dvh - 108px); overflow:auto;
+  padding:8px; border-radius:14px;
+  background:rgba(255,255,255,.96); border:2px solid rgba(26,107,90,.42);
+  box-shadow:0 4px 16px rgba(0,0,0,.22); color:#173f39;
 }
 .level4-calib.show{ display:flex; }
+.level4-auto-action button{
+  width:100%; min-height:50px; padding:8px 12px; cursor:pointer;
+  border:2px solid #0a5546; border-radius:13px; background:#16715d; color:#fff;
+  font:900 17px/1.15 inherit; box-shadow:0 2px 0 rgba(0,0,0,.13);
+}
+.level4-auto-action .en{ display:block; font-size:13px; font-weight:750; opacity:.94; }
+.level4-auto-action[hidden], .level4-calib-actions[hidden]{ display:none !important; }
+.level4-selected-arm{
+  padding:6px 8px; border-radius:10px; background:#e4f4ef; color:#0a5546;
+  font-size:16px; font-weight:850; text-align:center;
+}
 .level4-calib-actions{ display:flex; gap:8px; }
-.level4-calib-actions button{
-  flex:1; min-height:56px; padding:10px 8px; cursor:pointer;
+.level4-calib-actions button, .level4-auto-cancel{
+  flex:1; min-height:54px; padding:8px; cursor:pointer;
   border:2px solid #145a4d; border-radius:12px; background:#e8f6f1;
-  color:#0C3F35; font:900 17px/1.2 inherit;
+  color:#0C3F35; font:850 16px/1.15 inherit;
 }
-.level4-calib-actions button:active{ background:#c9ebe0; }
-.level4-calib-hint{ font-size:14px; font-weight:850; line-height:1.35; }
-.level4-calib-hint .en{ display:block; font-size:12px; font-weight:700; color:#4c625e; }
-  .level4-live-readouts{
-  display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:5px 8px;
-  padding:7px 8px; border-radius:10px; background:#edf7f3; color:#254c44;
-  font-size:12px; font-weight:800; font-variant-numeric:tabular-nums;
+.level4-auto-cancel{ width:100%; min-height:46px; border-color:#8a3a32; background:#fff4f2; color:#702219; }
+.level4-calib-actions button:active, .level4-auto-action button:active{ transform:translateY(1px); }
+.level4-calib-hint{ padding:7px 9px; border-radius:12px; background:#edf7f3; font-size:18px; font-weight:900; line-height:1.22; }
+.level4-calib-hint .en{ display:block; margin-top:2px; font-size:13px; font-weight:700; color:#4c625e; }
+.level4-auto-progress{ min-height:42px; padding:6px 10px; border-radius:12px; background:#fff6db; color:#563f05;
+  font-size:18px; font-weight:950; text-align:center; font-variant-numeric:tabular-nums; }
+.level4-auto-progress[hidden]{ display:none; }
+.level4-live-readouts{ display:grid; grid-template-columns:1fr; gap:5px; }
+.level4-reading{ display:flex; min-height:54px; align-items:center; justify-content:space-between; gap:8px; padding:7px 9px;
+  border-radius:12px; background:#edf7f3; color:#254c44; font-size:16px; font-weight:850; line-height:1.1; }
+.level4-reading[hidden]{ display:none !important; }
+.level4-reading .en{ display:block; margin-top:3px; font-size:12px; font-weight:650; color:#4c625e; }
+.level4-reading b{ color:#0b3e34; font:950 28px/1 tabular-nums,inherit; white-space:nowrap; }
+.level4-calib.shoulder-live .level4-reading:first-child{
+  min-height:72px; background:#dff3ed; border:2px solid rgba(1,105,111,.32);
 }
-  .level4-live-readouts span{ min-width:0; }
-  .level4-live-readouts b{ color:#0b3e34; font-weight:950; white-space:nowrap; }
-.level4-calib-diag{
-  font-size:11px; font-weight:700; line-height:1.3; color:#4c625e;
-  white-space:pre-wrap; word-break:break-all;
+.level4-calib.shoulder-live .level4-reading:first-child b{
+  color:#075f63; font-size:44px;
+}
+.level4-calib details{ border-top:1px solid rgba(26,107,90,.22); padding-top:6px; }
+.level4-calib summary{ cursor:pointer; min-height:36px; display:flex; align-items:center; font-size:14px; font-weight:850; }
+.level4-calib-diag{ font:700 11px/1.32 ui-monospace,SFMono-Regular,monospace; color:#4c625e; white-space:pre-wrap; word-break:break-word; }
+@media (max-width:600px) and (orientation:portrait){
+  .level4-calib{ left:8px; top:150px; width:min(252px,calc(100% - 16px)); max-height:calc(100dvh - 160px); }
+  .level4-auto-action button{ min-height:50px; font-size:17px; }
+  .level4-reading b{ font-size:26px; }
 }
 .cook-motion-guide{
   position:absolute; top:248px; right:14px; z-index:23;
@@ -266,6 +325,28 @@ html,body{
 }
 .hud-item .hud-label{ font-size:15px; color:var(--muted); font-weight:600; display:block; margin-bottom:2px; }
 .hud-item .hud-value{ font-size:30px; line-height:1.1; font-weight:800; }
+.game-stage.shoulder-flexion-game .prompt-zone{ padding-left:292px; }
+.target-hold-overlay{
+  position:absolute; inset:0; z-index:39; display:none;
+  align-items:center; justify-content:center; pointer-events:none;
+}
+.target-hold-overlay.show{ display:flex; }
+.target-hold-number{
+  width:min(40vw,300px); aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+  border-radius:50%; color:#686f73; background:rgba(232,235,236,.88);
+  border:8px solid rgba(104,111,115,.44); box-shadow:0 14px 44px rgba(0,0,0,.30);
+  font:950 clamp(140px,24vw,260px)/1 tabular-nums,"PingFang TC","Noto Sans TC",sans-serif;
+  text-shadow:0 3px 0 rgba(255,255,255,.75);
+}
+#feedbackOverlay.correct-feedback{ color:#18864b; text-shadow:0 7px 18px rgba(0,0,0,.28); }
+@media (max-width:600px) and (orientation:portrait){
+  .game-stage.shoulder-flexion-game .prompt-zone{ padding-left:276px; }
+}
+@media (min-width:601px) and (max-width:900px) and (orientation:portrait){
+  .game-controls{ top:88px !important; }
+  .level4-calib{ top:166px; }
+  .prompt-zone{ top:166px !important; }
+}
 
 /* ---------- SINGLE PROMPT SAFE STRIP ----------
    All in-game instruction / cognitive prompts live inside #promptZone, a single
@@ -848,6 +929,16 @@ html,body{
 .level-motion figcaption{
   margin-top:4px; color:var(--teal-dark); font-size:12px; line-height:1.2; font-weight:850;
 }
+.level-select.has-shoulder-demos{ grid-template-columns:minmax(145px,.75fr) minmax(330px,1.25fr); }
+.level-motion.shoulder-demos{ grid-template-columns:1fr 1fr; gap:10px; align-items:start; }
+.level-motion.shoulder-demos figure{
+  overflow:hidden; border:1px solid rgba(26,107,90,.2); border-radius:14px; background:#f7f3ea;
+}
+.level-motion.shoulder-demos img{ aspect-ratio:220/190; object-fit:contain; }
+.level-motion.shoulder-demos figcaption{
+  display:flex; min-height:54px; align-items:center; justify-content:center;
+  padding:7px 6px 8px; margin:0; background:#fff; font-size:12px; line-height:1.28;
+}
 .level-details{ border-top:1px solid var(--border); margin:0 18px; }
 .level-details summary{
   min-height:48px; display:flex; align-items:center; cursor:pointer;
@@ -864,9 +955,11 @@ html,body{
 .level-card .lv-note .lv-line{ display:block; margin-top:6px; }
 @media (max-width:819px){
   .level-select{ grid-template-columns:minmax(0,1fr) 210px; }
+  .level-select.has-shoulder-demos{ grid-template-columns:minmax(155px,.7fr) minmax(340px,1.3fr); }
 }
 @media (max-width:560px){
   .level-select{ grid-template-columns:1fr; gap:10px; }
+  .level-select.has-shoulder-demos{ grid-template-columns:1fr; }
   .level-motion{ width:100%; }
   .level-motion.single{ max-width:260px; }
   .level-motion.double{ max-width:none; }
@@ -981,6 +1074,19 @@ html,body{
 </style>
 </head>
 <body>
+<div class="language-switcher" data-testid="language-switcher">
+  <button class="language-button" id="languageButton" type="button"
+    aria-label="選擇語言" aria-haspopup="menu" aria-expanded="false" title="語言">
+    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="9"></circle>
+      <path d="M3 12h18M12 3c2.4 2.5 3.6 5.5 3.6 9S14.4 18.5 12 21M12 3C9.6 5.5 8.4 8.5 8.4 12S9.6 18.5 12 21"></path>
+    </svg>
+  </button>
+  <div class="language-menu" id="languageMenu" role="menu" aria-label="語言" hidden>
+    <button type="button" role="menuitemradio" data-language="zh-Hant" aria-checked="true">繁體中文</button>
+    <button type="button" role="menuitemradio" data-language="en" aria-checked="false">English</button>
+  </div>
+</div>
 <div id="app">
 
   <!-- ============ LEVEL LANDING SCREEN ============ -->
@@ -990,21 +1096,62 @@ html,body{
       <h2 class="service-title">中風上肢訓練</h2>
       <span class="title-rule" aria-hidden="true"></span>
       <p class="lead">選擇 Level</p>
+      <p style="max-width:680px;margin:8px auto 0;font-weight:750;color:#5a6663;">
+        必須由職業治療師選擇 FTHUE Level；本網站不作診斷或自動分級<br>
+        <span lang="en">OT selection is required. This website does not diagnose or automatically assign FTHUE levels.</span>
+      </p>
     </div>
     <div class="level-grid">
       <article class="level-card">
-        <button class="level-select" id="btnLevel3" data-level="3">
+        <button class="level-select" id="btnLevel2" data-level="2">
           <div class="level-copy">
-            <span class="lv-tag">FTHUE Level 3</span>
-            <h3>雙手外側滑動</h3>
-            <p class="lv-action">好手帶患手｜向患側外滑</p>
+            <span class="lv-tag">FTHUE Level 2</span>
+            <h3>桌面承托訓練</h3>
+            <p class="lv-action">雙手患側外滑｜患臂承托滑動</p>
           </div>
           <div class="level-motion single">
             <figure>
-              <img src="img/advanced/level3_small_towel_side_slide.gif"
-                alt="雙手及前臂放在毛巾上，由好手帶動患手向患側外滑"
-                data-testid="gif-level-3">
-              <figcaption>向患側外滑</figcaption>
+              <img src="img/advanced/level4_cartoon_side_forward.png"
+                alt="側面示意：患側前臂由前臂托及綁帶承托在桌面滑板上，由職業治療師監督桌面活動"
+                data-testid="gif-level-2">
+              <figcaption>桌面承托滑動</figcaption>
+            </figure>
+          </div>
+        </button>
+        <div class="trial-actions" aria-label="FTHUE Level 2 模式">
+          <button type="button" data-session-level="2" data-session-mode="trial"
+            data-testid="button-mode-trial-2" aria-label="FTHUE Level 2 試玩，不錄影及不提示治療師">試玩</button>
+          <button type="button" data-session-level="2" data-session-mode="training"
+            data-testid="button-mode-training-2" aria-label="FTHUE Level 2 訓練，錄影及提示治療師">訓練</button>
+        </div>
+        <details class="level-details">
+          <summary>詳情</summary>
+          <p class="lv-note">
+            <span class="lv-line">所有活動均在檯面承托下進行；由職業治療師選擇合適玩法</span>
+            <span class="lv-line">包括好手帶患手向患側外滑，以及患臂承托的伸肘／水平外展活動</span>
+            <span class="lv-line">鏡頭只追蹤治療師選定的患側手臂；不會自動判定 FTHUE Level</span>
+          </p>
+        </details>
+      </article>
+      <article class="level-card">
+        <button class="level-select has-shoulder-demos" id="btnLevel3" data-level="3">
+          <div class="level-copy">
+            <span class="lv-tag">FTHUE Level 3</span>
+            <h3>肩屈曲 30–60°</h3>
+            <p class="lv-action">患臂離桌｜個人化主動活動範圍</p>
+          </div>
+          <div class="level-motion shoulder-demos" aria-label="Level 3 肩屈曲動作示範">
+            <figure>
+              <img src="img/advanced/shoulder_active_30_60.svg"
+                alt="肩屈曲動作示範：患者以患手持杯，在三十至六十度範圍內重複抬高手臂"
+                data-testid="demo-level-3-active">
+              <figcaption>主動肩屈曲 (Active shoulder flexion)</figcaption>
+            </figure>
+            <figure>
+              <img src="img/advanced/shoulder_assisted_30_60.svg"
+                alt="主動輔助肩屈曲示範：患者雙手持黃色彈性阻力棒，在三十至六十度範圍內重複抬高手臂"
+                data-testid="demo-level-3-assisted">
+              <figcaption>主動輔助肩屈曲 (Active-assisted shoulder flexion)</figcaption>
             </figure>
           </div>
         </button>
@@ -1017,25 +1164,31 @@ html,body{
         <details class="level-details">
           <summary>詳情</summary>
           <p class="lv-note">
-            <span class="lv-line">坐在椅子或輪椅，雙手及前臂放在檯面毛巾上</span>
-            <span class="lv-line">用好手帶動患手向患側外滑，毛巾跟手移動</span>
-            <span class="lv-line">身體保持正中，避免過度側彎</span>
+            <span class="lv-line">患臂離開桌面，每個物件按畫面由 0°、10° 或 20° 穩定起步</span>
+            <span class="lv-line">每個物件使用 0°／10°／20° 起點；治療師選擇 30°／40°／50°／60° 目標</span>
+            <span class="lv-line">角度只屬相機訓練估算；FTHUE Level 必須由職業治療師選擇</span>
           </p>
         </details>
       </article>
       <article class="level-card">
-        <button class="level-select" id="btnLevel4" data-level="4">
+        <button class="level-select has-shoulder-demos" id="btnLevel4" data-level="4">
           <div class="level-copy">
             <span class="lv-tag">FTHUE Level 4</span>
-            <h3>患手向前滑動</h3>
-            <p class="lv-action">側坐｜患側旁枱向前滑</p>
+            <h3>肩屈曲 60° 或以上</h3>
+            <p class="lv-action">患臂離桌｜個人化高位主動活動</p>
           </div>
-          <div class="level-motion single">
+          <div class="level-motion shoulder-demos" aria-label="Level 4 肩屈曲動作示範">
             <figure>
-              <img src="img/advanced/level4_lateral_forward_slide_v2.gif"
-                alt="病人側坐，枱放在患側旁邊，患側手肘由約九十度屈曲起始，前臂在滑板上向前滑"
-                data-testid="gif-level-4">
-              <figcaption>患手向前滑</figcaption>
+              <img src="img/advanced/shoulder_active_60_plus.svg"
+                alt="肩屈曲動作示範：患者以患手持杯，由六十度或以上重複抬高手臂"
+                data-testid="demo-level-4-active">
+              <figcaption>主動肩屈曲 (Active shoulder flexion)</figcaption>
+            </figure>
+            <figure>
+              <img src="img/advanced/shoulder_assisted_60_plus.svg"
+                alt="主動輔助肩屈曲示範：患者雙手持黃色彈性阻力棒，由六十度或以上重複抬高手臂"
+                data-testid="demo-level-4-assisted">
+              <figcaption>主動輔助肩屈曲 (Active-assisted shoulder flexion)</figcaption>
             </figure>
           </div>
         </button>
@@ -1048,9 +1201,9 @@ html,body{
         <details class="level-details">
           <summary>詳情</summary>
           <p class="lv-note">
-            <span class="lv-line">側坐，枱只放患側旁邊；患側手肘先屈曲約 90°</span>
-            <span class="lv-line">前臂放滑板向前滑：輕微肩外展＋肩屈曲＋肘伸直</span>
-            <span class="lv-line">身體保持正中，避免聳肩</span>
+            <span class="lv-line">患臂離開桌面，每個物件按畫面由 0°、10° 或 20° 穩定起步</span>
+            <span class="lv-line">慢慢主動抬高手臂至治療師選定的 60° 或以上目標</span>
+            <span class="lv-line">相機不量度抓握或捏力；FTHUE Level 必須由職業治療師選擇</span>
           </p>
         </details>
       </article>
@@ -1125,11 +1278,21 @@ html,body{
         </details>
       </article>
     </div>
+    <!-- PUBLIC_BUILD_REMOVE_START: research entry requires the authenticated local backend -->
     <button class="research-entry" id="btnResearchMode">
       研究模式（Pilot Study）
     </button>
+    <!-- PUBLIC_BUILD_REMOVE_END -->
     <footer style="margin-top:32px;padding:16px 12px 8px;text-align:center;font-size:11px;color:var(--muted);line-height:1.6;border-top:1px solid var(--border);opacity:0.75;max-width:760px;width:100%;">
       訓練由仁濟醫院職業治療師鄧姑娘設計，網頁由 AI 協助製作
+      <details style="margin-top:8px;text-align:left;">
+        <summary>圖片來源 / Image credits</summary>
+        <p>荃灣街景相片：Mk2010（Chuen Lung Street、Tsuen Wan Plaza，CC BY-SA 3.0）；
+        姒姓賢寧（Tsuen Wan Market Street，CC BY-SA 4.0）；MAUOSREEGU DAVMUR
+        （Tsuen Wan downtown，CC0 1.0）；WiNG（Tsuen Wan skyline，CC BY-SA 3.0）；
+        Wing1990hk（Tak Wah Park，CC BY 3.0）。完整來源及授權網址：
+        <a href="image-sources.json">image-sources.json</a></p>
+      </details>
     </footer>
   </div>
 
@@ -1301,12 +1464,14 @@ html,body{
   <!-- ============ ACTIVITY LIBRARY SCREEN ============ -->
   <div id="screen-library" class="screen">
     <div class="page-head">
-      <h1 id="libraryLevelLabel">FTHUE Level 4 · 桌面中線訓練</h1>
+      <h1 id="libraryLevelLabel">FTHUE Level 2 · 桌面承托訓練</h1>
       <p class="lead">選擇遊戲</p>
     </div>
     <details class="level4-session-picker" id="level4SessionPicker" hidden>
-      <summary id="level4SessionSummary">Level 4 遊戲 · 顯示 5 款</summary>
+      <summary id="level4SessionSummary">Level 2 承托遊戲 · 顯示 5 款</summary>
       <div class="level4-session-options" id="level4SessionOptions">
+        <button type="button" data-level4-session-theme="bilateral">雙手外滑</button>
+        <button type="button" data-level4-session-theme="tsuenwan">荃灣街景</button>
         <button type="button" data-level4-session-theme="dimsum">點心</button>
         <button type="button" data-level4-session-theme="wipewindow">抹窗</button>
         <button type="button" data-level4-session-theme="bowling">保齡</button>
@@ -1326,7 +1491,8 @@ html,body{
       <h1 id="settingsTitle">茶樓飲茶</h1>
     </div>
 
-    <div class="context-strip" id="settingsContext">FTHUE Level 4 · 桌面中線</div>
+    <div class="context-strip" id="settingsContext">請由職業治療師選擇 FTHUE Level</div>
+    <div class="context-strip" id="cameraSetupGuide" style="border-radius:14px;line-height:1.45;"></div>
     <figure class="level4-scenario-demo" id="level4ScenarioDemo" hidden
       data-testid="figure-level4-scenario-demo">
       <img id="level4ScenarioDemoImg" alt="" loading="lazy" decoding="async"
@@ -1342,6 +1508,37 @@ html,body{
           <button class="option-btn" data-side="right" data-testid="button-affected-right">右患側</button>
         </div>
         <p id="affectedSideError" style="min-height:20px;margin:8px 0 0;color:#a1261b;font-weight:800;text-align:center;"></p>
+      </div>
+    </div>
+    <div class="card collapsible" id="shoulderExerciseModeCard" data-accordion="shoulder-exercise-mode" hidden>
+      <h2><span>訓練方式</span>
+        <span class="selected-preview" id="preview-shoulder-exercise-mode">患臂主動</span></h2>
+      <div class="card-body">
+        <div class="option-row" id="shoulderExerciseModeOptions">
+          <button class="option-btn selected" type="button" data-shoulder-exercise-mode="active"
+            data-testid="button-shoulder-mode-active">
+            患臂主動
+          </button>
+          <button class="option-btn" type="button" data-shoulder-exercise-mode="assisted-stick"
+            data-testid="button-shoulder-mode-assisted-stick">
+            雙手持 1 lb 棍
+          </button>
+        </div>
+        <p id="shoulderExerciseModeHint" style="margin:8px 0 0;color:#555;text-align:center;font-weight:700;">
+          患臂自行抬高
+        </p>
+      </div>
+    </div>
+    <div class="card collapsible" id="shoulderTargetCard" data-accordion="shoulder-target" hidden>
+      <h2><span>肩屈曲目標</span>
+        <span class="selected-preview" id="preview-shoulder-target">目標 40°</span></h2>
+      <div class="card-body">
+        <p style="font-weight:850;margin:12px 0 6px;">目標</p>
+        <div class="option-row" id="shoulderTargetOptions"></div>
+        <details class="setup-therapist-details" style="margin-top:10px;color:#555;">
+          <summary style="font-weight:800;">治療師詳情</summary>
+          <p style="margin:6px 0 0;font-weight:700;">相機角度只供遊戲控制，並非量角器 ROM，亦不作診斷或自動 FTHUE 分級。</p>
+        </details>
       </div>
     </div>
 
@@ -1382,9 +1579,17 @@ html,body{
       </div>
     </div>
 
-    <div class="card collapsible collapsed" data-accordion="dwell">
-      <h2><span>停留時間</span><span class="selected-preview" id="preview-dwell">1秒</span></h2>
+    <div class="card collapsible collapsed" id="timingCard" data-accordion="dwell">
+      <h2><span id="timingLabel">物件停留</span><span class="selected-preview" id="preview-dwell">1秒</span></h2>
       <div class="card-body">
+      <div class="option-row" id="targetHoldOptions" style="flex-wrap:wrap;gap:8px;" hidden>
+        <button class="option-btn selected" data-target-hold="0" style="flex:1 1 auto;min-width:72px;">不用保持</button>
+        <button class="option-btn" data-target-hold="1000" style="flex:1 1 auto;min-width:60px;">1秒</button>
+        <button class="option-btn" data-target-hold="2000" style="flex:1 1 auto;min-width:60px;">2秒</button>
+        <button class="option-btn" data-target-hold="3000" style="flex:1 1 auto;min-width:60px;">3秒</button>
+        <button class="option-btn" data-target-hold="4000" style="flex:1 1 auto;min-width:60px;">4秒</button>
+        <button class="option-btn" data-target-hold="5000" style="flex:1 1 auto;min-width:60px;">5秒</button>
+      </div>
       <div class="option-row" id="dwellOptions" style="flex-wrap:wrap;gap:8px;">
         <button class="option-btn" data-dwell="500" style="flex:1 1 auto;min-width:60px;">0.5秒</button>
         <button class="option-btn selected" data-dwell="1000" style="flex:1 1 auto;min-width:60px;">1秒</button>
@@ -1423,14 +1628,14 @@ html,body{
   <div id="screen-safety" class="screen safety-screen">
     <div class="safety-card" data-testid="panel-safety-screen">
       <h1 id="safetyTitle" data-testid="text-safety-title">開始前安全確認</h1>
-      <p class="safety-sub" id="safetyContext">FTHUE Level 4 · 桌面中線訓練</p>
+      <p class="safety-sub" id="safetyContext">職業治療師選定訓練</p>
       <p class="safety-red" id="safetySupervision" data-testid="text-safety-supervision">
-        治療師全程監督。疼痛、手緊或代償：立即停止。
+        治療師全程監督。
       </p>
       <ul class="safety-list" id="safetyChecklist">
-        <li data-testid="text-safety-item-stable">坐姿穩定｜<span data-testid="text-safety-item-support">Level 3–4 桌面承托｜Level 5–6 離桌</span></li>
-        <li data-testid="text-safety-item-baseline">開始前評估疼痛、疲勞、手緊</li>
-        <li data-testid="text-safety-item-practice">先試 3 次，無痛才開始</li>
+        <li data-testid="text-safety-item-stable">坐姿穩定｜<span data-testid="text-safety-item-support">Level 2 桌面承托｜Level 3–7 患臂離桌</span></li>
+        <li data-testid="text-safety-item-baseline">開始前由治療師核對</li>
+        <li data-testid="text-safety-item-practice">先試 3 次</li>
         <li data-testid="text-safety-item-rest">隨時休息／停止</li>
         <li data-testid="text-safety-item-quality">慢、穩、不追求次數</li>
       </ul>
@@ -1440,7 +1645,7 @@ html,body{
         <span>治療師已核對並全程監督</span>
       </label>
       <div class="safety-actions">
-        <button class="btn-primary" id="btnSafetyContinue" data-testid="button-safety-continue" disabled>繼續 ▶</button>
+        <button class="btn-primary" id="btnSafetyContinue" data-testid="button-safety-continue" disabled>繼續</button>
         <button class="btn-secondary" id="btnSafetyBack" data-testid="button-safety-back">返回</button>
       </div>
       <p style="margin:14px 0 0;font-size:12px;color:var(--muted);line-height:1.6;">
@@ -1507,6 +1712,9 @@ html,body{
   <div id="screen-game" class="screen">
     <div class="game-stage">
       <div id="feedbackOverlay" style="display:none;position:absolute;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;pointer-events:none;font-size:180px;opacity:0;transition:opacity 0.15s;"></div>
+      <div id="targetHoldOverlay" class="target-hold-overlay" role="status" aria-live="assertive" aria-hidden="true">
+        <span id="targetHoldNumber" class="target-hold-number">5</span>
+      </div>
       <video id="gameVideo" playsinline webkit-playsinline autoplay muted></video>
       <canvas id="gameCanvas"></canvas>
       <div class="cook-motion-guide" id="cookMotionGuide" aria-hidden="true"
@@ -1520,25 +1728,40 @@ html,body{
         data-testid="indicator-trial-mode">試玩 · 不錄影／不提示</div>
       <div class="level4-calib" id="level4CalibBar" role="group" aria-label="Level 4 校準"
         data-testid="panel-level4-calibration">
-        <div class="level4-calib-actions">
+        <div class="level4-auto-action" id="level4AutoAction" hidden>
+          <button type="button" id="btnLevel4AutoCapture" data-testid="button-level4-auto-capture"
+            aria-label="Retry automatic calibration">
+            重試自動偵測<span class="en">Retry auto</span>
+          </button>
+        </div>
+        <div class="level4-selected-arm" id="level4SelectedArmLabel" aria-live="polite"></div>
+        <button type="button" id="btnLevel4AutoCancel" class="level4-auto-cancel" hidden
+          data-testid="button-level4-auto-cancel" aria-label="Cancel automatic elbow calibration">取消自動標記<br>Cancel auto calibration</button>
+        <div class="level4-calib-actions" id="level4ManualActions" hidden
+          aria-label="手動備用標記 / Manual fallback">
           <button type="button" id="btnLevel4MarkFlexed"
-            data-testid="button-level4-mark-flexed">記錄屈肘起點<br>Mark start</button>
+            data-testid="button-level4-mark-flexed" aria-label="Manually mark flexed start">屈肘<br>Flexed</button>
           <button type="button" id="btnLevel4MarkExtended"
-            data-testid="button-level4-mark-extended">記錄伸直終點<br>Mark end</button>
+            data-testid="button-level4-mark-extended" aria-label="Manually mark extended end">伸肘<br>Extended</button>
+          <button type="button" id="btnLevel4MarkHorizontal" hidden
+            data-testid="button-level4-mark-horizontal" aria-label="Manually mark horizontal-abduction end">外展<br>Outward</button>
         </div>
         <div class="level4-calib-hint" id="level4CalibHint" role="status" aria-live="polite"></div>
-        <div class="level4-live-readouts" aria-label="Level 4 兩點肘角即時讀數">
-          <span>原始肘角 <b id="level4RawElbowAngle">—</b></span>
-          <span>濾波肘角 <b id="level4FilteredElbowAngle">—</b></span>
-          <span>進度 <b id="level4NormalizedProgress">0%</b></span>
-          <span>狀態 <b id="level4RecognisedState">未就緒</b></span>
+        <div class="level4-auto-progress" id="level4AutoProgress" role="status" aria-live="polite" hidden></div>
+        <div class="level4-live-readouts" aria-label="Level 4 patient-facing calibration readings">
+          <div class="level4-reading"><span>已記錄屈肘起點<span class="en">Captured flexed start</span></span><b id="level4FlexedEndpoint">—</b></div>
+          <div class="level4-reading"><span>已記錄伸肘終點<span class="en">Captured extended end</span></span><b id="level4ExtendedEndpoint">—</b></div>
+          <div class="level4-reading" id="level4ShoulderAbductionReading" hidden><span>肩水平外展範圍<span class="en">Shoulder horizontal-abduction range</span></span><b id="level4ShoulderAbduction">—</b></div>
         </div>
-        <div class="level4-calib-diag" id="level4CalibDiag"></div>
+        <details data-testid="details-level4-therapist" aria-label="治療師詳細資料 / Therapist details">
+          <summary>治療師詳細資料 / Therapist details</summary>
+          <div class="level4-calib-diag" id="level4CalibDiag"></div>
+        </details>
       </div>
       <div class="hud">
         <div class="hud-item"><span class="hud-label">得分</span><span class="hud-value" id="hudScore">0</span></div>
         <div class="hud-item"><span class="hud-label">正確</span><span class="hud-value" id="hudCorrect">0</span></div>
-        <div class="hud-item"><span class="hud-label">拿取</span><span class="hud-value" id="hudGrabs">0</span></div>
+        <div class="hud-item"><span class="hud-label" id="hudGrabsLabel">拿取</span><span class="hud-value" id="hudGrabs">0</span></div>
         <div class="hud-item"><span class="hud-label">時間</span><span class="hud-value" id="hudTime">00:60</span></div>
       </div>
       <div class="cog-overlay hidden" id="cogOverlay">
@@ -1592,7 +1815,7 @@ html,body{
         <span>停止後會安全結束這一節，相機會關閉；已記錄的資料不會自動匯出或消失。</span>
         <div class="stop-confirm-reasons" id="stopReasonRow">
           <button type="button" data-stop-reason="participant_request" data-testid="button-stop-reason-participant">患者要求停止</button>
-          <button type="button" data-stop-reason="pain_or_discomfort" data-testid="button-stop-reason-pain">疼痛、不適或手部繃緊</button>
+          <button type="button" data-stop-reason="pain_or_discomfort" data-testid="button-stop-reason-pain">身體狀況（治療師記錄）</button>
           <button type="button" data-stop-reason="fatigue" data-testid="button-stop-reason-fatigue">疲勞</button>
           <button type="button" data-stop-reason="technical" data-testid="button-stop-reason-technical">技術或追蹤問題</button>
           <button type="button" data-stop-reason="other" data-testid="button-stop-reason-other">其他原因</button>
@@ -1648,6 +1871,7 @@ html,body{
         <div class="r-item"><div class="r-label" id="resultGrabsLabel">拿取</div><div class="r-value" id="resGrabs">0</div></div>
         <div class="r-item"><div class="r-label" id="resultAccuracyLabel">準確率</div><div class="r-value" id="resAccuracy">0%</div></div>
       </div>
+      <p id="shoulderResultSummary" hidden style="margin:10px 0;padding:10px 12px;border-radius:12px;background:#edf7f3;font-weight:750;line-height:1.45;"></p>
       <section class="movement-review" id="movementReview" hidden
         data-testid="panel-movement-review" aria-labelledby="movementReviewTitle">
         <div class="movement-review-head">
@@ -2064,8 +2288,10 @@ html,body{
 <!-- MediaPipe loaded via ES module in JS -->
 <!-- Level 4 participant-specific two-pose elbow calibration (shared by all
      five Level 4 games and by the deterministic Node tests). -->
+<script src="localization.js"></script>
 <script src="level4-elbow-calibration.js"></script>
 <script src="level4-video-freshness.js"></script>
+<script src="shoulder-flexion-controller.js"></script>
 <script src="fthue-adaptive-progression.js"></script>
 <script>
 (function(){
@@ -2073,7 +2299,9 @@ html,body{
 
 /* ==================== 全域狀態 ==================== */
 const state = {
-  level: '4',           // '4' 桌面滑動 | '5' 握放 | '67' 三指／夾仔／筷子
+  level: '4',
+  shoulderTargetDeg: 60,
+  shoulderExerciseMode: 'active', // Levels 3–4: active | assisted-stick
   theme: 'dimsum',      // 活動 id
   mode: 'single',       // single | dual
   duration: 300,        // total seconds
@@ -2093,7 +2321,7 @@ const state = {
   personalPinchEnter:null, personalPinchExit:null, personalPinchOpen:null,
   mirrorX:true,
   sessionMode:'training', // training | trial
-  level4SessionThemes:['dimsum','wipewindow','bowling','mahjongwash','buspay'],
+  level4SessionThemes:['bilateral','tsuenwan','dimsum','flowers','laundry','cards','mahjong','wipewindow','bowling','mahjongwash','buspay'],
   level4RotationIndex:0,
   /* Adaptive progression: the app-side TRAINING stage/band only. The clinical
      FTHUE level stays with the therapist and is never changed automatically. */
@@ -2265,7 +2493,9 @@ function affectedSideSign(){
   return activeAffectedSide() === 'right' ? 1 : -1;
 }
 function isLevel4Tabletop(){
-  return !research.active && state.level === '4';
+  // Legacy internal name retained to avoid destabilising the well-tested
+  // supported tabletop engine. Clinically and visibly this is now Level 2 only.
+  return !research.active && state.level === '2';
 }
 function isLevel4WipeGame(){
   return isLevel4Tabletop() && state.theme === 'wipewindow';
@@ -2278,6 +2508,9 @@ function isLevel4MahjongWashGame(){
 }
 function isLevel4BusPayGame(){
   return isLevel4Tabletop() && state.theme === 'buspay';
+}
+function isLevel4HorizontalPathGame(){
+  return isLevel4WipeGame() || isLevel4MahjongWashGame() || isLevel4BusPayGame();
 }
 function isLevel4StandaloneGame(){
   return isLevel4WipeGame() || isLevel4BowlingGame()
@@ -2292,15 +2525,22 @@ function isLevel4StandardTransportGame(){
     && !usesAdvancedThemeModule();
 }
 function isLevel3Tabletop(){
-  return !research.active && state.level === '3';
+  // Legacy internal name: the inherited bilateral tabletop path is Level 2.
+  return isLevel4Tabletop() && state.theme === 'bilateral';
 }
 function isGrossTabletop(){
-  return isLevel3Tabletop() || isLevel4Tabletop();
+  return !research.active && ['2','3','4'].includes(state.level);
+}
+function isShoulderFlexionLevel(){
+  return !research.active && (state.level === '3' || state.level === '4');
 }
 function affectedDirectionLabel(){
   if(isLevel4WipeGame()) return '伸肘向外畫弧';
-  if(isLevel4Tabletop()) return '伸肘向上前送';
-  if(isLevel3Tabletop()) return activeAffectedSide() === 'right' ? '向右患側外滑' : '向左患側外滑';
+  if(isLevel4Tabletop()) return isLevel3Tabletop()
+    ? (activeAffectedSide() === 'right' ? '向右患側外滑' : '向左患側外滑')
+    : '承托下伸肘向上前送';
+  if(isShoulderFlexionLevel()) return state.level === '3'
+    ? '肩屈曲至治療師選定的 30–60° 目標' : '肩屈曲至治療師選定的 60° 或以上目標';
   return activeAffectedSide() === 'right' ? '向畫面右外下方放置' : '向畫面左外下方放置';
 }
 function affectedSelectionZone(){
@@ -2349,8 +2589,9 @@ function drawLevel4MidlineGuide(ctx){
   ctx.restore();
 }
 // The shared Level 4 reach signal has one screen interpretation: extension
-// progresses upward/forward and flexion returns downward. Its guide lane is
-// fixed in X, so elbow motion can never be presented as left/right movement.
+// progresses upward/forward and flexion returns downward. The three path games
+// add a separate, ordered shoulder-horizontal-abduction X phase; elbow motion
+// never becomes left/right movement.
 function level4VerticalReachPoint(cw = gameCanvas.width, ch = gameCanvas.height){
   const top = ch * 0.32;
   const bottom = ch * 0.84;
@@ -2358,6 +2599,35 @@ function level4VerticalReachPoint(cw = gameCanvas.width, ch = gameCanvas.height)
     x:Math.max(42, cw * 0.072),
     y:bottom + (top-bottom) * clamp01(level4Reach.progress),
   };
+}
+function level4PathControlPoint(cw = gameCanvas.width, ch = gameCanvas.height, horizontalProgress = 0){
+  const fallback = {
+    x:0.10 + 0.80 * clamp01(horizontalProgress),
+    y:0.84 + (0.32-0.84) * clamp01(level4Reach.progress),
+  };
+  const normal = typeof level4Calibration?.pathCoordinates === 'function'
+    ? level4Calibration.pathCoordinates(level4Reach.progress, horizontalProgress,
+      level4Reach.side, state.mirrorX !== false)
+    : fallback;
+  return {
+    // A game passes range only after its ordered forward/extension milestone.
+    // For both affected sides and either mirror setting, range increases left→right.
+    x:normal.x * cw,
+    y:normal.y * ch,
+  };
+}
+function level4OrderedHorizontalProgress(){
+  // The landmark-derived range is intentionally dormant until the individual
+  // game has completed its elbow-extension/forward milestone.  This prevents a
+  // therapist's entering arm, or a patient's early lateral movement, from
+  // becoming a permanent X offset.
+  if(typeof level4MiniGames === 'undefined') return 0;
+  const range = clamp01(level4Reach.abductionProgress || 0);
+  const since = baseline => clamp01((range - clamp01(baseline || 0)) / Math.max(.08, 1 - clamp01(baseline || 0)));
+  if(isLevel4WipeGame()) return level4Wipe.phase === 'sweep' ? since(level4Wipe.horizontalBaseline) : 0;
+  if(isLevel4MahjongWashGame()) return level4MiniGames.mahjong.phase === 'sweep' ? since(level4MiniGames.mahjong.horizontalBaseline) : 0;
+  if(isLevel4BusPayGame()) return level4MiniGames.bus.phase === 'return-horizontal' ? since(level4MiniGames.bus.horizontalBaseline) : 0;
+  return 0;
 }
 function drawLevel4VerticalReachGuide(ctx, cw, ch){
   if(!isLevel4Tabletop()) return;
@@ -2383,6 +2653,16 @@ function drawLevel4VerticalReachGuide(ctx, cw, ch){
   ctx.textAlign = 'center';
   ctx.fillText('伸肘 ↑', point.x, top-22);
   ctx.fillText('屈肘 ↓', point.x, bottom+24);
+  ctx.restore();
+}
+function drawShoulderFlexionGuide(ctx,cw,ch){
+  if(!isShoulderFlexionLevel()) return;
+  const x=cw*(ch>cw?.68:.58),bottom=ch*.80,top=ch*.32;
+  const target=shoulderFlexionState.selectedTargetDeg??'—';
+  ctx.save();ctx.strokeStyle='rgba(17,95,83,.62)';ctx.lineWidth=6;ctx.setLineDash([14,10]);
+  ctx.beginPath();ctx.moveTo(x,bottom);ctx.lineTo(x,top);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle='#155f53';ctx.font='800 16px "PingFang TC","Noto Sans TC",sans-serif';ctx.textAlign='center';
+  ctx.fillText('目標 '+target+'°',x,top-20);
   ctx.restore();
 }
 function pointInsideZone(x, y, zone){
@@ -2427,14 +2707,17 @@ function showScreen(name){
   Object.values(screens).forEach(s=>s.classList.remove('active'));
   screens[name].classList.add('active');
   currentScreen = name;
+  document.documentElement.dataset.screen = name;
+  if(window.YCHLanguage) window.YCHLanguage.apply(screens[name]);
 }
 
 /* ==================== 臨床安全模組（Level 3–6 共用） ====================
    P0 clinical safety review implementation.
    - Mandatory pre-session safety acknowledgement screen (all public levels).
    - Always-visible 休息 / 停止 controls during play.
-   - Therapist-confirmed compensation observation (manual; the app does NOT
-     automatically detect compensation, muscle tone or spasticity).
+   - Therapist-confirmed compensation observation remains manual. Camera-visible
+     trunk/shoulder substitutions may pause shoulder gameplay as a conservative
+     movement safeguard, but are not a diagnosis of tone, spasticity or FTHUE.
    - Level 5 maximum hold duration and repeated release-difficulty prompts.
    - Session safety counters exported with the session data.
    ===================================================================== */
@@ -2492,42 +2775,44 @@ function safetyLog(event, payload){
 
 /* ---------- 安全確認畫面 ---------- */
 const SAFETY_LEVEL_NOTES = {
-  '3': '動作要點：坐於椅子或輪椅，雙前臂置於桌面毛巾上。好手帶動患手，向患側做肩外展及外側滑動，毛巾須隨手移動。軀幹保持正中，不側彎或旋轉。',
-  '4': 'Level 4：坐在椅子或輪椅，清空桌面。患手放在離身 10–15 cm 的滑板上，不可貼近腹部；身體保持正中，避免聳肩，慢慢向前滑。',
-  '5': 'Level 5：坐在椅子或輪椅，手臂全程離開桌面並保持可見空隙。空手模擬：伸出患手、輕輕合手、張開手；身體保持正中，避免過度側彎。按患者當日張手幅度校準。',
-  '67': 'Level 6–7：坐穩，手臂離桌。按所選玩法使用三指輕捏、夾仔或筷子；只需輕力，身體保持正中。',
+  '2': '手臂放桌面；肩、肘、腕及路徑入鏡。',
+  '3': '患臂離桌；軀幹及全臂入鏡。',
+  '4': '患臂離桌；軀幹及全臂入鏡。',
+  '5': '患臂離桌；伸手、輕合、張手。',
+  '67': '患臂離桌；按玩法捏放。',
 };
 const SAFETY_LEVEL_TITLES = {
-  '3': 'FTHUE Level 3 · 雙手外側滑動（Sandbox）',
-  '4': 'FTHUE Level 4 · 患手向前滑動',
+  '2': 'FTHUE Level 2 · 桌面承托訓練',
+  '3': 'FTHUE Level 3 · 肩屈曲 30–60°',
+  '4': 'FTHUE Level 4 · 肩屈曲 60° 或以上',
   '5': 'FTHUE Level 5 · 患手握放練習',
   '67': 'FTHUE Level 6–7 · 患手捏放練習',
 };
 const SAFETY_DEFAULT_ITEMS = [
-  '坐姿穩定｜Level 3–4 桌面承托｜Level 5–6 離桌',
-  '開始前評估疼痛、疲勞、手緊',
-  '先試 3 次，無痛才開始',
+  '坐姿穩定｜Level 2 桌面承托｜Level 3–7 患臂離桌',
+  '開始前由治療師核對',
+  '先試 3 次',
   '隨時休息／停止',
-  '慢、穩、不追求次數',
+  '慢、穩',
 ];
 const SAFETY_LEVEL_4_ITEMS = [
-  '治療師全程監督，疼痛／手緊／代償 → 立即停止。',
-  '坐穩，患手放在滑板上（離身 10–15 cm，不貼腹），身體保持正中，不聳肩，緩慢向前滑。',
-  '先試 3 次，無痛才正式做；動作慢、穩，不追次數，隨時可休息或停止。',
+  '治療師全程監督。',
+  '坐穩，患臂離桌，抬至目標。',
+  '先試 3 次；慢、穩。',
 ];
 const SAFETY_LEVEL_5_ITEMS = [
-  '坐穩，伸出患手、輕輕合手、張開手。',
-  '身體保持正中，避免過度側彎。',
-  '先試 3 次，無痛才正式做。',
-  '動作慢、穩，不追次數，隨時可休息或停止。',
-  '治療師全程監督，疼痛／手緊／代償 → 立即停止。',
+  '坐穩；伸手、輕合、張手。',
+  '身體保持正中。',
+  '先試 3 次。',
+  '慢、穩；可休息。',
+  '治療師全程監督。',
 ];
 const SAFETY_LEVEL_67_ITEMS = [
-  '坐穩，伸出患手、手指輕捏、張開手指',
-  '身體保持正中，避免過度側彎。',
-  '先試 3 次，無痛才正式做。',
-  '動作慢、穩，不追次數，隨時可休息或停止。',
-  '治療師全程監督，疼痛／手緊／代償 → 立即停止。',
+  '坐穩；伸手、輕捏、張手。',
+  '身體保持正中。',
+  '先試 3 次。',
+  '慢、穩；可休息。',
+  '治療師全程監督。',
 ];
 
 let safetyGatePending = null;   // { levelKey, onContinue, onBack }
@@ -2542,14 +2827,14 @@ function openSafetyGate(levelKey, onContinue, onBack){
   const ack = document.getElementById('safetyAckCheck');
   const go = document.getElementById('btnSafetyContinue');
   if(title) title.textContent = levelKey === '3'
-    ? '開始前安全確認（FTHUE Level 3）'
+    ? '開始前確認（FTHUE Level 3）'
     : levelKey === '4'
-      ? '開始前安全確認（FTHUE Level 4）'
+      ? '開始前確認（FTHUE Level 4）'
       : levelKey === '5'
-        ? '開始前安全確認（FTHUE Level 5）'
+        ? '開始前確認（FTHUE Level 5）'
         : levelKey === '67'
-          ? '開始前安全確認（FTHUE Level 6–7）'
-      : '開始前安全確認';
+          ? '開始前確認（FTHUE Level 6–7）'
+      : '開始前確認';
   const usesApprovedChecklist = levelKey === '4' || levelKey === '5' || levelKey === '67';
   if(supervision) supervision.hidden = usesApprovedChecklist;
   if(note){
@@ -2783,7 +3068,7 @@ window.confirmStop = confirmStop;
   if(pauseResume){
     pauseResume.addEventListener('click', ()=>{
       hideSafetyPause();
-      if(typeof setActionPrompt === 'function') setActionPrompt('繼續', '慢慢來，唔好痛');
+      if(typeof setActionPrompt === 'function') setActionPrompt('繼續', '慢慢來');
     });
   }
   if(pauseStop) pauseStop.addEventListener('click', ()=> confirmStop('pain_or_discomfort'));
@@ -2846,7 +3131,7 @@ window.recordCompensation = recordCompensation;
    它不會自動評估 FTHUE 級別，也不會自行更改臨床級別；所有變更須治療師按鍵確認。
    計算單位是一次完整的任務循環（例如一次放置、一次拍卡、一次推保齡球），
    絕不會把逐幀偵測當成試作。 */
-const ADAPTIVE_STAGE_FOR_LEVEL = { '3':'early_level3', '4':'early_level4', '5':'level5', '67':'level6' };
+const ADAPTIVE_STAGE_FOR_LEVEL = { '2':'early_level3', '3':'late_level3', '4':'early_level4', '5':'level5', '67':'level6' };
 let adaptiveProgression = null;
 let adaptiveTrialSeq = 0;
 /* When tracking, calibration, occlusion or the camera fails, the NEXT completed
@@ -3104,11 +3389,13 @@ window.SAFETY_LEVEL_NOTES = SAFETY_LEVEL_NOTES;
    Level 5 explains the personalised release threshold; Level 6 states that
    bare-hand aperture detection is the default. */
 const CALIB_LEVEL_BRIEF = {
-  '4': '<b>Level 4 距離校準（必做）</b><br>'
-     + '請先帶患者做 <b>3 次練習</b>，逐次試不同前滑距離，然後採用「<b>沒有肩膊抬高、'
-     + '沒有軀幹傾斜、沒有疼痛、手指也沒有愈來愈繃緊</b>」的最遠距離作為本節設定。<br>'
-     + '指令用「<b>慢慢向前滑</b>」，不要催快、不計速度。訓練中如同一種代償出現兩次，'
-     + '請按畫面上的「代償觀察」鍵記錄；系統會提示暫停及縮短距離。<br>'
+  '3': '<b>Level 3 肩屈曲設定</b><br>'
+     + '患者持續握住所選物件；不需對鏡頭做抓放。治療師選擇 30–60° 相機估算目標。<br>'
+     + '<span lang="en">OT selects a 30–60° camera-estimated target. Practise 3 slow, steady attempts.</span><br>'
+     + '<span style="color:#7d1a12;">注意：角度不是量角器 ROM；軟件不會自動 FTHUE 分級。</span>',
+  '4': '<b>Level 4 肩屈曲設定</b><br>'
+     + '患者持續握住所選物件；不需對鏡頭做抓放。治療師選擇 60° 或以上相機估算目標。<br>'
+     + '<span lang="en">OT selects a camera-estimated target of 60° or above. Practise 3 slow, steady attempts.</span><br>'
      + '<span style="color:#7d1a12;">注意：軟件不會自動偵測代償，代償需由治療師人手觀察及確認。</span>',
   '5': '<b>Level 5 個人化放手標準</b><br>'
      + '校準時拍到的「張開手」幅度，就是本節的放手標準；'
@@ -3122,7 +3409,14 @@ function renderCalibLevelBrief(){
   const el = document.getElementById('calibLevelBrief');
   if(!el) return;
   const key = research.active ? (research.stratum === '5' ? '5' : '67') : (state.level || '4');
-  el.innerHTML = CALIB_LEVEL_BRIEF[key] || CALIB_LEVEL_BRIEF['4'];
+  const modeBrief=shoulderExerciseModeAvailable(key)
+    ? '<b>'+shoulderExerciseProfile().cue+'</b><br>'
+      +(state.shoulderExerciseMode==='assisted-stick'
+        ? '雙手持 1 磅棍；只追蹤患側。<br><span lang="en">Both hands hold the stick; affected arm tracked only.</span><br>'
+        : '持續握住治療師選定的物件；只追蹤患側。<br><span lang="en">Keep holding the OT-selected object; affected arm tracked only.</span><br>')
+      +'網頁只追蹤肩屈曲，不偵測抓握或放手。<br><span lang="en">The website tracks shoulder flexion only, not grasp or release.</span><br>'
+    : '';
+  el.innerHTML = modeBrief+(CALIB_LEVEL_BRIEF[key] || CALIB_LEVEL_BRIEF['4']);
 }
 window.renderCalibLevelBrief = renderCalibLevelBrief;
 window.CALIB_LEVEL_BRIEF = CALIB_LEVEL_BRIEF;
@@ -3875,7 +4169,6 @@ function renderResearchManager(){
 }
 function renderPilotLanguage(){
   const t = PILOT_TEXT[pilotLang];
-  document.documentElement.lang = pilotLang === 'en' ? 'en' : 'zh-Hant';
   document.getElementById('pilotTitle').textContent = t.title;
   document.getElementById('btnPilotLang').textContent = t.toggle;
   document.getElementById('pilotIntro').textContent = t.intro;
@@ -3955,10 +4248,12 @@ function renderPilotLanguage(){
 
 /* ==================== 級別資料 ==================== */
 const LEVELS = {
-  '3': { id:'3', tag:'FTHUE Level 3', name:'雙手患側外滑', gameType:'dwell',
-         actionLabel:'好手帶患手，由中央向患側外滑' },
-  '4': { id:'4', tag:'FTHUE Level 4', name:'患手向前滑動', gameType:'dwell',
-         actionLabel:'患手放在檯面滑板上，向前滑動' },
+  '2': { id:'2', tag:'FTHUE Level 2', name:'桌面承托訓練', gameType:'dwell',
+         actionLabel:'由職業治療師選擇雙手外滑或患臂承托活動' },
+  '3': { id:'3', tag:'FTHUE Level 3', name:'肩屈曲 30–60°', gameType:'dwell',
+         actionLabel:'持續握住物件，患臂肩屈曲至治療師選定目標；不偵測抓放' },
+  '4': { id:'4', tag:'FTHUE Level 4', name:'肩屈曲 60° 或以上', gameType:'dwell',
+         actionLabel:'持續握住物件，患臂肩屈曲至治療師選定的 60° 或以上目標；不偵測抓放' },
   '5': { id:'5', tag:'FTHUE Level 5', name:'患手握放練習', gameType:'grasp',
          actionLabel:'伸出患手、輕輕合手、張開手' },
   '67': { id:'67', tag:'FTHUE Level 6–7', name:'患手捏放練習', gameType:'pinch',
@@ -3978,10 +4273,104 @@ const LEVEL67_TOOL_MODES = {
     actionCue:'筷子尖對準 → 停住',
   },
 };
+const SHOULDER_EXERCISE_MODES = {
+  active:{
+    label:'主動',
+    setup:'患臂自行抬高｜Lift with affected arm',
+    cue:'患臂主動肩屈曲｜Active affected-arm shoulder flexion',
+    patient:'患臂自行慢慢抬高',
+  },
+  'assisted-stick':{
+    label:'雙手持 1 磅棍（主動輔助）',
+    setup:'雙手握棍，健手協助｜Hold stick with both hands; unaffected hand assists',
+    cue:'雙手持 1 lb 棍主動輔助｜Active-assisted with both hands on a 1 lb stick',
+    patient:'雙手握 1 lb 棍，健手協助患臂慢慢抬高',
+  },
+};
 function currentLevel(){ return LEVELS[state.level] || LEVELS['4']; }
 function level67ToolProfile(){ return LEVEL67_TOOL_MODES[state.toolMode] || LEVEL67_TOOL_MODES.bare; }
+function shoulderExerciseModeAvailable(level=state.level){ return level==='3'||level==='4'; }
+function shoulderExerciseProfile(){
+  return SHOULDER_EXERCISE_MODES[state.shoulderExerciseMode] || SHOULDER_EXERCISE_MODES.active;
+}
+function selectShoulderExerciseMode(mode){
+  if(!shoulderExerciseModeAvailable() || !SHOULDER_EXERCISE_MODES[mode]) return false;
+  state.shoulderExerciseMode=mode;
+  if(shoulderFlexionController) shoulderFlexionController.setExerciseMode(mode);
+  renderShoulderExerciseModeSettings();
+  const context=document.getElementById('settingsContext');
+  if(context){
+    const th=getTheme();
+    context.textContent=currentLevel().tag+' · '+th.title+' · '+th.actionLabelFor(state.level)
+      +' · '+shoulderExerciseProfile().label;
+  }
+  return true;
+}
+function renderShoulderExerciseModeSettings(){
+  const card=document.getElementById('shoulderExerciseModeCard');
+  if(!card)return;
+  const enabled=shoulderExerciseModeAvailable();
+  card.hidden=!enabled;
+  if(!enabled)return;
+  const profile=shoulderExerciseProfile();
+  document.getElementById('preview-shoulder-exercise-mode').textContent=profile.label;
+  document.getElementById('shoulderExerciseModeHint').textContent=profile.setup;
+  document.querySelectorAll('#shoulderExerciseModeOptions [data-shoulder-exercise-mode]').forEach(button=>{
+    button.classList.toggle('selected',button.dataset.shoulderExerciseMode===state.shoulderExerciseMode);
+    button.setAttribute('aria-pressed',button.dataset.shoulderExerciseMode===state.shoulderExerciseMode?'true':'false');
+  });
+}
 function applyInteractionModeForLevel(){
   state.gameType = state.level === '67' ? level67ToolProfile().gameType : currentLevel().gameType;
+}
+function renderShoulderTargetSettings(){
+  const card=document.getElementById('shoulderTargetCard');
+  const box=document.getElementById('shoulderTargetOptions');
+  if(!card||!box)return;
+  const enabled=state.level==='3'||state.level==='4';
+  card.hidden=!enabled;
+  if(!enabled)return;
+  const values=state.level==='3'?[30,40,50,60]:Array.from({length:13},(_,index)=>60+index*10);
+  if(!values.includes(Number(state.shoulderTargetDeg))) state.shoulderTargetDeg=state.level==='3'?40:60;
+  box.innerHTML='';
+  values.forEach(value=>{
+    const button=document.createElement('button');
+    button.type='button';button.className='option-btn'+(value===state.shoulderTargetDeg?' selected':'');
+    button.dataset.shoulderTarget=String(value);button.textContent=value+'°';
+    button.setAttribute('aria-label',(state.level==='4'?'Level 4 60 degrees or above ':'Level 3 ')+'camera-estimated target '+value+' degrees');
+    box.appendChild(button);
+  });
+  document.getElementById('preview-shoulder-target').textContent='目標 '+state.shoulderTargetDeg+'°';
+}
+function renderTimingSettings(){
+  const targetHold=isShoulderFlexionLevel();
+  const label=document.getElementById('timingLabel');
+  const targetOptions=document.getElementById('targetHoldOptions');
+  const dwellOptions=document.getElementById('dwellOptions');
+  const allowedHold=[0,1000,2000,3000,4000,5000];
+  const allowedDwell=[500,1000,2000,3000,4000,5000,6000,8000,10000];
+  if(targetHold && !allowedHold.includes(Number(state.dwellMs))) state.dwellMs=0;
+  if(!targetHold && !allowedDwell.includes(Number(state.dwellMs))) state.dwellMs=1000;
+  if(label) label.textContent=targetHold?'目標保持':'物件停留';
+  if(targetOptions){
+    targetOptions.hidden=!targetHold;
+    targetOptions.querySelectorAll('[data-target-hold]').forEach(button=>{
+      const selected=Number(button.dataset.targetHold)===Number(state.dwellMs);
+      button.classList.toggle('selected',selected);
+      button.setAttribute('aria-pressed',selected?'true':'false');
+    });
+  }
+  if(dwellOptions){
+    dwellOptions.hidden=targetHold;
+    dwellOptions.querySelectorAll('[data-dwell]').forEach(button=>{
+      const selected=Number(button.dataset.dwell)===Number(state.dwellMs);
+      button.classList.toggle('selected',selected);
+      button.setAttribute('aria-pressed',selected?'true':'false');
+    });
+  }
+  updatePreview('preview-dwell',targetHold
+    ? (Number(state.dwellMs)===0?'不用保持':Number(state.dwellMs)/1000+'秒')
+    : Number(state.dwellMs)/1000+'秒');
 }
 function isLevel67BareMode(){ return state.level === '67' && state.toolMode === 'bare'; }
 function isPegMode(){ return state.level === '67' && state.toolMode === 'peg'; }
@@ -4009,6 +4398,14 @@ document.getElementById('modeOptions').addEventListener('click', (e)=>{
 /* ==================== 級別選擇 → 活動選擇 → 設定 ==================== */
 function selectLevel(levelId){
   state.level = levelId;
+  // A new level/session follows the existing settings architecture: use a
+  // conservative default, then preserve the therapist's choice through setup,
+  // calibration, rules and gameplay until another level is selected.
+  state.shoulderExerciseMode='active';
+  if(levelId==='3') state.shoulderTargetDeg=40;
+  if(levelId==='4') state.shoulderTargetDeg=60;
+  state.dwellMs=(levelId==='3'||levelId==='4')?0:1000;
+  if(shoulderFlexionController) shoulderFlexionController.setExerciseMode('active');
   applyInteractionModeForLevel();
   document.getElementById('libraryLevelLabel').textContent =
     currentLevel().tag + ' · ' + currentLevel().name;
@@ -4025,6 +4422,7 @@ function beginSessionMode(levelId, mode){
     ? ' · 試玩 · 不錄影／不提示'
     : ' · 訓練 · 錄影及姿勢提示';
 }
+document.getElementById('btnLevel2').addEventListener('click', ()=> beginSessionMode('2', 'training'));
 document.getElementById('btnLevel4').addEventListener('click', ()=> beginSessionMode('4', 'training'));
 document.getElementById('btnLevel5').addEventListener('click', ()=> beginSessionMode('5', 'training'));
 document.getElementById('btnLevel67').addEventListener('click', ()=> beginSessionMode('67', 'training'));
@@ -4049,6 +4447,7 @@ function openInterventionSetup(){
   renderPilotLanguage();
   showScreen('research');
 }
+/* PUBLIC_BUILD_REMOVE_START: authenticated intervention deep link */
 function applyInterventionDeepLink(){
   const params = new URLSearchParams(window.location.search);
   if(params.get('role') !== 'intervention') return;
@@ -4078,7 +4477,9 @@ function applyInterventionDeepLink(){
     window.setTimeout(()=>document.getElementById('btnResearchBegin').click(), 50);
   }
 }
-/* Research Mode is gated by the Node backend on port 5000 (server/research-auth-server.js).
+/* PUBLIC_BUILD_REMOVE_END */
+/* PUBLIC_BUILD_REMOVE_START: research login requires the authenticated local backend.
+   Research Mode is gated by the Node backend on port 5000 (server/research-auth-server.js).
    No passcode, hash, or comparison exists in this static bundle: the button only navigates
    to the backend login page, which authenticates the shared passcode server-side and issues
    a signed, expiring __Host- session cookie. The literal below is rewritten to the proxied
@@ -4100,6 +4501,7 @@ window.addEventListener('load', ()=>{
     applyInterventionDeepLink();
   }catch(e){ console.warn('intervention deep link unavailable', e); }
 });
+/* PUBLIC_BUILD_REMOVE_END */
 const btnPilotRestResume = document.getElementById('btnPilotRestResume');
 if(btnPilotRestResume){
   btnPilotRestResume.addEventListener('click', ()=>{ pilotResumeFromRest(); });
@@ -4121,6 +4523,10 @@ document.getElementById('btnRandomiseBlocks').addEventListener('click', ()=>{
 document.getElementById('btnCogYes').addEventListener('click', ()=> pilotCogAnswer(true));
 document.getElementById('btnCogNo').addEventListener('click', ()=> pilotCogAnswer(false));
 document.getElementById('btnPilotLang').addEventListener('click', ()=>{
+  if(window.YCHLanguage){
+    window.YCHLanguage.setLanguage(window.YCHLanguage.isEnglish() ? 'zh-Hant' : 'en');
+    return;
+  }
   pilotLang = pilotLang === 'zh' ? 'en' : 'zh';
   document.getElementById('researchError').textContent = '';
   renderPilotLanguage();
@@ -4133,7 +4539,6 @@ document.getElementById('btnExportFormal').addEventListener('click', ()=>exportA
 document.getElementById('btnExportNonFormal').addEventListener('click', ()=>exportArchive('nonformal'));
 document.getElementById('btnResearchBack').addEventListener('click', ()=>{
   research.active = false;
-  document.documentElement.lang = 'zh-Hant';
   showScreen('level');
 });
 document.getElementById('btnResearchBegin').addEventListener('click', async ()=>{
@@ -4248,8 +4653,24 @@ function selectActivity(themeId){
   const th = getTheme();
   document.getElementById('settingsTitle').textContent = th.title;
   document.getElementById('settingsContext').textContent =
-    currentLevel().tag + ' · ' + th.title + ' · ' + th.actionLabelFor(state.level);
+    currentLevel().tag + ' · ' + th.title + ' · ' + th.actionLabelFor(state.level)
+    + (shoulderExerciseModeAvailable() ? ' · ' + shoulderExerciseProfile().label : '');
+  const setupGuide=document.getElementById('cameraSetupGuide');
+  if(setupGuide){
+    setupGuide.textContent=state.level==='2'
+      ? '相機：患側前斜約 45°；肩、肘、腕及桌面入鏡。'
+      : (state.level==='3'||state.level==='4')
+        ? '相機：橫放，患側前斜約 30–45°；軀幹及全臂入鏡。'
+        : '相機：患手及手指入鏡。';
+  }
   renderToolModeSettings();
+  renderShoulderExerciseModeSettings();
+  renderShoulderTargetSettings();
+  renderTimingSettings();
+  const go=document.getElementById('btnGoCalib');
+  if(go) go.textContent=isShoulderFlexionLevel()
+    ? '開始追蹤'
+    : '相機校準';
   renderLevel4ScenarioDemo();
   showScreen('start');
 }
@@ -4262,7 +4683,7 @@ function renderLevel4ScenarioDemo(){
   const img = document.getElementById('level4ScenarioDemoImg');
   const caption = document.getElementById('level4ScenarioDemoCaption');
   if(!figure || !img) return;
-  const gif = String(state.level) === '4' ? level4ScenarioGif(state.theme) : null;
+  const gif = String(state.level) === '2' ? level4ScenarioGif(state.theme) : null;
   if(!gif){
     figure.hidden = true;
     img.removeAttribute('src');
@@ -4319,7 +4740,7 @@ document.getElementById('level4SessionOptions').addEventListener('click', event=
   renderActivityLibrary();
 });
 document.getElementById('btnLevel4AutoRotate').addEventListener('click', ()=>{
-  const all = availableThemeOrder('4');
+  const all = availableThemeOrder('2');
   let start = state.level4RotationIndex % all.length;
   const current = state.level4SessionThemes.slice(0,2);
   if(current[0] === all[start] && current[1] === all[(start+1)%all.length]){
@@ -4352,6 +4773,15 @@ document.getElementById('dwellOptions').addEventListener('click', e=>{
   document.querySelectorAll('#dwellOptions .option-btn').forEach(b=>b.classList.remove('selected'));
   btn.classList.add('selected');
   state.dwellMs = parseInt(btn.dataset.dwell);
+  renderTimingSettings();
+});
+document.getElementById('targetHoldOptions').addEventListener('click', e=>{
+  const btn=e.target.closest('[data-target-hold]');
+  if(!btn)return;
+  const value=Number(btn.dataset.targetHold);
+  if(![0,1000,2000,3000,4000,5000].includes(value))return;
+  state.dwellMs=value;
+  renderTimingSettings();
 });
 
 document.getElementById('fontOptions').addEventListener('click', e=>{
@@ -4370,6 +4800,18 @@ document.getElementById('affectedSideOptions').addEventListener('click', e=>{
   document.getElementById('preview-affected-side').textContent =
     state.affectedSide === 'right' ? '右患側' : '左患側';
   document.getElementById('affectedSideError').textContent = '';
+});
+document.getElementById('shoulderTargetOptions').addEventListener('click',e=>{
+  const button=e.target.closest('[data-shoulder-target]');
+  if(!button)return;
+  const value=Number(button.dataset.shoulderTarget);
+  state.shoulderTargetDeg=value;
+  renderShoulderTargetSettings();
+});
+document.getElementById('shoulderExerciseModeOptions').addEventListener('click',e=>{
+  const button=e.target.closest('[data-shoulder-exercise-mode]');
+  if(!button)return;
+  selectShoulderExerciseMode(button.dataset.shoulderExerciseMode);
 });
 
 // Accordion: click h2 to expand/collapse (only one open at a time)
@@ -4428,15 +4870,19 @@ async function enterCalibrationFlow(){
     back: ()=>{ stopCalibLoop(); stopCamera(); renderActivityLibrary(); showScreen('library'); },
   };
   let trackingModelReady = false;
-  try{
-    await ensureHandLandmarker();
-    trackingModelReady = true;
-  }catch(err){
-    // Levels 3–4 may still work through the Pose wrist fallback below.
-  }
-  if(state.theme === 'cooking' || isGrossTabletop()){
-    const pose = await ensurePoseLandmarker().catch(()=>null);
-    trackingModelReady = trackingModelReady || Boolean(pose);
+  if(isGrossTabletop()){
+    // Levels 2–4 are Pose-driven. Hand Landmarker success must never mask a
+    // missing Pose model and admit a game that cannot measure the selected arm.
+    trackingModelReady = Boolean(await ensurePoseLandmarker().catch(()=>null));
+  }else{
+    try{
+      await ensureHandLandmarker();
+      trackingModelReady = true;
+    }catch(err){}
+    if(state.theme === 'cooking'){
+      const pose = await ensurePoseLandmarker().catch(()=>null);
+      trackingModelReady = trackingModelReady || Boolean(pose);
+    }
   }
   if(!trackingModelReady){
     showCameraError({ name:'ModelLoadError' }, cameraErrorContext);
@@ -4525,11 +4971,18 @@ const ADV_RULES = {
 // 根據目前活動（theme）及級別更新規則文字及廣東話內容
 function updateRulesForActivity(){
   const th = getTheme();
-  const actionCue = state.level === '4'
-    ? '承托 → 前滑 → 停住'
+  const shoulderModeCue=shoulderExerciseModeAvailable()
+    ? shoulderExerciseProfile().cue+' · '
+    : '';
+  const actionCue = state.level === '2'
+    ? '桌面承托 → 按遊戲方向移動 → 返回'
+    : (state.level === '3'
+      ? shoulderModeCue+'隨機起點 0°／10°／20° → 治療師選定 30°／40°／50°／60° 目標 → 返回'
+      : (state.level === '4'
+        ? shoulderModeCue+'隨機起點 0°／10°／20° → 治療師選定 60° 或以上目標 → 返回'
     : (state.level === '67'
       ? level67ToolProfile().actionCue
-      : '張手 → 輕握 → 放手');
+      : '張手 → 輕握 → 放手')));
   if(research.active){
     const advanced = research.dualTaskLevel === 'advanced_sort_motor';
     const rule = pilotLang === 'en'
@@ -4563,11 +5016,13 @@ function updateRulesForActivity(){
         `<div style="font-size:17px;color:#5a5a5a;line-height:1.5;">${r.lines[0]}</div>`;
     }
     window.__CURRENT_RULES_CANTONESE =
-      (state.level === '4'
-        ? '前臂承托在桌面，手掌或滑墊停在物件上，向前滑動，再在目標停住。慢慢做，不計速度。'
+      (state.level === '2'
+        ? '按職業治療師選定的桌面承托玩法移動。慢慢做，不計速度。'
+        : ((state.level === '3'||state.level === '4')
+          ? shoulderExerciseProfile().patient+'至治療師所選目標，再返回。相機只追蹤已選患側手臂；角度只作訓練估算。'
         : (state.level === '67'
           ? level67ToolProfile().actionCue + '。移到位置。'
-          : '先張開手，輕輕合手拿起。移到位置，再張開手放下。')) +
+          : '先張開手，輕輕合手拿起。移到位置，再張開手放下。'))) +
       r.lines[0] + '慢慢來。';
     return;
   }
@@ -4579,11 +5034,13 @@ function updateRulesForActivity(){
       `<div style="font-size:17px;color:#5a5a5a;">由中線拿取 · ${affectedDirectionLabel()}</div>`;
   }
   window.__CURRENT_RULES_CANTONESE =
-    state.level === '4'
-      ? `前臂承托在桌面。手掌或滑墊停在${th.itemWord}上，沿中線慢慢向前滑，再在同款目標停住。不用趕。`
+    state.level === '2'
+      ? `保持桌面承托。按職業治療師選定的外滑或伸肘路徑，把${th.itemWord}送到目標。不用趕。`
+      : ((state.level === '3'||state.level === '4')
+        ? `${shoulderExerciseProfile().patient}至治療師所選目標，把${th.itemWord}送到目標，再返回。相機只追蹤已選患側手臂；角度只作訓練估算。`
       : (state.level === '67'
         ? `${level67ToolProfile().actionCue}。將${th.itemWord}移到同款目標。慢慢來。`
-        : `先張開手。輕輕合手拿起${th.itemWord}，不用大力握。移到同款目標，再張開手放下。慢慢來。`);
+        : `先張開手。輕輕合手拿起${th.itemWord}，不用大力握。移到同款目標，再張開手放下。慢慢來。`));
 }
 
 let rulesStartTimer = 0;
@@ -4768,15 +5225,23 @@ function speakCantonese(text, opts){
     return null;
   }
   try{ window.speechSynthesis.cancel(); }catch(e){}
-  const u = new SpeechSynthesisUtterance(text);
+  const english = !!(window.YCHLanguage && window.YCHLanguage.isEnglish());
+  const spokenText = english ? window.YCHLanguage.translateToEnglish(text) : window.YCHLanguage?.text(text) || text;
+  const u = new SpeechSynthesisUtterance(spokenText);
   const voices = window.speechSynthesis.getVoices();
+  const englishVoice = english
+    ? (voices.find(v => /^en-HK$/i.test(v.lang))
+      || voices.find(v => /^en-(GB|US|AU)$/i.test(v.lang))
+      || voices.find(v => /^en/i.test(v.lang)))
+    : null;
   const yueVoice = voices.find(v => /yue|zh-HK|zh_HK/i.test(v.lang))
                 || voices.find(v => /Cantonese|廣東|粵/i.test(v.name))
                 || voices.find(v => /zh-TW|zh_TW/i.test(v.lang))
                 || voices.find(v => /zh/i.test(v.lang));
-  if(yueVoice) u.voice = yueVoice;
-  u.lang = yueVoice ? yueVoice.lang : 'zh-HK';
-  u.rate = (opts && opts.rate) || 0.85;
+  const selectedVoice = english ? englishVoice : yueVoice;
+  if(selectedVoice) u.voice = selectedVoice;
+  u.lang = selectedVoice ? selectedVoice.lang : (english ? 'en-US' : 'zh-HK');
+  u.rate = (opts && opts.rate) || (english ? 0.92 : 0.85);
   u.pitch = (opts && opts.pitch) || 1.0;
   u.volume = 1.0;
   if(opts && opts.onend) u.onend = opts.onend;
@@ -5015,6 +5480,12 @@ document.getElementById('btnLevel4MarkFlexed')
   .addEventListener('click', ()=>level4ManualCapture('flexed'));
 document.getElementById('btnLevel4MarkExtended')
   .addEventListener('click', ()=>level4ManualCapture('extended'));
+document.getElementById('btnLevel4AutoCapture')
+  .addEventListener('click', ()=>level4StartAutoCalibration());
+document.getElementById('btnLevel4AutoCancel')
+  .addEventListener('click', ()=>level4CancelAutoCalibration());
+document.getElementById('btnLevel4MarkHorizontal')
+  .addEventListener('click', ()=>level4ManualCapture('horizontal'));
 
 // Retry：以相同活動及設定重玩（重新校準相機後即可開始）
 document.getElementById('btnRetry').addEventListener('click', async ()=>{
@@ -5093,6 +5564,8 @@ function exitToLevelSelection(){
   document.getElementById('calibChecklist').classList.remove('active');
   research.active = false;
   state.sessionMode = 'training';
+  state.shoulderExerciseMode = 'active';
+  if(shoulderFlexionController) shoulderFlexionController.setExerciseMode('active');
   state.qaMode = false;
   showScreen('level');
 }
@@ -5869,7 +6342,9 @@ function updateCalibrationCopy(){
   const hint = document.getElementById('calibHint');
   const openCheck = document.getElementById('calibOpenCheck');
   const closeCheck = document.getElementById('calibCloseCheck');
-  if(isLevel67BareMode()){
+  if(isShoulderFlexionLevel()){
+    hint.textContent = '已選患側肩、手肘及軀幹入鏡；患臂自然垂低。';
+  }else if(isLevel67BareMode()){
     hint.textContent = '拇指、食指、中指入鏡。先張開，再輕捏。';
     openCheck.textContent = '○ 張開三指';
     closeCheck.textContent = '○ 三指輕捏';
@@ -5901,10 +6376,29 @@ function startCalibLoop(){
     const ctx = calibCanvas.getContext('2d');
     ctx.clearRect(0,0,rectW,rectH);
 
-    const res = detectWrist(video);
+    let res;
+    if(isGrossTabletop()){
+      const pose=detectPose(video);
+      const left=activeAffectedSide()==='left';
+      const shoulder=pose?.[left?11:12];
+      const elbow=pose?.[left?13:14];
+      const wrist=pose?.[left?15:16];
+      const otherShoulder=pose?.[left?12:11];
+      const needsWrist=!isShoulderFlexionLevel();
+      const poseReady=[shoulder,elbow,otherShoulder].every(level4PosePointUsable)
+        &&(!needsWrist||level4PosePointUsable(wrist));
+      const point=needsWrist?wrist:elbow;
+      res=poseReady
+        ? {detected:true,nx:point.x,ny:point.y,lm:pose}
+        : {detected:false,nx:0,ny:0,lm:null};
+    }else{
+      res=detectWrist(video);
+    }
 
     if(res.detected){
-      document.getElementById('pixelCount').textContent = '✅ 偵測到手部';
+      document.getElementById('pixelCount').textContent = isShoulderFlexionLevel()
+        ? '✅ 偵測到已選患側肩及手肘'
+        : '✅ 偵測到手部';
       if(research.active || isGraspStyleMode()){
         const now = nowMs();
         const c = research.active ? research.calibration : state.calibration;
@@ -6054,6 +6548,25 @@ const imgPilotBasketBlue = new Image(); imgPilotBasketBlue.src = 'img/advanced/b
 const imgElephant = new Image(); imgElephant.src = 'img/elephant.png';
 const imgCat = new Image(); imgCat.src = 'img/cat.png';
 const imgDog = new Image(); imgDog.src = 'img/dog.png';
+const TSUEN_WAN_PHOTOS = [
+  ['chuen_lung','川龍街','img/advanced/tsuenwan_chuen_lung.jpg'],
+  ['market_street','荃灣街市街','img/advanced/tsuenwan_market_street.jpg'],
+  ['downtown','荃灣市區街景','img/advanced/tsuenwan_downtown.jpg'],
+  ['skyline','荃灣天際線','img/advanced/tsuenwan_skyline.jpg'],
+  ['plaza','荃灣廣場','img/advanced/tsuenwan_plaza.jpg'],
+  ['tak_wah_park','德華公園','img/advanced/tsuenwan_tak_wah_park.jpg'],
+].map(([type,label,src])=>{const img=new Image();img.src=src;return {type,label,src,img};});
+function drawTsuenWanPhotoCard(ctx,img,x,y,size){
+  if(!img||!img.complete||!img.naturalWidth)return;
+  const w=size*1.34,h=size*.90;
+  ctx.save();rrPath(ctx,x-w/2,y-h/2,w,h,12);ctx.clip();
+  const sourceRatio=img.naturalWidth/img.naturalHeight,targetRatio=w/h;
+  let sx=0,sy=0,sw=img.naturalWidth,sh=img.naturalHeight;
+  if(sourceRatio>targetRatio){sw=sh*targetRatio;sx=(img.naturalWidth-sw)/2;}
+  else{sh=sw/targetRatio;sy=(img.naturalHeight-sh)/2;}
+  ctx.drawImage(img,sx,sy,sw,sh,x-w/2,y-h/2,w,h);
+  ctx.restore();ctx.save();ctx.strokeStyle='#fff';ctx.lineWidth=4;rrPath(ctx,x-w/2,y-h/2,w,h,12);ctx.stroke();ctx.restore();
+}
 
 /* ==================== 通用 canvas 繪圖工具（活動主題用） ==================== */
 function shapeShadow(ctx, fn){
@@ -6326,8 +6839,8 @@ function drawBasket(ctx, x, y, s){
 }
 
 /* ==================== 活動主題註冊表 ==================== */
-const LEVEL_VERB = { '4':'慢慢向前滑', '5':'輕輕合手拿起', '67':'輕輕捏起' };
-const LEVEL_ACTION = { '4':'患手向前滑動', '5':'患手握放練習', '67':'患手捏放練習' };
+const LEVEL_VERB = { '2':'桌面承托慢慢移動', '3':'肩屈曲 30–60°', '4':'肩屈曲 60° 或以上', '5':'輕輕合手拿起', '67':'輕輕捏起' };
+const LEVEL_ACTION = { '2':'桌面承托訓練', '3':'患側肩屈曲 30–60°', '4':'患側肩屈曲 60° 或以上', '5':'患手握放練習', '67':'患手捏放練習' };
 const BASE_THEME = {
   verbFor(level){ return LEVEL_VERB[level] || LEVEL_VERB['4']; },
   actionLabelFor(level){ return LEVEL_ACTION[level] || LEVEL_ACTION['4']; },
@@ -6341,13 +6854,13 @@ const LEVEL4_GUIDE_ASSETS = {
   dimsum:{src:'img/advanced/level4_lateral_forward_slide_v2.gif',
     alt:'患側手肘由屈曲起始，前臂沿枱面向前滑'},
   wipewindow:{src:'img/advanced/level4_lateral_forward_slide_v2.gif',
-    alt:'伸直手肘後向患側畫大弧抹窗'},
+    alt:'手臂保持枱面高度：屈肘開始 → 伸肘向前 → 肩水平外展'},
   bowling:{src:'img/advanced/level4_bowling_real_life.gif',
     alt:'實景示範：保齡球沿球道推出撞倒球瓶'},
   mahjongwash:{src:'img/advanced/level4_mahjongwash_real_life.gif',
-    alt:'實景示範：單手前臂沿枱面畫弧洗麻雀'},
+    alt:'實景示範：手臂保持枱面高度，屈肘開始 → 伸肘向前 → 肩水平外展洗麻雀'},
   buspay:{src:'img/advanced/level4_buspay_real_life.gif',
-    alt:'合成實景示範：屈肘起點、向前伸肘、保持伸肘向外畫弧，再於巴士讀卡器拍卡'},
+    alt:'合成實景示範：手臂保持枱面高度，屈肘開始 → 伸肘向前 → 肩水平外展拍卡'},
 };
 /* Kept as an alias so older call sites and QA harnesses keep working. */
 const LEVEL4_SCENARIO_GIFS = LEVEL4_GUIDE_ASSETS;
@@ -6356,44 +6869,67 @@ function level4ScenarioGif(themeId = state.theme){
 }
 
 const THEMES = {
+  tsuenwan: mkTheme({
+    id:'tsuenwan',title:'荃灣街景相片',goal:'把荃灣街景相片送到同名的大型相片目標',
+    itemWord:'街景相片',difficulty:'容易至中等',targetStyle:'panel',
+    thumbnail:'img/advanced/tsuenwan_market_street.jpg',thumbnailAlt:'荃灣街市街真實街景相片',
+    categoriesFor(){return TSUEN_WAN_PHOTOS.map(photo=>({
+      type:photo.type,itemLabel:photo.label,targetLabel:photo.label,img:photo.img,
+      color:'#1A6B5A',drawScale:.92,labelGap:.88,
+      drawItem:(ctx,x,y,r)=>drawTsuenWanPhotoCard(ctx,photo.img,x,y,r*1.25),
+      drawIcon:(ctx,x,y,s)=>drawTsuenWanPhotoCard(ctx,photo.img,x,y,s*1.35),
+    }));},
+  }),
+  bilateral: mkTheme({
+    id:'bilateral', title:'雙手患側外滑',
+    goal:'好手帶患手，在毛巾上由中央向患側外滑',
+    itemWord:'點心', difficulty:'容易', targetStyle:'steamer',
+    thumbnail:'img/siumai.png', thumbnailAlt:'桌面承托雙手患側外滑點心遊戲',
+    verbFor(){ return '雙手及前臂承托 → 好手帶患手向患側外滑 → 返回中央'; },
+    actionLabelFor(){ return '只追蹤已選患側手腕；好手可協助，但不會成為相機控制手'; },
+    categoriesFor(){ return [
+      { type:'siumai', itemLabel:'燒賣', targetLabel:'燒賣', img:imgSiumai,
+        targetImg:imgSteamerSiumai, scale:.66, color:'#1A6B5A' },
+    ]; },
+  }),
   wipewindow: mkTheme({
     id:'wipewindow', title:'抹窗擦霧',
-    goal:'持續控制：先伸肘，再保持伸肘向外畫大弧',
+    goal:'手臂保持枱面高度：屈肘開始 → 伸肘向前 → 肩水平外展',
     itemWord:'霧氣', difficulty:'容易至中等', targetStyle:'panel',
     thumbnail:'img/advanced/level4_cartoon_side_forward.png',
     thumbnailAlt:'患手伸肘向外畫弧的 Level 4 練習',
-    verbFor(){ return '先伸肘，再向外畫弧'; },
-    actionLabelFor(){ return '先伸直手肘，保持伸肘向外畫大弧擦走霧氣'; },
+    verbFor(){ return '屈肘開始 → 伸肘向前 → 肩水平外展'; },
+    actionLabelFor(){ return '手臂保持枱面高度；伸肘向前後，肩水平外展由左至右抹窗'; },
     categoriesFor(){ return []; },
   }),
   bowling: mkTheme({
     id:'bowling', title:'保齡球',
-    goal:'幅度控制：推出再慢慢收回',
+    goal:'手臂保持枱面高度：屈肘開始 → 伸肘向前 → 屈肘返回',
     itemWord:'保齡球', difficulty:'容易', targetStyle:'panel',
     thumbnail:'img/advanced/level4_bowling_real_life.gif',
     thumbnailAlt:'實景示範：保齡球沿球道撞倒球瓶',
-    verbFor(){ return '向前伸肘再收手'; },
-    actionLabelFor(){ return '完整向前伸肘及收手'; },
+    verbFor(){ return '屈肘開始 → 伸肘向前 → 屈肘返回'; },
+    actionLabelFor(){ return '手臂保持枱面高度；屈肘開始 → 伸肘向前 → 屈肘返回'; },
     categoriesFor(){ return []; },
   }),
   mahjongwash: mkTheme({
     id:'mahjongwash', title:'洗麻雀',
-    goal:'側向控制：先伸肘，再保持伸肘沿枱面向外掃動',
+    goal:'手臂保持枱面高度：屈肘開始 → 伸肘向前 → 肩水平外展',
     itemWord:'麻雀', difficulty:'中等', targetStyle:'panel',
     thumbnail:'img/advanced/level4_mahjongwash_real_life.gif',
     thumbnailAlt:'實景示範：沿桌面畫大弧洗麻雀',
-    verbFor(){ return '先伸肘，再向外畫大弧'; },
-    actionLabelFor(){ return '先伸直手肘，保持伸肘沿桌面向外畫大弧'; },
+    verbFor(){ return '屈肘開始 → 伸肘向前 → 肩水平外展'; },
+    actionLabelFor(){ return '手臂保持枱面高度；向前伸肘後，肩水平外展洗麻雀'; },
     categoriesFor(){ return []; },
   }),
   buspay: mkTheme({
     id:'buspay', title:'巴士拍卡',
-    goal:'終點準確：先伸肘，再向外畫弧到目標停穩',
+    goal:'手臂保持枱面高度：屈肘開始 → 伸肘向前 → 拍卡 → 肩水平外展返回',
     itemWord:'讀卡器', difficulty:'中等', targetStyle:'panel',
     thumbnail:'img/advanced/level4_buspay_real_life.gif',
     thumbnailAlt:'合成實景示範：先向前伸肘，再保持伸肘向外畫弧，最後在巴士讀卡器拍卡',
-    verbFor(){ return '先伸肘，再向外停穩拍卡'; },
-    actionLabelFor(){ return '先伸直手肘，向外畫弧，再對準讀卡器停穩拍卡'; },
+    verbFor(){ return '屈肘開始 → 伸肘向前 → 肩水平外展'; },
+    actionLabelFor(){ return '手臂保持枱面高度；拍卡後肩水平外展由左至右返回'; },
     categoriesFor(){ return []; },
   }),
   dimsum: mkTheme({
@@ -6401,7 +6937,7 @@ const THEMES = {
     itemWord:'點心', difficulty:'容易', targetStyle:'steamer',
     thumbnail:'img/siumai.png', thumbnailAlt:'燒賣點心',
     categoriesFor(level){
-      return level === '4' || level === '5'
+      return ['2','3','4','5'].includes(level)
         ? [ { type:'charsiu',   itemLabel:'叉燒包', targetLabel:'叉燒包', img:imgCharsiu, targetImg:imgSteamerCharsiu, scale:0.66, color:'#1A6B5A' },
             { type:'lotusrice', itemLabel:'糯米雞', targetLabel:'糯米雞', img:imgLotusrice, targetImg:imgSteamerLotusrice, scale:0.66, color:'#E07B39' } ]
         : [ { type:'siumai', itemLabel:'燒賣', targetLabel:'燒賣', img:imgSiumai, targetImg:imgSteamerSiumai, scale:0.66, color:'#1A6B5A' },
@@ -6547,7 +7083,8 @@ const LEVEL3_THEME_VARIANTS = {
 let level3RoundVariant = null;
 let level3PreviousVariantType = '';
 function level3VariantPool(themeId = state.theme){
-  return LEVEL3_THEME_VARIANTS[themeId] || THEMES[themeId]?.categoriesFor('3') || [];
+  return LEVEL3_THEME_VARIANTS[themeId === 'bilateral' ? 'dimsum' : themeId]
+    || THEMES[themeId]?.categoriesFor('2') || [];
 }
 function chooseLevel3RoundVariant(){
   const pool = level3VariantPool();
@@ -6560,22 +7097,31 @@ function chooseLevel3RoundVariant(){
   return selected;
 }
 function advanceLevel3RoundVariant(){
-  if(!isLevel3Tabletop()) return;
+  if(!(isLevel3Tabletop() || isShoulderFlexionLevel())) return;
   chooseLevel3RoundVariant();
   setupTargets();
 }
 function themeAvailableForLevel(themeId, level = state.level){
-  if(['wipewindow','bowling','mahjongwash','buspay'].includes(themeId)) return level === '4';
+  if(['wipewindow','bowling','mahjongwash','buspay'].includes(themeId)) return level === '2';
   return themeId !== 'cooking' || level === '67';
 }
 function availableThemeOrder(level = state.level){
+  if(level === '2'){
+    // Level 2 owns every tabletop-supported activity: the inherited bilateral
+    // themes plus the former supported elbow/horizontal-path games.
+    return ['bilateral','tsuenwan','dimsum','flowers','laundry','cards','mahjong','wipewindow','bowling','mahjongwash','buspay'];
+  }
+  if(level === '3' || level === '4'){
+    // Same visual choices, different OT-selected shoulder-flexion band.
+    return ['tsuenwan','dimsum','flowers','laundry','cards','mahjong'];
+  }
   if(level === '4'){
     return ['dimsum','wipewindow','bowling','mahjongwash','buspay'];
   }
   return THEME_ORDER.filter(id=>themeAvailableForLevel(id, level));
 }
 function visibleThemeOrder(level = state.level){
-  if(level !== '4') return availableThemeOrder(level);
+  if(level !== '2') return availableThemeOrder(level);
   const allowed = new Set(availableThemeOrder(level));
   const selected = state.level4SessionThemes.filter(id=>allowed.has(id));
   return selected.length ? selected : ['dimsum'];
@@ -6584,12 +7130,12 @@ function visibleThemeOrder(level = state.level){
 function renderLevel4SessionPicker(){
   const picker = document.getElementById('level4SessionPicker');
   if(!picker) return;
-  const isLevel4 = state.level === '4';
-  picker.hidden = !isLevel4;
-  if(!isLevel4) return;
-  const selected = visibleThemeOrder('4');
+  const isLevel2 = state.level === '2';
+  picker.hidden = !isLevel2;
+  if(!isLevel2) return;
+  const selected = visibleThemeOrder('2');
   document.getElementById('level4SessionSummary').textContent =
-    'Level 4 遊戲 · 顯示 ' + selected.length + ' 款';
+    'Level 2 承托遊戲 · 顯示 ' + selected.length + ' 款';
   document.getElementById('level4SessionMessage').textContent = '按下可顯示／隱藏';
   picker.querySelectorAll('[data-level4-session-theme]').forEach(button=>{
     button.setAttribute('aria-pressed', selected.includes(button.dataset.level4SessionTheme) ? 'true' : 'false');
@@ -6602,7 +7148,7 @@ function getCategories(){
   // Level 3 keeps one central object and one affected-side destination so the
   // bilateral outward slide remains the only required movement. The visual
   // item changes after each completed round, without repeating immediately.
-  if(isLevel3Tabletop()){
+  if(isLevel3Tabletop() || isShoulderFlexionLevel()){
     return [level3RoundVariant || chooseLevel3RoundVariant() || categories[0]];
   }
   return categories;
@@ -6659,6 +7205,10 @@ let heldItem = null;
 let releaseDwellStart = 0;  // ms timestamp when user started releasing hand (0 = not releasing)
 let releaseDwellPlate = null; // which plate cursor was on when release started
 let score = 0, correctCount = 0, grabCount = 0;
+let shoulderFlexionLastRepetition = 0;
+let shoulderFlexionCycleAwarded = false;
+let shoulderHoldSpokenSecond = null;
+let shoulderHoldInterruptedSpoken = false;
 let totalWrong = 0;
 let basicOpenStart = 0, basicGraspStart = 0, basicGraspCandidate = '', basicGraspArmed = false;
 let basicContactCandidate = '', basicContactUntil = 0;
@@ -6914,7 +7464,8 @@ function playWrongSound(){
 }
 function showFeedback(correct){
   const el = document.getElementById('feedbackOverlay');
-  el.textContent = correct ? '✅' : '❌';
+  el.textContent = correct ? '✓' : '✕';
+  el.classList.toggle('correct-feedback',correct);
   el.style.opacity = '1';
   el.style.display = 'flex';
   setTimeout(()=>{ el.style.opacity = '0'; }, 600);
@@ -6924,6 +7475,53 @@ function triggerFeedback(correct){
   if(research.active && research.visitKind === 'assess') return;
   if(correct){ playCorrectSound(); showFeedback(true); }
   else { playWrongSound(); showFeedback(false); }
+}
+const SHOULDER_HOLD_COUNT_CANTONESE={1:'一',2:'二',3:'三',4:'四',5:'五'};
+function hideTargetHoldCountdown(){
+  const overlay=document.getElementById('targetHoldOverlay');
+  if(!overlay)return;
+  overlay.classList.remove('show');
+  overlay.setAttribute('aria-hidden','true');
+}
+function syncTargetHoldFeedback(){
+  if(!isShoulderFlexionLevel()){
+    hideTargetHoldCountdown();
+    return;
+  }
+  const shoulder=shoulderFlexionState||{};
+  const overlay=document.getElementById('targetHoldOverlay');
+  const number=document.getElementById('targetHoldNumber');
+  if(shoulder.phase==='target-hold'&&shoulder.holdInterrupted){
+    hideTargetHoldCountdown();
+    shoulderHoldSpokenSecond=null;
+    if(!shoulderHoldInterruptedSpoken){
+      shoulderHoldInterruptedSpoken=true;
+      speakCantonese('請再抬高手臂，保持住。',{rate:.82});
+    }
+    return;
+  }
+  shoulderHoldInterruptedSpoken=false;
+  if(shoulder.holdFeedbackActive){
+    hideTargetHoldCountdown();
+    shoulderHoldSpokenSecond=null;
+    return;
+  }
+  if(shoulder.holdCountdownActive&&Number(shoulder.holdRemainingSec)>0){
+    const remaining=Math.max(1,Math.min(5,Number(shoulder.holdRemainingSec)));
+    if(number)number.textContent=String(remaining);
+    if(overlay){
+      overlay.classList.add('show');
+      overlay.setAttribute('aria-hidden','false');
+    }
+    if(remaining!==shoulderHoldSpokenSecond){
+      shoulderHoldSpokenSecond=remaining;
+      speakCantonese((remaining===Math.ceil(Number(shoulder.holdDurationMs)/1000)
+        ? '保持舉高手臂。':'')+(SHOULDER_HOLD_COUNT_CANTONESE[remaining]||remaining)+'。',{rate:.76});
+    }
+    return;
+  }
+  hideTargetHoldCountdown();
+  shoulderHoldSpokenSecond=null;
 }
 /* ===================================== */
 
@@ -6947,6 +7545,11 @@ function initGame(){
   // 舊版【關卡說明 banner】已被 showLevelUpBanner() 取代（將在 state.running=true 之後觸發）
 
   score = 0; correctCount = 0; grabCount = 0; totalWrong = 0; wrongStreak = 0;
+  shoulderFlexionLastRepetition = 0;
+  shoulderFlexionCycleAwarded = false;
+  shoulderHoldSpokenSecond = null;
+  shoulderHoldInterruptedSpoken = false;
+  hideTargetHoldCountdown();
   lastLevelShown = -1;  // reset 升級追蹤，讓 initGame 後首次 spawn 觸發 tier 0 banner
   heldItem = null; foods = []; targets = [];
   releaseDwellStart = 0; releaseDwellPlate = null;
@@ -6961,12 +7564,20 @@ function initGame(){
   trackingPointHistory = [];
   level3Lateral.reset();
   level4Reach.reset();
+  if(shoulderFlexionController){
+    shoulderFlexionController.reset(state.level,state.shoulderTargetDeg);
+    shoulderFlexionController.setTarget(state.shoulderTargetDeg,state.level);
+    shoulderFlexionController.setHoldDuration(isShoulderFlexionLevel()?Number(state.dwellMs)/1000:0);
+    shoulderFlexionController.setExerciseMode(state.shoulderExerciseMode);
+    shoulderFlexionState=shoulderFlexionController.snapshot();
+  }
   level4Wipe.reset();
+  level4DimSumCycle.reset();
   level4MiniGames.reset();
   level4UpdateCalibrationBar();
   level3RoundVariant = null;
   level3PreviousVariantType = '';
-  if(isLevel3Tabletop()) chooseLevel3RoundVariant();
+  if(isLevel3Tabletop() || isShoulderFlexionLevel()) chooseLevel3RoundVariant();
   if(isGrossTabletop()) ensurePoseLandmarker().catch(()=>null);
 
   timeLeft = state.duration; // 由用家選擇
@@ -6975,6 +7586,7 @@ function initGame(){
   resizeGameCanvas();
   const gameStage = document.querySelector('.game-stage');
   if(gameStage) gameStage.classList.toggle('level4-selfie-window', isLevel4WipeGame());
+  if(gameStage) gameStage.classList.toggle('shoulder-flexion-game', isShoulderFlexionLevel());
   // 先顯示提示，讓第一局生成物件時已可量度右上角提示禁區
   setActionPrompt('等待偵測手部', '手放鏡頭前');
   if(isLevel4StandaloneGame()){
@@ -7103,6 +7715,16 @@ function setupTargets(){
       y:ch * 0.72, w:tw, h:th,
       color:category.color || '#1A6B5A',
     }];
+    return;
+  }
+  if(isShoulderFlexionLevel()){
+    const tw=Math.min(cw*.38,320);
+    const th=tw*(style==='steamer'?.74:.62);
+    const category=cats[0];
+    const laneX=cw*(portrait?.68:.58);
+    targets=[{type:category.type,label:category.targetLabel,img:category.targetImg||category.img||null,
+      drawIcon:category.drawIcon||null,style,x:laneX,y:ch*.32,w:tw,h:th,
+      color:category.color||'#1A6B5A'}];
     return;
   }
   if(isLevel4Tabletop()){
@@ -7309,18 +7931,24 @@ function makeFoodAt(def, existingFoods){
   // Safety default for public Level 5: larger objects are easier to pick up with a
   // light, non-forceful grasp and easier to release.
   const level5Boost = (!research.active && state.level === '5') ? 1.18 : 1;
-  const baseR = (isLevel4Tabletop() ? (portrait ? 78 : 104)
-    : (portrait ? (advancedPilot ? 62 : 72) : 100)) * level5Boost;
+  const baseR = (isShoulderFlexionLevel() ? (portrait ? 104 : 138)
+    : (isLevel4Tabletop() ? (portrait ? 78 : 104)
+      : (portrait ? (advancedPilot ? 62 : 72) : 100))) * level5Boost;
   // Task-specific strata: FTHUE 6 and 7 use progressively smaller objects.
   const level67DimSum = state.level === '67' && dimSumTheme;
-  const requestedR = baseR * (def.scale || 1.0) *
+  const requestedR = baseR * (isShoulderFlexionLevel() ? 1 : (def.scale || 1.0)) *
     (research.active ? pilotStratum().itemScale : 1) * (level67DimSum ? 1.5 : 1);
   // On compact portrait canvases the 1.5× size is capped only when necessary
   // to preserve a clear three-item layout and an unobstructed instruction area.
   const maxLevel67DimSumR = portrait
     ? Math.min(cw * 0.135, ch * 0.11)
     : cw * 0.135;
-  const r = level67DimSum ? Math.min(requestedR, maxLevel67DimSumR) : requestedR;
+  const shoulderFlexionMaxR=portrait
+    ? Math.min(cw*.24,ch*.13)
+    : Math.min(cw*.16,ch*.19);
+  const r = level67DimSum
+    ? Math.min(requestedR, maxLevel67DimSumR)
+    : (isShoulderFlexionLevel() ? Math.min(requestedR,shoulderFlexionMaxR) : requestedR);
 
   // 直向以兩欄多列分佈；橫向保留足夠肩部移動距離，同時容納進階版最多 6 個物件。
   // 限制 spawn 區域：左右都留更大邊距（避免右下角衝碰磟子造成 jitter）
@@ -7345,8 +7973,8 @@ function makeFoodAt(def, existingFoods){
     drawScale: def.drawScale || 0.92, labelGap: def.labelGap || 1.04,
     x, y, r, baseX: x, baseY: y, held: false, removed: false,
   });
-  if(isLevel3Tabletop()){
-    return createFood(cw * 0.50, ch * 0.72);
+  if(isLevel3Tabletop() || isShoulderFlexionLevel()){
+    return createFood(isShoulderFlexionLevel()?cw*(portrait?.68:.58):cw*.50, ch * 0.72);
   }
   const clearsProtectedZones = (x, y) => {
     if(circleOverlapsRect(x, y, r, instructionExclusion)) return false;
@@ -7429,7 +8057,7 @@ function spawnDistractor(existingFoods){
 // 目標：畫面上保持 3 個活動配對物件 + N 個 distractor 動物（N = getDistractorCount()）
 const DIM_SUM_TARGET = 3;
 function dimSumTargetCount(){
-  if(isLevel3Tabletop()) return 1;
+  if(isLevel3Tabletop() || isShoulderFlexionLevel()) return 1;
   return isLevel4Tabletop() ? 2 : DIM_SUM_TARGET;
 }
 
@@ -7495,7 +8123,9 @@ function rotateCognitiveInstruction(){
 function updateHUD(){
   document.getElementById('hudScore').textContent = score;
   document.getElementById('hudCorrect').textContent = correctCount;
-  document.getElementById('hudGrabs').textContent = grabCount;
+  const grabsLabel=document.getElementById('hudGrabsLabel');
+  if(grabsLabel) grabsLabel.textContent=isShoulderFlexionLevel()?'達標':'拿取';
+  document.getElementById('hudGrabs').textContent = isShoulderFlexionLevel() ? correctCount : grabCount;
   // 將秒數格式化為 mm:ss
   const t = Math.max(0, timeLeft);
   const mm = Math.floor(t/60).toString().padStart(2,'0');
@@ -7516,6 +8146,7 @@ function gameLoop(){
     updateTracking();
     if(usesAdvancedThemeModule()){ advUpdate(); advRender(); }
     else { updateGameLogic(); renderGame(); }
+    drawLevel4SelectedArmOverlay(gameCtx, gameCanvas.width, gameCanvas.height);
   }
   gameRAF = requestAnimationFrame(gameLoop);
 }
@@ -7556,18 +8187,16 @@ function readGrossPoseHand(lm){
   }
   if(!Array.isArray(lm)) return {detected:false};
   if(isLevel3Tabletop()){
-    const leftWrist = lm[15], rightWrist = lm[16];
-    if(!level4PosePointUsable(leftWrist) || !level4PosePointUsable(rightWrist)){
-      return {detected:false};
-    }
+    const selectedWrist=lm[activeAffectedSide()==='left'?15:16];
+    if(!level4PosePointUsable(selectedWrist)) return {detected:false};
     return {
       detected:true,
       nx:state.qaMode && Number.isFinite(qaHand?.nx)
         ? qaHand.nx
-        : interactionX((leftWrist.x+rightWrist.x)/2),
+        : interactionX(selectedWrist.x),
       ny:state.qaMode && Number.isFinite(qaHand?.ny)
         ? qaHand.ny
-        : (leftWrist.y+rightWrist.y)/2,
+        : selectedWrist.y,
       isGrasping:false,
       isOpenPrep:true,
       source:'pose-bilateral-wrist-live'
@@ -7585,10 +8214,11 @@ function readGrossPoseHand(lm){
   };
 }
 
-/* ---------- Level 3 bilateral affected-side slide controller ----------
-   The cursor follows the midpoint of both wrists, not either hand alone.
-   Camera coordinates are mapped once into the mirrored display coordinate
-   system, then compared with a neutral midline baseline. */
+/* ---------- Level 2 bilateral affected-side slide controller ----------
+   The physical task remains bilateral (the unaffected hand may guide the
+   affected hand), but camera control uses only the OT-selected anatomical
+   affected wrist. The opposite arm can never substitute for a lost selected
+   arm. Mirroring changes display X only; it never swaps landmark indices. */
 const level3Lateral = {
   baselineX:null,
   samples:[],
@@ -7603,13 +8233,13 @@ const level3Lateral = {
 };
 function updateLevel3LateralController(lm, cw, ch){
   if(!isLevel3Tabletop()) return level3Lateral;
-  const leftWrist = lm?.[15], rightWrist = lm?.[16];
-  if(!level4PosePointUsable(leftWrist) || !level4PosePointUsable(rightWrist)){
+  const wrist=lm?.[activeAffectedSide()==='left'?15:16];
+  if(!level4PosePointUsable(wrist)){
     return level3Lateral;
   }
   const midpoint = cameraPointToCanvas(
-    interactionX((leftWrist.x+rightWrist.x)/2),
-    (leftWrist.y+rightWrist.y)/2,
+    interactionX(wrist.x),
+    wrist.y,
     cw,
     ch
   );
@@ -7638,10 +8268,22 @@ function updateLevel3LateralController(lm, cw, ch){
 
    `level4Reach` is a live mirror of that controller state. Every Level 4 game
    reads the same angle progress, so extension always means forward/up progress
-   and flexion always means return. The separately reported lateral signal is
-   consumed only by path games and never changes angle progress. */
+   and flexion always means return. The separately reported approximate
+   shoulder-horizontal-abduction range supplies an ordered path-game X phase
+   only and never changes angle progress. */
 const level4Calibration = window.Level4ElbowCalibration || null;
 const level4Controller = level4Calibration ? level4Calibration.createController() : null;
+const level4AutoCalibration = level4Calibration && level4Controller
+  ? level4Calibration.createAutoCalibration() : null;
+const shoulderFlexionApi = window.ShoulderFlexionController || null;
+const shoulderFlexionController = shoulderFlexionApi
+  ? shoulderFlexionApi.createController({level:'3'}) : null;
+let shoulderFlexionState = shoulderFlexionController
+  ? shoulderFlexionController.snapshot()
+  : {phase:'unavailable',reason:'module-missing',calibrated:false,gameReady:false,
+    framingReady:false,progress:0,newFrame:false,frame:{fresh:false}};
+let level4SelectedOverlayPose = null;
+let level4AutoRetryAvailableAt = 0;
 const level4Reach = {
   stage:'framing',
   reason:level4Controller ? 'framing' : 'calibration-module-missing',
@@ -7654,9 +8296,10 @@ const level4Reach = {
   reachGate:false,
   returnReady:true,
   completionReady:false,
-  shoulderHike:false,
   warning:'',
   elbowAngle:null,
+  shoulderAbduction:null,
+  autoCalibration:{phase:'idle', stableFrames:0, requiredStableFrames:8, countdownRemainingMs:0, reason:'idle'},
   imageAspect:1,
   separation:{},
   endpoints:{flexed:null, extended:null},
@@ -7665,8 +8308,8 @@ const level4Reach = {
   manual:{flexed:false, extended:false},
   retryCount:0,
   captureCount:{flexed:0, extended:0},
-  // Signal B: shoulder-abduction / lateral arc. Only the path games
-  // (抹窗 wipewindow, 洗麻雀 mahjongwash, 巴士拍卡 buspay) consume it; 茶樓 dimsum and
+  // Signal B: approximate shoulder-horizontal-abduction range. Only the path games
+  // (抹窗 wipewindow, 洗麻雀 mahjongwash, 巴士拍卡 buspay) consume its X axis; 茶樓 dimsum and
   // 保齡球 bowling use the linear flexion/extension progress alone.
   lateral:null,
   arcProgress:0,
@@ -7674,6 +8317,11 @@ const level4Reach = {
   arcActive:false,
   arcCalibrated:false,
   arcBaseline:null,
+  abductionProgress:0,
+  abductionInstant:0,
+  abductionCalibrated:false,
+  abductionBaseline:null,
+  abductionRange:null,
   stabilizer:null,
   filtered:null,
   frame:{
@@ -7684,6 +8332,8 @@ const level4Reach = {
   newFrame:false,
   side:'right',
   reset(){
+    level4AutoRetryAvailableAt = 0;
+    if(level4AutoCalibration) level4AutoCalibration.reset('reset');
     if(level4Controller) level4Controller.reset();
     level4SyncReachMirror();
     level4UpdateCalibrationBar();
@@ -7720,7 +8370,6 @@ function level4SyncReachMirror(){
   level4Reach.reachGate = snap.reachGate;
   level4Reach.returnReady = snap.returnReady;
   level4Reach.completionReady = snap.completionReady;
-  level4Reach.shoulderHike = snap.shoulderHike;
   level4Reach.warning = snap.warning;
   level4Reach.separation = snap.separation;
   level4Reach.endpoints = snap.endpoints;
@@ -7733,12 +8382,21 @@ function level4SyncReachMirror(){
   const signals = snap.signals || {};
   level4Reach.elbowAngle = Number.isFinite(snap.rawAngle) ? snap.rawAngle
     : (Number.isFinite(signals.angle) ? signals.angle : null);
+  level4Reach.shoulderAbduction = Number.isFinite(snap.filteredShoulderAbduction)
+    ? snap.filteredShoulderAbduction : null;
+  level4Reach.autoCalibration = level4AutoCalibration ? level4AutoCalibration.snapshot()
+    : {phase:'unavailable', stableFrames:0, requiredStableFrames:0, countdownRemainingMs:0, reason:'module-missing'};
   level4Reach.lateral = snap.lateral;
   level4Reach.arcProgress = snap.arcProgress;
   level4Reach.arcInstant = snap.arc ? snap.arc.instant : 0;
   level4Reach.arcActive = snap.arcActive;
   level4Reach.arcCalibrated = snap.arc ? snap.arc.calibrated : false;
   level4Reach.arcBaseline = snap.arc ? snap.arc.baseline : null;
+  level4Reach.abductionProgress = clamp01(snap.abductionProgress || 0);
+  level4Reach.abductionInstant = clamp01(snap.abductionInstant || 0);
+  level4Reach.abductionCalibrated = snap.abductionCalibrated === true;
+  level4Reach.abductionBaseline = Number.isFinite(snap.abductionBaseline) ? snap.abductionBaseline : null;
+  level4Reach.abductionRange = Number.isFinite(snap.abductionRange) ? snap.abductionRange : null;
   level4Reach.stabilizer = snap.stabilizer || null;
   level4Reach.filtered = snap.filtered || null;
   level4Reach.frame = snap.frame || level4Reach.frame;
@@ -7749,24 +8407,37 @@ function level4SyncReachMirror(){
 /* Compact therapist fallback: mark the current pose as the flexed start or the
    extended end when automatic stable capture struggles bedside. */
 function level4ManualCapture(which){
+  // A therapist deliberately using the fallback stops any unattended run first.
+  if(level4AutoCalibration) level4AutoCalibration.cancel();
   if(!level4Controller) return level4Reach;
   const frame = level4FrameStatus(gameVideo);
-  const hasCurrentPose = state.qaMode || lastPoseFrameGeneration === frame.generation;
+  let hasCurrentPose = state.qaMode || lastPoseFrameGeneration === frame.generation;
+  // The decoded camera generation can advance just before the normal game-loop
+  // inference completes.  On a deliberate therapist tap, infer that exact
+  // visible generation once and admit it through the normal Level 4 packet
+  // route.  Anatomical side selection remains fixed; the opposite arm is never
+  // used as a fallback.
+  if(frame.fresh && !hasCurrentPose && !state.qaMode){
+    const currentPose = detectPose(gameVideo, frame.generation);
+    if(currentPose && lastPoseFrameGeneration === frame.generation){
+      updateLevel4ReachController(currentPose, lastPoseWorldLm, frame);
+      hasCurrentPose = true;
+    }
+  }
   if(!frame.fresh || !hasCurrentPose){
     // A therapist mark must describe the image currently on screen. Never
     // capture endpoint data from a cached pose after a Safari frame freeze or
-    // from an older decoded frame after an inference miss.
-    level4Controller.update({
-      frameFresh:!!frame.fresh,
-      frameGeneration:frame.generation,
-      frameStale:!frame.fresh,
-      frame,
-    });
-    level4SyncReachMirror();
+    // from an older decoded frame after an inference miss.  Crucially, do not
+    // inject an arm-less packet here: that would misreport selected-arm loss
+    // even while the live overlay is tracking the patient.
+    level4Reach.warning = frame.fresh
+      ? '等待目前畫面的患側手臂 · Waiting for the current affected-arm frame'
+      : '相機畫面未更新 · Waiting for a fresh camera frame';
     level4UpdateCalibrationBar();
     return level4Reach;
   }
   if(which === 'extended') level4Controller.markExtended();
+  else if(which === 'horizontal') level4Controller.markHorizontal();
   else level4Controller.markFlexed();
   level4SyncReachMirror();
   level4UpdateCalibrationBar();
@@ -7777,6 +8448,67 @@ function level4ManualCapture(which){
     calibrated:level4Reach.calibrated,
   });
   return level4Reach;
+}
+function level4StartAutoCalibration(){
+  if(!level4AutoCalibration) return level4Reach;
+  level4AutoRetryAvailableAt = 0;
+  level4AutoCalibration.start(nowMs(), {requireHorizontal:isLevel4HorizontalPathGame()});
+  level4SyncReachMirror();
+  level4UpdateCalibrationBar();
+  return level4Reach;
+}
+function level4MaybeStartAutoCalibration(){
+  if(!level4AutoCalibration || !isLevel4Tabletop() || level4Reach.gameReady) return false;
+  const auto = level4AutoCalibration.snapshot();
+  if(!['idle','retry'].includes(auto.phase) || auto.preAnchor?.available !== true) return false;
+  const now = nowMs();
+  if(auto.phase === 'retry'){
+    if(!level4AutoRetryAvailableAt) level4AutoRetryAvailableAt = now + 1200;
+    if(now < level4AutoRetryAvailableAt) return false;
+  }
+  level4AutoRetryAvailableAt = 0;
+  level4AutoCalibration.start(now, {requireHorizontal:isLevel4HorizontalPathGame()});
+  return true;
+}
+function level4CancelAutoCalibration(){
+  if(!level4AutoCalibration) return level4Reach;
+  level4AutoCalibration.cancel();
+  level4SyncReachMirror();
+  level4UpdateCalibrationBar();
+  return level4Reach;
+}
+function level4AutoGuidance(auto){
+  const a = auto || {};
+  if(a.phase === 'countdown') return { main:'治療師請退後；患者保持承托屈肘', en:'Therapist step away; patient hold supported elbow flexion' };
+  if(a.phase === 'capture-flexed') return { main:'保持承托屈肘，不要動', en:'hold-flexed' };
+  if(a.phase === 'capture-extended') return { main:'請慢慢伸直手肘，停住', en:'extend-and-hold' };
+  if(a.phase === 'capture-horizontal') return { main:'保持伸肘，向外移動後停住', en:'keep-elbow-extended-and-move-outward' };
+  if(a.phase === 'retry' && a.reason === 'pre-anchor-required') return { main:'請讓患者獨自在鏡頭內保持；等候幾秒後重試', en:'Keep patient alone and in frame; wait briefly, then retry' };
+  if(a.phase === 'retry' && a.reason === 'torso-moved/person-changed') return { main:'軀幹位置改變或已換人；請讓同一位患者回到鏡頭後重試', en:'torso-moved/person-changed' };
+  if(a.reason === 'selected-arm-lost') return { main:'未見已選患側手臂；請讓肩、肘、手腕回到畫面', en:'selected-arm-lost' };
+  if(a.phase === 'retry') return { main:'自動標記未完成；可重試或使用手動按鈕', en:'Auto capture did not finish; retry or use manual buttons' };
+  return null;
+}
+function level4PatientReadyGuidance(){
+  // Only the three path games expose a shoulder-horizontal-abduction phase.
+  // Keep dim sum, bowling, and the generic/unselected Level 4 state entirely
+  // elbow-only so the patient never sees an irrelevant lateral instruction.
+  if(isLevel4WipeGame()) return {
+    main:'屈肘開始 → 伸肘向上 → 肩水平外展由左至右',
+    en:'Flexed start → extend up → shoulder horizontal abduction left to right'
+  };
+  if(isLevel4MahjongWashGame()) return {
+    main:'屈肘開始 → 伸肘向前 → 肩水平外展順時針洗牌',
+    en:'Flexed start → extend forward → shoulder horizontal abduction clockwise'
+  };
+  if(isLevel4BusPayGame()) return {
+    main:'屈肘開始 → 伸肘向上拍卡 → 肩水平外展由左至右返回',
+    en:'Flexed start → extend up to pay → shoulder horizontal abduction left to right back'
+  };
+  return {
+    main:'屈肘開始 → 伸肘向上／向前 → 屈肘返回',
+    en:'Flexed start → extend up/forward → flexed return'
+  };
 }
 function level4CalibrationDiagnosticsLine(){
   if(!level4Controller) return 'calibration module missing';
@@ -7791,13 +8523,23 @@ function level4CalibrationDiagnosticsLine(){
     'state ' + (level4Reach.gameReady ? 'READY' : 'NOT READY') + ' · ' + level4Reach.reason,
     'captured ' + endpoints + ' · Δ ' + (Number.isFinite(level4Reach.separation?.angle)
       ? level4Reach.separation.angle.toFixed(1) + '°' : '—'),
+    'shoulder abduction ' + (Number.isFinite(level4Reach.shoulderAbduction) ? level4Reach.shoulderAbduction.toFixed(1) + '°' : '—'),
+    'auto phase ' + (level4Reach.autoCalibration?.phase || 'idle') + ' · stable '
+      + (level4Reach.autoCalibration?.stableFrames ?? 0) + '/' + (level4Reach.autoCalibration?.requiredStableFrames ?? 0)
+      + ' · countdown ' + Math.ceil((level4Reach.autoCalibration?.countdownRemainingMs || 0)/1000)
+      + ' · reject ' + (level4Reach.autoCalibration?.reason || '—')
+      + ' · pre-anchor ' + (level4Reach.autoCalibration?.preAnchor?.available ? 'READY' : 'WAIT')
+      + ' ' + (level4Reach.autoCalibration?.preAnchor?.stableFrames ?? 0) + '/' + (level4Reach.autoCalibration?.preAnchor?.requiredFrames ?? 0)
+      + ' ' + (level4Reach.autoCalibration?.preAnchor?.frozen ? 'FROZEN' : 'LIVE')
+      + ' · candidate Δ ' + (Number.isFinite(level4Reach.autoCalibration?.candidate?.separation)
+        ? level4Reach.autoCalibration.candidate.separation.toFixed(1) + '°' : '—'),
     'raw ' + (Number.isFinite(level4Reach.elbowAngle) ? level4Reach.elbowAngle.toFixed(1) + '°' : '—')
       + ' · filtered ' + filtered + ' · progress ' + level4Reach.progress.toFixed(2),
     'frame ' + (frame.fresh ? 'FRESH' : 'STALE') + ' gen ' + (frame.generation ?? '—')
       + ' new ' + (level4Reach.newFrame ? 'YES' : 'NO')
       + ' age ' + (Number.isFinite(frame.ageMs) ? Math.round(frame.ageMs) + 'ms' : '—')
       + ' · ' + (frame.source || 'none') + ' · ' + (frame.reason || 'unknown'),
-    'arc lateral ' + (Number.isFinite(level4Reach.lateral) ? level4Reach.lateral.toFixed(3) : '—')
+    'path shoulder-outward ' + (Number.isFinite(level4Reach.abductionBaseline) ? level4Reach.abductionBaseline.toFixed(3) : '—')
       + ' · progress ' + Number(level4Reach.arcProgress || 0).toFixed(2)
       + ' · ' + (level4Reach.arcActive ? 'active' : 'waiting'),
   ].join('\n');
@@ -7805,25 +8547,91 @@ function level4CalibrationDiagnosticsLine(){
 function level4UpdateCalibrationBar(){
   const bar = document.getElementById('level4CalibBar');
   if(!bar) return;
-  const active = isLevel4Tabletop() && currentScreen === 'game';
+  const active = (isLevel4Tabletop() || isShoulderFlexionLevel()) && currentScreen === 'game';
   bar.classList.toggle('show', active);
   if(!active) return;
+  bar.setAttribute('aria-label',isShoulderFlexionLevel()
+    ? '肩屈曲自動設定及相機估算進度 / automatic shoulder-flexion setup'
+    : 'Level 2 桌面承托動作設定 / supported tabletop setup');
   const hint = document.getElementById('level4CalibHint');
   const diag = document.getElementById('level4CalibDiag');
-  const guide = level4Reach.guidance();
-  const rawAngle = document.getElementById('level4RawElbowAngle');
-  const filteredAngle = document.getElementById('level4FilteredElbowAngle');
-  const normalised = document.getElementById('level4NormalizedProgress');
-  const recognised = document.getElementById('level4RecognisedState');
-  if(rawAngle) rawAngle.textContent = Number.isFinite(level4Reach.elbowAngle)
-    ? level4Reach.elbowAngle.toFixed(1) + '°' : '—';
-  if(filteredAngle) filteredAngle.textContent = Number.isFinite(level4Reach.filtered?.angle)
-    ? level4Reach.filtered.angle.toFixed(1) + '°' : '—';
-  if(normalised) normalised.textContent = Math.round(clamp01(level4Reach.progress)*100) + '%';
-  if(recognised) recognised.textContent = level4Reach.gameReady ? '已就緒' : '未就緒';
-  if(hint){
-    hint.innerHTML = '<span>' + guide.main + (guide.detail ? ' · ' + guide.detail : '') + '</span>'
-      + '<span class="en">' + guide.en + '</span>';
+  if(isShoulderFlexionLevel()){
+    bar.classList.add('shoulder-live');
+    const shoulder=shoulderFlexionState;
+    const guide=shoulderFlexionController
+      ? shoulderFlexionController.guidance()
+      : {main:'肩屈曲模組未載入',en:'Shoulder-flexion module unavailable'};
+    const hint=document.getElementById('level4CalibHint');
+    if(hint) hint.textContent=guide.main;
+    const selectedArmLabel=document.getElementById('level4SelectedArmLabel');
+    if(selectedArmLabel) selectedArmLabel.textContent='患側：'+(activeAffectedSide()==='left'?'左':'右')+'手臂';
+    const labels=document.querySelectorAll('.level4-live-readouts .level4-reading > span');
+    if(labels[0]) labels[0].textContent='現在';
+    if(labels[1]) labels[1].textContent='目標';
+    // Keep the most recent valid fresh-frame estimate visible between Pose
+    // inferences. `newFrame` is intentionally not required here: it remains
+    // the mutation/scoring gate, while ordinary RAF redraws must not make the
+    // patient-facing angle flash between a degree value and "paused".
+    const liveAngleReady=shoulder.framingReady&&shoulder.gameReady
+      &&shoulder.frame?.fresh===true&&shoulder.reason==='ready'
+      &&Number.isFinite(shoulder.estimatedAngle);
+    document.getElementById('level4FlexedEndpoint').textContent=liveAngleReady
+      ? Math.round(shoulder.estimatedAngle)+'°' : '暫停';
+    document.getElementById('level4ExtendedEndpoint').textContent=Number.isFinite(shoulder.selectedTargetDeg)?shoulder.selectedTargetDeg+'°':'—';
+    document.getElementById('level4ShoulderAbductionReading').hidden=true;
+    document.getElementById('level4AutoAction').hidden=true;
+    document.getElementById('level4ManualActions').hidden=true;
+    document.getElementById('btnLevel4AutoCancel').hidden=true;
+    const progress=document.getElementById('level4AutoProgress');
+    if(progress){
+      progress.hidden=shoulder.calibrated;
+      progress.textContent='找起點 '+(shoulder.stableFrames||0)+'/'+(shoulder.requiredStableFrames||8);
+    }
+    const diag=document.getElementById('level4CalibDiag');
+    if(diag) diag.textContent=(shoulderFlexionController?.toText()||'module missing')
+      +'\nangle is camera-estimated training feedback, not medical-grade ROM';
+    return;
+  }
+  bar.classList.remove('shoulder-live');
+  const labels=document.querySelectorAll('.level4-live-readouts .level4-reading > span');
+  if(labels[0]) labels[0].innerHTML='已記錄屈肘起點<span class="en">Captured flexed start</span>';
+  if(labels[1]) labels[1].innerHTML='已記錄伸肘終點<span class="en">Captured extended end</span>';
+  const auto = level4Reach.autoCalibration || {};
+  const autoGuide = level4AutoGuidance(auto);
+  const controllerGuide = level4Reach.guidance();
+  const guide = autoGuide || (level4Reach.gameReady ? level4PatientReadyGuidance() : controllerGuide);
+  const endpoint = which => level4Reach.endpoints?.[which]?.angle;
+  // Patient-facing calibration confirms the completed posture without exposing
+  // live joint angles or thresholds; exact values stay in collapsed therapist details.
+  const setAngle = (id, value) => { const el=document.getElementById(id); if(el) el.textContent=Number.isFinite(value) ? '已記錄 · Captured' : '—'; };
+  setAngle('level4FlexedEndpoint', endpoint('flexed'));
+  setAngle('level4ExtendedEndpoint', endpoint('extended'));
+  const horizontalEnabled = isLevel4HorizontalPathGame();
+  const horizontalRange = horizontalEnabled && level4Reach.abductionCalibrated && Number.isFinite(level4Reach.abductionProgress)
+    ? '已記錄 · Captured' : '—';
+  const horizontalEl = document.getElementById('level4ShoulderAbduction');
+  if(horizontalEl) horizontalEl.textContent = horizontalRange;
+  const horizontalReading = document.getElementById('level4ShoulderAbductionReading');
+  if(horizontalReading) horizontalReading.hidden = !horizontalEnabled;
+  const selectedArmLabel = document.getElementById('level4SelectedArmLabel');
+  if(selectedArmLabel) selectedArmLabel.textContent = '追蹤患者' + (activeAffectedSide()==='left' ? '左' : '右')
+    + '手臂 · Tracking patient’s ' + (activeAffectedSide()==='left' ? 'LEFT' : 'RIGHT') + ' arm';
+  const horizontalButton = document.getElementById('btnLevel4MarkHorizontal');
+  if(horizontalButton) horizontalButton.hidden = !(horizontalEnabled && level4Reach.stage === 'capture-horizontal');
+  if(hint) hint.textContent = window.YCHLanguage?.isEnglish() ? (guide.en || guide.main) : guide.main;
+  const progress = document.getElementById('level4AutoProgress');
+  const cancel = document.getElementById('btnLevel4AutoCancel');
+  const autoRunning = ['countdown','capture-flexed','capture-extended','capture-horizontal'].includes(auto.phase);
+  const fallbackVisible = ['retry','cancelled'].includes(auto.phase) && !level4Reach.gameReady;
+  const autoAction = document.getElementById('level4AutoAction');
+  const manualActions = document.getElementById('level4ManualActions');
+  if(autoAction) autoAction.hidden = !fallbackVisible;
+  if(manualActions) manualActions.hidden = !fallbackVisible;
+  if(cancel) cancel.hidden = !autoRunning;
+  if(progress){
+    progress.hidden = !autoRunning;
+    if(auto.phase === 'countdown') progress.textContent = '請等候 ' + Math.max(0,Math.ceil((auto.countdownRemainingMs || 0)/1000)) + ' 秒';
+    else progress.textContent = '正在確認穩定姿勢 · Checking steady hold';
   }
   if(diag) diag.textContent = level4CalibrationDiagnosticsLine();
 }
@@ -7847,6 +8655,8 @@ const level4Wipe = {
   lastPoint:null,
   lastConsumedGeneration:null,
   validMovement:false,
+  phase:'forward',
+  horizontalBaseline:0,
   completed:false,
   nextPaneAt:0,
   reset(){
@@ -7856,6 +8666,8 @@ const level4Wipe = {
     this.lastPoint = null;
     this.lastConsumedGeneration = null;
     this.validMovement = false;
+    this.phase = 'forward';
+    this.horizontalBaseline = 0;
     this.completed = false;
     this.nextPaneAt = 0;
   }
@@ -7863,6 +8675,30 @@ const level4Wipe = {
 // Deliberately broad bedside window: the active fog occupies a visibly larger
 // central canvas while the movement filter below still rejects stationary noise.
 const LEVEL4_WIPE_BOUNDS = {left:0.07, top:0.18, right:0.93, bottom:0.90};
+const level4DimSumCycle = {
+  phase:'await-start', lastGeneration:null,
+  reset(){ this.phase='await-start'; this.lastGeneration=null; },
+  update(motion){
+    if(!isLevel4StandardTransportGame()) return;
+    if(!(motion?.calibrated && motion.gameReady === true)){
+      if(this.phase !== 'await-return') this.phase='await-start';
+      return;
+    }
+    // `newFrame` is a render-tick flag and may already be false after a second
+    // RAF paints the same decoded pose.  The generation itself is authoritative:
+    // accept it once here, reject every duplicate, and never promote a
+    // generation-less duplicate.
+    if(Number.isFinite(motion.frameGeneration)){
+      if(this.lastGeneration === motion.frameGeneration) return;
+      this.lastGeneration = motion.frameGeneration;
+    }else if(motion.newFrame === false){
+      return;
+    }
+    if(this.phase === 'await-start' && motion.returnReady) this.phase='forward';
+    else if(this.phase === 'forward' && motion.reachGate) this.phase='await-return';
+    else if(this.phase === 'await-return' && motion.returnReady) this.phase='forward';
+  },
+};
 function level4MarkFogPoint(nx, ny){
   if(!isLevel4WipeGame() || level4Wipe.completed) return;
   const b = LEVEL4_WIPE_BOUNDS;
@@ -7896,12 +8732,12 @@ function level4MarkFogPoint(nx, ny){
   }
 }
 /* Path games (抹窗 wipewindow, 洗麻雀 mahjongwash, 巴士拍卡 buspay) need the ordered
-   movement: adequate stabilized elbow extension first, then the side-correct
-   outward/abduction path. 茶樓 dimsum and 保齡球 bowling never use this gate. */
+   movement: adequate stabilized elbow extension/forward reach first, then
+   shoulder HORIZONTAL abduction. 茶樓 dimsum and 保齡球 bowling never use this gate. */
 function level4PathGateOpen(motion){
   if(!motion?.calibrated || motion.gameReady !== true) return false;
-  // Arc eligibility is deliberately additive: extension gates lateral work,
-  // while lateral activity never freezes or rewrites the direct angle map.
+  // Horizontal admission is deliberately additive: it never freezes or rewrites
+  // the direct fixed-endpoint elbow map.
   return clamp01(motion.progress) >= 0.70
     && motion.arcCalibrated === true
     && (motion.arcActive === true || clamp01(motion.arcProgress) >= 0.12);
@@ -7923,12 +8759,48 @@ function updateLevel4Wipe(cursorNx, cursorNy, motion){
     level4Wipe.lastConsumedGeneration = motion.frameGeneration;
   }
   if(level4Wipe.completed){
-    if(nowMs() >= level4Wipe.nextPaneAt) level4Wipe.reset();
+    // A completed pane is durable, but the next pane must still begin from a
+    // genuinely returned flexed/lower position.  Do not turn a held extension
+    // into repeated panes.
+    if(nowMs() >= level4Wipe.nextPaneAt){
+      level4Wipe.completed = false;
+      level4Wipe.cleanPercent = 0;
+      level4Wipe.cleaned = 0;
+      level4Wipe.cells = new Uint8Array(level4Wipe.cols * level4Wipe.rows);
+      level4Wipe.phase = 'await-return';
+      level4Wipe.horizontalBaseline = 0;
+      level4Wipe.lastPoint = null;
+      level4Wipe.nextPaneAt = 0;
+    }
     return;
   }
-  // Wiping counts only after the shared two-pose progress shows real elbow
-  // extension, and then while the side-correct outward path signal is moving.
-  const valid = !!(motion?.engaged && level4PathGateOpen(motion));
+  if(level4Wipe.phase === 'await-return'){
+    if(motion.returnReady){
+      level4Wipe.phase = 'forward';
+      level4Wipe.horizontalBaseline = 0;
+    }
+    level4Wipe.lastPoint = null;
+    level4Wipe.validMovement = false;
+    return;
+  }
+  // Returning to the flexed/lower start deliberately closes an unfinished
+  // lateral sweep too.  The next extension starts a fresh forward → sweep
+  // cycle; retained cleaned cells remain visible within the current pane.
+  if(level4Wipe.phase === 'sweep' && motion.returnReady){
+    level4Wipe.phase = 'forward';
+    level4Wipe.horizontalBaseline = 0;
+    level4Wipe.lastPoint = null;
+    level4Wipe.validMovement = false;
+    return;
+  }
+  // Wiping is a strict tabletop sequence: flexed/lower → elbow extension/up →
+  // horizontal-abduction sweep left-to-right. Early horizontal movement is not
+  // admitted and therefore cannot clean a window.
+  if(level4Wipe.phase === 'forward' && level4Reach.reachGate){
+    level4Wipe.phase = 'sweep';
+    level4Wipe.horizontalBaseline = clamp01(motion?.abductionProgress || 0);
+  }
+  const valid = !!(level4Wipe.phase === 'sweep' && motion?.engaged && level4PathGateOpen(motion));
   level4Wipe.validMovement = valid;
   if(!valid){
     level4Wipe.lastPoint = null;
@@ -7942,11 +8814,10 @@ function updateLevel4Wipe(cursorNx, cursorNy, motion){
   const dx = point.x-level4Wipe.lastPoint.x;
   const dy = point.y-level4Wipe.lastPoint.y;
   const distance = Math.hypot(dx,dy);
-  // A stationary wrist must not clear the window. Ignore tracking noise, and
-  // interpolate intentional arcs so faster movements do not leave large gaps.
-  // Refresh the anchor even for small tremor so a stationary jitter cloud can
-  // never accumulate into a long virtual wipe.
-  if(distance < 0.006 || distance > 0.18){
+  // Admit only increasing screen X. A reverse/no-progress wrist sample can
+  // refresh the non-credit anchor but can never clear fog; this matches the
+  // Mahjong clockwise sweep's left-to-right direction contract.
+  if(dx <= 0 || distance < 0.006 || distance > 0.18){
     level4Wipe.lastPoint = point;
     return;
   }
@@ -8003,6 +8874,7 @@ function level4VideoAspect(videoEl){
 function updateLevel4ReachController(lm, worldLm, frame){
   const stage = document.querySelector('.game-stage');
   if(!isLevel4Tabletop()){
+    level4SelectedOverlayPose = null;
     stage?.classList.remove('level4-movement-alert');
     return level4Reach;
   }
@@ -8015,7 +8887,7 @@ function updateLevel4ReachController(lm, worldLm, frame){
   // Freshness, capture admission, the fixed median/EMA, and endpoint
   // hysteresis live in the shared module so deterministic tests exercise the
   // same direct-angle path as bedside runtime.
-  level4Controller.update({
+  const level4Packet = {
     lm,
     worldLm:worldLm || null,
     frameFresh:!!frame?.fresh,
@@ -8033,12 +8905,70 @@ function updateLevel4ReachController(lm, worldLm, frame){
     // live source is portrait or non-square. This keeps iPhone and iPad elbow
     // geometry identical in physical image space, regardless of CSS layout.
     imageAspect:level4VideoAspect(gameVideo),
-  });
+    // Only the three ordered path games admit the approximate shoulder
+    // horizontal-abduction observation. Dimsum and bowling are elbow-only.
+    enableHorizontalAbduction:isLevel4HorizontalPathGame(),
+    requireHorizontal:isLevel4HorizontalPathGame(),
+    nowMs:nowMs(),
+  };
+  level4SelectedOverlayPose = Array.isArray(lm) ? lm : null;
+  level4Controller.update(level4Packet);
+  // This deliberately runs after the normal controller admission; it does not
+  // change the fixed signed elbow map until a full valid pair commits atomically.
+  if(level4AutoCalibration) level4AutoCalibration.update(level4Packet, level4Controller);
+  // Hands-free admission: once six distinct fresh frames have established the
+  // selected patient's torso and affected-arm context, begin calibration
+  // automatically. No therapist hand needs to enter the camera view.
+  if(level4MaybeStartAutoCalibration()) level4SyncReachMirror();
   level4SyncReachMirror();
   level4UpdateCalibrationBar();
-  stage?.classList.toggle('level4-movement-alert',
-    level4Reach.shoulderHike && !isTrialMode());
+  stage?.classList.remove('level4-movement-alert');
   return level4Reach;
+}
+function updateShoulderFlexionController(lm, worldLm, frame){
+  if(!isShoulderFlexionLevel() || !shoulderFlexionController) return shoulderFlexionState;
+  level4SelectedOverlayPose=Array.isArray(lm)?lm:null;
+  const packet={
+    lm,worldLm:worldLm||null,side:activeAffectedSide(),
+    mirrorX:state.mirrorX!==false,imageAspect:level4VideoAspect(gameVideo),
+    frameFresh:!!frame?.fresh,frameGeneration:frame?.generation,
+    newFrame:state.qaMode===true,frame,nowMs:nowMs(),
+  };
+  shoulderFlexionController.update(packet);
+  shoulderFlexionState=shoulderFlexionController.snapshot();
+  return shoulderFlexionState;
+}
+function drawLevel4SelectedArmOverlay(ctx, cw, ch){
+  if(!ctx || !isGrossTabletop() || !Array.isArray(level4SelectedOverlayPose)) return;
+  const left = activeAffectedSide() === 'left';
+  const points = [level4SelectedOverlayPose[left ? 11 : 12], level4SelectedOverlayPose[left ? 13 : 14], level4SelectedOverlayPose[left ? 15 : 16]];
+  if(!points.every(level4PosePointUsable)) return;
+  const toCanvas = point => ({
+    x:(state.mirrorX ? 1-point.x : point.x) * cw,
+    y:point.y * ch,
+  });
+  const [shoulder, elbow, wrist] = points.map(toCanvas);
+  ctx.save();
+  ctx.strokeStyle = '#12b886'; ctx.lineWidth = 8; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.shadowColor = 'rgba(0,0,0,.55)'; ctx.shadowBlur = 5;
+  ctx.beginPath(); ctx.moveTo(shoulder.x,shoulder.y); ctx.lineTo(elbow.x,elbow.y); ctx.lineTo(wrist.x,wrist.y); ctx.stroke();
+  [[shoulder,'#0b7285'],[elbow,'#f08c00'],[wrist,'#d6336c']].forEach(([point,color])=>{
+    ctx.beginPath(); ctx.arc(point.x,point.y,8,0,Math.PI*2); ctx.fillStyle=color; ctx.fill();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
+  });
+  if(isShoulderFlexionLevel()){
+    const hipPoints=[level4SelectedOverlayPose[23],level4SelectedOverlayPose[24]];
+    if(hipPoints.every(level4PosePointUsable)){
+      const hips=hipPoints.map(toCanvas);
+      const hipMid={x:(hips[0].x+hips[1].x)/2,y:(hips[0].y+hips[1].y)/2};
+      const shoulderPoints=[level4SelectedOverlayPose[11],level4SelectedOverlayPose[12]].map(toCanvas);
+      const shoulderMid={x:(shoulderPoints[0].x+shoulderPoints[1].x)/2,y:(shoulderPoints[0].y+shoulderPoints[1].y)/2};
+      ctx.strokeStyle='rgba(255,255,255,.92)';ctx.lineWidth=5;ctx.setLineDash([9,7]);
+      ctx.beginPath();ctx.moveTo(shoulderMid.x,shoulderMid.y);ctx.lineTo(hipMid.x,hipMid.y);ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+  ctx.restore();
 }
 
 function updateTracking(){
@@ -8066,6 +8996,7 @@ function updateTracking(){
     : (productionFrameFresh && lastPoseFrameGeneration === frame.generation
       ? lastPoseWorldLm : null);
   const level4Motion = updateLevel4ReachController(grossPose, level4WorldPose, frame);
+  const shoulderMotion = updateShoulderFlexionController(grossPose, level4WorldPose, frame);
   // Levels 3–4 are driven by shoulder/elbow/wrist Pose only. Running the hand
   // model as well on every iPad frame halved the effective frame rate and made
   // the live game behave differently from the movement test.
@@ -8095,12 +9026,10 @@ function updateTracking(){
     if(isLevel3Tabletop()){
       mapped.x = cw * 0.50 + affectedSideSign() * level3Motion.progress * cw * 0.32;
       mapped.y = ch * 0.72;
-    }
-    if(isLevel4Tabletop()){
-      // The wipe cursor follows the real affected wrist. The shared elbow
-      // controller is vertical-only; special games may keep a real wrist path
-      // for their intrinsic precision/path task, but extension and flexion
-      // themselves never remap to cursor X.
+    }else if(isShoulderFlexionLevel()){
+      mapped.x = cw * (ch>cw ? 0.68 : 0.58);
+      const visualProgress=clamp01(Number(shoulderMotion.progress)||0);
+      mapped.y = ch * (0.80 - 0.48 * visualProgress);
     }
     const stablePoint = stabiliseTrackingPoint(mapped.x, mapped.y);
     const px = stablePoint.x;
@@ -8174,10 +9103,17 @@ function updateTracking(){
   // Invoke every standalone game for every tracking pass, including stale or
   // pose-lost admissions, so their partial dwell/path credits fail closed. The
   // motion packet itself allows one and only one fresh decoded generation.
-  if(isLevel4WipeGame()) updateLevel4Wipe(cursorX/cw, cursorY/ch, level4Motion);
+  // The controller cursor is reconstructed from the ordered tabletop cycle:
+  // elbow progress is Y only (flexed/down, extended/forward-up); horizontal
+  // abduction can alter X only after the particular game reaches its forward
+  // milestone. Stale/lost motion still reaches each game to clear partial credit.
+  const level4PathPoint = level4PathControlPoint(cw, ch, level4OrderedHorizontalProgress());
+  level4DimSumCycle.update(level4Motion);
+  if(isLevel4WipeGame()) updateLevel4Wipe(level4PathPoint.x/cw, level4PathPoint.y/ch, level4Motion);
   if(isLevel4BowlingGame()) updateLevel4Bowling(level4Motion);
-  if(isLevel4MahjongWashGame()) updateLevel4MahjongWash(level4Motion, cursorX/cw, cursorY/ch);
-  if(isLevel4BusPayGame()) updateLevel4BusPay(level4Motion, cursorX/cw, cursorY/ch);
+  if(isLevel4MahjongWashGame()) updateLevel4MahjongWash(level4Motion, level4PathPoint.x/cw, level4PathPoint.y/ch);
+  if(isLevel4BusPayGame()) updateLevel4BusPay(level4Motion, level4PathPoint.x/cw, level4PathPoint.y/ch);
+  if(isShoulderFlexionLevel()) level4UpdateCalibrationBar();
 }
 
 function dist(x1,y1,x2,y2){
@@ -8205,15 +9141,27 @@ function updateGameLogic(){
     setActionPrompt('雙手置中', '準備向患側外滑');
     return;
   }
+  if(isShoulderFlexionLevel()){
+    if(!shoulderFlexionState.framingReady || !shoulderFlexionState.calibrated || !shoulderFlexionState.gameReady){
+      dwellTarget=null;dwellStartTime=0;dwellActive=false;lastDwellPct=0;
+      if(!shoulderFlexionState.targetReady) shoulderFlexionCycleAwarded=false;
+      syncTargetHoldFeedback();
+      const guide=shoulderFlexionController?.guidance()||{main:'肩屈曲追蹤未就緒',en:'Shoulder tracking not ready'};
+      setActionPrompt(window.YCHLanguage?.isEnglish() ? (guide.en || guide.main) : guide.main,'');
+      return;
+    }
+    if(!shoulderFlexionState.newFrame){
+      syncTargetHoldFeedback();
+      setActionPrompt('等待鏡頭','');
+      return;
+    }
+    updateShoulderFlexionGame();
+    return;
+  }
   if(isLevel4Tabletop()){
     if(!level4Reach.framingReady){
       dwellTarget = null; dwellStartTime = 0; dwellActive = false; lastDwellPct = 0;
       setActionPrompt('iPad 同枱直放 · 約 1 米', '患側肩・手肘・手腕全部入鏡');
-      return;
-    }
-    if(level4Reach.warning && !isTrialMode()){
-      dwellTarget = null; dwellStartTime = 0; dwellActive = false; lastDwellPct = 0;
-      setActionPrompt('患側聳肩', '請治療師即時糾正');
       return;
     }
     if(!level4Reach.calibrated){
@@ -8243,31 +9191,32 @@ function updateGameLogic(){
       if(level4Wipe.completed){
         setActionPrompt('完成', '準備下一塊窗');
       }else if(!level4Reach.engaged || !level4Reach.reachGate){
-        setActionPrompt('先伸直手肘', '再向患側畫弧');
+        setActionPrompt('手臂保持枱面高度', '屈肘開始 → 伸肘向前');
       }else if(level4Wipe.validMovement){
-        setActionPrompt('向外畫大弧', '已清潔 ' + level4Wipe.cleanPercent + '%');
+        setActionPrompt('肩水平外展：由左至右', '已清潔 ' + level4Wipe.cleanPercent + '%');
       }else{
-        setActionPrompt('伸肘向外畫弧', '手腕保持移動');
+        setActionPrompt('伸肘向前後肩水平外展', '由左至右抹窗');
       }
       return;
     }
     if(isLevel4BowlingGame()){
       dwellTarget = null;
       setActionPrompt(
-        level4MiniGames.bowling.phase === 'return' ? '屈肘收手' : '向前伸直手肘',
-        '完成整個來回才出球'
+        level4MiniGames.bowling.phase === 'await-return' ? '屈肘返回' : '屈肘開始 → 伸肘向前',
+        '手臂保持枱面高度；返回後才可再投'
       );
       return;
     }
     if(isLevel4MahjongWashGame()){
       dwellTarget = null;
-      setActionPrompt('先伸肘，再保持伸肘向外畫大弧', '洗牌 ' + Math.round(level4MiniGames.mahjong.progress*100) + '%');
+      setActionPrompt(level4MiniGames.mahjong.phase === 'sweep' ? '肩水平外展：順時針洗牌' : '屈肘開始 → 伸肘向前',
+        '手臂保持枱面高度；洗牌 ' + Math.round(level4MiniGames.mahjong.progress*100) + '%');
       return;
     }
     if(isLevel4BusPayGame()){
       dwellTarget = null;
-      setActionPrompt('先伸肘 → 向外畫弧 → 停穩拍卡',
-        level4MiniGames.bus.holdFrames ? '保持對準黃色讀卡器' : '伸肘後向外移到黃色讀卡器');
+      setActionPrompt(level4MiniGames.bus.phase === 'return-horizontal' ? '肩水平外展：由左至右返回' : '屈肘開始 → 伸肘向前拍卡',
+        level4MiniGames.bus.holdFrames ? '保持讀卡器位置' : '手臂保持枱面高度');
       return;
     }
   }
@@ -8294,8 +9243,11 @@ function updateGameLogic(){
       // Pickup zone: 食物實際 radius + 80px tolerance（原本固定 120 → 現在對食物 size 自適應）
       // 對於顫抖病人：碰到食物邊邊也算抓到
       // Pickup only at the participant's own calibrated flexed endpoint.
-      const level4AtStart = !isLevel4Tabletop()
-        || (level4Reach.gameReady && level4Reach.returnReady && !level4Reach.engaged);
+      const level4AtStart = isShoulderFlexionLevel()
+        ? shoulderFlexionState.returnReady
+        : (!isLevel4Tabletop()
+          || (level4Reach.gameReady && level4Reach.returnReady && !level4Reach.engaged
+            && level4DimSumCycle.phase === 'forward'));
       const overFood = nearest && level4AtStart && nearestDist <= (nearest.r + 80);
       if(overFood && still){
         if(dwellTarget !== 'food'){
@@ -8325,6 +9277,7 @@ function updateGameLogic(){
         if(!handDetected) setActionPrompt('等待偵測手部', '手放鏡頭前');
         else if(isLevel3Tabletop()) setActionPrompt('雙手置中', '停在' + getTheme().itemWord + '上');
         else if(isLevel4Tabletop()) setActionPrompt('患手對準', '停在' + getTheme().itemWord + '上');
+        else if(isShoulderFlexionLevel()) setActionPrompt('患手在舒適起點', '停在' + getTheme().itemWord + '上');
         else if(isChopsticksMode()) setActionPrompt('筷子尖對準', getTheme().itemWord);
         else setActionPrompt('移動食指', '移到' + getTheme().itemWord + '上');
       }
@@ -8353,8 +9306,10 @@ function updateGameLogic(){
         }
       }
       // Placement only once the calibrated extended endpoint is reached.
-      const level4CanPlace = !isLevel4Tabletop()
-        || (level4Reach.gameReady && level4Reach.completionReady && level4Reach.reachGate);
+      const level4CanPlace = isShoulderFlexionLevel()
+        ? shoulderFlexionState.targetReady
+        : (!isLevel4Tabletop()
+          || (level4Reach.gameReady && level4Reach.completionReady && level4Reach.reachGate));
       if(onPlate && level4CanPlace && still){
         if(dwellTarget !== 'plate'){
           dwellTarget = 'plate';
@@ -8397,8 +9352,9 @@ function updateGameLogic(){
         }
       } else {
         dwellTarget = null;
-        if(isLevel4Tabletop() && onPlate && !level4CanPlace){
-          setActionPrompt('繼續伸直手肘', '接近伸直先放下');
+        if((isLevel4Tabletop() || isShoulderFlexionLevel()) && onPlate && !level4CanPlace){
+          setActionPrompt(isShoulderFlexionLevel() ? '繼續主動抬高手臂' : '繼續伸直手肘',
+            isShoulderFlexionLevel() ? '到個人化目標先放下' : '接近伸直先放下');
         }else{
           setActionPrompt(isChopsticksMode() ? '筷子尖移到目標' : '移到目標', '停在同款目標');
         }
@@ -8411,6 +9367,78 @@ function updateGameLogic(){
   }
 }
 
+/* Levels 3–4 are shoulder-flexion practice, not virtual grasp-and-release.
+   The patient keeps holding an OT-selected real object (or the selected 1 lb
+   stick mode). A single large screen object follows the camera-estimated lift
+   continuously. No hand contact, pickup dwell, grip, plate overlap, or release
+   signal is admitted in this branch. */
+function updateShoulderFlexionGame(){
+  dwellTarget=null;dwellStartTime=0;dwellActive=false;lastDwellPct=0;
+  heldItem=null;gripActive=false;
+
+  if(shoulderFlexionState.repetitions!==shoulderFlexionLastRepetition){
+    const completed=shoulderFlexionState.repetitions>shoulderFlexionLastRepetition;
+    shoulderFlexionLastRepetition=shoulderFlexionState.repetitions;
+    if(completed){
+      score+=10;correctCount++;wrongStreak=0;
+      adaptiveNoteTrial('shoulder_flexion_cycle','success');
+      researchLog('shoulder_cycle_completed',{
+        estimated_deg:Math.round(Number(shoulderFlexionState.estimatedAngle)||0),
+        target_deg:Number(shoulderFlexionState.selectedTargetDeg)||0,
+        exercise_mode:state.shoulderExerciseMode,
+      });
+      showLevelUpBanner();
+      updateHUD();
+    }
+    shoulderFlexionCycleAwarded=false;
+    advanceLevel3RoundVariant();
+    foods=[];
+    spawnInitialFoods();
+  }
+
+  let item=foods.find(food=>!food.removed);
+  if(!item){
+    spawnInitialFoods();
+    item=foods.find(food=>!food.removed);
+  }
+  const target=Math.max(1,Number(shoulderFlexionState.selectedTargetDeg)||1);
+  const estimated=Math.max(0,Number(shoulderFlexionState.estimatedAngle)||0);
+  const visualProgress=clamp01(Number(shoulderFlexionState.progress)||0);
+  const cw=gameCanvas.width,ch=gameCanvas.height;
+  const laneX=cw*(ch>cw?.68:.58);
+  const bottom=ch*.78,top=ch*.34;
+  if(item){
+    item.x=laneX;
+    item.y=bottom-(bottom-top)*visualProgress;
+    item.baseX=item.x;item.baseY=item.y;item.held=false;
+  }
+
+  if(shoulderFlexionState.targetReady&&!shoulderFlexionCycleAwarded){
+    shoulderFlexionCycleAwarded=true;
+    triggerFeedback(true);
+    researchLog('shoulder_target_reached',{
+      estimated_deg:Math.round(estimated),
+      target_deg:target,
+      exercise_mode:state.shoulderExerciseMode,
+    });
+  }
+
+  syncTargetHoldFeedback();
+  if(shoulderFlexionState.phase==='target-hold'&&shoulderFlexionState.holdInterrupted){
+    setActionPrompt('再抬高 · 保持','');
+  }else if(shoulderFlexionState.holdFeedbackActive){
+    setActionPrompt('好！','');
+  }else if(shoulderFlexionState.holdCountdownActive){
+    setActionPrompt('保持舉高',shoulderFlexionState.holdRemainingSec+'');
+  }else if(shoulderFlexionState.targetReady){
+    setActionPrompt('慢慢返回',shoulderFlexionState.selectedStartDeg+'°');
+  }else if(shoulderFlexionState.phase==='await-start'){
+    setActionPrompt('到起點',shoulderFlexionState.selectedStartDeg+'°');
+  }else{
+    setActionPrompt('抬高至',target+'°');
+  }
+}
+
 /* ---------- 握放模式邏輯 ---------- */
 function setActionPrompt(main, detail){
   const statusBar = document.getElementById('statusBar');
@@ -8418,6 +9446,10 @@ function setActionPrompt(main, detail){
   if(main === '等待偵測手部'){
     main = '鏡頭對準';
     detail = '';
+  }
+  if(window.YCHLanguage){
+    main = window.YCHLanguage.text(main);
+    detail = window.YCHLanguage.text(detail);
   }
   statusBar.innerHTML = `<span class="action-main">${main}</span>` +
     (detail ? `<span class="action-detail">${detail}</span>` : '');
@@ -8779,9 +9811,10 @@ function renderLevel4WipeGame(ctx, cw, ch){
   ctx.fillText('清潔 '+level4Wipe.cleanPercent+'%',x+w/2,y+h-34);
 
   drawLevel4VerticalReachGuide(ctx, cw, ch);
-  if(handDetected && cursorX >= 0 && cursorY >= 0){
+  const controlled = level4PathControlPoint(cw, ch);
+  if(level4Reach.framingReady){
     ctx.beginPath();
-    ctx.arc(cursorX,cursorY,34,0,Math.PI*2);
+    ctx.arc(controlled.x,controlled.y,34,0,Math.PI*2);
     ctx.strokeStyle = level4Wipe.validMovement ? '#E63946' : 'rgba(255,255,255,0.95)';
     ctx.lineWidth = 7;
     ctx.stroke();
@@ -8810,6 +9843,7 @@ function renderGame(){
     return;
   }
   drawLevel4MidlineGuide(ctx);
+  drawShoulderFlexionGuide(ctx,cw,ch);
 
   // 目標盤（真實單白圓隱磁盤：徑向漸變 + 隱隱影支支、圓形 rim）
   const LBL_SIZE = state.labelFont || 36;
@@ -8917,7 +9951,7 @@ function renderGame(){
 
   // 游標：大圓點 + 停留進度環 / 握放手勢圖示
   const cursorPoint = displayCursorPoint();
-  if(cursorPoint.x >= 0 && cursorPoint.y >= 0 && handDetected){
+  if(cursorPoint.x >= 0 && cursorPoint.y >= 0 && handDetected && !isShoulderFlexionLevel()){
     ctx.save();
 
     if(isGraspStyleMode()){
@@ -9060,9 +10094,9 @@ function endGame(endReason){
     stopMovementRecording(true);
   }
 
-  const resultEnglish = research.active && pilotLang === 'en';
+  const resultEnglish = !!(window.YCHLanguage && window.YCHLanguage.isEnglish());
   document.getElementById('resultTitle').textContent = isTrialMode()
-    ? '試玩完成'
+    ? (resultEnglish ? 'Trial complete' : '試玩完成')
     : (resultEnglish ? 'Training complete' : '訓練完成');
   document.getElementById('resultScoreLabel').textContent = resultEnglish ? 'Total score' : '總得分';
   document.getElementById('resultCorrectLabel').textContent = resultEnglish ? 'Correct' : '正確次數';
@@ -9076,13 +10110,29 @@ function endGame(endReason){
     ? research.participantId + ' · Session ' + research.sessionNo + ' · ' +
       pilotScenarioName(research.scenarioId) + ' · ' + researchTrackName(research.dualTaskLevel) + ' · ' + currentLevel().tag
     : (isTrialMode()
-      ? currentLevel().tag + ' · 試玩 · 不錄影／不提示'
-      : currentLevel().tag + ' · ' + getTheme().title);
+      ? currentLevel().tag + (resultEnglish ? ' · Trial · no recording or therapist alerts' : ' · 試玩 · 不錄影／不提示')
+      : currentLevel().tag + ' · ' + (window.YCHLanguage ? window.YCHLanguage.text(getTheme().title) : getTheme().title));
   document.getElementById('resScore').textContent = score;
   document.getElementById('resCorrect').textContent = correctCount;
   document.getElementById('resGrabs').textContent = grabCount;
   const acc = grabCount > 0 ? Math.round((correctCount/grabCount)*100) : 0;
   document.getElementById('resAccuracy').textContent = acc + '%';
+  const shoulderSummary=document.getElementById('shoulderResultSummary');
+  if(shoulderSummary){
+    shoulderSummary.hidden=!isShoulderFlexionLevel();
+    if(isShoulderFlexionLevel()){
+      const s=shoulderFlexionState;
+      shoulderSummary.textContent=resultEnglish
+        ? 'Camera-estimated training record: start '+s.selectedStartDeg+'° · target '+s.selectedTargetDeg+
+          '° · camera zero '+(Number.isFinite(s.baseline)?s.baseline.toFixed(1)+'°':'—')+
+          ' · peak estimate '+(Number.isFinite(s.peakEstimatedAngle)?s.peakEstimatedAngle.toFixed(1)+'°':'—')+
+          ' · repetitions '+(s.repetitions||0)+'. Not goniometric ROM or automatic FTHUE grading.'
+        : '相機估算訓練紀錄：起點 '+s.selectedStartDeg+'° · 目標 '+s.selectedTargetDeg+
+          '° · 相機零點 '+(Number.isFinite(s.baseline)?s.baseline.toFixed(1)+'°':'—')+
+          ' · 最高估算 '+(Number.isFinite(s.peakEstimatedAngle)?s.peakEstimatedAngle.toFixed(1)+'°':'—')+
+          ' · 重複 '+(s.repetitions||0)+'。不是量角器 ROM 或 FTHUE 自動分級。';
+    }
+  }
 
   const rr = document.getElementById('researchResult');
   const downloadBtn = document.getElementById('btnDownloadResearch');
@@ -12352,6 +13402,7 @@ function dimsumReward(){
   });
 }
 
+/* PUBLIC_BUILD_REMOVE_START: QA-only browser automation hooks */
 /* ==================================================================
    無相機 QA 模擬：以合成手部 / 姿勢 landmarks 真實觸發動作偵測
    （並非病人用功能，只供自動測試及治療師示範）
@@ -12503,7 +13554,13 @@ window.render_game_to_text = function(){
   lines.push('level=' + state.level + ' (' + currentLevel().tag + ', gameType=' + state.gameType +
     (state.level === '67' ? ', toolMode=' + state.toolMode : '') + ')');
   lines.push('activity=' + state.theme + ' (' + getTheme().title + ')');
-  lines.push('mode=' + state.mode + ' duration=' + state.duration + 's dwellMs=' + state.dwellMs + ' font=' + state.labelFont);
+  lines.push('mode=' + state.mode + ' duration=' + state.duration + 's '
+    +(isShoulderFlexionLevel()?'targetHoldMs=':'dwellMs=')+state.dwellMs+' font=' + state.labelFont);
+  if(shoulderExerciseModeAvailable()){
+    lines.push('shoulderExerciseMode='+state.shoulderExerciseMode
+      +' trackingTarget=selected-anatomical-affected-arm unaffectedHandFallback=false'
+      +(state.shoulderExerciseMode==='assisted-stick'?' stickWeightLb=1':''));
+  }
   if(research.active){
     const phase = pilotCurrentPhase();
     const m = research.phaseMetrics || emptyPhaseMetrics();
@@ -12547,13 +13604,22 @@ window.render_game_to_text = function(){
       lines.push('level4ReachGuide=' + [
         'stage:' + level4Reach.stage,
         'reason:' + level4Reach.reason,
-        'shoulderHike:' + level4Reach.shoulderHike,
         'warning:' + (level4Reach.warning || 'none'),
         'qualified:' + (level4Reach.qualified.join('|') || 'none'),
         'lacking:' + ((level4Reach.lacking || [])
           .map(entry => entry.signal + ':' + entry.reason).join('|') || 'none'),
         'manual:' + (level4Reach.manual.flexed ? 'F' : '-')
           + (level4Reach.manual.extended ? 'E' : '-'),
+        'shoulderAbduction:' + (Number.isFinite(level4Reach.shoulderAbduction) ? level4Reach.shoulderAbduction.toFixed(1) : 'na'),
+        'autoPhase:' + (level4Reach.autoCalibration?.phase || 'idle')
+          + ' stable:' + (level4Reach.autoCalibration?.stableFrames ?? 0) + '/' + (level4Reach.autoCalibration?.requiredStableFrames ?? 0)
+          + ' countdown:' + Math.ceil((level4Reach.autoCalibration?.countdownRemainingMs || 0)/1000)
+          + ' reject:' + (level4Reach.autoCalibration?.reason || 'none')
+          + ' candidateSeparation:' + (Number.isFinite(level4Reach.autoCalibration?.candidate?.separation)
+            ? level4Reach.autoCalibration.candidate.separation.toFixed(1) : 'na')
+          + ' preAnchor:' + (level4Reach.autoCalibration?.preAnchor?.available ? 'ready' : 'waiting')
+          + ':' + (level4Reach.autoCalibration?.preAnchor?.stableFrames ?? 0) + '/' + (level4Reach.autoCalibration?.preAnchor?.requiredFrames ?? 0)
+          + ':' + (level4Reach.autoCalibration?.preAnchor?.frozen ? 'frozen' : 'live'),
         'frame:' + (level4Reach.frame?.fresh ? 'fresh' : 'stale')
           + ' gen:' + (level4Reach.frame?.generation ?? 'na')
           + ' age:' + (Number.isFinite(level4Reach.frame?.ageMs)
@@ -12568,6 +13634,19 @@ window.render_game_to_text = function(){
       if(typeof level4MiniGamesText === 'function' && !isLevel4WipeGame()){
         lines.push(level4MiniGamesText());
       }
+    }
+    if(isShoulderFlexionLevel()){
+      lines.push('shoulderFlexion='+(shoulderFlexionController?.toText()||'module unavailable'));
+      lines.push('shoulderGameplay=control:shoulder-flexion-only physicalHold:continuous'
+        +' graspDetection:false releaseDetection:false liveAngleDeg:'
+        +(Number.isFinite(shoulderFlexionState.estimatedAngle)
+          ? shoulderFlexionState.estimatedAngle.toFixed(1) : 'na')
+        +' visualProgress:'
+        +clamp01(Number(shoulderFlexionState.progress)||0).toFixed(3)
+        +' holdOverlay:'+(document.getElementById('targetHoldOverlay')?.classList.contains('show')?'visible':'hidden')
+        +' holdNumber:'+(document.getElementById('targetHoldNumber')?.textContent||''));
+      lines.push('trainingBand='+(state.level==='3'?'therapist-selected 30-60':'therapist-selected 60-or-above')
+        +' cameraEstimateOnly=true exactROMRequires=separate-lateral-camera-or-therapist-goniometry');
     }
   }
   if((currentScreen === 'game' || currentScreen === 'result') && usesAdvancedThemeModule() && advCurrent){
@@ -12693,6 +13772,21 @@ window.__qa = {
   },
   selectLevel(levelId){ selectLevel(levelId); return window.render_game_to_text(); },
   selectActivity(themeId){ selectActivity(themeId); return window.render_game_to_text(); },
+  selectShoulderExerciseMode(mode){
+    if(!selectShoulderExerciseMode(mode)) throw new Error('Shoulder exercise mode unavailable: '+mode);
+    return this.shoulderExerciseModeState();
+  },
+  shoulderExerciseModeState(){
+    return {
+      level:state.level,
+      available:shoulderExerciseModeAvailable(),
+      mode:state.shoulderExerciseMode,
+      label:shoulderExerciseProfile().label,
+      trackingTarget:'selected-anatomical-affected-arm',
+      unaffectedHandFallback:false,
+      stickWeightLb:state.shoulderExerciseMode==='assisted-stick'?1:null,
+    };
+  },
   selectToolMode(mode){
     if(!LEVEL67_TOOL_MODES[mode]) throw new Error('Unknown Level 6–7 tool mode: ' + mode);
     state.toolMode = mode;
@@ -12714,12 +13808,23 @@ window.__qa = {
     opts = opts || {};
     state.qaMode = true;
     if(opts.level) state.level = opts.level;
+    if(opts.shoulderExerciseMode && shoulderExerciseModeAvailable()
+      && SHOULDER_EXERCISE_MODES[opts.shoulderExerciseMode]){
+      state.shoulderExerciseMode=opts.shoulderExerciseMode;
+    }
+    if(!shoulderExerciseModeAvailable()) state.shoulderExerciseMode='active';
+    if(shoulderFlexionController) shoulderFlexionController.setExerciseMode(state.shoulderExerciseMode);
+    const qaShoulderTarget = Number(opts.shoulderTargetDeg);
+    if(state.level==='3' && [30,40,50,60].includes(qaShoulderTarget)) state.shoulderTargetDeg=qaShoulderTarget;
+    if(state.level==='4' && Array.from({length:13},(_,index)=>60+index*10).includes(qaShoulderTarget)) state.shoulderTargetDeg=qaShoulderTarget;
+    if(state.level==='3' && ![30,40,50,60].includes(Number(state.shoulderTargetDeg))) state.shoulderTargetDeg=40;
+    if(state.level==='4' && !Array.from({length:13},(_,index)=>60+index*10).includes(Number(state.shoulderTargetDeg))) state.shoulderTargetDeg=60;
     if(opts.toolMode && LEVEL67_TOOL_MODES[opts.toolMode]) state.toolMode = opts.toolMode;
     applyInteractionModeForLevel();
     if(opts.theme) state.theme = opts.theme;
     if(opts.mode) state.mode = opts.mode;
     if(opts.duration) state.duration = opts.duration;
-    if(opts.dwellMs) state.dwellMs = opts.dwellMs;
+    if(Number.isFinite(Number(opts.dwellMs))) state.dwellMs = Number(opts.dwellMs);
     if(opts.affectedSide) state.affectedSide = opts.affectedSide;
     qaHand = null;
     qaFrameGeneration = 0;
@@ -12828,6 +13933,11 @@ window.__qa = {
     lm[elbowIndex] = point(spec.elbow, {x:0.45,y:0.48});
     lm[wristIndex] = point(spec.wrist, {x:0.58,y:0.48});
     lm[otherShoulderIndex] = point(spec.otherShoulder, {x:0.60,y:0.30});
+    const shoulderMidX = (lm[11].x + lm[12].x) / 2;
+    const shoulderMidY = (lm[11].y + lm[12].y) / 2;
+    const shoulderHalfSpan = Math.abs(lm[11].x - lm[12].x) / 2 || .08;
+    lm[23] = point(spec.leftHip, {x:shoulderMidX-shoulderHalfSpan*.9,y:shoulderMidY+.38});
+    lm[24] = point(spec.rightHip, {x:shoulderMidX+shoulderHalfSpan*.9,y:shoulderMidY+.38});
     qaHand.poseLm = lm;
     // Optional synthetic world landmarks remain available to other pose QA
     // hooks; the Level 4 two-point controller intentionally ignores them.
@@ -12868,11 +13978,28 @@ window.__qa = {
         else { updateGameLogic(); renderGame(); }
       }
     }
-    return this.level4ReachState();
+    return isShoulderFlexionLevel() ? this.shoulderFlexionState() : this.level4ReachState();
+  },
+  setShoulderPose(spec){ return this.setLevel4Pose(spec); },
+  shoulderFlexionState(){
+    return shoulderFlexionController ? {
+      ...shoulderFlexionController.snapshot(),
+      guidance:shoulderFlexionController.guidance(),
+      diagnostics:shoulderFlexionController.toText(),
+      trainingBand:state.level==='3'?'30-60':'60-or-above',
+      exerciseMode:state.shoulderExerciseMode,
+      trackingTarget:'selected-anatomical-affected-arm',
+      unaffectedHandFallback:false,
+      cameraEstimateOnly:true,
+      holdOverlayVisible:document.getElementById('targetHoldOverlay')?.classList.contains('show')||false,
+      holdOverlayNumber:document.getElementById('targetHoldNumber')?.textContent||'',
+    } : {reason:'module-missing',gameReady:false};
   },
   level4ManualCapture(which){
-    return level4ManualCapture(which === 'extended' ? 'extended' : 'flexed');
+    return level4ManualCapture(which === 'extended' ? 'extended' : (which === 'horizontal' ? 'horizontal' : 'flexed'));
   },
+  level4AutoStart(){ return level4StartAutoCalibration(); },
+  level4AutoCancel(){ return level4CancelAutoCalibration(); },
   level4ReachState(){
     return {
       calibrated:level4Reach.calibrated,
@@ -12885,6 +14012,8 @@ window.__qa = {
       reachGate:level4Reach.reachGate,
       returnReady:level4Reach.returnReady,
       elbowAngle:level4Reach.elbowAngle,
+      shoulderAbduction:level4Reach.shoulderAbduction,
+      autoCalibration:level4Reach.autoCalibration,
       separation:level4Reach.separation,
       endpoints:level4Reach.endpoints,
       qualified:level4Reach.qualified,
@@ -12893,7 +14022,6 @@ window.__qa = {
       retryCount:level4Reach.retryCount,
       captureCount:level4Reach.captureCount,
       completionReady:level4Reach.completionReady,
-      shoulderHike:level4Reach.shoulderHike,
       framingReady:level4Reach.framingReady,
       warning:level4Reach.warning,
       guidance:level4Reach.guidance(),
@@ -12903,15 +14031,28 @@ window.__qa = {
       arcInstant:level4Reach.arcInstant,
       arcActive:level4Reach.arcActive,
       arcCalibrated:level4Reach.arcCalibrated,
+      abductionProgress:level4Reach.abductionProgress,
+      abductionInstant:level4Reach.abductionInstant,
+      abductionCalibrated:level4Reach.abductionCalibrated,
+      abductionBaseline:level4Reach.abductionBaseline,
       newFrame:level4Reach.newFrame,
       frame:level4Reach.frame,
       stabilizer:level4Reach.stabilizer,
       pathGateOpen:level4PathGateOpen(level4Reach),
       side:level4Reach.side,
+      // Ordered-cycle states stay in the QA/text bridge while the patient view
+      // remains deliberately simple.  No shoulder-elevation signal is exposed.
+      dimSumPhase:level4DimSumCycle.phase,
+      wipePhase:level4Wipe.phase,
+      bowlingPhase:level4MiniGames.bowling.phase,
+      mahjongPhase:level4MiniGames.mahjong.phase,
+      busPhase:level4MiniGames.bus.phase,
+      orderedHorizontalProgress:level4OrderedHorizontalProgress(),
       wipeCleanPercent:level4Wipe.cleanPercent,
       wipeValidMovement:level4Wipe.validMovement,
       wipeCompleted:level4Wipe.completed,
       screenForward:level4VerticalReachPoint(),
+      pathCursor:level4PathControlPoint(),
       cursorY,
     };
   },
@@ -13149,11 +14290,11 @@ window.__qa = {
   },
   level4SessionThemes(){ return [...state.level4SessionThemes]; },
   setLevel4SessionThemes(ids){
-    const allowed = new Set(availableThemeOrder('4'));
+    const allowed = new Set(availableThemeOrder('2'));
     const next = [...new Set((ids || []).filter(id=>allowed.has(id)))].slice(0,2);
-    if(!next.length) throw new Error('Level 4 requires at least one session game');
+    if(!next.length) throw new Error('Level 2 requires at least one supported session game');
     state.level4SessionThemes = next;
-    if(state.level === '4') renderActivityLibrary();
+    if(state.level === '2') renderActivityLibrary();
     return [...state.level4SessionThemes];
   },
 
@@ -13392,6 +14533,7 @@ window.__qa = {
       prefix:url.slice(0, 22) }; },
   },
 };
+/* PUBLIC_BUILD_REMOVE_END */
 
 /* Narrow runtime bridge for the independently loaded Level 4 games.
    Keep the main rehabilitation runtime private inside this IIFE while exposing
@@ -13434,6 +14576,8 @@ window.__level4GameRuntime = Object.freeze({
       arcProgress:clamp01(level4Reach.arcProgress),
       arcActive:level4Reach.arcActive,
       arcCalibrated:level4Reach.arcCalibrated,
+      abductionProgress:clamp01(level4Reach.abductionProgress),
+      abductionCalibrated:level4Reach.abductionCalibrated,
       side:level4Reach.side,
     };
   },
@@ -13451,12 +14595,40 @@ window.__level4GameRuntime = Object.freeze({
   mahjongClack: playMahjongShuffleClack,
   drawVerticalReachGuide: drawLevel4VerticalReachGuide,
   cursor(){
+    const point = level4PathControlPoint();
     return {
-      detected: handDetected,
-      x: cursorX,
-      y: cursorY,
+      detected: level4Reach.framingReady,
+      x: point.x,
+      y: point.y,
     };
   },
+});
+
+/* Re-render the small state-derived labels after a global language change.
+   Static and newly inserted DOM copy is handled by localization.js; these
+   renderers preserve selected values, calibration and game state. */
+window.addEventListener('ychlanguagechange', ()=>{
+  pilotLang = window.YCHLanguage?.isEnglish() ? 'en' : 'zh';
+  const researchError = document.getElementById('researchError');
+  if(researchError) researchError.textContent = '';
+  if(currentScreen === 'research') renderPilotLanguage();
+  if(currentScreen === 'library'){
+    document.getElementById('libraryLevelLabel').textContent =
+      currentLevel().tag + ' · ' + currentLevel().name;
+    renderActivityLibrary();
+  }
+  if(currentScreen === 'start'){
+    renderToolModeSettings();
+    renderShoulderExerciseModeSettings();
+    renderShoulderTargetSettings();
+    renderTimingSettings();
+    renderLevel4ScenarioDemo();
+  }
+  if(currentScreen === 'rules') updateRulesForActivity();
+  if(currentScreen === 'game') updateHUD();
+  window.requestAnimationFrame(()=>{
+    window.YCHLanguage?.apply(screens[currentScreen] || document);
+  });
 });
 
 })();
@@ -13790,6 +14962,7 @@ window.__level4GameRuntime = Object.freeze({
 
 </script>
 <script src="level4-three-games-module.js"></script>
+<!-- PUBLIC_BUILD_REMOVE_START: Level 4 developer diagnostics -->
 <script>
 /* Level 4 on-device diagnostics.
    Add ?debug=1 to the URL. This reads the existing text-state hook only and
@@ -13947,9 +15120,10 @@ window.__level4GameRuntime = Object.freeze({
   update();
 })();
 </script>
+<!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v30-20260821-chrome-update-takeover";
+  const LEVEL_APP_BUILD = "v49-20260826-offline-release";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 
