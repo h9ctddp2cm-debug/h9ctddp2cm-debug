@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v55-20260826-level2-outward-abduction";
+const CACHE_VERSION = "fthue-rehab-v57-20260826-level2-horizontal-abduction-clean-ui";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");
