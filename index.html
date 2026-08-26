@@ -9436,6 +9436,8 @@ function updateLevel2LateralGame(){
     const reason=String(level3Lateral.reason||'');
     if(reason.startsWith('missing-')||reason==='invalid-torso-reference'){
       setActionPrompt('暫停：患側肩、肘、腕及軀幹要入鏡','');
+    }else if(reason==='not-at-midline'){
+      setActionPrompt('患手返回中線','');
     }else if(reason.startsWith('torso-')){
       setActionPrompt('暫停：身體保持正中','');
     }else{
@@ -13604,7 +13606,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <script src="level4-three-games-module.js"></script>
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v59-20260826-level2-real-slide-tracking";
+  const LEVEL_APP_BUILD = "v60-20260826-level2-midline-sway-fix";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

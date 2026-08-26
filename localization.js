@@ -69,6 +69,7 @@
     '向患側外滑；返回中線後再開始下一次':'Slide toward the affected side; return to midline before the next repetition.',
     '向患側外滑':'Slide outward to the affected side',
     '好！返回中線':'Good! Return to the centre',
+    '患手返回中線':'Return the affected hand to the centre',
     '患手置中':'Affected hand at centre',
     '準備向外滑':'Get ready to slide outward',
     '荃灣街景':'Tsuen Wan scenes',

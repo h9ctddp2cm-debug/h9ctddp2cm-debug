@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v59-20260826-level2-real-slide-tracking";
+const CACHE_VERSION = "fthue-rehab-v60-20260826-level2-midline-sway-fix";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

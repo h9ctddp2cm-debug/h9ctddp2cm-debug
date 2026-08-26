@@ -3,7 +3,7 @@
   "short_name": "FTHUE 復康",
   "description": "治療師監督下使用的中風上肢復康試玩、訓練及研究工具。",
   "lang": "zh-Hant",
-  "start_url": "./index.html?build=v59-20260826-level2-real-slide-tracking",
+  "start_url": "./index.html?build=v60-20260826-level2-midline-sway-fix",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",

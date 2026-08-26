@@ -13,7 +13,8 @@
     returnThreshold:.16,
     endpointFrames:2,
     maxTorsoTranslation:.14,
-    maxTorsoLean:.12,
+    maxTorsoLean:.24,
+    baselineMidlineTolerance:.10,
     smoothing:.42,
   });
 
@@ -135,6 +136,10 @@
       const pose=geometry(packet.landmarks,side,config.minVisibility,packet.aspectX);
       if(!pose.valid) return reject(pose.reason,generation);
       if(!state.calibrated){
+        if(Math.abs(pose.wrist)>config.baselineMidlineTolerance){
+          state.baselineSamples=[];
+          return reject('not-at-midline',generation);
+        }
         state.baselineSamples.push(pose);
         if(state.baselineSamples.length>=config.baselineFrames){
           state.baseline={
