@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v65-20260828-level6-tripod-pinch-all-games";
+const CACHE_VERSION = "fthue-rehab-v66-20260828-level6-calibration-fresh-frame";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

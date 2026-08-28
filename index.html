@@ -4924,9 +4924,10 @@ async function enterCalibrationFlow(){
   // Unlock AudioContext on first interaction (Safari).
   try{ const c = getAudioCtx(); if(c.state === 'suspended') await c.resume(); }catch(e){}
   let trackingModelReady = false;
-  if(isGrossTabletop()){
-    // Levels 2–4 are Pose-driven. Hand Landmarker success must never mask a
-    // missing Pose model and admit a game that cannot measure the selected arm.
+  if(isGrossTabletop() && !isLevel6ToolGestureTask()){
+    // Levels 2–4 are Pose-driven. Normal Level 6 remains in the legacy gross
+    // classifier for layout, but all six activities require Hand Landmarker
+    // tripod-pinch input and must never enter calibration with Pose alone.
     trackingModelReady = Boolean(await ensurePoseLandmarker().catch(()=>null));
   }else{
     try{
@@ -5988,7 +5989,10 @@ async function startCamera(videoElId){
     if(reusable){
       if(videoEl.srcObject!==reusable) videoEl.srcObject=reusable;
       await videoEl.play().catch(()=>{});
-      if(videoElId==='gameVideo'&&!(await waitForLiveCameraFrame(videoEl))) return false;
+      // Calibration and gameplay share the same fail-closed frame authority.
+      // Rebinding the reusable stream must start the monitor for the current
+      // video element before either pose or hand inference is admitted.
+      if(!(await waitForLiveCameraFrame(videoEl))) return false;
       hideCameraError();
       return true;
     }
@@ -6032,12 +6036,10 @@ async function startCamera(videoElId){
     state.stream = stream;
     videoEl.srcObject = stream;
     await videoEl.play().catch(()=>{});
-    if(videoElId === 'gameVideo'){
-      // This is also used by the no-stream recovery path, which otherwise
-      // reaches initGame without calling ensureGameCameraPlayback().
-      const decodedReady = await waitForLiveCameraFrame(videoEl);
-      if(!decodedReady) return false;
-    }
+    // This also starts/rebinds the freshness monitor for calibration. The
+    // Level 6 hand detector deliberately rejects calls without a fresh frame.
+    const decodedReady = await waitForLiveCameraFrame(videoEl);
+    if(!decodedReady) return false;
     hideCameraError();
     return true;
   }catch(err){
@@ -6545,11 +6547,15 @@ function startCalibLoop(){
     const ctx = calibCanvas.getContext('2d');
     ctx.clearRect(0,0,rectW,rectH);
 
+    // Poll once per calibration iteration and pass this exact frame status to
+    // hand inference. v65 omitted this argument, so detectWrist correctly
+    // failed closed as `hand-frame-stale` even while a clear hand was visible.
+    const frame=level4FrameStatus(video);
     let res;
     if(isLevel6()){
       // Every normal-flow Level 6 calibration uses a fresh selected-hand frame.
       // Pose must never make calibration ready when the hand is absent.
-      res=detectWrist(video);
+      res=detectWrist(video,frame);
     }else if(isGrossTabletop()){
       const pose=detectPose(video);
       const left=activeAffectedSide()==='left';
@@ -6565,7 +6571,7 @@ function startCalibLoop(){
         ? {detected:true,nx:point.x,ny:point.y,lm:pose}
         : {detected:false,nx:0,ny:0,lm:null};
     }else{
-      res=detectWrist(video);
+      res=detectWrist(video,frame);
     }
 
     if(res.detected){
@@ -13977,7 +13983,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <script src="level4-three-games-module.js"></script>
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v65-20260828-level6-tripod-pinch-all-games";
+  const LEVEL_APP_BUILD = "v66-20260828-level6-calibration-fresh-frame";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 
