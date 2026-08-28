@@ -1040,8 +1040,9 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
 .activity-card[data-theme="mahjong"] .ac-visual img{ width:108px; height:92px; }
 .activity-card[data-theme="flowers"] .ac-visual img{ width:72px; height:102px; }
 .activity-card[data-theme="cooking"] .ac-visual img{ width:104px; height:84px; }
-/* Participant-first compact copy: names and difficulty remain visible; explanatory
-   goals stay in each card's accessible label without crowding the screen. */
+/* Participant-first compact copy: concise activity names remain visible.
+   Goals stay in each card's accessible label without crowding the screen;
+   per-activity difficulty labels are intentionally not rendered at any level. */
 #screen-library .activity-card .ac-goal{ display:none; }
 #screen-library .activity-card .ac-copy{ gap:12px; }
 .level-card figcaption{ display:none; }
@@ -1244,39 +1245,41 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
       <article class="level-card">
         <button class="level-select" id="btnLevel67" data-level="67">
           <div class="level-copy">
-            <span class="lv-tag">FTHUE Level 6–7</span>
-            <h3>患手捏放練習</h3>
-            <p class="lv-action">伸手 → 輕捏 → 張開手指</p>
+            <span class="lv-tag">FTHUE Level 6</span>
+            <h3>患臂肩屈曲功能任務</h3>
+            <p class="lv-action">選擇功能活動 → 主動抬高手臂運送 → 完成任務</p>
           </div>
           <div class="level-motion double">
             <figure>
               <img src="img/advanced/hand_clothes_peg.gif"
-                alt="手臂離開桌面，以衫夾示範功能性捏放動作"
+                alt="患臂手持真實衣夾，主動抬高手臂把衣物運送到晾衫繩"
                 loading="lazy" decoding="async"
                 data-testid="gif-level-6-clothes-peg">
-              <figcaption>衫夾</figcaption>
+              <figcaption>衣夾晾衫</figcaption>
             </figure>
             <figure>
               <img src="img/advanced/hand_chopsticks.gif"
-                alt="手臂離開桌面，以筷子示範功能性捏放動作"
+                alt="患臂手持真實筷子，主動抬高手臂把點心運送到飯碗"
                 loading="lazy" decoding="async"
                 data-testid="gif-level-6-chopsticks">
-              <figcaption>筷子</figcaption>
+              <figcaption>筷子點心</figcaption>
             </figure>
           </div>
         </button>
-        <div class="trial-actions" aria-label="FTHUE Level 6 至 7 模式">
+        <div class="trial-actions" aria-label="FTHUE Level 6 模式">
           <button type="button" data-session-level="67" data-session-mode="trial"
-            data-testid="button-mode-trial-67" aria-label="FTHUE Level 6 至 7 試玩，不錄影及不提示治療師">試玩</button>
+            data-testid="button-mode-trial-67" aria-label="FTHUE Level 6 試玩，不錄影及不提示治療師">試玩</button>
           <button type="button" data-session-level="67" data-session-mode="training"
-            data-testid="button-mode-training-67" aria-label="FTHUE Level 6 至 7 訓練，錄影及提示治療師">訓練</button>
+            data-testid="button-mode-training-67" aria-label="FTHUE Level 6 訓練，錄影及提示治療師">訓練</button>
         </div>
         <details class="level-details">
           <summary>詳情</summary>
           <p class="lv-note">
-            <span class="lv-line">坐在椅子或輪椅，手臂離開桌面</span>
-            <span class="lv-line">伸出患手 → 手指輕捏 → 張開手指</span>
-            <span class="lv-line">三種玩法：頭三指輕捏／衫夾／筷子</span>
+            <span class="lv-line">坐在椅子或輪椅，患臂離開桌面</span>
+            <span class="lv-line">選好功能活動後即可開始，不需選擇肩屈曲角度</span>
+            <span class="lv-line">六個功能活動：插花／筷子點心／衣夾晾衫／啤牌／麻雀／煮蛋炒飯</span>
+            <span class="lv-line">筷子點心／衣夾晾衫使用真實工具；其餘為虛擬活動</span>
+            <span class="lv-line">筷子點心偵測患手食指＋中指開合；衣夾晾衫偵測患手三點捏握開合；肩屈曲控制運送</span>
             <span class="lv-line">身體保持正中，避免過度側彎</span>
           </p>
         </details>
@@ -1531,18 +1534,6 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
           <summary style="font-weight:800;">治療師詳情</summary>
           <p style="margin:6px 0 0;font-weight:700;">相機角度只供遊戲控制，並非量角器 ROM，亦不作診斷或自動 FTHUE 分級。</p>
         </details>
-      </div>
-    </div>
-
-    <div class="card collapsible" id="level67ToolCard" data-accordion="level67-tool" hidden>
-      <h2><span>玩法</span><span class="selected-preview" id="preview-tool-mode">空手（三指）</span></h2>
-      <div class="card-body">
-        <div class="option-row" id="level67ToolOptions">
-          <button class="option-btn selected" data-tool-mode="bare">空手（三指）</button>
-          <button class="option-btn" data-tool-mode="peg">夾仔</button>
-          <button class="option-btn" data-tool-mode="chopsticks">筷子</button>
-        </div>
-        <p id="toolModeHint" style="margin:8px 0 0;color:#555;text-align:center;font-weight:700;">偵測三指輕捏</p>
       </div>
     </div>
 
@@ -2304,7 +2295,9 @@ const state = {
   running: false,
   paused: false,
   gameType: 'dwell',     // 'dwell' | 'grasp' | 'pinch' — 由 level 決定
-  toolMode: 'bare',       // Level 6–7: bare | peg | chopsticks
+  toolMode: 'bare',       // Pilot-study research track only (Level 5/6–7): bare | peg | chopsticks
+  level6Task: 'chopsticks', // Normal Level 6: 4 restored activities + 2 replacement tool tasks
+  level6LockedTheme: '',    // Set only by a Level 6 activity-library card; immutable throughout setup/play
   graspType: 'any',      // fixed: open-hand detection
   affectedSide: '',      // normal play: therapist must choose left or right before calibration
   qaMode: false,         // QA-only: 經 hook 注入游標，不需相機
@@ -2529,18 +2522,25 @@ function isLevel3Tabletop(){
   return isLevel2HorizontalAbduction();
 }
 function isGrossTabletop(){
-  return !research.active && ['2','3','4'].includes(state.level);
+  return !research.active && ['2','3','4','67'].includes(state.level);
 }
 function isShoulderFlexionLevel(){
-  return !research.active && (state.level === '3' || state.level === '4');
+  return !research.active && (state.level === '3' || state.level === '4' || state.level === '67');
 }
+function isLevel6(){ return !research.active && state.level === '67'; }
+function isLevel6Chopsticks(){ return isLevel6() && state.level6Task === 'chopsticks'; }
+function isLevel6Peg(){ return isLevel6() && state.level6Task === 'peg'; }
+function isLevel6ToolGestureTask(){ return isLevel6Chopsticks() || isLevel6Peg(); }
 function affectedDirectionLabel(){
   if(isLevel4WipeGame()) return '伸肘向外畫弧';
   if(isLevel4Tabletop()) return isLevel3Tabletop()
     ? (activeAffectedSide() === 'right' ? '向右患側外滑' : '向左患側外滑')
     : '承托下伸肘向上前送';
   if(isShoulderFlexionLevel()) return state.level === '3'
-    ? '肩屈曲至治療師選定的 30–60° 目標' : '肩屈曲至治療師選定的 60° 或以上目標';
+    ? '肩屈曲至治療師選定的 30–60° 目標'
+    : (state.level === '4'
+      ? '肩屈曲至治療師選定的 60° 或以上目標'
+      : '主動抬高手臂運送到功能目標');
   return activeAffectedSide() === 'right' ? '向畫面右外下方放置' : '向畫面左外下方放置';
 }
 function affectedSelectionZone(){
@@ -2816,14 +2816,14 @@ const SAFETY_LEVEL_NOTES = {
   '3': '患臂離桌；軀幹及全臂入鏡。',
   '4': '患臂離桌；軀幹及全臂入鏡。',
   '5': '患臂離桌；伸手、輕合、張手。',
-  '67': '患臂離桌；按玩法捏放。',
+  '67': '患臂離桌；選擇功能活動，主動抬高手臂完成運送。',
 };
 const SAFETY_LEVEL_TITLES = {
   '2': 'FTHUE Level 2 · 桌面承托訓練',
   '3': 'FTHUE Level 3 · 肩屈曲 30–60°',
   '4': 'FTHUE Level 4 · 肩屈曲 60° 或以上',
   '5': 'FTHUE Level 5 · 患手握放練習',
-  '67': 'FTHUE Level 6–7 · 患手捏放練習',
+  '67': 'FTHUE Level 6 · 患臂肩屈曲功能任務',
 };
 const SAFETY_DEFAULT_ITEMS = [
   '坐姿穩定｜Level 2 桌面承托｜Level 3–7 患臂離桌',
@@ -2845,11 +2845,11 @@ const SAFETY_LEVEL_5_ITEMS = [
   '治療師全程監督。',
 ];
 const SAFETY_LEVEL_67_ITEMS = [
-  '坐穩；伸手、輕捏、張手。',
-  '身體保持正中。',
+  '坐穩；患臂離桌，主動抬高手臂完成運送。',
+  '先選擇功能活動；筷子點心或衣夾晾衫才使用真實工具。',
   '先試 3 次。',
   '慢、穩；可休息。',
-  '治療師全程監督。',
+  '治療師全程監督；如使用實體工具，確認拿法正確。',
 ];
 
 let safetyGatePending = null;   // { levelKey, onContinue, onBack }
@@ -2870,7 +2870,7 @@ function openSafetyGate(levelKey, onContinue, onBack){
       : levelKey === '5'
         ? '開始前確認（FTHUE Level 5）'
         : levelKey === '67'
-          ? '開始前確認（FTHUE Level 6–7）'
+          ? '開始前確認（FTHUE Level 6）'
       : '開始前確認';
   const usesApprovedChecklist = levelKey === '4' || levelKey === '5' || levelKey === '67';
   if(supervision) supervision.hidden = usesApprovedChecklist;
@@ -3423,8 +3423,8 @@ window.SAFETY_LEVEL_NOTES = SAFETY_LEVEL_NOTES;
 
 /* Therapist-facing brief shown on the calibration screen for each public level.
    Level 4 carries the mandatory 3-attempt distance calibration instruction;
-   Level 5 explains the personalised release threshold; Level 6 states that
-   bare-hand aperture detection is the default. */
+   Level 5 explains the personalised release threshold; Level 6 states the
+   six activity choices and each task's tracking boundary. */
 const CALIB_LEVEL_BRIEF = {
   '3': '<b>Level 3 肩屈曲設定</b><br>'
      + '患者持續握住所選物件；不需對鏡頭做抓放。治療師選擇 30–60° 相機估算目標。<br>'
@@ -3440,7 +3440,11 @@ const CALIB_LEVEL_BRIEF = {
      + '拿取用「<b>輕輕合手拿起</b>」，不要大力握實；拿住物件超過 '
      + '<b>5 秒</b> 系統會自動暫停，提示放下物件、張開手、放鬆。<br>'
      + '預設使用<b>較大物件及較短距離</b>；如連續放手困難，系統會提示重新評估。',
-  '67': '<b>Level 6–7</b><br>依所選玩法校準；只需輕輕操作，不要用盡力。',
+  '67': '<b>Level 6 患臂肩屈曲功能任務</b><br>'
+     + '選好功能活動後即可開始，不需選擇肩屈曲角度。每次動作由參加者個人化起點開始。<br>'
+     + '<span lang="en">Choose a functional activity and begin without selecting a shoulder-flexion angle. Each repetition starts from the participant’s personalised start position.</span><br>'
+     + '可選插花、筷子點心、衣夾晾衫、啤牌、麻雀或煮蛋炒飯。筷子點心偵測已選患手食指＋中指開合；衣夾晾衫偵測已選患手三點捏握開合；肩屈曲控制運送。網頁不識別實體工具，亦不量度握力或捏力。<br>'
+     + '<span style="color:#7d1a12;">注意：相機追蹤只控制遊戲，亦不作診斷或自動 FTHUE 分級。</span>',
 };
 function renderCalibLevelBrief(){
   const el = document.getElementById('calibLevelBrief');
@@ -4293,9 +4297,83 @@ const LEVELS = {
          actionLabel:'持續握住物件，患臂肩屈曲至治療師選定的 60° 或以上目標；不偵測抓放' },
   '5': { id:'5', tag:'FTHUE Level 5', name:'患手握放練習', gameType:'grasp',
          actionLabel:'伸出患手、輕輕合手、張開手' },
-  '67': { id:'67', tag:'FTHUE Level 6–7', name:'患手捏放練習', gameType:'pinch',
-          actionLabel:'伸出患手、手指輕捏、張開手指' },
+  '67': { id:'67', tag:'FTHUE Level 6', name:'患臂肩屈曲功能任務', gameType:'dwell',
+          actionLabel:'患臂主動抬高手臂，把物件運送到功能目標' },
 };
+// Normal Level 6 restores the four non-dim-sum/non-laundry v60 activities and
+// keeps the two v61 replacement tool tasks. All six use the shared
+// shoulder-flexion Pose controller for transport. The two replacement tool
+// tasks additionally require visible selected-hand opening/closing; the site
+// still does not identify a physical tool or measure grip/pinch force.
+const LEVEL6_TASKS = {
+  flowers:{
+    id:'flowers', theme:'flowers',
+    gameType:'dwell',
+    label:'插花', labelEn:'Flower Arranging',
+    hint:'主動抬高手臂，把虛擬花材運送到花瓶',
+    actionCue:'主動抬高手臂運送 → 把花材放入花瓶',
+  },
+  chopsticks:{
+    id:'chopsticks', theme:'chopstick_dimsum',
+    gameType:'grasp',
+    label:'筷子點心', labelEn:'Chopstick Dim Sum',
+    hint:'患手食指及中指稍伸直打開筷子，稍屈曲夾起點心；肩屈曲運送，到飯碗再伸直放下',
+    actionCue:'食指＋中指稍伸直 → 稍屈曲夾起 → 肩屈曲運送 → 再伸直放下',
+  },
+  peg:{
+    id:'peg', theme:'peg_laundry',
+    gameType:'grasp',
+    label:'衣夾晾衫', labelEn:'Cloth-Peg Laundry',
+    hint:'患手以三點捏握張開衣夾、輕捏夾起衣物；肩屈曲運送，到晾衫繩再張開放下',
+    actionCue:'三點捏握張開 → 輕捏夾起 → 肩屈曲運送 → 再張開放下',
+  },
+  cards:{
+    id:'cards', theme:'cards',
+    gameType:'dwell',
+    label:'啤牌', labelEn:'Playing Cards',
+    hint:'主動抬高手臂，把虛擬啤牌運送到相同花色的牌堆',
+    actionCue:'主動抬高手臂運送 → 把啤牌放到相同花色',
+  },
+  mahjong:{
+    id:'mahjong', theme:'mahjong',
+    gameType:'dwell',
+    label:'麻雀', labelEn:'Mahjong',
+    hint:'主動抬高手臂，把虛擬麻雀運送到相同圖案的位置',
+    actionCue:'主動抬高手臂運送 → 把麻雀放到相同圖案',
+  },
+  cooking:{
+    id:'cooking', theme:'cooking',
+    gameType:'dwell',
+    label:'煮蛋炒飯', labelEn:'Cook Egg Fried Rice',
+    hint:'主動抬高手臂運送，依照步驟完成虛擬蛋炒飯',
+    actionCue:'主動抬高手臂運送 → 依照步驟煮蛋炒飯',
+  },
+};
+function level6TaskProfile(){ return LEVEL6_TASKS[state.level6Task] || LEVEL6_TASKS.chopsticks; }
+function level6TaskForTheme(themeId){
+  return Object.values(LEVEL6_TASKS).find(task=>task.theme===themeId) || null;
+}
+function lockLevel6Activity(themeId){
+  const task=level6TaskForTheme(themeId);
+  if(!task) return false;
+  state.level6LockedTheme=task.theme;
+  state.theme=task.theme;
+  state.level6Task=task.id;
+  applyInteractionModeForLevel();
+  return true;
+}
+function assertLevel6ActivityLock(){
+  if(state.level!=='67'||research.active) return true;
+  const task=level6TaskForTheme(state.level6LockedTheme);
+  if(!task) return false;
+  state.theme=task.theme;
+  state.level6Task=task.id;
+  applyInteractionModeForLevel();
+  return true;
+}
+// Pilot-study research track only. Kept unchanged for the existing clinical
+// trial arm structure (research.toolUsed: none | cloth_peg | chopsticks),
+// which predates and is separate from the normal Level 6 setup above.
 const LEVEL67_TOOL_MODES = {
   bare:{
     gameType:'pinch', label:'空手（三指）', hint:'偵測三指輕捏',
@@ -4326,6 +4404,13 @@ const SHOULDER_EXERCISE_MODES = {
 };
 function currentLevel(){ return LEVELS[state.level] || LEVELS['4']; }
 function level67ToolProfile(){ return LEVEL67_TOOL_MODES[state.toolMode] || LEVEL67_TOOL_MODES.bare; }
+// Rules/HUD/prompt text for Level 6 must reflect whichever track is active:
+// the pilot-study research track keeps its own bare/peg/chopsticks tool
+// profile (LEVEL67_TOOL_MODES), while normal (non-research) Level 6 always
+// uses the six-task profile (LEVEL6_TASKS) synced from state.level6Task.
+function activeLevel67ToolProfile(){
+  return (state.level === '67' && research.active) ? level67ToolProfile() : level6TaskProfile();
+}
 function shoulderExerciseModeAvailable(level=state.level){ return level==='3'||level==='4'; }
 function shoulderExerciseProfile(){
   return SHOULDER_EXERCISE_MODES[state.shoulderExerciseMode] || SHOULDER_EXERCISE_MODES.active;
@@ -4358,17 +4443,29 @@ function renderShoulderExerciseModeSettings(){
   });
 }
 function applyInteractionModeForLevel(){
-  state.gameType = state.level === '67' ? level67ToolProfile().gameType : currentLevel().gameType;
+  // Pilot-study research track keeps its own bare/peg/chopsticks gameType
+  // (pinch/grasp/dwell) via LEVEL67_TOOL_MODES — unchanged from before.
+  // Normal Level 6 keeps pose-only dwell for the four restored activities.
+  // The two replacement tool tasks combine shoulder transport with selected
+  // affected-hand opening/closing and therefore use the grasp state machine.
+  state.gameType = (state.level === '67' && research.active)
+    ? level67ToolProfile().gameType
+    : (state.level === '67' ? level6TaskProfile().gameType : currentLevel().gameType);
 }
 function renderShoulderTargetSettings(){
   const card=document.getElementById('shoulderTargetCard');
   const box=document.getElementById('shoulderTargetOptions');
   if(!card||!box)return;
+  // The target-angle selector is intentionally limited to Levels 3 and 4.
+  // Level 6 keeps the existing fixed internal reach transport endpoint and
+  // never asks a therapist to choose an angle.
   const enabled=state.level==='3'||state.level==='4';
   card.hidden=!enabled;
   if(!enabled)return;
-  const values=state.level==='3'?[30,40,50,60]:Array.from({length:13},(_,index)=>60+index*10);
-  if(!values.includes(Number(state.shoulderTargetDeg))) state.shoulderTargetDeg=state.level==='3'?40:60;
+  const values=state.level==='3'?[30,40,50,60]
+    :Array.from({length:13},(_,index)=>60+index*10);
+  const defaultDeg=state.level==='3'?40:60;
+  if(!values.includes(Number(state.shoulderTargetDeg))) state.shoulderTargetDeg=defaultDeg;
   box.innerHTML='';
   values.forEach(value=>{
     const button=document.createElement('button');
@@ -4413,19 +4510,12 @@ function renderTimingSettings(){
     ? (Number(state.dwellMs)===0?'不用保持':Number(state.dwellMs)/1000+'秒')
     : Number(state.dwellMs)/1000+'秒');
 }
-function isLevel67BareMode(){ return state.level === '67' && state.toolMode === 'bare'; }
-function isPegMode(){ return state.level === '67' && state.toolMode === 'peg'; }
-function isChopsticksMode(){ return state.level === '67' && state.toolMode === 'chopsticks'; }
-function renderToolModeSettings(){
-  const card = document.getElementById('level67ToolCard');
-  if(!card) return;
-  card.hidden = state.level !== '67';
-  const profile = level67ToolProfile();
-  document.getElementById('preview-tool-mode').textContent = profile.label;
-  document.getElementById('toolModeHint').textContent = profile.hint;
-  document.querySelectorAll('#level67ToolOptions [data-tool-mode]').forEach(button=>{
-    button.classList.toggle('selected', button.dataset.toolMode === state.toolMode);
-  });
+function isLevel67BareMode(){ return state.level === '67' && research.active && state.toolMode === 'bare'; }
+function isPegMode(){
+  return state.level === '67' && (research.active ? state.toolMode === 'peg' : state.level6Task === 'peg');
+}
+function isChopsticksMode(){
+  return state.level === '67' && (research.active ? state.toolMode === 'chopsticks' : state.level6Task === 'chopsticks');
 }
 document.getElementById('modeOptions').addEventListener('click', (e)=>{
   const btn = e.target.closest('.option-btn');
@@ -4439,12 +4529,14 @@ document.getElementById('modeOptions').addEventListener('click', (e)=>{
 /* ==================== 級別選擇 → 活動選擇 → 設定 ==================== */
 function selectLevel(levelId){
   state.level = levelId;
+  state.level6LockedTheme = '';
   // A new level/session follows the existing settings architecture: use a
   // conservative default, then preserve the therapist's choice through setup,
   // calibration, rules and gameplay until another level is selected.
   state.shoulderExerciseMode='active';
   if(levelId==='3') state.shoulderTargetDeg=40;
   if(levelId==='4') state.shoulderTargetDeg=60;
+  if(levelId==='67') state.shoulderTargetDeg=60;
   state.dwellMs=(levelId==='3'||levelId==='4')?0:1000;
   if(shoulderFlexionController) shoulderFlexionController.setExerciseMode('active');
   applyInteractionModeForLevel();
@@ -4640,6 +4732,10 @@ function selectActivity(themeId){
     return;
   }
   state.theme = themeId;
+  // Level 6 has exactly one task-selection surface: the activity library.
+  // Lock that card's task now and preserve it through setup, calibration and
+  // gameplay. No setup control is allowed to rewrite the task/theme pair.
+  if(state.level === '67' && !lockLevel6Activity(themeId)) return;
   const th = getTheme();
   document.getElementById('settingsTitle').textContent = th.title;
   document.getElementById('settingsContext').textContent =
@@ -4653,7 +4749,6 @@ function selectActivity(themeId){
         ? '相機：橫放，患側前斜約 30–45°；軀幹及全臂入鏡。'
         : '相機：患手及手指入鏡。';
   }
-  renderToolModeSettings();
   renderShoulderExerciseModeSettings();
   renderShoulderTargetSettings();
   renderTimingSettings();
@@ -4696,16 +4791,15 @@ function renderActivityLibrary(){
     btn.className = 'activity-card';
     btn.dataset.theme = id;
     btn.innerHTML =
-      '<div class="ac-copy"><h3></h3><p class="ac-goal"></p><span class="ac-meta"></span></div>' +
+      '<div class="ac-copy"><h3></h3><p class="ac-goal"></p></div>' +
       '<div class="ac-visual"><img loading="eager" decoding="async"></div>';
     btn.querySelector('h3').textContent = th.title;
     btn.querySelector('.ac-goal').textContent = th.goal;
-    btn.querySelector('.ac-meta').textContent = '難度：' + th.difficulty;
     const img = btn.querySelector('.ac-visual img');
     img.src = th.thumbnail;
     img.alt = th.thumbnailAlt;
     img.addEventListener('error', ()=> btn.querySelector('.ac-visual').remove());
-    btn.setAttribute('aria-label', th.title + '：' + th.goal + '，難度' + th.difficulty);
+    btn.setAttribute('aria-label', th.title + '：' + th.goal);
     btn.addEventListener('click', ()=> selectActivity(id));
     grid.appendChild(btn);
   });
@@ -4717,14 +4811,6 @@ document.getElementById('durationOptions').addEventListener('click', e=>{
   document.querySelectorAll('#durationOptions .option-btn').forEach(b=>b.classList.remove('selected'));
   btn.classList.add('selected');
   state.duration = parseInt(btn.dataset.duration);
-});
-document.getElementById('level67ToolOptions').addEventListener('click', e=>{
-  const btn = e.target.closest('[data-tool-mode]');
-  if(!btn || !LEVEL67_TOOL_MODES[btn.dataset.toolMode]) return;
-  state.toolMode = btn.dataset.toolMode;
-  applyInteractionModeForLevel();
-  resetNormalCalibration();
-  renderToolModeSettings();
 });
 document.getElementById('dwellOptions').addEventListener('click', e=>{
   const btn = e.target.closest('.option-btn');
@@ -4810,6 +4896,11 @@ document.getElementById('fontOptions').addEventListener('click', e=>{
 });
 
 async function enterCalibrationFlow(){
+  if(state.level==='67'&&!research.active&&!assertLevel6ActivityLock()){
+    renderActivityLibrary();
+    showScreen('library');
+    return;
+  }
   resetNormalCalibration();
   resetSessionSafety();
   resetSafetyRuntime();
@@ -4943,7 +5034,7 @@ function updateRulesForActivity(){
       : (state.level === '4'
         ? shoulderModeCue+'0° 起點 → 治療師選定 60° 或以上目標 → 返回 0°'
     : (state.level === '67'
-      ? level67ToolProfile().actionCue
+      ? activeLevel67ToolProfile().actionCue
       : '張手 → 輕握 → 放手')));
   if(research.active){
     const advanced = research.dualTaskLevel === 'advanced_sort_motor';
@@ -4983,7 +5074,7 @@ function updateRulesForActivity(){
         : ((state.level === '3'||state.level === '4')
           ? shoulderExerciseProfile().patient+'至治療師所選目標，再返回。相機只追蹤已選患側手臂；角度只作訓練估算。'
         : (state.level === '67'
-          ? level67ToolProfile().actionCue + '。移到位置。'
+          ? activeLevel67ToolProfile().actionCue + '。移到位置。'
           : '先張開手，輕輕合手拿起。移到位置，再張開手放下。'))) +
       r.lines[0] + '慢慢來。';
     return;
@@ -5004,7 +5095,7 @@ function updateRulesForActivity(){
       : ((state.level === '3'||state.level === '4')
         ? `${shoulderExerciseProfile().patient}至治療師所選目標，把${th.itemWord}送到目標，再返回。相機只追蹤已選患側手臂；角度只作訓練估算。`
       : (state.level === '67'
-        ? `${level67ToolProfile().actionCue}。將${th.itemWord}移到同款目標。慢慢來。`
+        ? `${activeLevel67ToolProfile().actionCue}。將${th.itemWord}移到同款目標。慢慢來。`
         : `先張開手。輕輕合手拿起${th.itemWord}，不用大力握。移到同款目標，再張開手放下。慢慢來。`));
 }
 
@@ -5124,6 +5215,11 @@ async function ensureGameCameraPlayback(prime){
 
 async function startSelectedGame(){
   if(gameStartInProgress) return;
+  if(state.level==='67'&&!research.active&&!assertLevel6ActivityLock()){
+    renderActivityLibrary();
+    showScreen('library');
+    return;
+  }
   gameStartInProgress = true;
   clearTimeout(rulesStartTimer);
   try{ window.speechSynthesis.cancel(); }catch(e){}
@@ -5314,7 +5410,7 @@ function showLevelUpBanner(){
       : (state.level === '4'
       ? `遊戲開始。前臂放在桌面。手掌或滑墊停在${itemWord0}上，沿中線慢慢向前，再在目標停住。`
       : (state.level === '67'
-        ? `遊戲開始。${level67ToolProfile().actionCue}。將${itemWord0}移到同款目標。`
+        ? `遊戲開始。${activeLevel67ToolProfile().actionCue}。將${itemWord0}移到同款目標。`
         : `遊戲開始。張開手，輕輕合手拿起${itemWord0}。移到同款目標，再張開手放下。`));
     persistText = okTag;
   } else if(tier === 1){
@@ -6060,30 +6156,36 @@ function selectedAffectedHandIndex(results, inputMirrored=false){
   return selected;
 }
 
-// 偵測食指尖位置，回傳 {detected, nx, ny}（nx/ny 已經鏡像處理，範圍 0-1）
-function detectWrist(videoEl){
-  if(!videoEl || videoEl.readyState < 2){
-    return { detected:false };
+function computeChopstickFlexState(lm, isClosedPrev){
+  if(!hasFiniteHandLandmarks(lm, [0,5,8,9,12,17])){
+    return {isClosed:false,isOpen:false,score:0,indexRatio:null,middleRatio:null,valid:false};
   }
-  let results = null;
-  if(handLandmarker){
-    try{
-      results = handLandmarker.detectForVideo(videoEl, nextTs('hand'));
-    }catch(e){
-      results = null;
-    }
-  }
+  const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y,(a.z-b.z)*.20);
+  const indexRatio=distance(lm[8],lm[0])/Math.max(distance(lm[5],lm[0]),.001);
+  const middleRatio=distance(lm[12],lm[0])/Math.max(distance(lm[9],lm[0]),.001);
+  const mean=(indexRatio+middleRatio)/2;
+  // Both chopstick fingers must agree. Hysteresis accepts a slight flexion to
+  // close while requiring a clear re-extension before release.
+  const flexThreshold=isClosedPrev?1.60:1.48;
+  const isClosed=indexRatio<=flexThreshold&&middleRatio<=flexThreshold;
+  const isOpen=indexRatio>=1.68&&middleRatio>=1.68;
+  return {isClosed,isOpen,score:clamp01((1.78-mean)/.55),indexRatio,middleRatio,valid:true};
+}
+
+function interpretHandResults(results, inputMirrored=false){
   if(results && results.landmarks && results.landmarks.length > 0){
     // CSS scaleX(-1) mirrors presentation, not the CanvasImageSource passed to
     // Hand Landmarker. Keep inference mirroring explicit so display settings
     // can never swap the selected anatomical hand.
-    const selectedHandIndex = selectedAffectedHandIndex(results, false);
+    const selectedHandIndex = selectedAffectedHandIndex(results, inputMirrored);
     if(selectedHandIndex < 0) return { detected:false, reason:'affected-hand-not-detected' };
     const lm = results.landmarks[selectedHandIndex];
     const required = isPegMode()
       ? [0,2,4,5,8,9,12,17]
       : state.gameType === 'pinch'
       ? [0,4,5,8,9,12,17]
+      : isLevel6Chopsticks()
+        ? [0,5,8,9,12,17]
       : isChopsticksMode()
         ? [0,5,8,9,13,17]
       : isGrossTabletop()
@@ -6094,10 +6196,18 @@ function detectWrist(videoEl){
     }else{
     // Cursor position
     const tip = lm[8]; // index finger tip = landmark 8 (reach mode)
+    if(isLevel6Chopsticks()){
+      const chopsticks=computeChopstickFlexState(lm,isGrasping);
+      return { detected:true, nx:interactionX((lm[8].x+lm[12].x)/2), ny:(lm[8].y+lm[12].y)/2,
+        isGrasping:stabiliseDetectedGesture(chopsticks.isClosed,'chopsticks'),
+        graspScore:chopsticks.score,isOpenPrep:chopsticks.isOpen,
+        indexRatio:chopsticks.indexRatio,middleRatio:chopsticks.middleRatio,lm,
+        source:'chopsticks-index-middle-flexion' };
+    }
     if(isChopsticksMode()){
       return { detected:true, nx:interactionX(tip.x), ny:tip.y,
         isGrasping:false, graspScore:0, isOpenPrep:true, lm,
-        source:'index-dwell' };
+        source:'chopsticks-index-dwell' };
     }
     // palm center = average of landmarks 0,5,9,13,17
     const palmX = (lm[0].x + lm[5].x + lm[9].x + lm[13].x + lm[17].x) / 5;
@@ -6137,7 +6247,9 @@ function detectWrist(videoEl){
   }
   // Tabletop hands are often partly hidden by the table edge. Pose landmarks
   // keep gross-arm levels playable even when the hand model loses the fingers.
-  if(isGrossTabletop()){
+  // The two Level 6 tool replacements are deliberate exceptions: they must
+  // fail closed rather than substituting a pose wrist for an absent affected hand.
+  if(isGrossTabletop() && !isLevel6ToolGestureTask()){
     const pose = (lastPoseLm && nowMs()-lastPoseTs < 250) ? lastPoseLm : detectPose(videoEl);
     const wristIndex = activeAffectedSide() === 'left' ? 15 : 16;
     const wrist = pose?.[wristIndex];
@@ -6155,6 +6267,22 @@ function detectWrist(videoEl){
     }
   }
   return { detected:false };
+}
+
+// 偵測食指尖位置，回傳 {detected, nx, ny}（nx/ny 已經鏡像處理，範圍 0-1）
+function detectWrist(videoEl, frame){
+  if(!videoEl || videoEl.readyState < 2 || !frame?.fresh){
+    return { detected:false, reason:'hand-frame-stale' };
+  }
+  let results = null;
+  if(handLandmarker){
+    try{
+      results = handLandmarker.detectForVideo(videoEl, nextTs('hand'));
+    }catch(e){
+      results = null;
+    }
+  }
+  return interpretHandResults(results,false);
 }
 
 function computeGraspScore(lm, isGraspingPrev){
@@ -6293,7 +6421,9 @@ function computePinchState(lm, isPinchingPrev){
 const GESTURE_CONFIRM_MS = 60;
 let detectedGestureState = { mode:'', stable:false, candidate:false, candidateAt:0 };
 function stabiliseDetectedGesture(rawValue, mode){
-  const now = performance.now();
+  // Use the application's monotonic clock so synthetic fresh-frame tests and
+  // production frames share the same confirmation semantics.
+  const now = nowMs();
   if(detectedGestureState.mode !== mode){
     detectedGestureState = {mode, stable:false, candidate:rawValue, candidateAt:now};
     return false;
@@ -6315,7 +6445,7 @@ function stabiliseDetectedGesture(rawValue, mode){
 }
 function isGraspStyleMode(){ return state.gameType === 'grasp' || state.gameType === 'pinch'; }
 function isPinchMode(){ return state.gameType === 'pinch'; }
-function isLevel67GestureMode(){ return state.level === '67' && !isChopsticksMode(); }
+function isLevel67GestureMode(){ return state.level === '67' && (research.active || isLevel6ToolGestureTask()); }
 
 const DOT_EMA = 0.15;  // lower = smoother (less jitter, slight lag) - 陰低給90歲tremor病人減少邊緣重新偵測造成的拖抳
 
@@ -6871,9 +7001,100 @@ function drawBasket(ctx, x, y, s){
   ctx.restore();
 }
 
+/* ---- Level 6：筷子點心 / 衣夾晾衫（大型高對比 Canvas 物件；不做工具/抓放偵測） ---- */
+function drawRiceBowl(ctx, x, y, s){
+  // 大碗身：白瓷加藍邊，供筷子將點心放入的目標。
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,0.16)';
+  ctx.beginPath();
+  ctx.ellipse(x, y + s*0.62, s*0.92, s*0.20, 0, 0, Math.PI*2);
+  ctx.fill();
+  const bowlGrad = ctx.createLinearGradient(0, y - s*0.1, 0, y + s*0.62);
+  bowlGrad.addColorStop(0, '#FFFFFF');
+  bowlGrad.addColorStop(1, '#E7E2D6');
+  ctx.fillStyle = bowlGrad;
+  ctx.beginPath();
+  ctx.moveTo(x - s*0.98, y - s*0.05);
+  ctx.quadraticCurveTo(x, y + s*0.78, x + s*0.98, y - s*0.05);
+  ctx.quadraticCurveTo(x, y + s*0.14, x - s*0.98, y - s*0.05);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#2E6DA4'; ctx.lineWidth = Math.max(4, s*0.10);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.ellipse(x, y - s*0.05, s*0.98, s*0.16, 0, 0, Math.PI*2);
+  ctx.strokeStyle = '#2E6DA4'; ctx.lineWidth = Math.max(3, s*0.07);
+  ctx.stroke();
+  ctx.restore();
+}
+function drawBeefBall(ctx, x, y, r){
+  // 沒有現成牛肉丸圖檔，程序繪製一顆有光澤的丸子並插上竹籤示意。
+  ctx.save();
+  const grad = ctx.createRadialGradient(x - r*0.25, y - r*0.3, r*0.15, x, y, r*0.85);
+  grad.addColorStop(0, '#8B5A3C');
+  grad.addColorStop(1, '#5B3A24');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(x, y, r*0.72, 0, Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle = '#3E2716'; ctx.lineWidth = Math.max(2, r*0.05);
+  ctx.stroke();
+  ctx.strokeStyle = '#B98A5E'; ctx.lineWidth = Math.max(3, r*0.10);
+  ctx.beginPath();
+  ctx.moveTo(x - r*0.05, y - r*0.66); ctx.lineTo(x - r*0.05, y - r*1.05);
+  ctx.stroke();
+  ctx.restore();
+}
+function drawChopsticksHolding(ctx, x, y, r, itemDrawer){
+  // 大型高對比虛擬筷子（不偵測真實筷子/夾握），夾住指定點心並停在游標位置。
+  ctx.save();
+  const spread = r*0.34;
+  ctx.strokeStyle = '#8B5A2B';
+  ctx.lineCap = 'round';
+  ctx.lineWidth = Math.max(6, r*0.16);
+  ctx.beginPath();
+  ctx.moveTo(x - spread, y - r*1.9); ctx.lineTo(x - r*0.06, y - r*0.08);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x + spread, y - r*1.9); ctx.lineTo(x + r*0.06, y - r*0.08);
+  ctx.stroke();
+  if(itemDrawer) itemDrawer(ctx, x, y + r*0.05, r*0.86);
+  ctx.restore();
+}
+function drawDryingPole(ctx, x, y, s){
+  // 香港常見曬衫竹笆（晾衫棍架），懸掛在畫面上方作為晾衫目標。
+  ctx.save();
+  ctx.strokeStyle = '#B98A4B'; ctx.lineCap = 'round';
+  ctx.lineWidth = Math.max(8, s*0.16);
+  ctx.beginPath();
+  ctx.moveTo(x - s*1.05, y); ctx.lineTo(x + s*1.05, y);
+  ctx.stroke();
+  ctx.fillStyle = '#7A4E1D';
+  ctx.beginPath(); ctx.arc(x - s*1.05, y, s*0.14, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(x + s*1.05, y, s*0.14, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+function drawPegHolding(ctx, x, y, r, itemDrawer){
+  // 大型高對比虛擬衣夾（不偵測真實衣夾/開合），夾住指定衣物並掛在晾衫繩上。
+  ctx.save();
+  if(itemDrawer) itemDrawer(ctx, x, y + r*0.30, r*0.92);
+  ctx.fillStyle = '#D94F4F';
+  ctx.beginPath();
+  ctx.moveTo(x - r*0.30, y - r*0.62);
+  ctx.lineTo(x + r*0.30, y - r*0.62);
+  ctx.lineTo(x + r*0.20, y - r*0.06);
+  ctx.lineTo(x - r*0.20, y - r*0.06);
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = '#8E2E2E'; ctx.lineWidth = Math.max(3, r*0.08); ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(x, y - r*0.62, r*0.10, 0, Math.PI*2);
+  ctx.fillStyle = '#8E2E2E'; ctx.fill();
+  ctx.restore();
+}
+
 /* ==================== 活動主題註冊表 ==================== */
 const LEVEL_VERB = { '2':'桌面承托慢慢移動', '3':'肩屈曲 30–60°', '4':'肩屈曲 60° 或以上', '5':'輕輕合手拿起', '67':'輕輕捏起' };
-const LEVEL_ACTION = { '2':'桌面承托訓練', '3':'患側肩屈曲 30–60°', '4':'患側肩屈曲 60° 或以上', '5':'患手握放練習', '67':'患手捏放練習' };
+const LEVEL_ACTION = { '2':'桌面承托訓練', '3':'患側肩屈曲 30–60°', '4':'患側肩屈曲 60° 或以上', '5':'患手握放練習', '67':'患臂肩屈曲功能任務' };
 const BASE_THEME = {
   verbFor(level){ return LEVEL_VERB[level] || LEVEL_VERB['4']; },
   actionLabelFor(level){ return LEVEL_ACTION[level] || LEVEL_ACTION['4']; },
@@ -6976,6 +7197,22 @@ const THEMES = {
         : [ { type:'siumai', itemLabel:'燒賣', targetLabel:'燒賣', img:imgSiumai, targetImg:imgSteamerSiumai, scale:0.66, color:'#1A6B5A' },
             { type:'hargau', itemLabel:'蝦餃', targetLabel:'蝦餃', img:imgHargau, targetImg:imgSteamerHargau, scale:0.76, color:'#E07B39' } ];
     },
+  }),
+  chopstick_dimsum: mkTheme({
+    id:'chopstick_dimsum', title:'筷子點心', goal:'患手食指及中指伸直打開、屈曲夾起；肩屈曲運送，到飯碗再伸直放下',
+    itemWord:'點心', difficulty:'肩屈曲運送', targetStyle:'panel',
+    thumbnail:'img/hargau.png', thumbnailAlt:'蝦餃點心，代表筷子點心任務',
+    verbFor(){ return '手持筷子，主動抬高手臂把點心運送到飯碗'; },
+    actionLabelFor(){ return '食指＋中指稍伸直打開 → 稍屈曲夾起 → 肩屈曲運送 → 再伸直放下；只偵測已選患手'; },
+    categoriesFor(){ return LEVEL3_THEME_VARIANTS.chopstick_dimsum; },
+  }),
+  peg_laundry: mkTheme({
+    id:'peg_laundry', title:'衣夾晾衫', goal:'患手三點捏握張開衣夾、輕捏夾起；肩屈曲運送，到晾衫繩再張開放下',
+    itemWord:'衣物', difficulty:'肩屈曲運送', targetStyle:'panel',
+    thumbnail:'img/advanced/g_tshirt_blue.png', thumbnailAlt:'上衣待晾，代表衣夾晾衫任務',
+    verbFor(){ return '手持衣夾，主動抬高手臂把衣物運送到晾衫繩'; },
+    actionLabelFor(){ return '三點捏握張開 → 輕捏夾起 → 肩屈曲運送 → 再張開放下；只偵測已選患手'; },
+    categoriesFor(){ return LEVEL3_THEME_VARIANTS.peg_laundry; },
   }),
   pilot_laundry: mkTheme({
     id:'pilot_laundry', title:'衣物分類', goal:'將衣物放到相同顏色的洗衣籃',
@@ -7112,6 +7349,46 @@ const LEVEL3_THEME_VARIANTS = {
     drawItem:(ctx,x,y,r)=>drawCard(ctx,x,y,r,suit),
     drawIcon:(ctx,x,y,s)=>drawCard(ctx,x,y,s*0.85,suit),
   })),
+  // Level 6 筷子點心：患手兩指開合控制虛擬筷子夾放點心，肩屈曲運送至飯碗；不識別真實筷子或量度捏力。
+  chopstick_dimsum:[
+    { type:'chop_hargau', itemLabel:'蝦餃→筷子', targetLabel:'飯碗', color:'#E07B39',
+      drawScale:0.92, labelGap:1.05,
+      drawItem:(ctx,x,y,r)=>drawChopsticksHolding(ctx,x,y,r,(c2,x2,y2,r2)=>{
+        const img=imgHargau; if(img&&img.complete&&img.naturalWidth>0){ c2.drawImage(img,x2-r2,y2-r2,r2*2,r2*2); } else { drawBeefBall(c2,x2,y2,r2); }
+      }),
+      drawIcon:(ctx,x,y,s)=>drawRiceBowl(ctx,x,y,s),
+    },
+    { type:'chop_siumai', itemLabel:'燒賣→筷子', targetLabel:'飯碗', color:'#1A6B5A',
+      drawScale:0.92, labelGap:1.05,
+      drawItem:(ctx,x,y,r)=>drawChopsticksHolding(ctx,x,y,r,(c2,x2,y2,r2)=>{
+        const img=imgSiumai; if(img&&img.complete&&img.naturalWidth>0){ c2.drawImage(img,x2-r2,y2-r2,r2*2,r2*2); } else { drawBeefBall(c2,x2,y2,r2); }
+      }),
+      drawIcon:(ctx,x,y,s)=>drawRiceBowl(ctx,x,y,s),
+    },
+    { type:'chop_beefball', itemLabel:'牛肉丸→筷子', targetLabel:'飯碗', color:'#8E4B35',
+      drawScale:0.92, labelGap:1.05,
+      drawItem:(ctx,x,y,r)=>drawChopsticksHolding(ctx,x,y,r,(c2,x2,y2,r2)=>drawBeefBall(c2,x2,y2,r2)),
+      drawIcon:(ctx,x,y,s)=>drawRiceBowl(ctx,x,y,s),
+    },
+  ],
+  // Level 6 衣夾晾衫：患手三點捏握開合控制虛擬衣夾夾放衣物，肩屈曲運送至晾衫繩；不識別真實衣夾或量度捏力。
+  peg_laundry:[
+    { type:'peg_tshirt', itemLabel:'上衣→衣夾', targetLabel:'曬衫竹笆', color:'#3E7CB1',
+      drawScale:0.92, labelGap:1.08,
+      drawItem:(ctx,x,y,r)=>drawPegHolding(ctx,x,y,r,(c2,x2,y2,r2)=>drawShirt(c2,x2,y2,r2,'#3E7CB1','#2A567E')),
+      drawIcon:(ctx,x,y,s)=>drawDryingPole(ctx,x,y,s),
+    },
+    { type:'peg_sock', itemLabel:'襪→衣夾', targetLabel:'曬衫竹笆', color:'#C9A13B',
+      drawScale:0.92, labelGap:1.08,
+      drawItem:(ctx,x,y,r)=>drawPegHolding(ctx,x,y,r,(c2,x2,y2,r2)=>drawSock(c2,x2,y2,r2,'#C9A13B','#8C6E1F')),
+      drawIcon:(ctx,x,y,s)=>drawDryingPole(ctx,x,y,s),
+    },
+    { type:'peg_towel', itemLabel:'毛巾→衣夾', targetLabel:'曬衫竹笆', color:'#5FA777',
+      drawScale:0.92, labelGap:1.08,
+      drawItem:(ctx,x,y,r)=>drawPegHolding(ctx,x,y,r,(c2,x2,y2,r2)=>drawShirt(c2,x2,y2,r2,'#5FA777','#3C7050')),
+      drawIcon:(ctx,x,y,s)=>drawDryingPole(ctx,x,y,s),
+    },
+  ],
 };
 let level3RoundVariant = null;
 let level3PreviousVariantType = '';
@@ -7136,12 +7413,18 @@ function advanceLevel3RoundVariant(){
 }
 function themeAvailableForLevel(themeId, level = state.level){
   if(level === '2') return themeId === 'bilateral';
+  // Level 6 restores all v60 choices except the legacy dim-sum/laundry themes,
+  // which are replaced (without duplicates) by the v61 chopstick/peg tasks.
+  if(level === '67') return ['flowers','chopstick_dimsum','peg_laundry','cards','mahjong','cooking'].includes(themeId);
   if(['wipewindow','bowling','mahjongwash','buspay','bilateral'].includes(themeId)) return false;
-  return themeId !== 'cooking' || level === '67';
+  return themeId !== 'cooking';
 }
 function availableThemeOrder(level = state.level){
   if(level === '2'){
     return ['bilateral'];
+  }
+  if(level === '67'){
+    return ['flowers','chopstick_dimsum','peg_laundry','cards','mahjong','cooking'];
   }
   if(level === '3' || level === '4'){
     // Same visual choices, different OT-selected shoulder-flexion band.
@@ -7249,7 +7532,7 @@ let foodIdSeq = 1;
    vertical lane. Y is a pure function of the already-smoothed elbow reach
    progress; flexion follows exactly the same lane back down. */
 function beginLevel4StandardCarry(item){
-  if(!item || !isLevel4StandardTransportGame()) return;
+  if(!item || (!isLevel4StandardTransportGame() && !isLevel6ToolGestureTask())) return;
   const matchingTarget = targets.find(target => target.type === item.targetType);
   // Standard source slots normally sit under their matching target. If a
   // replenished item occupies the other slot, choose the matching target's
@@ -7273,9 +7556,11 @@ function beginLevel4StandardCarry(item){
   item.level4Carry.topY = Math.min(item.level4Carry.pickupY, item.level4Carry.targetY);
 }
 function level4StandardCarryPoint(item = heldItem){
-  if(!item || !isLevel4StandardTransportGame() || !item.level4Carry) return null;
+  if(!item || (!isLevel4StandardTransportGame() && !isLevel6ToolGestureTask()) || !item.level4Carry) return null;
   const carry = item.level4Carry;
-  const progress = clamp01(level4Reach.progress);
+  const progress = isLevel6ToolGestureTask()
+    ? clamp01(Number(shoulderFlexionState.progress)||0)
+    : clamp01(level4Reach.progress);
   const bottomY = Number.isFinite(carry.bottomY)
     ? carry.bottomY : Math.max(carry.pickupY, carry.targetY);
   const topY = Number.isFinite(carry.topY)
@@ -7582,6 +7867,9 @@ function initGame(){
   basicContactCandidate = ''; basicContactUntil = 0;
   gripActive = false;
   isGrasping = false;
+  handOpenPrep = false;
+  detectedGestureState = {mode:'', stable:false, candidate:false, candidateAt:0};
+  lastAcceptedToolHandGeneration = -1;
   cursorX = -1; cursorY = -1;
   dotEmaX = -1; dotEmaY = -1;
   handDetected = false;
@@ -7605,6 +7893,7 @@ function initGame(){
   level3PreviousVariantType = '';
   if(isLevel3Tabletop() || isShoulderFlexionLevel()) chooseLevel3RoundVariant();
   if(isGrossTabletop()) ensurePoseLandmarker().catch(()=>null);
+  if(isLevel6ToolGestureTask()) ensureHandLandmarker().catch(()=>null);
 
   timeLeft = state.duration; // 由用家選擇
   updateHUD();
@@ -8190,13 +8479,50 @@ let qaHand = null;   // { nx, ny, isGrasping }
 // injection normally advances generation once; an explicit generation can
 // deliberately exercise duplicate RAF handling.
 let qaFrameGeneration = 0;
-function readHand(){
+let lastAcceptedToolHandGeneration = -1;
+function qaToolHandResults(kind, gesture, side, missing){
+  const lm=Array.from({length:21},()=>({x:.5,y:.5,z:0}));
+  lm[0]={x:.42,y:.72,z:0};lm[5]={x:.43,y:.55,z:0};lm[9]={x:.52,y:.53,z:0};lm[17]={x:.62,y:.58,z:0};
+  if(kind==='chopsticks'){
+    const ratio=gesture==='closed'?1.34:1.82;
+    const place=(mcp,tip,dx)=>{
+      const base=lm[mcp];
+      lm[tip]={x:lm[0].x+(base.x-lm[0].x)*ratio+dx,y:lm[0].y+(base.y-lm[0].y)*ratio,z:0};
+    };
+    place(5,8,-.01);place(9,12,.01);
+  }else{
+    lm[4]={x:.48,y:.49,z:0};
+    const gap=gesture==='closed'?.07:.18;
+    lm[8]={x:lm[4].x+gap,y:lm[4].y,z:0};
+    lm[12]={x:lm[4].x+gap/.92,y:lm[4].y,z:0};
+  }
+  for(const index of Array.isArray(missing)?missing:[]) lm[index]={x:NaN,y:NaN,z:NaN};
+  return {
+    landmarks:[lm],
+    handednesses:[[{categoryName:side==='left'?'Left':'Right',score:.99}]],
+  };
+}
+function readHand(frame){
+  if(isLevel6ToolGestureTask()){
+    const generation=Number(frame?.generation);
+    if(!frame?.fresh || frame?.newFrame === false || !Number.isFinite(generation)
+      || generation <= lastAcceptedToolHandGeneration){
+      return {detected:false,reason:'hand-frame-stale'};
+    }
+    lastAcceptedToolHandGeneration=generation;
+  }
   if(state.qaMode){
     if(!qaHand) return { detected:false };
+    if(isLevel6ToolGestureTask()){
+      if(qaHand.frameGeneration !== frame.generation){
+        return {detected:false,reason:'hand-frame-stale'};
+      }
+      return interpretHandResults(qaHand.results,false);
+    }
     return { detected:true, nx:qaHand.nx, ny:qaHand.ny, isGrasping:!!qaHand.isGrasping,
       isOpenPrep: qaHand.isOpenPrep === undefined ? !qaHand.isGrasping : !!qaHand.isOpenPrep };
   }
-  return detectWrist(gameVideo);
+  return detectWrist(gameVideo,frame);
 }
 
 function readGrossPoseHand(lm){
@@ -9024,7 +9350,8 @@ function updateTracking(){
   // Levels 3–4 are driven by shoulder/elbow/wrist Pose only. Running the hand
   // model as well on every iPad frame halved the effective frame rate and made
   // the live game behave differently from the movement test.
-  const res = isGrossTabletop() ? readGrossPoseHand(grossPose) : readHand();
+  const res = (isGrossTabletop() && !isLevel6ToolGestureTask())
+    ? readGrossPoseHand(grossPose) : readHand(frame);
 
   if(res.detected){
     // Real detection
@@ -9094,7 +9421,7 @@ function updateTracking(){
       // 進階活動（例如煮飯抓鬆冷飯）在 Level 6–7 亦需要知道手掌開／合
       isGrasping = !!res.isGrasping;
     }
-  } else if(cursorX >= 0 && (now - lastDetectedAt) < DETECTION_LOST_GRACE_MS){
+  } else if(!isLevel6ToolGestureTask() && cursorX >= 0 && (now - lastDetectedAt) < DETECTION_LOST_GRACE_MS){
     // 偵測短暫 miss（2-3 幀）：保留上一幀的 cursor / grasp 狀態、不 reset EMA、不清 posHistory，
     // 因為90歲病人手到畫面邊邊時 MediaPipe 邊緣偵測不穩定。
     // handDetected 仍然維持 true，讓 downstream drop/pickup 邏輯可以完成
@@ -9184,7 +9511,11 @@ function updateGameLogic(){
       setActionPrompt('等待鏡頭','');
       return;
     }
-    updateShoulderFlexionGame();
+    if(isLevel6ToolGestureTask()){
+      updateGraspLogic();
+    }else{
+      updateShoulderFlexionGame();
+    }
     return;
   }
   if(isLevel4Tabletop()){
@@ -9555,6 +9886,12 @@ function graspPrompt(key){
     if(key === 'carry') return '保持手指輕合';
     return '放鬆張開手指放下';
   }
+  if(isChopsticksMode()){
+    if(key === 'prep') return '食指及中指稍伸直';
+    if(key === 'hold') return '食指及中指稍屈曲';
+    if(key === 'carry') return '保持兩指稍屈曲';
+    return '食指及中指稍伸直放下';
+  }
   // Patient-facing wording avoids '握拳 / 握緊', which encourages excessive flexor
   // effort in a spastic hand. Internal variable names are unchanged.
   if(key === 'prep')    return '張開手';
@@ -9565,9 +9902,10 @@ function graspPrompt(key){
 function updateGraspLogic(){
   const PREP_OPEN_MS = 220, GRASP_HOLD_MS = 360, DROP_DWELL_MS = 650;
   const CONTACT_GRACE_MS = 450;
-  // Preparation requirement: Level 5 and peg mode need an open hand; bare mode
-  // needs all three fingertips separated before a new three-finger pinch.
-  const openPrep = isPinchMode() ? handOpenPrep : !isGrasping;
+  // Preparation requires a positively observed open state for all Level 6
+  // gesture tasks. This prevents an ambiguous/static closed hand from arming.
+  const openPrep = isLevel6ToolGestureTask() ? handOpenPrep
+    : (isPinchMode() ? handOpenPrep : !isGrasping);
 
   if(cursorX < 0 || !handDetected){
     const trackingDetail = isLevel67BareMode()
@@ -9600,7 +9938,12 @@ function updateGraspLogic(){
       const d = dist(cursorX, cursorY, f.x, f.y);
       if(d < nearestDist){ nearest = f; nearestDist = d; }
     }
-    let overFood = nearest && nearestDist <= pickupContactRadius(nearest.r, 100);
+    const shoulderAtPickupStart = !isLevel6ToolGestureTask()
+      || (shoulderFlexionState.startReady
+        && !shoulderFlexionState.targetReady
+        && Number(shoulderFlexionState.progress) <= .16);
+    let overFood = nearest && nearestDist <= pickupContactRadius(nearest.r, 100)
+      && shoulderAtPickupStart;
     if(overFood){
       basicContactCandidate = nearest.id;
       basicContactUntil = now + CONTACT_GRACE_MS;
@@ -9619,6 +9962,13 @@ function updateGraspLogic(){
       if(now-basicOpenStart >= PREP_OPEN_MS) basicGraspArmed = true;
       setActionPrompt(basicGraspArmed ? graspPrompt('hold') : graspPrompt('prep'),
         basicGraspArmed ? graspPrompt('carry') : pct + '%');
+    } else if(basicGraspArmed && basicGraspCandidate === nearest.id
+      && !openPrep && !isGrasping){
+      // A positively observed open hand has already armed pickup. Preserve that
+      // arm briefly while the close gesture passes through its confirmation
+      // window; a static closed hand can never enter this branch.
+      basicGraspStart = 0;
+      setActionPrompt(graspPrompt('hold'), '保持指定手指動作');
     } else if(!basicGraspArmed || basicGraspCandidate !== nearest.id || !isGrasping){
       basicOpenStart = 0; basicGraspStart = 0; basicGraspArmed = false;
       setActionPrompt(graspPrompt('prep'), isLevel67GestureMode() ? graspPrompt('hold') : '再輕輕合手');
@@ -9630,11 +9980,13 @@ function updateGraspLogic(){
       const pct = Math.min(100, Math.round((now-basicGraspStart)/GRASP_HOLD_MS*100));
       if(now-basicGraspStart >= GRASP_HOLD_MS){
         nearest.held = true; heldItem = nearest; grabCount++;
+        beginLevel4StandardCarry(nearest);
         noteHoldStart();
         pilotBump(isLevel67GestureMode() ? 'pinch_success' : 'grasp_success');
         transportStartX = cursorX; transportStartY = cursorY; transportStartAt = now;
         const pickupMethod = isLevel67BareMode()
-          ? 'three_finger_pinch' : (isPegMode() ? 'peg_hand_closure' : 'open_then_grasp');
+          ? 'three_finger_pinch' : (isPegMode() ? 'tripod_peg_closure'
+            : (isChopsticksMode() ? 'index_middle_flexion' : 'open_then_grasp'));
         researchLog('pickup', {item:nearest.label, method:pickupMethod});
         updateHUD();
         basicOpenStart = 0; basicGraspStart = 0; basicGraspCandidate = ''; basicGraspArmed = false;
@@ -9650,8 +10002,7 @@ function updateGraspLogic(){
     // put the object down, open the hand and relax.
     if(checkHoldTimeout()) return;
     // 正握住食物：跟隨游標移動
-    heldItem.x = cursorX;
-    heldItem.y = cursorY;
+    moveHeldItemWithController();
 
     // Check if cursor is on any plate
     let onPlate = null;
@@ -9671,7 +10022,14 @@ function updateGraspLogic(){
 
     // Release requirement: grasp/peg modes reopen the hand; bare mode maintains
     // a reopened three-finger aperture before the object is dropped.
-    const releasing = isPinchMode() ? handOpenPrep : !isGrasping;
+    const releasing = isLevel6ToolGestureTask() ? handOpenPrep
+      : (isPinchMode() ? handOpenPrep : !isGrasping);
+    const shoulderReleaseReady = !isLevel6ToolGestureTask() || shoulderFlexionState.targetReady;
+    if(releasing && !shoulderReleaseReady){
+      releaseDwellStart=0;releaseDwellPlate=null;
+      setActionPrompt('繼續主動抬高手臂','到個人化目標再張開放下');
+      return;
+    }
     if(releasing){
       // 鬆開手：需要持續 releaseDwellMs 先真正 drop（防止 hand tracking jitter 誤觸）
       const now = nowMs();
@@ -13588,7 +13946,6 @@ window.addEventListener('ychlanguagechange', ()=>{
     renderActivityLibrary();
   }
   if(currentScreen === 'start'){
-    renderToolModeSettings();
     renderShoulderExerciseModeSettings();
     renderShoulderTargetSettings();
     renderTimingSettings();
@@ -13606,7 +13963,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <script src="level4-three-games-module.js"></script>
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v60-20260826-level2-midline-sway-fix";
+  const LEVEL_APP_BUILD = "v64-20260827-level6-no-duplicate-task-picker";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

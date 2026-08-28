@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v60-20260826-level2-midline-sway-fix";
+const CACHE_VERSION = "fthue-rehab-v64-20260827-level6-no-duplicate-task-picker";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

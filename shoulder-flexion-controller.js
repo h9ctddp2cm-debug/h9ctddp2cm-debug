@@ -41,6 +41,13 @@
   function exerciseModeAvailable(level) {
     return String(level)==='3'||String(level)==='4';
   }
+  // FTHUE Level 6 (internal key '67') reuses this shoulder-flexion state
+  // machine with its conservative existing 60-degree internal reach endpoint.
+  // Level 6 exposes neither an angle selector nor the Level 3/4
+  // active/assisted-stick exercise-mode choice.
+  function shoulderFlexionLevel(level) {
+    return String(level)==='3'||String(level)==='4'||String(level)==='67';
+  }
   function selectedArm(lm, side) {
     if (!Array.isArray(lm)) return null;
     const left = side === 'left';
@@ -154,7 +161,7 @@
     function normalizeExerciseMode(mode) {
       return mode==='assisted-stick'?'assisted-stick':'active';
     }
-    function defaultTarget(level){ return String(level)==='4'?60:40; }
+    function defaultTarget(level){ return String(level)==='4'?60:(String(level)==='67'?60:40); }
     // Level 3 and 4 always begin from the participant-specific camera zero.
     // A single fixed start is easier to acquire reliably than asking the
     // tracker to distinguish prescribed 10° or 20° starting positions.
@@ -420,7 +427,9 @@
       state.level=String(level||state.level);
       const allowed=state.level==='4'
         ? Array.from({length:13},(_,index)=>60+index*10)
-        : [30,40,50,60];
+        : (state.level==='67'
+          ? [60]
+          : [30,40,50,60]);
       if(!allowed.includes(value))return false;
       state.selectedTargetDeg=value;
       state.selectedStartDeg=0;
@@ -450,7 +459,7 @@
     return {config,state,reset,setTarget,setHoldDuration,setExerciseMode,startChoices,update,snapshot,guidance,toText};
   }
 
-  const api={CONFIG,createController,exerciseModeAvailable,selectedArm,shoulderFlexion2D,shoulderFlexionWorld,torsoSignature,clamp01,median};
+  const api={CONFIG,createController,exerciseModeAvailable,shoulderFlexionLevel,selectedArm,shoulderFlexion2D,shoulderFlexionWorld,torsoSignature,clamp01,median};
   global.ShoulderFlexionController=api;
   if(typeof module!=='undefined'&&module.exports) module.exports=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
