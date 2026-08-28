@@ -1246,20 +1246,20 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
         <button class="level-select" id="btnLevel67" data-level="67">
           <div class="level-copy">
             <span class="lv-tag">FTHUE Level 6</span>
-            <h3>患臂肩屈曲功能任務</h3>
-            <p class="lv-action">選擇功能活動 → 主動抬高手臂運送 → 完成任務</p>
+            <h3>患手三點捏握功能任務</h3>
+            <p class="lv-action">三指張開 → 輕捏拿起 → 移動 → 張開放下</p>
           </div>
           <div class="level-motion double">
             <figure>
               <img src="img/advanced/hand_clothes_peg.gif"
-                alt="患臂手持真實衣夾，主動抬高手臂把衣物運送到晾衫繩"
+                alt="患手三指輕捏拿起衣物，移到晾衫繩，再張開放下"
                 loading="lazy" decoding="async"
                 data-testid="gif-level-6-clothes-peg">
               <figcaption>衣夾晾衫</figcaption>
             </figure>
             <figure>
               <img src="img/advanced/hand_chopsticks.gif"
-                alt="患臂手持真實筷子，主動抬高手臂把點心運送到飯碗"
+                alt="患手三指輕捏拿起點心，移到飯碗，再張開放下"
                 loading="lazy" decoding="async"
                 data-testid="gif-level-6-chopsticks">
               <figcaption>筷子點心</figcaption>
@@ -1275,12 +1275,11 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
         <details class="level-details">
           <summary>詳情</summary>
           <p class="lv-note">
-            <span class="lv-line">坐在椅子或輪椅，患臂離開桌面</span>
-            <span class="lv-line">選好功能活動後即可開始，不需選擇肩屈曲角度</span>
+            <span class="lv-line">坐在椅子或輪椅，患手拇指、食指及中指入鏡</span>
+            <span class="lv-line">六款活動都使用患手三點捏握，不需肩或肘角度</span>
             <span class="lv-line">六個功能活動：插花／筷子點心／衣夾晾衫／啤牌／麻雀／煮蛋炒飯</span>
-            <span class="lv-line">筷子點心／衣夾晾衫使用真實工具；其餘為虛擬活動</span>
-            <span class="lv-line">筷子點心偵測患手食指＋中指開合；衣夾晾衫偵測患手三點捏握開合；肩屈曲控制運送</span>
-            <span class="lv-line">身體保持正中，避免過度側彎</span>
+            <span class="lv-line">先張開三指，輕輕合手拿起；用手的位置移動，再張開放下</span>
+            <span class="lv-line">只偵測已選患手的可見開合，不識別工具或量度力度</span>
           </p>
         </details>
       </article>
@@ -2525,12 +2524,15 @@ function isGrossTabletop(){
   return !research.active && ['2','3','4','67'].includes(state.level);
 }
 function isShoulderFlexionLevel(){
-  return !research.active && (state.level === '3' || state.level === '4' || state.level === '67');
+  // Normal Level 6 is controlled entirely by the selected affected hand.
+  // Pose may still be drawn as an optional reference, but it cannot admit a
+  // frame, move an item, gate pickup/release, or award progress.
+  return !research.active && (state.level === '3' || state.level === '4');
 }
 function isLevel6(){ return !research.active && state.level === '67'; }
 function isLevel6Chopsticks(){ return isLevel6() && state.level6Task === 'chopsticks'; }
 function isLevel6Peg(){ return isLevel6() && state.level6Task === 'peg'; }
-function isLevel6ToolGestureTask(){ return isLevel6Chopsticks() || isLevel6Peg(); }
+function isLevel6ToolGestureTask(){ return isLevel6(); }
 function affectedDirectionLabel(){
   if(isLevel4WipeGame()) return '伸肘向外畫弧';
   if(isLevel4Tabletop()) return isLevel3Tabletop()
@@ -2540,7 +2542,7 @@ function affectedDirectionLabel(){
     ? '肩屈曲至治療師選定的 30–60° 目標'
     : (state.level === '4'
       ? '肩屈曲至治療師選定的 60° 或以上目標'
-      : '主動抬高手臂運送到功能目標');
+      : '用患手三點捏握運送到功能目標');
   return activeAffectedSide() === 'right' ? '向畫面右外下方放置' : '向畫面左外下方放置';
 }
 function affectedSelectionZone(){
@@ -2816,14 +2818,14 @@ const SAFETY_LEVEL_NOTES = {
   '3': '患臂離桌；軀幹及全臂入鏡。',
   '4': '患臂離桌；軀幹及全臂入鏡。',
   '5': '患臂離桌；伸手、輕合、張手。',
-  '67': '患臂離桌；選擇功能活動，主動抬高手臂完成運送。',
+  '67': '患手三指張開、輕捏拿起、移動，再張開放下。',
 };
 const SAFETY_LEVEL_TITLES = {
   '2': 'FTHUE Level 2 · 桌面承托訓練',
   '3': 'FTHUE Level 3 · 肩屈曲 30–60°',
   '4': 'FTHUE Level 4 · 肩屈曲 60° 或以上',
   '5': 'FTHUE Level 5 · 患手握放練習',
-  '67': 'FTHUE Level 6 · 患臂肩屈曲功能任務',
+  '67': 'FTHUE Level 6 · 患手三點捏握功能任務',
 };
 const SAFETY_DEFAULT_ITEMS = [
   '坐姿穩定｜Level 2 桌面承托｜Level 3–7 患臂離桌',
@@ -2845,7 +2847,7 @@ const SAFETY_LEVEL_5_ITEMS = [
   '治療師全程監督。',
 ];
 const SAFETY_LEVEL_67_ITEMS = [
-  '坐穩；患臂離桌，主動抬高手臂完成運送。',
+  '坐穩；患手三指張開、輕捏拿起、移動，再張開放下。',
   '先選擇功能活動；筷子點心或衣夾晾衫才使用真實工具。',
   '先試 3 次。',
   '慢、穩；可休息。',
@@ -3440,10 +3442,10 @@ const CALIB_LEVEL_BRIEF = {
      + '拿取用「<b>輕輕合手拿起</b>」，不要大力握實；拿住物件超過 '
      + '<b>5 秒</b> 系統會自動暫停，提示放下物件、張開手、放鬆。<br>'
      + '預設使用<b>較大物件及較短距離</b>；如連續放手困難，系統會提示重新評估。',
-  '67': '<b>Level 6 患臂肩屈曲功能任務</b><br>'
-     + '選好功能活動後即可開始，不需選擇肩屈曲角度。每次動作由參加者個人化起點開始。<br>'
-     + '<span lang="en">Choose a functional activity and begin without selecting a shoulder-flexion angle. Each repetition starts from the participant’s personalised start position.</span><br>'
-     + '可選插花、筷子點心、衣夾晾衫、啤牌、麻雀或煮蛋炒飯。筷子點心偵測已選患手食指＋中指開合；衣夾晾衫偵測已選患手三點捏握開合；肩屈曲控制運送。網頁不識別實體工具，亦不量度握力或捏力。<br>'
+  '67': '<b>Level 6 患手三點捏握功能任務</b><br>'
+     + '六款活動都用已選患手：先張開三指，輕捏拿起，用手的位置移動，再張開放下。<br>'
+     + '<span lang="en">All six activities use the selected affected hand: open three fingers, lightly pinch to pick up, move with the hand, then reopen to release.</span><br>'
+     + '可選插花、筷子點心、衣夾晾衫、啤牌、麻雀或煮蛋炒飯。六款活動都偵測已選患手三點捏握：先張開、輕捏拿起、用手的位置移動，再張開放下。網頁不識別實體工具，亦不量度握力或捏力。<br>'
      + '<span style="color:#7d1a12;">注意：相機追蹤只控制遊戲，亦不作診斷或自動 FTHUE 分級。</span>',
 };
 function renderCalibLevelBrief(){
@@ -4297,56 +4299,56 @@ const LEVELS = {
          actionLabel:'持續握住物件，患臂肩屈曲至治療師選定的 60° 或以上目標；不偵測抓放' },
   '5': { id:'5', tag:'FTHUE Level 5', name:'患手握放練習', gameType:'grasp',
          actionLabel:'伸出患手、輕輕合手、張開手' },
-  '67': { id:'67', tag:'FTHUE Level 6', name:'患臂肩屈曲功能任務', gameType:'dwell',
-          actionLabel:'患臂主動抬高手臂，把物件運送到功能目標' },
+  '67': { id:'67', tag:'FTHUE Level 6', name:'患手三點捏握功能任務', gameType:'pinch',
+          actionLabel:'患手三指張開、輕捏拿起、移動，再張開放下' },
 };
-// Normal Level 6 restores the four non-dim-sum/non-laundry v60 activities and
-// keeps the two v61 replacement tool tasks. All six use the shared
-// shoulder-flexion Pose controller for transport. The two replacement tool
-// tasks additionally require visible selected-hand opening/closing; the site
-// still does not identify a physical tool or measure grip/pinch force.
+// Normal Level 6 has six non-duplicated functional activities. Every activity
+// uses the same selected-affected-hand tripod-pinch sequence and fresh Hand
+// Landmarker frames: open preparation -> light close -> hand transport -> reopen.
+// No shoulder/elbow signal is required. The site observes aperture only; it
+// cannot identify a physical tool or measure force.
 const LEVEL6_TASKS = {
   flowers:{
     id:'flowers', theme:'flowers',
-    gameType:'dwell',
+    gameType:'pinch',
     label:'插花', labelEn:'Flower Arranging',
-    hint:'主動抬高手臂，把虛擬花材運送到花瓶',
-    actionCue:'主動抬高手臂運送 → 把花材放入花瓶',
+    hint:'患手三指張開，輕捏拿起花材，移到花瓶，再張開放下',
+    actionCue:'三指張開 → 輕捏拿起 → 移動 → 張開放下',
   },
   chopsticks:{
     id:'chopsticks', theme:'chopstick_dimsum',
-    gameType:'grasp',
+    gameType:'pinch',
     label:'筷子點心', labelEn:'Chopstick Dim Sum',
-    hint:'患手食指及中指稍伸直打開筷子，稍屈曲夾起點心；肩屈曲運送，到飯碗再伸直放下',
-    actionCue:'食指＋中指稍伸直 → 稍屈曲夾起 → 肩屈曲運送 → 再伸直放下',
+    hint:'患手三指張開，輕捏拿起點心，移到飯碗，再張開放下',
+    actionCue:'三指張開 → 輕捏拿起 → 移動 → 張開放下',
   },
   peg:{
     id:'peg', theme:'peg_laundry',
-    gameType:'grasp',
+    gameType:'pinch',
     label:'衣夾晾衫', labelEn:'Cloth-Peg Laundry',
-    hint:'患手以三點捏握張開衣夾、輕捏夾起衣物；肩屈曲運送，到晾衫繩再張開放下',
-    actionCue:'三點捏握張開 → 輕捏夾起 → 肩屈曲運送 → 再張開放下',
+    hint:'患手三指張開，輕捏拿起衣物，移到晾衫繩，再張開放下',
+    actionCue:'三指張開 → 輕捏拿起 → 移動 → 張開放下',
   },
   cards:{
     id:'cards', theme:'cards',
-    gameType:'dwell',
+    gameType:'pinch',
     label:'啤牌', labelEn:'Playing Cards',
-    hint:'主動抬高手臂，把虛擬啤牌運送到相同花色的牌堆',
-    actionCue:'主動抬高手臂運送 → 把啤牌放到相同花色',
+    hint:'患手三指張開，輕捏拿起啤牌，移到相同花色，再張開放下',
+    actionCue:'三指張開 → 輕捏拿起 → 移動 → 張開放下',
   },
   mahjong:{
     id:'mahjong', theme:'mahjong',
-    gameType:'dwell',
+    gameType:'pinch',
     label:'麻雀', labelEn:'Mahjong',
-    hint:'主動抬高手臂，把虛擬麻雀運送到相同圖案的位置',
-    actionCue:'主動抬高手臂運送 → 把麻雀放到相同圖案',
+    hint:'患手三指張開，輕捏拿起麻雀，移到相同圖案，再張開放下',
+    actionCue:'三指張開 → 輕捏拿起 → 移動 → 張開放下',
   },
   cooking:{
     id:'cooking', theme:'cooking',
-    gameType:'dwell',
+    gameType:'pinch',
     label:'煮蛋炒飯', labelEn:'Cook Egg Fried Rice',
-    hint:'主動抬高手臂運送，依照步驟完成虛擬蛋炒飯',
-    actionCue:'主動抬高手臂運送 → 依照步驟煮蛋炒飯',
+    hint:'患手三指張開，輕捏拿起食材，移到目標，再張開放下',
+    actionCue:'三指張開 → 輕捏拿起 → 移動 → 張開放下',
   },
 };
 function level6TaskProfile(){ return LEVEL6_TASKS[state.level6Task] || LEVEL6_TASKS.chopsticks; }
@@ -4445,9 +4447,8 @@ function renderShoulderExerciseModeSettings(){
 function applyInteractionModeForLevel(){
   // Pilot-study research track keeps its own bare/peg/chopsticks gameType
   // (pinch/grasp/dwell) via LEVEL67_TOOL_MODES — unchanged from before.
-  // Normal Level 6 keeps pose-only dwell for the four restored activities.
-  // The two replacement tool tasks combine shoulder transport with selected
-  // affected-hand opening/closing and therefore use the grasp state machine.
+  // Normal Level 6 always uses the selected affected-hand tripod-pinch state
+  // machine. The pilot-study research path keeps its historical modes.
   state.gameType = (state.level === '67' && research.active)
     ? level67ToolProfile().gameType
     : (state.level === '67' ? level6TaskProfile().gameType : currentLevel().gameType);
@@ -6146,6 +6147,10 @@ function selectedAffectedHandIndex(results, inputMirrored=false){
     if(mediaPipeAnatomicalHand(results, index, inputMirrored) !== affected) continue;
     const groups = results.handednesses || results.handedness;
     const confidence = Number(groups?.[index]?.[0]?.score);
+    // An uncertain side label is not enough to select a clinical control hand.
+    // Missing and low-confidence handedness fail closed rather than falling
+    // back to result zero or the opposite hand.
+    if(!Number.isFinite(confidence) || confidence < 0.55) continue;
     if(selected < 0 || (Number.isFinite(confidence) && confidence > selectedConfidence)){
       selected = index;
       selectedConfidence = Number.isFinite(confidence) ? confidence : selectedConfidence;
@@ -6180,12 +6185,8 @@ function interpretHandResults(results, inputMirrored=false){
     const selectedHandIndex = selectedAffectedHandIndex(results, inputMirrored);
     if(selectedHandIndex < 0) return { detected:false, reason:'affected-hand-not-detected' };
     const lm = results.landmarks[selectedHandIndex];
-    const required = isPegMode()
-      ? [0,2,4,5,8,9,12,17]
-      : state.gameType === 'pinch'
+    const required = state.gameType === 'pinch'
       ? [0,4,5,8,9,12,17]
-      : isLevel6Chopsticks()
-        ? [0,5,8,9,12,17]
       : isChopsticksMode()
         ? [0,5,8,9,13,17]
       : isGrossTabletop()
@@ -6196,15 +6197,7 @@ function interpretHandResults(results, inputMirrored=false){
     }else{
     // Cursor position
     const tip = lm[8]; // index finger tip = landmark 8 (reach mode)
-    if(isLevel6Chopsticks()){
-      const chopsticks=computeChopstickFlexState(lm,isGrasping);
-      return { detected:true, nx:interactionX((lm[8].x+lm[12].x)/2), ny:(lm[8].y+lm[12].y)/2,
-        isGrasping:stabiliseDetectedGesture(chopsticks.isClosed,'chopsticks'),
-        graspScore:chopsticks.score,isOpenPrep:chopsticks.isOpen,
-        indexRatio:chopsticks.indexRatio,middleRatio:chopsticks.middleRatio,lm,
-        source:'chopsticks-index-middle-flexion' };
-    }
-    if(isChopsticksMode()){
+    if(isChopsticksMode() && research.active){
       return { detected:true, nx:interactionX(tip.x), ny:tip.y,
         isGrasping:false, graspScore:0, isOpenPrep:true, lm,
         source:'chopsticks-index-dwell' };
@@ -6212,7 +6205,7 @@ function interpretHandResults(results, inputMirrored=false){
     // palm center = average of landmarks 0,5,9,13,17
     const palmX = (lm[0].x + lm[5].x + lm[9].x + lm[13].x + lm[17].x) / 5;
     const palmY = (lm[0].y + lm[5].y + lm[9].y + lm[13].y + lm[17].y) / 5;
-    if(isPegMode()){
+    if(isPegMode() && research.active){
       const peg = computePegPressState(lm, isGrasping);
       return { detected:true, nx:interactionX(palmX), ny:palmY,
         isGrasping:stabiliseDetectedGesture(peg.isPressing, 'peg'),
@@ -6221,7 +6214,8 @@ function interpretHandResults(results, inputMirrored=false){
         source:'peg-aperture' };
     }
     if(state.gameType === 'pinch'){
-      // Bare-hand FTHUE 6/7: cursor is the centroid of thumb, index and middle fingertips.
+      // Normal Level 6 (all six tasks), plus the research bare-hand mode:
+      // cursor is the centroid of thumb, index and middle fingertips.
       const pinch = computePinchState(lm, isGrasping);
       const midX = (lm[4].x + lm[8].x + lm[12].x) / 3;
       const midY = (lm[4].y + lm[8].y + lm[12].y) / 3;
@@ -6233,7 +6227,9 @@ function interpretHandResults(results, inputMirrored=false){
         graspScore:pinch.score,
         // Release is armed only after the same stabilized reopen state.
         // It does not require reopening to a theoretical maximum.
-        isOpenPrep:!pinchHeld, pinchRatio:pinch.ratio, lm };
+        isOpenPrep:!pinchHeld && pinch.isSeparated,
+        pinchRatio:pinch.ratio, pinchIndexRatio:pinch.indexRatio,
+        pinchMiddleRatio:pinch.middleRatio, lm, source:'tripod-pinch' };
     }
     const usePalmCursor = state.gameType === 'grasp' || isGrossTabletop();
     const nx = interactionX(usePalmCursor ? palmX : tip.x);
@@ -6247,7 +6243,7 @@ function interpretHandResults(results, inputMirrored=false){
   }
   // Tabletop hands are often partly hidden by the table edge. Pose landmarks
   // keep gross-arm levels playable even when the hand model loses the fingers.
-  // The two Level 6 tool replacements are deliberate exceptions: they must
+  // Normal Level 6 is a deliberate exception: every task must
   // fail closed rather than substituting a pose wrist for an absent affected hand.
   if(isGrossTabletop() && !isLevel6ToolGestureTask()){
     const pose = (lastPoseLm && nowMs()-lastPoseTs < 250) ? lastPoseLm : detectPose(videoEl);
@@ -6372,8 +6368,8 @@ function computePegPressState(lm, isPressingPrev){
   };
 }
 
-/* Three-finger pinch detection for bare-hand FTHUE 6/7.
-   Mean thumb-index and thumb-middle aperture is normalised by hand scale
+/* Three-finger pinch detection for normal Level 6 and bare-hand research mode.
+   Thumb-index and thumb-middle apertures are normalised by hand scale
    (wrist 0 to middle-finger MCP 9) so it is independent of camera distance.
    Hysteresis prevents flicker: a closed pinch must cross PINCH_ENTER, and it is only
    released once the fingers reopen past PINCH_EXIT. This detects the pinch aperture only;
@@ -6396,11 +6392,14 @@ function computePinchState(lm, isPinchingPrev){
   const scale = Math.max(palmLength, palmWidth);
   const indexGap = distance(lm[4], lm[8]);
   const middleGap = distance(lm[4], lm[12]);
-  // A light three-finger pinch is often asymmetrical after stroke. Keep both
-  // fingers in the measurement, but let the nearer fingertip carry more weight.
-  const gap = Math.min(indexGap, middleGap) * 0.62
-    + Math.max(indexGap, middleGap) * 0.38;
-  const ratio = scale < 0.001 ? 1 : (gap / scale);
+  const indexRatio = scale < 0.001 ? 1 : indexGap / scale;
+  const middleRatio = scale < 0.001 ? 1 : middleGap / scale;
+  const nearRatio = Math.min(indexRatio, middleRatio);
+  const farRatio = Math.max(indexRatio, middleRatio);
+  // Soft agreement: one digit may make a clear light closure while the other
+  // remains only moderately close. This is intentionally an OR-style tripod
+  // rule for asymmetric stroke hands, not a force or full-fist requirement.
+  const ratio = nearRatio * 0.68 + farRatio * 0.32;
   const pinchThresholds = research.active ? research : state;
   const personal = (!research.active || research.stratum === '6' || research.stratum === '7') &&
     Number.isFinite(pinchThresholds.personalPinchEnter) &&
@@ -6409,11 +6408,18 @@ function computePinchState(lm, isPinchingPrev){
   const enter = personal ? pinchThresholds.personalPinchEnter : PINCH_ENTER;
   const exit = personal ? pinchThresholds.personalPinchExit : PINCH_EXIT;
   const open = personal ? pinchThresholds.personalPinchOpen : PINCH_OPEN;
-  const threshold = isPinchingPrev ? exit : enter;
-  const isPinching = ratio < threshold;
+  const bothClearlyClosed = indexRatio <= enter && middleRatio <= enter;
+  const asymmetricLightClose = nearRatio <= enter * 0.82
+    && farRatio <= Math.max(exit, enter * 1.28);
+  // Once held, preserve hysteresis until both digits visibly reopen. A single
+  // drifting landmark cannot release an item.
+  const bothReopened = indexRatio >= exit && middleRatio >= exit;
+  const isPinching = isPinchingPrev
+    ? !bothReopened
+    : (bothClearlyClosed || asymmetricLightClose);
   return {
-    isPinching, ratio,
-    isSeparated: ratio > open,
+    isPinching, ratio, indexRatio, middleRatio, nearRatio, farRatio,
+    isSeparated: indexRatio > open && middleRatio > open,
     score: Math.max(0, Math.min(1, 1 - (ratio / Math.max(open,0.001)))),
     valid:true,
   };
@@ -6507,7 +6513,7 @@ function updateCalibrationCopy(){
   const closeCheck = document.getElementById('calibCloseCheck');
   if(isShoulderFlexionLevel()){
     hint.textContent = '已選患側肩、手肘及軀幹入鏡；患臂自然垂低。';
-  }else if(isLevel67BareMode()){
+  }else if(isLevel6() || isLevel67BareMode()){
     hint.textContent = '拇指、食指、中指入鏡。先張開，再輕捏。';
     openCheck.textContent = '○ 張開三指';
     closeCheck.textContent = '○ 三指輕捏';
@@ -6540,7 +6546,11 @@ function startCalibLoop(){
     ctx.clearRect(0,0,rectW,rectH);
 
     let res;
-    if(isGrossTabletop()){
+    if(isLevel6()){
+      // Every normal-flow Level 6 calibration uses a fresh selected-hand frame.
+      // Pose must never make calibration ready when the hand is absent.
+      res=detectWrist(video);
+    }else if(isGrossTabletop()){
       const pose=detectPose(video);
       const left=activeAffectedSide()==='left';
       const shoulder=pose?.[left?11:12];
@@ -7094,7 +7104,7 @@ function drawPegHolding(ctx, x, y, r, itemDrawer){
 
 /* ==================== 活動主題註冊表 ==================== */
 const LEVEL_VERB = { '2':'桌面承托慢慢移動', '3':'肩屈曲 30–60°', '4':'肩屈曲 60° 或以上', '5':'輕輕合手拿起', '67':'輕輕捏起' };
-const LEVEL_ACTION = { '2':'桌面承托訓練', '3':'患側肩屈曲 30–60°', '4':'患側肩屈曲 60° 或以上', '5':'患手握放練習', '67':'患臂肩屈曲功能任務' };
+const LEVEL_ACTION = { '2':'桌面承托訓練', '3':'患側肩屈曲 30–60°', '4':'患側肩屈曲 60° 或以上', '5':'患手握放練習', '67':'患手三點捏握功能任務' };
 const BASE_THEME = {
   verbFor(level){ return LEVEL_VERB[level] || LEVEL_VERB['4']; },
   actionLabelFor(level){ return LEVEL_ACTION[level] || LEVEL_ACTION['4']; },
@@ -7199,19 +7209,19 @@ const THEMES = {
     },
   }),
   chopstick_dimsum: mkTheme({
-    id:'chopstick_dimsum', title:'筷子點心', goal:'患手食指及中指伸直打開、屈曲夾起；肩屈曲運送，到飯碗再伸直放下',
-    itemWord:'點心', difficulty:'肩屈曲運送', targetStyle:'panel',
+    id:'chopstick_dimsum', title:'筷子點心', goal:'患手三指張開、輕捏拿起；移到飯碗，再張開放下',
+    itemWord:'點心', difficulty:'三點捏握運送', targetStyle:'panel',
     thumbnail:'img/hargau.png', thumbnailAlt:'蝦餃點心，代表筷子點心任務',
-    verbFor(){ return '手持筷子，主動抬高手臂把點心運送到飯碗'; },
-    actionLabelFor(){ return '食指＋中指稍伸直打開 → 稍屈曲夾起 → 肩屈曲運送 → 再伸直放下；只偵測已選患手'; },
+    verbFor(){ return '患手三指輕捏拿起點心，移到飯碗，再張開放下'; },
+    actionLabelFor(){ return '三指張開 → 輕捏拿起 → 移動 → 張開放下；只偵測已選患手'; },
     categoriesFor(){ return LEVEL3_THEME_VARIANTS.chopstick_dimsum; },
   }),
   peg_laundry: mkTheme({
-    id:'peg_laundry', title:'衣夾晾衫', goal:'患手三點捏握張開衣夾、輕捏夾起；肩屈曲運送，到晾衫繩再張開放下',
-    itemWord:'衣物', difficulty:'肩屈曲運送', targetStyle:'panel',
+    id:'peg_laundry', title:'衣夾晾衫', goal:'患手三指張開、輕捏拿起；移到晾衫繩，再張開放下',
+    itemWord:'衣物', difficulty:'三點捏握運送', targetStyle:'panel',
     thumbnail:'img/advanced/g_tshirt_blue.png', thumbnailAlt:'上衣待晾，代表衣夾晾衫任務',
-    verbFor(){ return '手持衣夾，主動抬高手臂把衣物運送到晾衫繩'; },
-    actionLabelFor(){ return '三點捏握張開 → 輕捏夾起 → 肩屈曲運送 → 再張開放下；只偵測已選患手'; },
+    verbFor(){ return '患手三指輕捏拿起衣物，移到晾衫繩，再張開放下'; },
+    actionLabelFor(){ return '三指張開 → 輕捏拿起 → 移動 → 張開放下；只偵測已選患手'; },
     categoriesFor(){ return LEVEL3_THEME_VARIANTS.peg_laundry; },
   }),
   pilot_laundry: mkTheme({
@@ -7532,7 +7542,7 @@ let foodIdSeq = 1;
    vertical lane. Y is a pure function of the already-smoothed elbow reach
    progress; flexion follows exactly the same lane back down. */
 function beginLevel4StandardCarry(item){
-  if(!item || (!isLevel4StandardTransportGame() && !isLevel6ToolGestureTask())) return;
+  if(!item || !isLevel4StandardTransportGame()) return;
   const matchingTarget = targets.find(target => target.type === item.targetType);
   // Standard source slots normally sit under their matching target. If a
   // replenished item occupies the other slot, choose the matching target's
@@ -7556,11 +7566,9 @@ function beginLevel4StandardCarry(item){
   item.level4Carry.topY = Math.min(item.level4Carry.pickupY, item.level4Carry.targetY);
 }
 function level4StandardCarryPoint(item = heldItem){
-  if(!item || (!isLevel4StandardTransportGame() && !isLevel6ToolGestureTask()) || !item.level4Carry) return null;
+  if(!item || !isLevel4StandardTransportGame() || !item.level4Carry) return null;
   const carry = item.level4Carry;
-  const progress = isLevel6ToolGestureTask()
-    ? clamp01(Number(shoulderFlexionState.progress)||0)
-    : clamp01(level4Reach.progress);
+  const progress = clamp01(level4Reach.progress);
   const bottomY = Number.isFinite(carry.bottomY)
     ? carry.bottomY : Math.max(carry.pickupY, carry.targetY);
   const topY = Number.isFinite(carry.topY)
@@ -8100,7 +8108,15 @@ function setupTargets(){
     return;
   }
   const outsideX = pullToCentre(sideSign > 0 ? cw * 0.78 : cw * 0.22);
-  const landscapeXs = (sideSign > 0 ? [cw * 0.66, cw * 0.87] : [cw * 0.34, cw * 0.13]).map(pullToCentre);
+  const landscapeGap = Math.min(cw - tw - 28, tw + 18);
+  const desiredLandscapeCentre = pullToCentre(sideSign > 0 ? cw * 0.765 : cw * 0.235);
+  const landscapeCentre = Math.max(
+    tw / 2 + landscapeGap / 2 + 14,
+    Math.min(cw - tw / 2 - landscapeGap / 2 - 14, desiredLandscapeCentre)
+  );
+  const landscapeXs = sideSign > 0
+    ? [landscapeCentre-landscapeGap/2,landscapeCentre+landscapeGap/2]
+    : [landscapeCentre+landscapeGap/2,landscapeCentre-landscapeGap/2];
   const portraitYs = shortReach
     ? [ch * 0.66, Math.min(ch - th/2 - 64, ch * 0.80)]
     : [ch * 0.72, Math.min(ch - th/2 - 64, ch * 0.88)];
@@ -8480,10 +8496,10 @@ let qaHand = null;   // { nx, ny, isGrasping }
 // deliberately exercise duplicate RAF handling.
 let qaFrameGeneration = 0;
 let lastAcceptedToolHandGeneration = -1;
-function qaToolHandResults(kind, gesture, side, missing){
+function qaToolHandResults(kind, gesture, side, missing, apertures, handednessConfidence){
   const lm=Array.from({length:21},()=>({x:.5,y:.5,z:0}));
   lm[0]={x:.42,y:.72,z:0};lm[5]={x:.43,y:.55,z:0};lm[9]={x:.52,y:.53,z:0};lm[17]={x:.62,y:.58,z:0};
-  if(kind==='chopsticks'){
+  if(kind==='chopsticks' && research.active){
     const ratio=gesture==='closed'?1.34:1.82;
     const place=(mcp,tip,dx)=>{
       const base=lm[mcp];
@@ -8492,14 +8508,20 @@ function qaToolHandResults(kind, gesture, side, missing){
     place(5,8,-.01);place(9,12,.01);
   }else{
     lm[4]={x:.48,y:.49,z:0};
-    const gap=gesture==='closed'?.07:.18;
-    lm[8]={x:lm[4].x+gap,y:lm[4].y,z:0};
-    lm[12]={x:lm[4].x+gap/.92,y:lm[4].y,z:0};
+    const indexGap=Number.isFinite(apertures?.index)
+      ? apertures.index : (gesture==='closed'?.11:.22);
+    const middleGap=Number.isFinite(apertures?.middle)
+      ? apertures.middle : (gesture==='closed'?.11:.22);
+    lm[8]={x:lm[4].x+indexGap,y:lm[4].y,z:0};
+    lm[12]={x:lm[4].x+middleGap,y:lm[4].y,z:0};
   }
   for(const index of Array.isArray(missing)?missing:[]) lm[index]={x:NaN,y:NaN,z:NaN};
   return {
     landmarks:[lm],
-    handednesses:[[{categoryName:side==='left'?'Left':'Right',score:.99}]],
+    handednesses:side==='missing' ? [[]] : [[{
+      categoryName:side==='left'?'Left':(side==='right'?'Right':'Unknown'),
+      score:Number.isFinite(handednessConfidence)?handednessConfidence:.99
+    }]],
   };
 }
 function readHand(frame){
@@ -8517,7 +8539,10 @@ function readHand(frame){
       if(qaHand.frameGeneration !== frame.generation){
         return {detected:false,reason:'hand-frame-stale'};
       }
-      return interpretHandResults(qaHand.results,false);
+      const interpreted=interpretHandResults(qaHand.results,false);
+      if(interpreted.detected && Number.isFinite(qaHand.nx)) interpreted.nx=qaHand.nx;
+      if(interpreted.detected && Number.isFinite(qaHand.ny)) interpreted.ny=qaHand.ny;
+      return interpreted;
     }
     return { detected:true, nx:qaHand.nx, ny:qaHand.ny, isGrasping:!!qaHand.isGrasping,
       isOpenPrep: qaHand.isOpenPrep === undefined ? !qaHand.isGrasping : !!qaHand.isOpenPrep };
@@ -9874,7 +9899,7 @@ function setActionPrompt(main, detail){
 /* Short, mode-specific prompts. Tool modes use observable hand motion only:
    the camera does not identify the physical tool or measure force. */
 function graspPrompt(key){
-  if(isLevel67BareMode()){
+  if(isLevel6() || isLevel67BareMode()){
     if(key === 'prep') return '張開三指';
     if(key === 'hold') return '三指輕捏';
     if(key === 'carry') return '保持輕捏';
@@ -9938,12 +9963,7 @@ function updateGraspLogic(){
       const d = dist(cursorX, cursorY, f.x, f.y);
       if(d < nearestDist){ nearest = f; nearestDist = d; }
     }
-    const shoulderAtPickupStart = !isLevel6ToolGestureTask()
-      || (shoulderFlexionState.startReady
-        && !shoulderFlexionState.targetReady
-        && Number(shoulderFlexionState.progress) <= .16);
-    let overFood = nearest && nearestDist <= pickupContactRadius(nearest.r, 100)
-      && shoulderAtPickupStart;
+    let overFood = nearest && nearestDist <= pickupContactRadius(nearest.r, 100);
     if(overFood){
       basicContactCandidate = nearest.id;
       basicContactUntil = now + CONTACT_GRACE_MS;
@@ -9984,9 +10004,9 @@ function updateGraspLogic(){
         noteHoldStart();
         pilotBump(isLevel67GestureMode() ? 'pinch_success' : 'grasp_success');
         transportStartX = cursorX; transportStartY = cursorY; transportStartAt = now;
-        const pickupMethod = isLevel67BareMode()
-          ? 'three_finger_pinch' : (isPegMode() ? 'tripod_peg_closure'
-            : (isChopsticksMode() ? 'index_middle_flexion' : 'open_then_grasp'));
+        const pickupMethod = isLevel6()
+          ? 'tripod_pinch' : (isLevel67BareMode()
+            ? 'three_finger_pinch' : (isPegMode() ? 'tripod_peg_closure' : 'open_then_grasp'));
         researchLog('pickup', {item:nearest.label, method:pickupMethod});
         updateHUD();
         basicOpenStart = 0; basicGraspStart = 0; basicGraspCandidate = ''; basicGraspArmed = false;
@@ -10024,12 +10044,6 @@ function updateGraspLogic(){
     // a reopened three-finger aperture before the object is dropped.
     const releasing = isLevel6ToolGestureTask() ? handOpenPrep
       : (isPinchMode() ? handOpenPrep : !isGrasping);
-    const shoulderReleaseReady = !isLevel6ToolGestureTask() || shoulderFlexionState.targetReady;
-    if(releasing && !shoulderReleaseReady){
-      releaseDwellStart=0;releaseDwellPlate=null;
-      setActionPrompt('繼續主動抬高手臂','到個人化目標再張開放下');
-      return;
-    }
     if(releasing){
       // 鬆開手：需要持續 releaseDwellMs 先真正 drop（防止 hand tracking jitter 誤觸）
       const now = nowMs();
@@ -13963,7 +13977,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <script src="level4-three-games-module.js"></script>
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v64-20260827-level6-no-duplicate-task-picker";
+  const LEVEL_APP_BUILD = "v65-20260828-level6-tripod-pinch-all-games";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

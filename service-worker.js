@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v64-20260827-level6-no-duplicate-task-picker";
+const CACHE_VERSION = "fthue-rehab-v65-20260828-level6-tripod-pinch-all-games";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");
