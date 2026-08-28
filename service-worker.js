@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v66-20260828-level6-calibration-fresh-frame";
+const CACHE_VERSION = "fthue-rehab-v67-20260828-bedside-usability-fixes";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

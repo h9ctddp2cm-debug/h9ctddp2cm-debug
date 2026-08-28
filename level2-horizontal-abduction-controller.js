@@ -12,10 +12,12 @@
     targetThreshold:.84,
     returnThreshold:.16,
     endpointFrames:2,
-    maxTorsoTranslation:.14,
-    maxTorsoLean:.24,
+    maxTorsoTranslation:.20,
+    maxTorsoLean:.32,
     baselineMidlineTolerance:.10,
     smoothing:.42,
+    baselineAdaptAlpha:.06,
+    torsoRebaselineFrames:75,
   });
 
   const finite=n=>Number.isFinite(Number(n));
@@ -100,6 +102,7 @@
         lastGeneration:null,
         baselineSamples:[],
         baseline:null,
+        torsoRejectFrames:0,
         frame:{fresh:false,generation:null},
       };
       return snapshot();
@@ -166,13 +169,47 @@
         pose.shoulderCentre.x-state.baseline.centre.x,
         pose.shoulderCentre.y-state.baseline.centre.y
       )/state.baseline.span;
-      if(centreShift>config.maxTorsoTranslation) return reject('torso-translation',generation);
-      if(Math.abs(pose.torsoLean-state.baseline.lean)>config.maxTorsoLean){
-        return reject('torso-lean',generation);
+      const torsoShifted=centreShift>config.maxTorsoTranslation;
+      const torsoLeaned=Math.abs(pose.torsoLean-state.baseline.lean)>config.maxTorsoLean;
+      if(torsoShifted||torsoLeaned){
+        state.torsoRejectFrames+=1;
+        /* A sustained postural change while the wrist rests at midline is a new
+           seated position, not an in-repetition compensation. Re-run the normal
+           midline baseline capture instead of pausing the session permanently. */
+        if(state.torsoRejectFrames>=config.torsoRebaselineFrames
+            &&Math.abs(pose.wrist)<=config.baselineMidlineTolerance){
+          state.calibrated=false;
+          state.baseline=null;
+          state.baselineSamples=[];
+          state.torsoRejectFrames=0;
+          state.phase='outward';
+          state.progress=0;
+          state.instantProgress=0;
+          state.targetFrames=0;
+          state.returnFrames=0;
+          state.valid=true;
+          state.newFrame=true;
+          state.reason='hold-at-midline';
+          state.frame={fresh:true,generation};
+          return snapshot();
+        }
+        return reject(torsoShifted?'torso-translation':'torso-lean',generation);
       }
+      state.torsoRejectFrames=0;
       const wristDelta=pose.wrist-state.baseline.wrist;
       state.instantProgress=clamp01(wristDelta/config.outwardSpan);
       state.progress+=config.smoothing*(state.instantProgress-state.progress);
+      /* Slow baseline drift adaptation, only while the wrist is near midline,
+         so small chair or camera shifts never lock the session while genuine
+         trunk movement during the outward reach is still rejected above. */
+      if(state.instantProgress<=config.returnThreshold
+          &&state.progress<=config.returnThreshold){
+        const alpha=config.baselineAdaptAlpha;
+        state.baseline.centre.x+=alpha*(pose.shoulderCentre.x-state.baseline.centre.x);
+        state.baseline.centre.y+=alpha*(pose.shoulderCentre.y-state.baseline.centre.y);
+        state.baseline.lean+=alpha*(pose.torsoLean-state.baseline.lean);
+        state.baseline.span+=alpha*(pose.shoulderSpan-state.baseline.span);
+      }
       state.valid=true;
       state.newFrame=true;
       state.reason='tracking';

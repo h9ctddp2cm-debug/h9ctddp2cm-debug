@@ -23,6 +23,13 @@
     anchorJumpScale: 1,
     safeguardStableFrames: 6,
     returnToleranceDeg: 10,
+    // Adaptive return floor: an oblique bedside camera can report a resting
+    // arm as 30–45°, making an absolute near-0° return window unreachable.
+    // A repetition also completes when the arm settles at its own observed
+    // lowest angle, provided it has descended below relativeReturnCap of the
+    // prescribed excursion. This is a game gate, not a goniometric claim.
+    returnFloorToleranceDeg: 6,
+    relativeReturnCap: 0.45,
   };
 
   function clamp01(value) {
@@ -177,6 +184,7 @@
         selectedStartDeg:0,
         selectedTargetDeg:Number(targetDeg)||defaultTarget(level||'3'),peakEstimatedAngle:null,
         targetReached:false,repetitions:0,cycleArmed:false,targetStableFrames:0,returnStableFrames:0,
+        returnFloorDeg:null,startFloorDeg:null,
         holdDurationMs:Math.max(0,Number(options&&options.holdDurationMs)||0),
         holdStartedAtMs:null,holdRemainingSec:null,holdComplete:false,holdRestartCount:0,
         holdAtTarget:false,holdInterrupted:false,lastUpdateMs:null,
@@ -298,13 +306,20 @@
           Math.max(5,(state.trainingMax-state.trainingMin)*config.returnAt)
         );
 
+        const relativeCapDeg=state.selectedStartDeg
+          +config.relativeReturnCap*Math.max(0,state.selectedTargetDeg-state.selectedStartDeg);
         if(state.phase==='await-start'){
-          const atStart=state.estimatedAngle>=Math.max(0,state.selectedStartDeg-config.startToleranceDeg)
+          state.startFloorDeg=Number.isFinite(state.startFloorDeg)
+            ? Math.min(state.startFloorDeg,state.estimatedAngle):state.estimatedAngle;
+          const inWindow=state.estimatedAngle>=Math.max(0,state.selectedStartDeg-config.startToleranceDeg)
             && state.estimatedAngle<=state.selectedStartDeg+returnWindow;
+          const atOwnFloor=state.estimatedAngle<=relativeCapDeg
+            && state.estimatedAngle<=state.startFloorDeg+config.returnFloorToleranceDeg;
+          const atStart=inWindow||atOwnFloor;
           state.startStableFrames=atStart?state.startStableFrames+1:0;
           state.targetStableFrames=0; state.returnStableFrames=0;
           if(state.startStableFrames>=config.gateStableFrames){
-            state.phase='outward'; state.startStableFrames=0;
+            state.phase='outward'; state.startStableFrames=0; state.startFloorDeg=null;
           }
         }else if(state.phase==='outward'){
           state.targetStableFrames=state.estimatedAngle>=state.selectedTargetDeg-config.targetToleranceDeg
@@ -346,9 +361,13 @@
           }
         }else if(state.phase==='await-return'){
           state.targetStableFrames=0;
-          state.returnStableFrames=state.estimatedAngle>=Math.max(0,state.selectedStartDeg-config.startToleranceDeg)
-            && state.estimatedAngle<=state.selectedStartDeg+returnWindow
-            ? state.returnStableFrames+1:0;
+          state.returnFloorDeg=Number.isFinite(state.returnFloorDeg)
+            ? Math.min(state.returnFloorDeg,state.estimatedAngle):state.estimatedAngle;
+          const inWindow=state.estimatedAngle>=Math.max(0,state.selectedStartDeg-config.startToleranceDeg)
+            && state.estimatedAngle<=state.selectedStartDeg+returnWindow;
+          const atOwnFloor=state.estimatedAngle<=relativeCapDeg
+            && state.estimatedAngle<=state.returnFloorDeg+config.returnFloorToleranceDeg;
+          state.returnStableFrames=inWindow||atOwnFloor?state.returnStableFrames+1:0;
         }
         if(state.phase==='await-return'&&state.cycleArmed
             &&state.returnStableFrames>=config.gateStableFrames){
@@ -360,6 +379,7 @@
           state.prescribedExcursionDeg=state.selectedTargetDeg-state.selectedStartDeg;
           state.progress=clamp01((state.estimatedAngle-state.trainingMin)/(state.trainingMax-state.trainingMin));
           state.phase='await-start'; state.startStableFrames=0; state.returnStableFrames=0;
+          state.returnFloorDeg=null; state.startFloorDeg=null;
         }
         state.gameReady=true; state.reason='ready';
       }

@@ -2300,7 +2300,7 @@ const state = {
   graspType: 'any',      // fixed: open-hand detection
   affectedSide: '',      // normal play: therapist must choose left or right before calibration
   qaMode: false,         // QA-only: 經 hook 注入游標，不需相機
-  calibration:{ detectedStart:0, openStart:0, closedStart:0, detectedDone:false,
+  calibration:{ detectedStart:0, openStart:0, closedHoldMs:0, closedTickAt:0, lastSeenAt:0, detectedDone:false,
     openDone:false, closedDone:false, ready:false, openScores:[], closedScores:[] },
   personalGraspEnter:null, personalGraspExit:null,
   personalPinchEnter:null, personalPinchExit:null, personalPinchOpen:null,
@@ -2463,7 +2463,7 @@ const research = {
   safetyClearance:'',
   cog:{ active:false, prompt:null, shownAt:0, nextAt:0, index:0, lastResult:'' },
   ruleSwitchOn:false, ruleSwitchAt:0,
-  calibration:{ detectedStart:0, openStart:0, closedStart:0, detectedDone:false,
+  calibration:{ detectedStart:0, openStart:0, closedHoldMs:0, closedTickAt:0, lastSeenAt:0, detectedDone:false,
     openDone:false, closedDone:false, ready:false, openScores:[], closedScores:[] },
   personalGraspEnter:null, personalGraspExit:null,
   personalPinchEnter:null, personalPinchExit:null, personalPinchOpen:null,
@@ -3465,7 +3465,7 @@ window.renderCalibLevelBrief = renderCalibLevelBrief;
 window.CALIB_LEVEL_BRIEF = CALIB_LEVEL_BRIEF;
 
 function resetResearchCalibration(){
-  research.calibration = { detectedStart:0, openStart:0, closedStart:0, detectedDone:false,
+  research.calibration = { detectedStart:0, openStart:0, closedHoldMs:0, closedTickAt:0, lastSeenAt:0, detectedDone:false,
     openDone:false, closedDone:false, ready:false, openScores:[], closedScores:[] };
   research.personalGraspEnter = null;
   research.personalGraspExit = null;
@@ -3473,11 +3473,11 @@ function resetResearchCalibration(){
   research.personalPinchExit = null;
   research.personalPinchOpen = null;
   ['calibDetectCheck','calibOpenCheck','calibCloseCheck'].forEach(id=>{
-    const el = document.getElementById(id); if(el) el.classList.remove('done');
+    renderCalibCheck(id, false);
   });
 }
 function resetNormalCalibration(){
-  state.calibration = { detectedStart:0, openStart:0, closedStart:0, detectedDone:false,
+  state.calibration = { detectedStart:0, openStart:0, closedHoldMs:0, closedTickAt:0, lastSeenAt:0, detectedDone:false,
     openDone:false, closedDone:false, ready:false, openScores:[], closedScores:[] };
   state.personalGraspEnter = null;
   state.personalGraspExit = null;
@@ -3485,7 +3485,7 @@ function resetNormalCalibration(){
   state.personalPinchExit = null;
   state.personalPinchOpen = null;
   ['calibDetectCheck','calibOpenCheck','calibCloseCheck'].forEach(id=>{
-    const el = document.getElementById(id); if(el) el.classList.remove('done');
+    renderCalibCheck(id, false);
   });
 }
 const PILOT_PHASE_LABEL = {
@@ -6413,15 +6413,22 @@ function computePinchState(lm, isPinchingPrev){
   const bothClearlyClosed = indexRatio <= enter && middleRatio <= enter;
   const asymmetricLightClose = nearRatio <= enter * 0.82
     && farRatio <= Math.max(exit, enter * 1.28);
-  // Once held, preserve hysteresis until both digits visibly reopen. A single
-  // drifting landmark cannot release an item.
-  const bothReopened = indexRatio >= exit && middleRatio >= exit;
+  // Once held, preserve hysteresis until the hand visibly reopens. Either
+  // both digits clear the exit threshold, or one digit reopens decisively
+  // past the open threshold while the other clears at least the midpoint of
+  // the enter/exit band. Both paths still require movement from BOTH digits,
+  // so a single drifting landmark cannot release an item, while an
+  // asymmetric stroke hand is no longer trapped in a hold.
+  const midReopen = (enter + exit) / 2;
+  const bothReopened = (indexRatio >= exit && middleRatio >= exit)
+    || (farRatio >= open && nearRatio >= midReopen);
   const isPinching = isPinchingPrev
     ? !bothReopened
     : (bothClearlyClosed || asymmetricLightClose);
   return {
     isPinching, ratio, indexRatio, middleRatio, nearRatio, farRatio,
-    isSeparated: indexRatio > open && middleRatio > open,
+    isSeparated: (indexRatio > open && middleRatio > open)
+      || (farRatio > open && nearRatio >= exit),
     score: Math.max(0, Math.min(1, 1 - (ratio / Math.max(open,0.001)))),
     valid:true,
   };
@@ -6534,6 +6541,15 @@ function updateCalibrationCopy(){
   }
 }
 
+const CALIB_DROPOUT_GRACE_MS = 1500;
+function renderCalibCheck(id, done){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.classList.toggle('done', !!done);
+  const label = el.textContent.replace(/^[○✓]\s*/, '');
+  const next = (done ? '✓ ' : '○ ') + label;
+  if(el.textContent !== next) el.textContent = next;
+}
 function startCalibLoop(){
   updateCalibrationCopy();
   const video = document.getElementById('calibVideo');
@@ -6582,6 +6598,7 @@ function startCalibLoop(){
         const now = nowMs();
         const c = research.active ? research.calibration : state.calibration;
         const thresholds = research.active ? research : state;
+        c.lastSeenAt = now;
         if(!c.detectedStart) c.detectedStart = now;
         if(!c.detectedDone && now - c.detectedStart >= 800) c.detectedDone = true;
         if(isGraspStyleMode()){
@@ -6591,7 +6608,8 @@ function startCalibLoop(){
             if(!c.openStart) c.openStart = now;
             if(now - c.openStart >= 750){
               c.openDone = true;
-              c.closedStart = 0;
+              c.closedHoldMs = 0;
+              c.closedTickAt = 0;
               hint.textContent = isPinchMode() ? '而家輕捏。' : '而家輕合手。';
             }
           }else if(!c.closedDone && Number.isFinite(value)){
@@ -6605,20 +6623,33 @@ function startCalibLoop(){
                 // change than a grasp. Accept a small but sustained difference.
                 ? value >= openMean + Math.max(0.006, openMean * 0.015)
                 : value >= openMean + 0.035;
+            const previousTick = c.closedTickAt;
+            c.closedTickAt = now;
             if(changedEnough){
               c.closedScores.push(value);
-              if(!c.closedStart) c.closedStart = now;
-              if(now - c.closedStart >= 550) c.closedDone = true;
+              // Accumulate qualifying light-close time instead of demanding one
+              // unbroken hold. Closing the hand often drops the landmarker for
+              // a moment, and a hard reset made this stage unreachable for
+              // stroke hands (v66 bedside recordings).
+              const delta = Number.isFinite(previousTick) && previousTick > 0
+                ? Math.min(120, now - previousTick) : 0;
+              c.closedHoldMs = (c.closedHoldMs || 0) + delta;
+              if(c.closedHoldMs >= 450 || c.closedScores.length >= 10) c.closedDone = true;
             }else{
-              c.closedStart = 0;
+              // Only a clear reopen restarts the accumulated evidence; brief
+              // mid-close jitter does not.
+              const clearlyOpenAgain = isPinchMode()
+                ? value >= openMean - 0.010
+                : value <= openMean + 0.004;
+              if(clearlyOpenAgain) c.closedHoldMs = 0;
             }
           }
         } else {
           c.openDone = true; c.closedDone = true;
         }
-        document.getElementById('calibDetectCheck').classList.toggle('done', c.detectedDone);
-        document.getElementById('calibOpenCheck').classList.toggle('done', c.openDone);
-        document.getElementById('calibCloseCheck').classList.toggle('done', c.closedDone);
+        renderCalibCheck('calibDetectCheck', c.detectedDone);
+        renderCalibCheck('calibOpenCheck', c.openDone);
+        renderCalibCheck('calibCloseCheck', c.closedDone);
         c.ready = c.detectedDone && c.openDone && c.closedDone;
         if(c.ready && state.gameType === 'grasp' && thresholds.personalGraspEnter == null &&
             c.openScores.length && c.closedScores.length){
@@ -6639,11 +6670,16 @@ function startCalibLoop(){
           // forced 0.12 minimum could place the "open" threshold above the
           // participant's real opening, permanently blocking pickup.
           const gap = Math.max(0.025, openMean - closedMean);
-          thresholds.personalPinchEnter = closedMean + gap * 0.72;
-          thresholds.personalPinchExit = closedMean + gap * 0.84;
+          // v67: keep pickup easy but make release attainable. The old 0.72 /
+          // 0.84 / 0.94 proportions demanded a near-full reopen that hemiplegic
+          // hands could not sustain, so holds timed out and the release-
+          // difficulty pause fired (28 Aug bedside recordings). Ordering
+          // closedMean < enter < exit < open is preserved for hysteresis.
+          thresholds.personalPinchEnter = closedMean + gap * 0.56;
+          thresholds.personalPinchExit = closedMean + gap * 0.70;
           thresholds.personalPinchOpen = Math.min(
-            openMean - gap * 0.03,
-            closedMean + gap * 0.94
+            openMean - gap * 0.02,
+            closedMean + gap * 0.80
           );
         }
         document.getElementById('btnStartGame').disabled = !c.ready;
@@ -6687,9 +6723,19 @@ function startCalibLoop(){
       document.getElementById('pixelCount').textContent = '尚未偵測';
       if(research.active || isGraspStyleMode()){
         const c = research.active ? research.calibration : state.calibration;
-        c.detectedStart = 0;
-        c.openStart = 0;
-        c.closedStart = 0;
+        // Landmark dropouts are expected exactly when the hand closes. Keep
+        // stage progress through a short dropout; only a sustained loss of the
+        // hand restarts the detect/open/close timers.
+        const lostForMs = Number.isFinite(c.lastSeenAt) && c.lastSeenAt > 0
+          ? nowMs() - c.lastSeenAt : Infinity;
+        if(lostForMs > CALIB_DROPOUT_GRACE_MS){
+          c.detectedStart = 0;
+          c.openStart = 0;
+          c.closedHoldMs = 0;
+          c.closedTickAt = 0;
+        }else{
+          c.closedTickAt = 0;
+        }
       }
       calibDotEmaX = -1; calibDotEmaY = -1;
     }
@@ -9807,6 +9853,8 @@ function updateLevel2LateralGame(){
     }
   }else if(!level3Lateral.newFrame){
     setActionPrompt('等待鏡頭','');
+  }else if(level3Lateral.reason==='hold-at-midline'){
+    setActionPrompt('患手保持中線','重新對位');
   }else if(level3Lateral.phase==='return'){
     setActionPrompt('好！返回中線','');
   }else{
@@ -13983,7 +14031,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <script src="level4-three-games-module.js"></script>
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v66-20260828-level6-calibration-fresh-frame";
+  const LEVEL_APP_BUILD = "v67-20260828-bedside-usability-fixes";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 
