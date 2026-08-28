@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v49-20260826-offline-release";
+const CACHE_VERSION = "fthue-rehab-v67-20260828-bedside-usability-fixes";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

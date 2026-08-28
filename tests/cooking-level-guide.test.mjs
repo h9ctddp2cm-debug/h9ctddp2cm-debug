@@ -7,8 +7,10 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const source = readFileSync(path.join(root, "index.html"), "utf8");
 
-test("cooking is available only for FTHUE Level 6–7", () => {
-  assert.match(source, /themeId !== 'cooking' \|\| level === '67'/);
+test("cooking is restored for Level 6 but remains unavailable at other normal levels", () => {
+  assert.match(source, /return themeId !== 'cooking';/);
+  assert.match(source, /if\(level === '67'\) return \['flowers','chopstick_dimsum','peg_laundry','cards','mahjong','cooking'\]\.includes\(themeId\);/);
+  assert.match(source, /return \['flowers','chopstick_dimsum','peg_laundry','cards','mahjong','cooking'\];/);
   assert.match(source, /visibleThemeOrder\(\)\.forEach/);
   assert.match(source, /if\(!themeAvailableForLevel\('cooking'\)\)/);
 });

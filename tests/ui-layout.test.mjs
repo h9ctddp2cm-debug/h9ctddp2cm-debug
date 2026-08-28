@@ -210,68 +210,39 @@ test('critical test IDs and safety hooks preserved', async (t) => {
 });
 
 
-test('Level 2 linear supported games render no shoulder-horizontal-abduction patient row or wording', async (t) => {
-  const linearReadyText = '屈肘開始 → 伸肘向上／向前 → 屈肘返回';
+test('Level 2 renders one outward-slide activity and never shows elbow calibration', async (t) => {
   assert.match(PAGE_SOURCE, /id="level4ShoulderAbductionReading" hidden/);
   assert.match(PAGE_SOURCE, /\.level4-reading\[hidden\]\{\s*display:none !important;\s*\}/);
-  assert.match(PAGE_SOURCE, /function level4PatientReadyGuidance\(\)/);
+  assert.match(PAGE_SOURCE, /const active = \(usesLegacyLevel4Reach\(\) \|\| isShoulderFlexionLevel\(\)\)/);
+  assert.match(PAGE_SOURCE, /if\(timingCard\) timingCard\.hidden=level2HorizontalAbduction;/);
   if (!browser) return t.skip('playwright unavailable');
 
-  for (const theme of ['dimsum', 'bowling']) {
-    await withPage(VIEWPORTS[2], async (page) => {
-      const patientState = await page.evaluate((selectedTheme) => {
-        const flex = { shoulder:{x:.45,y:.30}, elbow:{x:.45,y:.48}, wrist:{x:.58,y:.48}, otherShoulder:{x:.60,y:.30} };
-        const reach = { shoulder:{x:.45,y:.30}, elbow:{x:.54,y:.35}, wrist:{x:.74,y:.36}, otherShoulder:{x:.60,y:.30} };
-        window.__qa.startGame({level:'2', theme:selectedTheme, affectedSide:'right', duration:300});
-        window.__qa.setLevel4Pose(flex);
-        window.__qa.level4ManualCapture('flexed');
-        window.__qa.setLevel4Pose(reach);
-        window.__qa.level4ManualCapture('extended');
+  await withPage(VIEWPORTS[2], async (page) => {
+      const patientState = await page.evaluate(() => {
+        window.__qa.startGame({level:'2', theme:'mahjongwash', affectedSide:'right', duration:300});
         const row = document.getElementById('level4ShoulderAbductionReading');
-        const hint = document.getElementById('level4CalibHint');
+        const bar = document.getElementById('level4CalibBar');
+        const themes = window.__qa.themes('2');
+        window.__qa.showRules();
         return {
+          theme:window.__qa.state().theme,
+          themes,
           hidden: row.hidden,
           display: getComputedStyle(row).display,
-          patientText: document.getElementById('level4CalibBar').innerText,
-          hint: hint.innerText,
+          barVisible:bar.classList.contains('show'),
+          rules:document.getElementById('rulesContent').innerText,
         };
-      }, theme);
-      assert.equal(patientState.hidden, true, `${theme}: horizontal-abduction row has hidden state`);
-      assert.equal(patientState.display, 'none', `${theme}: horizontal-abduction row is not rendered`);
-      assert.match(patientState.hint, new RegExp(linearReadyText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `${theme}: only elbow-repeat instruction remains`);
-      assert.doesNotMatch(patientState.patientText, /Shoulder horizontal-abduction range|肩水平外展範圍|abduction moves left\/right/i);
-    });
-  }
-});
-
-test('Level 2 supported path games render shoulder-horizontal-abduction row and ordered guidance', async (t) => {
-  if (!browser) return t.skip('playwright unavailable');
-  for (const theme of ['wipewindow', 'mahjongwash', 'buspay']) {
-    await withPage(VIEWPORTS[2], async (page) => {
-      const patientState = await page.evaluate((selectedTheme) => {
-        const flex = { shoulder:{x:.45,y:.30}, elbow:{x:.45,y:.48}, wrist:{x:.58,y:.48}, otherShoulder:{x:.60,y:.30} };
-        const reach = { shoulder:{x:.45,y:.30}, elbow:{x:.54,y:.35}, wrist:{x:.74,y:.36}, otherShoulder:{x:.60,y:.30} };
-        window.__qa.startGame({level:'2', theme:selectedTheme, affectedSide:'right', duration:300});
-        window.__qa.setLevel4Pose(flex);
-        window.__qa.level4ManualCapture('flexed');
-        window.__qa.setLevel4Pose(reach);
-        window.__qa.level4ManualCapture('extended');
-        const row = document.getElementById('level4ShoulderAbductionReading');
-        return {
-          hidden: row.hidden,
-          display: getComputedStyle(row).display,
-          hint: document.getElementById('level4CalibHint').innerText,
-          height: row.getBoundingClientRect().height,
-          clipped: row.getBoundingClientRect().bottom > document.querySelector('.game-stage').getBoundingClientRect().bottom + 1,
-        };
-      }, theme);
-      assert.equal(patientState.hidden, false, `${theme}: horizontal-abduction row is enabled`);
-      assert.notEqual(patientState.display, 'none', `${theme}: horizontal-abduction row is rendered`);
-      assert.ok(patientState.height >= 38, `${theme}: path-only row retains a readable patient touch/read height`);
-      assert.equal(patientState.clipped, false, `${theme}: path-only row stays within the game stage`);
-      assert.match(patientState.hint, /肩水平外展/, `${theme}: ordered path guidance stays visible`);
-    });
-  }
+      });
+      assert.equal(patientState.theme,'bilateral');
+      assert.deepEqual(patientState.themes.map(theme=>theme.id),['bilateral']);
+      assert.equal(patientState.hidden,true);
+      assert.equal(patientState.display,'none');
+      assert.equal(patientState.barVisible,false);
+      assert.match(patientState.rules,/桌面肩水平外展/);
+      assert.match(patientState.rules,/向患側外滑/);
+      assert.match(patientState.rules,/返回中線/);
+      assert.doesNotMatch(patientState.rules,/屈肘|伸肘|拿取|抓|放手|畫圈|前伸/);
+  });
 });
 
 test('every FTHUE level offers trial and training modes with accessible controls', async (t) => {
@@ -424,7 +395,7 @@ test('Level 5 safety gate uses the approved five-item wording', async (t) => {
   });
 });
 
-test('Level 6–7 safety gate uses the approved five-item wording', async (t) => {
+test('Level 6 safety gate uses no angle-selection wording and keeps tool supervision', async (t) => {
   if (!browser) return t.skip('playwright unavailable');
   await withPage(VIEWPORTS[1], async (page) => {
     const copy = await page.evaluate(() => {
@@ -438,16 +409,16 @@ test('Level 6–7 safety gate uses the approved five-item wording', async (t) =>
         noteHidden: document.getElementById('safetyLevelNote')?.hidden,
       };
     });
-    assert.equal(copy.title, '開始前確認（FTHUE Level 6–7）');
+    assert.equal(copy.title, '開始前確認（FTHUE Level 6）');
     assert.deepEqual(copy.items, [
-      '坐穩；伸手、輕捏、張手。',
-      '身體保持正中。',
+      '坐穩；患手三指張開、輕捏拿起、移動，再張開放下。',
+      '先選擇功能活動；筷子點心或衣夾晾衫才使用真實工具。',
       '先試 3 次。',
       '慢、穩；可休息。',
-      '治療師全程監督。',
+      '治療師全程監督；如使用實體工具，確認拿法正確。',
     ]);
     assert.equal(copy.supervisionHidden, true, 'duplicate supervision line is hidden');
-    assert.equal(copy.noteHidden, true, 'duplicate Level 6–7 note is hidden');
+    assert.equal(copy.noteHidden, true, 'duplicate Level 6 note is hidden');
   });
 });
 
@@ -468,7 +439,7 @@ test('final FTHUE Level 2–7 movement wording is consistent', async (t) => {
       '肩屈曲 30–60°',
       '肩屈曲 60° 或以上',
       '患手握放練習',
-      '患手捏放練習',
+      '患手三點捏握功能任務',
     ]);
     assert.match(copy.level2, /手臂放桌面/);
     assert.match(copy.level2, /肩、肘、腕及路徑入鏡/);
@@ -477,7 +448,8 @@ test('final FTHUE Level 2–7 movement wording is consistent', async (t) => {
     assert.match(copy.level4, /患臂離桌/);
     assert.match(copy.level4, /軀幹及全臂入鏡/);
     assert.match(copy.level5, /伸手、輕合、張手/);
-    assert.match(copy.level67, /按玩法捏放/);
+    assert.match(copy.level67, /患手三指張開、輕捏拿起、移動，再張開放下/);
+    assert.doesNotMatch(copy.level67, /量角器|60–120|角度|肩|肘|抬高手臂/);
   });
 });
 

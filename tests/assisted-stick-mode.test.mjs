@@ -54,7 +54,7 @@ test('concise setup and trial/training rules describe both movement modes and 1 
   assert.match(html,/data-testid="button-shoulder-mode-assisted-stick">[\s\S]*雙手持 1 lb 棍/);
   assert.match(html,/雙手握棍，健手協助｜Hold stick with both hands; unaffected hand assists/);
   assert.match(html,/相機只追蹤已選患側手臂；角度只作訓練估算/);
-  assert.match(html,/shoulderModeCue\+'隨機起點/);
+  assert.match(html,/shoulderModeCue\+'0° 起點/);
   assert.match(html,/shoulderExerciseProfile\(\)\.patient\+'至治療師所選目標/);
   assert.match(html,/相機只追蹤已選患側手臂；角度只作訓練估算/);
   assert.doesNotMatch(html,/醫療級肩關節活動幅度|medical-grade shoulder ROM/i);
@@ -87,7 +87,7 @@ test('mode persists through controller calibration reset while a new app level r
 });
 
 test('existing Level 3 and Level 4 target-degree sets remain unchanged',()=>{
-  assert.match(html,/state\.level==='3'\?\[30,40,50,60\]:Array\.from\(\{length:13\},\(_,index\)=>60\+index\*10\)/);
+  assert.match(html,/state\.level==='3'\?\[30,40,50,60\][\s\S]{0,80}:Array\.from\(\{length:13\},\(_,index\)=>60\+index\*10\)/);
   const level3=api.createController({level:'3'});
   const level4=api.createController({level:'4'});
   assert.equal(level3.setTarget(30,'3'),true);

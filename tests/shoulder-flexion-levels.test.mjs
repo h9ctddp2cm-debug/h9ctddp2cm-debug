@@ -78,7 +78,7 @@ test('shoulder angle uses trunk-to-upper-arm geometry: arm by side is 0 and forw
   assert.ok(Math.abs(api.shoulderFlexion2D(api.selectedArm(pose(75),'right'),1)-75)<1e-6);
 });
 
-test('Level 3 auto-starts hands-free at the deterministic-random required start',()=>{
+test('Level 3 auto-starts hands-free from fixed zero',()=>{
   const {c,ready,start}=calibrate('3',50);
   assert.equal(ready.calibrated,true);
   assert.equal(ready.gameReady,true);
@@ -87,15 +87,17 @@ test('Level 3 auto-starts hands-free at the deterministic-random required start'
   assert.ok(Math.abs(ready.baseline-25)<.01);
   assert.ok(Math.abs(ready.estimatedAngle)<.01);
   assert.equal(ready.selectedTargetDeg,50);
+  assert.equal(start,0);
   const middle=feed(c,60,60,6);
   assert.ok(middle.progress>0&&middle.progress<1);
 });
 
-test('Level 4 auto-starts at its required random start and maps toward the selected 60-or-above target',()=>{
+test('Level 4 auto-starts from fixed zero and maps toward the selected 60-or-above target',()=>{
   const {c,ready,start}=calibrate('4',80,{smoothAlpha:1});
   assert.equal(ready.calibrated,true);
   assert.equal(ready.trainingMin,start);
   assert.equal(ready.trainingMax,80);
+  assert.equal(start,0);
   acquireStart(c,start,30);
   assert.equal(feed(c,rawForEstimated(80),60,8).targetReady,true);
 });
@@ -133,12 +135,12 @@ test('camera-visible shoulder rise is reported without freezing valid elevation'
   assert.equal(guarded.reason,'ready');
 });
 
-test('target options and deterministic starts obey the clinical sets and never repeat when alternatives exist',()=>{
+test('target options preserve the clinical sets while every repetition starts at zero',()=>{
   const c=api.createController({level:'3'});
-  assert.deepEqual(c.startChoices('3',30),[0,10,20]);
-  assert.deepEqual(c.startChoices('3',50),[0,10,20]);
+  assert.deepEqual(c.startChoices('3',30),[0]);
+  assert.deepEqual(c.startChoices('3',50),[0]);
   assert.equal(c.setTarget(60,'3'),true);
-  assert.deepEqual(c.startChoices('4',60),[0,10,20]);
+  assert.deepEqual(c.startChoices('4',60),[0]);
   assert.equal(c.setTarget(35,'3'),false);
   assert.equal(c.setTarget(180,'4'),true);
   const {c:cycle,start}=calibrate('3',50,{smoothAlpha:1});
@@ -147,8 +149,8 @@ test('target options and deterministic starts obey the clinical sets and never r
   feed(cycle,rawForEstimated(start),60,8);
   const after=cycle.snapshot();
   assert.equal(after.repetitions,1);
-  assert.notEqual(after.selectedStartDeg,start);
-  assert.ok(after.selectedStartDeg<=40);
+  assert.equal(start,0);
+  assert.equal(after.selectedStartDeg,0);
 });
 
 test('a stable 25-degree camera offset calibrates automatically without requiring raw zero',()=>{
@@ -327,7 +329,10 @@ test('visible mapping and setup copy distinguish Level 2, Level 3 and Level 4 wi
   assert.match(html,/並非量角器 ROM/);
   assert.match(html,/不作診斷或自動分級/);
   assert.match(html,/相機不量度抓握或捏力/);
-  assert.match(html,/state\.level==='3'\?\[30,40,50,60\]:Array\.from\(\{length:13\},\(_,index\)=>60\+index\*10\)/);
+  assert.match(html,/const enabled=state\.level==='3'\|\|state\.level==='4'/);
+  assert.match(html,/state\.level==='3'\?\[30,40,50,60\][\s\S]{0,80}:Array\.from\(\{length:13\},\(_,index\)=>60\+index\*10\)/);
+  assert.doesNotMatch(html,/state\.level==='67'\?\[60,70,80,90,100,110,120\]/);
+  assert.match(html,/if\(levelId==='67'\) state\.shoulderTargetDeg=60/);
   assert.match(html,/FTHUE Level 2[\s\S]*img\/advanced\/level4_cartoon_side_forward\.png/);
   assert.match(html,/FTHUE Level 3[\s\S]*img\/advanced\/shoulder_active_30_60\.svg[\s\S]*img\/advanced\/shoulder_assisted_30_60\.svg/);
   assert.match(html,/FTHUE Level 4[\s\S]*img\/advanced\/shoulder_active_60_plus\.svg[\s\S]*img\/advanced\/shoulder_assisted_60_plus\.svg/);
@@ -356,7 +361,7 @@ test('Level 3 and 4 gameplay directly follows live shoulder angle with larger ob
   assert.match(html,/網頁只追蹤肩屈曲，不偵測抓握或放手/);
 });
 
-test('setup exposes distinct exact target-hold choices and aligns v48 source identifiers',()=>{
+test('setup exposes distinct exact target-hold choices and aligns v51 source identifiers',()=>{
   const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
   const manifest=fs.readFileSync(path.join(root,'manifest.webmanifest'),'utf8');
   const worker=fs.readFileSync(path.join(root,'service-worker.js'),'utf8');
@@ -370,9 +375,9 @@ test('setup exposes distinct exact target-hold choices and aligns v48 source ide
   assert.match(html,/id="targetHoldOverlay"[\s\S]*id="targetHoldNumber"/);
   assert.match(html,/holdCountdownActive/);
   assert.match(html,/SHOULDER_HOLD_COUNT_CANTONESE/);
-  assert.match(html,/v49-20260826-offline-release/);
-  assert.match(manifest,/v49-20260826-offline-release/);
-  assert.match(worker,/v49-20260826-offline-release/);
+  assert.match(html,/v67-20260828-bedside-usability-fixes/);
+  assert.match(manifest,/v67-20260828-bedside-usability-fixes/);
+  assert.match(worker,/v67-20260828-bedside-usability-fixes/);
   assert.doesNotMatch(html,/v46-20260825-shoulder-detection-repair/);
   assert.doesNotMatch(manifest,/v46-20260825-shoulder-detection-repair/);
   assert.doesNotMatch(worker,/v46-20260825-shoulder-detection-repair/);

@@ -1,0 +1,33 @@
+<!doctype html>
+<meta charset="utf-8">
+<img id="sample" src="woman_hands_official_sample.jpg">
+<canvas id="mirrored" width="640" height="960"></canvas>
+<script type="module">
+import { FilesetResolver, HandLandmarker } from "./vendor/mediapipe/vision_bundle.mjs";
+const image = document.getElementById("sample");
+await image.decode();
+const vision = await FilesetResolver.forVisionTasks("./vendor/mediapipe/wasm");
+const landmarker = await HandLandmarker.createFromOptions(vision, {
+  baseOptions: {
+    modelAssetPath: "./vendor/mediapipe/models/hand_landmarker.task",
+    delegate: "CPU",
+  },
+  runningMode: "IMAGE",
+  numHands: 2,
+});
+const canvas = document.getElementById("mirrored");
+const context = canvas.getContext("2d");
+context.translate(canvas.width, 0);
+context.scale(-1, 1);
+context.drawImage(image, 0, 0, canvas.width, canvas.height);
+const compact = result => result.landmarks.map((landmarks, index) => ({
+  label: (result.handedness || result.handednesses)[index][0].categoryName,
+  score: (result.handedness || result.handednesses)[index][0].score,
+  wristX: landmarks[0].x,
+  wristY: landmarks[0].y,
+}));
+window.__handednessProbe = {
+  original: compact(landmarker.detect(image)),
+  mirrored: compact(landmarker.detect(canvas)),
+};
+</script>

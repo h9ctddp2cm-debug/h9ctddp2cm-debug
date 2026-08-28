@@ -9,22 +9,34 @@ const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const moduleJs = fs.readFileSync(path.join(root, 'level4-three-games-module.js'), 'utf8');
 const build = fs.readFileSync(path.join(root, 'scripts/build-dist.sh'), 'utf8');
 
-test('Level 2 presents inherited bilateral and supported tabletop games while preserving other themes', () => {
-  for (const id of ['bowling', 'mahjongwash', 'buspay']) {
-    assert.match(html, new RegExp(`${id}: mkTheme`));
-  }
-  assert.match(html, /return \['bilateral','tsuenwan','dimsum','flowers','laundry','cards','mahjong','wipewindow','bowling','mahjongwash','buspay'\]/);
-  assert.match(html, /\['wipewindow','bowling','mahjongwash','buspay'\]\.includes\(themeId\)/);
+test('Level 2 presents exactly one fail-closed supported tabletop game', () => {
+  assert.match(html, /if\(level === '2'\) return themeId === 'bilateral'/);
+  assert.match(html, /return \['bilateral'\]/);
+  assert.match(html, /level4SessionThemes:\['bilateral'\]/);
 });
 
-test('Level 2 library shows all supported games by default and allows independent visibility choices', () => {
-  assert.match(html, /level4SessionThemes:\['bilateral','tsuenwan','dimsum','flowers','laundry','cards','mahjong','wipewindow','bowling','mahjongwash','buspay'\]/);
+test('Level 2 copy prescribes only supported shoulder horizontal abduction and return', () => {
+  assert.match(html, /id:'bilateral', title:'檯面肩水平外展'/);
+  assert.match(html, /患側前臂承托，由中線向患側外滑，再返回中線/);
+  assert.match(html, /返回中線後再開始下一次/);
+  assert.match(html, /return \['bilateral'\]/);
+});
+
+test('Level 2 directly follows torso-relative outward progress without pickup or release gates', () => {
+  assert.match(html, /function updateLevel2LateralGame\(\)/);
+  assert.match(html, /item\.x=lane\.startX\+\(lane\.endX-lane\.startX\)\*clamp01\(level3Lateral\.progress\)/);
+  assert.match(html, /adaptiveNoteTrial\('level2_horizontal_abduction','success'\)/);
+  assert.match(html, /if\(isLevel3Tabletop\(\)\)\{\s*updateLevel2LateralGame\(\);\s*return;/);
+  assert.match(html, /phase:'outward'/);
+  assert.match(html, /Level2HorizontalAbductionController/);
+  assert.match(html, /generation:frame\?\.generation/);
+});
+
+test('Level 2 library always shows the one prescribed game without a picker', () => {
+  assert.match(html, /level4SessionThemes:\['bilateral'\]/);
   assert.match(html, /function visibleThemeOrder\(level = state\.level\)/);
-  assert.match(html, /return selected\.length \? selected : \['dimsum'\]/);
-  assert.match(html, /Level 2 承托遊戲 · 顯示/);
-  assert.doesNotMatch(html, /每節最多 2 款/);
-  assert.match(html, /id="btnLevel4AutoRotate"/);
-  assert.match(html, /if\(current\[0\] === all\[start\] && current\[1\] === all\[\(start\+1\)%all\.length\]\)/);
+  assert.match(html, /return availableThemeOrder\(level\)/);
+  assert.match(html, /picker\.hidden = true/);
 });
 
 test('actual tracking and render loops connect all three independent games', () => {

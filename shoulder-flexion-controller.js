@@ -23,6 +23,13 @@
     anchorJumpScale: 1,
     safeguardStableFrames: 6,
     returnToleranceDeg: 10,
+    // Adaptive return floor: an oblique bedside camera can report a resting
+    // arm as 30–45°, making an absolute near-0° return window unreachable.
+    // A repetition also completes when the arm settles at its own observed
+    // lowest angle, provided it has descended below relativeReturnCap of the
+    // prescribed excursion. This is a game gate, not a goniometric claim.
+    returnFloorToleranceDeg: 6,
+    relativeReturnCap: 0.45,
   };
 
   function clamp01(value) {
@@ -40,6 +47,13 @@
   }
   function exerciseModeAvailable(level) {
     return String(level)==='3'||String(level)==='4';
+  }
+  // FTHUE Level 6 (internal key '67') reuses this shoulder-flexion state
+  // machine with its conservative existing 60-degree internal reach endpoint.
+  // Level 6 exposes neither an angle selector nor the Level 3/4
+  // active/assisted-stick exercise-mode choice.
+  function shoulderFlexionLevel(level) {
+    return String(level)==='3'||String(level)==='4'||String(level)==='67';
   }
   function selectedArm(lm, side) {
     if (!Array.isArray(lm)) return null;
@@ -154,17 +168,11 @@
     function normalizeExerciseMode(mode) {
       return mode==='assisted-stick'?'assisted-stick':'active';
     }
-    function defaultTarget(level){ return String(level)==='4'?60:40; }
-    function startChoices(level,target){
-      const pool=[0,10,20];
-      return pool.filter(value=>value<=Number(target)-10);
-    }
-    function nextRandomStart(previous){
-      const pool=startChoices(state.level,state.selectedTargetDeg);
-      const alternatives=pool.length>1?pool.filter(value=>value!==previous):pool;
-      state.seed=(state.seed*1664525+1013904223)>>>0;
-      return alternatives[Math.floor((state.seed/4294967296)*alternatives.length)]??pool[0]??0;
-    }
+    function defaultTarget(level){ return String(level)==='4'?60:(String(level)==='67'?60:40); }
+    // Level 3 and 4 always begin from the participant-specific camera zero.
+    // A single fixed start is easier to acquire reliably than asking the
+    // tracker to distinguish prescribed 10° or 20° starting positions.
+    function startChoices(){ return [0]; }
     function reset(level,targetDeg) {
       Object.assign(state,{level:String(level||'3'),phase:'anchor',reason:'awaiting-patient',
         calibrated:false,gameReady:false,framingReady:false,
@@ -173,9 +181,10 @@
         exerciseMode:normalizeExerciseMode(state.exerciseMode||(options&&options.exerciseMode)),
         trackingTarget:'selected-anatomical-affected-arm',unaffectedHandFallback:false,
         preSamples:[],anchor:null,samples:[],baseline:null,maximum:null,trainingMin:null,trainingMax:null,
-        seed:0x5f3759df,selectedStartDeg:0,
+        selectedStartDeg:0,
         selectedTargetDeg:Number(targetDeg)||defaultTarget(level||'3'),peakEstimatedAngle:null,
         targetReached:false,repetitions:0,cycleArmed:false,targetStableFrames:0,returnStableFrames:0,
+        returnFloorDeg:null,startFloorDeg:null,
         holdDurationMs:Math.max(0,Number(options&&options.holdDurationMs)||0),
         holdStartedAtMs:null,holdRemainingSec:null,holdComplete:false,holdRestartCount:0,
         holdAtTarget:false,holdInterrupted:false,lastUpdateMs:null,
@@ -185,7 +194,7 @@
         signalSource:'image-2d-relative',progress:0,newFrame:false,compensation:null,
         anchorJumpFrames:0,shoulderHikeFrames:0,trunkLeanFrames:0,
         frame:{fresh:false,generation:null,ageMs:null,reason:'awaiting-decoded-frame'}});
-      state.selectedStartDeg=nextRandomStart(null);
+      state.selectedStartDeg=0;
       return snapshot();
     }
     reset(options && options.level);
@@ -297,13 +306,20 @@
           Math.max(5,(state.trainingMax-state.trainingMin)*config.returnAt)
         );
 
+        const relativeCapDeg=state.selectedStartDeg
+          +config.relativeReturnCap*Math.max(0,state.selectedTargetDeg-state.selectedStartDeg);
         if(state.phase==='await-start'){
-          const atStart=state.estimatedAngle>=Math.max(0,state.selectedStartDeg-config.startToleranceDeg)
+          state.startFloorDeg=Number.isFinite(state.startFloorDeg)
+            ? Math.min(state.startFloorDeg,state.estimatedAngle):state.estimatedAngle;
+          const inWindow=state.estimatedAngle>=Math.max(0,state.selectedStartDeg-config.startToleranceDeg)
             && state.estimatedAngle<=state.selectedStartDeg+returnWindow;
+          const atOwnFloor=state.estimatedAngle<=relativeCapDeg
+            && state.estimatedAngle<=state.startFloorDeg+config.returnFloorToleranceDeg;
+          const atStart=inWindow||atOwnFloor;
           state.startStableFrames=atStart?state.startStableFrames+1:0;
           state.targetStableFrames=0; state.returnStableFrames=0;
           if(state.startStableFrames>=config.gateStableFrames){
-            state.phase='outward'; state.startStableFrames=0;
+            state.phase='outward'; state.startStableFrames=0; state.startFloorDeg=null;
           }
         }else if(state.phase==='outward'){
           state.targetStableFrames=state.estimatedAngle>=state.selectedTargetDeg-config.targetToleranceDeg
@@ -345,20 +361,25 @@
           }
         }else if(state.phase==='await-return'){
           state.targetStableFrames=0;
-          state.returnStableFrames=state.estimatedAngle>=Math.max(0,state.selectedStartDeg-config.startToleranceDeg)
-            && state.estimatedAngle<=state.selectedStartDeg+returnWindow
-            ? state.returnStableFrames+1:0;
+          state.returnFloorDeg=Number.isFinite(state.returnFloorDeg)
+            ? Math.min(state.returnFloorDeg,state.estimatedAngle):state.estimatedAngle;
+          const inWindow=state.estimatedAngle>=Math.max(0,state.selectedStartDeg-config.startToleranceDeg)
+            && state.estimatedAngle<=state.selectedStartDeg+returnWindow;
+          const atOwnFloor=state.estimatedAngle<=relativeCapDeg
+            && state.estimatedAngle<=state.returnFloorDeg+config.returnFloorToleranceDeg;
+          state.returnStableFrames=inWindow||atOwnFloor?state.returnStableFrames+1:0;
         }
         if(state.phase==='await-return'&&state.cycleArmed
             &&state.returnStableFrames>=config.gateStableFrames){
           state.repetitions+=1;state.cycleArmed=false;state.targetStableFrames=0;
           state.holdStartedAtMs=null;state.holdRemainingSec=null;state.holdComplete=false;
           state.holdAtTarget=false;state.holdInterrupted=false;
-          state.selectedStartDeg=nextRandomStart(state.selectedStartDeg);
+          state.selectedStartDeg=0;
           state.trainingMin=state.selectedStartDeg;
           state.prescribedExcursionDeg=state.selectedTargetDeg-state.selectedStartDeg;
           state.progress=clamp01((state.estimatedAngle-state.trainingMin)/(state.trainingMax-state.trainingMin));
           state.phase='await-start'; state.startStableFrames=0; state.returnStableFrames=0;
+          state.returnFloorDeg=null; state.startFloorDeg=null;
         }
         state.gameReady=true; state.reason='ready';
       }
@@ -426,12 +447,12 @@
       state.level=String(level||state.level);
       const allowed=state.level==='4'
         ? Array.from({length:13},(_,index)=>60+index*10)
-        : [30,40,50,60];
+        : (state.level==='67'
+          ? [60]
+          : [30,40,50,60]);
       if(!allowed.includes(value))return false;
       state.selectedTargetDeg=value;
-      if(!startChoices(state.level,value).includes(state.selectedStartDeg)){
-        state.selectedStartDeg=nextRandomStart(state.selectedStartDeg);
-      }
+      state.selectedStartDeg=0;
       if(state.calibrated){
         state.trainingMin=state.selectedStartDeg;
         state.trainingMax=value;
@@ -458,7 +479,7 @@
     return {config,state,reset,setTarget,setHoldDuration,setExerciseMode,startChoices,update,snapshot,guidance,toText};
   }
 
-  const api={CONFIG,createController,exerciseModeAvailable,selectedArm,shoulderFlexion2D,shoulderFlexionWorld,torsoSignature,clamp01,median};
+  const api={CONFIG,createController,exerciseModeAvailable,shoulderFlexionLevel,selectedArm,shoulderFlexion2D,shoulderFlexionWorld,torsoSignature,clamp01,median};
   global.ShoulderFlexionController=api;
   if(typeof module!=='undefined'&&module.exports) module.exports=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

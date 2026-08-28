@@ -39,30 +39,31 @@ test("portrait phones keep the camera inline in a compact preview instead of ful
   assert.match(publicSource, /height:min\(25dvh,210px\)/);
   assert.ok(publicSource.includes("videoEl.setAttribute('webkit-playsinline', '')"));
   assert.ok(publicSource.includes("videoEl.controls = false"));
-  assert.match(serviceWorkerSource, /fthue-rehab-v49-20260826-offline-release/);
+  assert.match(serviceWorkerSource, /fthue-rehab-v67-20260828-bedside-usability-fixes/);
 });
 
 test("Levels 3 and 4 can use Pose when tabletop hands occlude the finger model", () => {
-  assert.match(publicSource, /source:'pose-bilateral-wrist'/);
+  assert.match(publicSource, /source:'pose-bilateral-wrist-live'/);
   assert.match(publicSource, /source:'pose-wrist'/);
-  assert.match(publicSource, /const res = isGrossTabletop\(\) \? readGrossPoseHand\(grossPose\) : readHand\(\)/);
+  assert.match(publicSource, /const res = \(isGrossTabletop\(\) && !isLevel6ToolGestureTask\(\)\)\s*\? readGrossPoseHand\(grossPose\) : readHand\(frame\)/);
   assert.match(publicSource, /activeAffectedSide\(\)\s*===\s*'left'\s*\?\s*15\s*:\s*16/);
 });
 
-test("Levels 2–4 open the shared activity library with supported games confined to Level 2", () => {
+test("Levels 2–4 open the shared activity library with Level 2 fail-closed to bilateral", () => {
   assert.match(publicSource, /'2':\s*\{\s*id:'2'/);
   assert.match(publicSource, /'3':\s*\{\s*id:'3'/);
   assert.match(publicSource, /beginSessionMode\('3',\s*'training'\)/);
   assert.doesNotMatch(publicSource, /window\.location\.href\s*=\s*'sandbox\/level3-bilateral/);
   assert.match(publicSource, /const THEME_ORDER = \['wipewindow','bowling','mahjongwash','buspay','flowers','dimsum','laundry','cards','mahjong','cooking'\]/);
-  assert.match(publicSource, /if\(\['wipewindow','bowling','mahjongwash','buspay'\]\.includes\(themeId\)\) return level === '2'/);
+  assert.match(publicSource, /if\(level === '2'\) return themeId === 'bilateral'/);
+  assert.match(publicSource, /return \['bilateral'\]/);
 });
 
-test("Level 2 bilateral controller follows only the selected anatomical affected wrist", () => {
-  assert.match(publicSource, /function updateLevel3LateralController\(lm,\s*cw,\s*ch\)/);
-  assert.match(publicSource, /const wrist=lm\?\.\[activeAffectedSide\(\)==='left'\?15:16\]/);
-  assert.match(publicSource, /interactionX\(wrist\.x\)/);
-  assert.match(publicSource, /const outwardPixels = affectedSideSign\(\) \* \(midpoint\.x-level3Lateral\.baselineX\)/);
+test("Level 2 controller uses selected shoulder-elbow-wrist and torso-relative normalized progress", () => {
+  assert.match(publicSource, /function updateLevel3LateralController\(lm,\s*frame\)/);
+  assert.match(publicSource, /landmarks:lm/);
+  assert.match(publicSource, /generation:frame\?\.generation/);
+  assert.match(publicSource, /affectedSide:activeAffectedSide\(\)/);
   assert.match(publicSource, /mapped\.x = cw \* 0\.50 \+ affectedSideSign\(\) \* level3Motion\.progress/);
   assert.ok(publicSource.includes("setLevel3Pose(spec)"));
   assert.ok(publicSource.includes("level3LateralState()"));
@@ -132,7 +133,7 @@ test("Levels 3 and 4 use shoulder-flexion-only play without virtual pickup or re
   assert.match(publicSource, /return !isGrossTabletop\(\) && isAdvTheme\(id\)/);
   assert.match(publicSource, /if\(usesAdvancedThemeModule\(\)\)\{ advUpdate\(\); advRender\(\); \}/);
   assert.match(publicSource, /function updateShoulderFlexionGame\(\)/);
-  assert.match(publicSource, /updateShoulderFlexionGame\(\);\s*return;/);
+  assert.match(publicSource, /if\(isLevel6ToolGestureTask\(\)\)\{\s*updateGraspLogic\(\);\s*\}else\{\s*updateShoulderFlexionGame\(\);\s*\}\s*return;/);
   assert.match(publicSource, /No hand contact, pickup dwell, grip, plate overlap, or release/);
   assert.match(publicSource, /graspDetection:false releaseDetection:false/);
 });
@@ -180,9 +181,9 @@ test("all items stay clear of targets and can be parked in blank space", () => {
 test("offline worker forces the current build instead of serving the stale game", () => {
   const manifest = JSON.parse(readFileSync(path.join(root, "manifest.webmanifest"), "utf8"));
   assert.ok(publicSource.includes('updateViaCache:"none"'));
-  assert.match(serviceWorkerSource, /fthue-rehab-v49-20260826-offline-release/);
-  assert.ok(publicSource.includes('const LEVEL_APP_BUILD = "v49-20260826-offline-release"'));
-  assert.equal(manifest.start_url, "./index.html?build=v49-20260826-offline-release");
+  assert.match(serviceWorkerSource, /fthue-rehab-v67-20260828-bedside-usability-fixes/);
+  assert.ok(publicSource.includes('const LEVEL_APP_BUILD = "v67-20260828-bedside-usability-fixes"'));
+  assert.equal(manifest.start_url, "./index.html?build=v67-20260828-bedside-usability-fixes");
   assert.ok(publicSource.includes('const levelAppHadController = Boolean(navigator.serviceWorker.controller)'));
   assert.ok(publicSource.includes('if (!levelAppHadController || levelAppReloading) return'));
   assert.ok(publicSource.includes('navigator.serviceWorker.addEventListener("controllerchange"'));
@@ -199,7 +200,7 @@ test("Level 4 exposes deterministic compound-movement QA hooks", () => {
   assert.ok(publicSource.includes("setActionPrompt('iPad 同枱直放 · 約 1 米', '患側肩・手肘・手腕全部入鏡')"));
 });
 
-test("Level 2 wipe-window is an independent supported activity and preserves the other supported games", () => {
+test("legacy standalone modules remain registered but are unavailable to Level 2", () => {
   assert.ok(publicSource.includes("const level4Wipe = {"));
   assert.match(publicSource, /cols:16,\s*rows:10/);
   assert.match(publicSource, /const LEVEL4_WIPE_BOUNDS = \{left:0\.07, top:0\.18, right:0\.93, bottom:0\.90\}/);
@@ -215,7 +216,8 @@ test("Level 2 wipe-window is an independent supported activity and preserves the
   assert.ok(publicSource.includes("return !isGrossTabletop() && isAdvTheme(id)"));
   assert.match(publicSource, /function isLevel4WipeGame\(\)\{\s*return isLevel4Tabletop\(\) && state\.theme === 'wipewindow'/);
   assert.match(publicSource, /if\(isLevel4WipeGame\(\)\)\{\s*renderLevel4WipeGame/);
-  assert.match(publicSource, /if\(\['wipewindow','bowling','mahjongwash','buspay'\]\.includes\(themeId\)\) return level === '2'/);
+  assert.match(publicSource, /if\(level === '2'\) return themeId === 'bilateral'/);
+  assert.match(publicSource, /if\(\['wipewindow','bowling','mahjongwash','buspay','bilateral'\]\.includes\(themeId\)\) return false/);
   for (const id of ["flowers", "dimsum", "laundry", "cards", "mahjong"]) {
     assert.ok(publicSource.includes(`${id}: mkTheme({`), `${id} remains registered`);
   }
@@ -239,7 +241,7 @@ test("Level 5 grasp requires two curled fingers and releases after two visibly r
 test("Level 5 calibration accepts the participant's available opening range without long holds", () => {
   assert.match(publicSource, /now\s*-\s*c\.openStart\s*>=\s*750/);
   assert.match(publicSource, /openMean\s*\+\s*0\.035/);
-  assert.match(publicSource, /now\s*-\s*c\.closedStart\s*>=\s*550/);
+  assert.match(publicSource, /c\.closedHoldMs\s*>=\s*450\s*\|\|\s*c\.closedScores\.length\s*>=\s*10/);
   assert.match(publicSource, /openMean\s*\+\s*gap\s*\*\s*\(isPegMode\(\)\s*\?\s*0\.24\s*:\s*0\.48\)/);
   assert.match(
     publicSource,
@@ -250,34 +252,43 @@ test("Level 5 calibration accepts the participant's available opening range with
 test("Level 6–7 calibration accepts a light pinch without inventing a larger aperture range", () => {
   assert.match(publicSource, /openMean\s*-\s*Math\.max\(0\.020,\s*openMean\s*\*\s*0\.035\)/);
   assert.match(publicSource, /const gap = Math\.max\(0\.025, openMean - closedMean\)/);
-  assert.match(publicSource, /personalPinchEnter = closedMean \+ gap \* 0\.72/);
-  assert.match(publicSource, /personalPinchExit = closedMean \+ gap \* 0\.84/);
+  assert.match(publicSource, /personalPinchEnter = closedMean \+ gap \* 0\.56/);
+  assert.match(publicSource, /personalPinchExit = closedMean \+ gap \* 0\.70/);
   assert.ok(publicSource.includes("personalPinchOpen = Math.min("));
   assert.doesNotMatch(publicSource, /Math\.max\(0\.12, openMean - closedMean\)/);
 });
 
-test("Level 6–7 exposes three independent interaction modes", () => {
-  assert.match(publicSource, /id="level67ToolCard"/);
-  assert.match(publicSource, /data-tool-mode="bare">空手（三指）/);
-  assert.match(publicSource, /data-tool-mode="peg">夾仔/);
-  assert.match(publicSource, /data-tool-mode="chopsticks">筷子/);
-  assert.match(publicSource, /bare:\{\s*gameType:'pinch'/);
-  assert.match(publicSource, /peg:\{\s*gameType:'grasp'/);
-  assert.match(publicSource, /chopsticks:\{\s*gameType:'dwell'/);
+test("Level 6 keeps six library choices and removes the duplicate setup picker", () => {
+  assert.doesNotMatch(publicSource, /id="level67ToolCard"/);
+  assert.doesNotMatch(publicSource, /id="level67ToolOptions"/);
+  assert.doesNotMatch(publicSource, /data-level6-task=/);
+  assert.doesNotMatch(publicSource, /data-tool-mode="bare"/);
+  assert.match(publicSource, /flowers:\{\s*id:'flowers', theme:'flowers'/);
+  assert.match(publicSource, /chopsticks:\{\s*id:'chopsticks', theme:'chopstick_dimsum'/);
+  assert.match(publicSource, /peg:\{\s*id:'peg', theme:'peg_laundry'/);
+  assert.match(publicSource, /cards:\{\s*id:'cards', theme:'cards'/);
+  assert.match(publicSource, /mahjong:\{\s*id:'mahjong', theme:'mahjong'/);
+  assert.match(publicSource, /cooking:\{\s*id:'cooking', theme:'cooking'/);
+  assert.match(publicSource, /function lockLevel6Activity\(themeId\)/);
+  assert.match(publicSource, /function assertLevel6ActivityLock\(\)/);
+  assert.match(publicSource, /level6LockedTheme/);
 });
 
-test("bare, peg and chopsticks modes use different observable tracking signals", () => {
-  assert.match(publicSource, /const required = isPegMode\(\)\s*\?\s*\[0,2,4,5,8,9,12,17\]/);
+test("all normal Level 6 games share tripod pinch while research tool modes remain distinct", () => {
+  assert.match(publicSource, /function isLevel6ToolGestureTask\(\)\{ return isLevel6\(\); \}/);
+  assert.match(publicSource, /const required = state\.gameType === 'pinch'\s*\?\s*\[0,4,5,8,9,12,17\]/);
   assert.match(publicSource, /const indexGap = distance\(lm\[4\], lm\[8\]\)/);
   assert.match(publicSource, /const middleGap = distance\(lm\[4\], lm\[12\]\)/);
-  assert.match(publicSource, /Math\.min\(indexGap, middleGap\) \* 0\.62/);
+  assert.match(publicSource, /const asymmetricLightClose = nearRatio <= enter \* 0\.82/);
+  assert.match(publicSource, /farRatio <= Math\.max\(exit, enter \* 1\.28\)/);
   assert.match(publicSource, /const pinchHeld = stabiliseDetectedGesture\(pinch\.isPinching, 'pinch'\)/);
-  assert.match(publicSource, /isOpenPrep:!pinchHeld/);
+  assert.match(publicSource, /isOpenPrep:!pinchHeld && pinch\.isSeparated/);
   assert.match(publicSource, /const GESTURE_CONFIRM_MS = 60/);
   assert.match(publicSource, /function computePegPressState\(lm, isPressingPrev\)/);
   assert.match(publicSource, /source:'peg-aperture'/);
   assert.match(publicSource, /isPegMode\(\) \? 0\.006 : 0\.04/);
-  assert.match(publicSource, /source:'index-dwell'/);
+  assert.match(publicSource, /source:'chopsticks-index-dwell'/);
+  assert.doesNotMatch(publicSource, /source:'chopsticks-index-middle-flexion'/);
   assert.match(publicSource, /method:isChopsticksMode\(\) \? 'chopsticks_index_dwell' : 'dwell'/);
 });
 

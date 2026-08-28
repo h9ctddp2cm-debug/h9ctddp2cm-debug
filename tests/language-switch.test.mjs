@@ -46,8 +46,8 @@ test('required shoulder demonstration labels localize exactly and remain clinica
   assert.doesNotMatch(html,/shoulder-demos[\s\S]{0,400}(疼痛|不適)/);
 });
 
-test('v49 app, manifest, service worker and build output include localization consistently',()=>{
-  const version='v49-20260826-offline-release';
+test('app, manifest, service worker and build output include localization consistently',()=>{
+  const version='v67-20260828-bedside-usability-fixes';
   assert.match(html,new RegExp(version));
   assert.equal(JSON.parse(manifest).start_url,`./index.html?build=${version}`);
   assert.match(worker,new RegExp(`fthue-rehab-${version}`));

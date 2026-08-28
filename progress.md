@@ -2,6 +2,87 @@
 
 Original prompt: Fix Level 6–7 interactions: make light clothes-peg press detection easier without claiming tool/force sensing; keep bare three-finger pinch held through transport until a stabilized reopen; enlarge Level 6–7 dim sum and steamers 1.5× without collisions; and make Home/Back/Stop safely return to level selection.
 
+## 2026-08-28 v66 Level 6 calibration fresh-frame repair
+- Reproduced the bedside symptom from the supplied iPhone recording: the selected hand is clearly visible in the calibration camera, but all three checks remain incomplete and the status stays `尚未偵測`.
+- Confirmed two linked v65 regressions. First, `detectWrist(videoEl, frame)` became fail-closed for stale or missing frame authority while `startCalibLoop()` still called it without the current decoded-frame status. Second, the legacy `isGrossTabletop()` route initialized Pose instead of Hand Landmarker for normal Level 6. Either defect kept a clearly visible hand permanently at `尚未偵測`.
+- The calibration loop now polls `level4FrameStatus(video)` once per animation iteration and passes that exact fresh-frame result into every hand-detection path. Normal Level 6 is excluded from the Pose-only model-loading branch and initializes Hand Landmarker before calibration. Camera startup also starts/rebinds the freshness monitor for the calibration video and for a reused stream.
+- Preserved selected-affected-hand admission, two-hand handedness filtering, low-confidence rejection, fresh-generation safeguards, all-six tripod-pinch interaction, no shoulder/elbow dependency, and one camera-permission request per page session.
+- Added focused regressions for calibration frame propagation, decoded-frame startup, and calibration-to-game stream reuse. Version markers are aligned to `v66-20260828-level6-calibration-fresh-frame`.
+- Final validation passed: complete Node suite **273 total / 270 passed / 0 failed / 3 intentional skips**; focused Level 6/camera/tracking suite **81/81**; technical validator **165/165** including Level 6 **46/46**; embedded/module JavaScript syntax, `git diff --check`, production marker alignment and QA-hook exclusion all passed. `dist/public` was rebuilt with **134 files (83M)**.
+- Rebuilt-production iPad visual QA passed at **820×1180 portrait** and **1180×820 landscape**. The exact six-card Level 6 catalog, selected task lock, hidden angle panel, absent duplicate picker/difficulty labels, no horizontal overflow and no console/page errors were confirmed and the screenshots were visually inspected.
+- Independent release security/privacy review returned **PASS with no BLOCK or WARN findings**. The official GitHub Pages `gh-pages` branch was updated at commit `dba38d0`, and the live URL was verified to serve v66 in Traditional Chinese with the correct six Level 6 activities.
+- Remaining limitation: automated landmark tests and layout verification do not replace supervised bedside testing of real affected-hand visibility, tripod aperture, tool occlusion, ward lighting and handedness confidence on the target iPad.
+
+## 2026-08-28 v65 all Level 6 games use tripod pinch
+- Changed all six normal-flow Level 6 activities (`flowers`, `chopstick_dimsum`, `peg_laundry`, `cards`, `mahjong`, `cooking`) to `gameType:'pinch'`. The selected affected hand and fresh Hand Landmarker generation now exclusively control open preparation, pickup, hand-position transport and release. Pose/shoulder/elbow state cannot arm, move, gate or score a Level 6 task; the pilot research tool-mode routing remains unchanged.
+- Unified chopstick and cloth-peg interaction with the same normalized thumb–index/thumb–middle tripod aperture. The detector accepts either two moderately closed digits or one clearly closed plus one moderately close digit, preserves close/reopen hysteresis and personalized calibration, and requires a stabilized open observation before a sustained light closure. Both digits must visibly reopen for release.
+- Normal Level 6 rejects stale/repeated generations, missing/partial landmarks, missing or low-confidence handedness, and the wrong anatomical side. Invalid frames clear partial pickup/release dwell and never receive the detector-loss grace used by easier levels.
+- Replaced normal Level 6 shoulder/index-middle-flexion wording with concise Chinese/English tripod-pinch wording. The six catalog cards remain the only task picker; legacy `dimsum`/`laundry`, the duplicate setup picker and difficulty labels remain absent.
+- Added deterministic all-six-task coverage for `gameType:'pinch'`, open-before-close, asymmetric light closure, static-close rejection, fresh-generation admission, wrong/missing/uncertain hand rejection, hand-position transport with missing shoulder/elbow/wrist pose, and stabilized reopen release. Corrected the two-target landscape spacing exposed when every task adopted the pinch sizing profile.
+- Version markers are aligned to `v65-20260828-level6-tripod-pinch-all-games`; `dist/public` was rebuilt with **134 files (83M)**.
+- Final validation: focused Level 6 suite **44/44**; full Node suite **271 total / 268 passed / 0 failed / 3 intentional skips**; technical validator **165/165** (Level 6 **46/46**); all `tools/checkjs.sh` blocks, `git diff --check`, build and source/dist version assertions passed.
+- Practical Playwright QA passed at **820×1180 portrait** and **1180×820 landscape**: exact six-card catalog, all-six setup copy free of shoulder/elbow instructions, no duplicate picker/angle panel/difficulty labels, asymmetric light pickup, missing-pose hand transport and reopen scoring, no horizontal overflow, and no console/page errors. Screenshots and JSON evidence are in `/home/user/workspace/ych_rehab_qa_artifacts/v65-level6-tripod-pinch-all-games/`.
+- Limitation: automated camera inputs are deterministic synthetic Hand Landmarker frames. Real iPad lighting, occlusion, handedness confidence and an individual stroke participant’s available aperture still require supervised bedside confirmation before release.
+
+## 2026-08-27 v64 Level 6 duplicate task picker removed
+- Removed the complete Level 6 setup `任務 / Task` card, including its selected summary, six task buttons, task description, and therapist-details subsection. The six Level 6 activity-library cards remain the sole public task-selection surface in Traditional Chinese and English.
+- Added an explicit activity-library lock (`level6LockedTheme`) that binds the selected Level 6 theme and task before setup and reasserts the pair before calibration and gameplay. Affected-side and other setup controls cannot rewrite it; returning from calibration or the library and re-entering the same card preserves it.
+- Kept all six Level 6 games and their existing interaction engines, selected-hand tracking, fixed internal shoulder endpoint, and the separate research tool-mode path unchanged. QA-only selection/screen helpers remain inside the stripped `window.__qa` block.
+- Added normal-card regressions for every Level 6 activity in both languages, including matching setup title/instructions, absent duplicate picker, affected-side persistence, calibration back flow, library back/re-entry, and same-task game launch. Extended the technical validator with the six locked-library flows.
+- App, manifest, and service-worker identifiers are aligned to `v64-20260827-level6-no-duplicate-task-picker`.
+- Final validation: focused Level 6 suite **36/36**; full Node suite **263 total / 260 passed / 0 failed / 3 intentional skips**; source technical validator **157/157** (Level 6 **38/38**); all inline/module syntax checks and `git diff --check` passed. `dist/public` was rebuilt with **134 files (83M)** and contains no duplicate picker markup or QA/runtime test hooks.
+- Rebuilt-public Playwright QA passed all **24/24** Level 6 card/language/viewport flows at **820×1180 portrait** and **1180×820 landscape**, with no console/page errors or horizontal overflow. The affected-side and library back/re-entry checks kept the selected title unchanged; screenshots were visually inspected and showed the compact setup with no task-selector card. Evidence is under `/home/user/workspace/ych_rehab_qa_artifacts/v64-level6-no-duplicate-task-picker/`.
+
+## 2026-08-26 v58 Level 2 original horizontal table-wiping lane
+- Restored the original dim-sum table-wiping screen logic for Level 2: one object starts at the patient's midline, moves horizontally toward the selected affected side, and returns to midline to re-arm.
+- Replaced the incorrect vertical dashed lane and upward arrow with a horizontal lane and side-specific arrow: right affected side points right; left affected side points left.
+- The guide, object path, and target now share one geometry helper so their positions cannot drift apart.
+- Added regression coverage for horizontal direction and guide/object/target alignment.
+
+## 2026-08-26 v56 Level 2 shoulder horizontal abduction only
+- Level 2 now exposes exactly one activity: the selected affected forearm remains supported on the tabletop, moves from midline outward toward the affected side through shoulder horizontal abduction, then returns to midline to re-arm.
+- Added `level2-horizontal-abduction-controller.js`. Progress uses aspect-corrected selected wrist and elbow displacement relative to the shoulder-centred outward torso axis and shoulder span. Elbow displacement is permissive upper-limb confirmation only; elbow angle never controls progress.
+- The controller fails closed for missing selected shoulder/elbow/wrist or torso landmarks, meaningful torso translation/lean, incoherent wrist-only/forearm-only or elbow-only movement, duplicate/stale/out-of-order generations, and unavailable module state. It never substitutes the unaffected arm/hand or a therapist hand; display mirroring does not alter anatomical selection.
+- Level 2 availability, all fallbacks and QA launch paths are locked to `bilateral`. Pickup, grasp/release, forward reach, circle, second-hand and legacy elbow-calibration dependencies were removed from Level 2 copy, scoring, HUD, results and localization. Scoring uses `correctCount` repetitions with outward-once/return-rearm hysteresis.
+- Level 2 no longer invokes or displays the legacy flexed/extended elbow calibration and is excluded from elbow-calibration adaptive invalidation. Levels 3–7 and standalone legacy module code remain intact.
+- Camera permission remains enabled. One active stream and the promise-cached Hand/Pose models are reused across screens, levels and games in the same page session; navigation suspends frame admission without stopping tracks. The single page-session camera request still begins from the explicit participant gesture, and hardware is released only on non-bfcache page teardown.
+- App, manifest and service-worker identifiers are aligned at `v57-20260826-level2-horizontal-abduction-clean-ui`; `dist/public` was rebuilt with **134 files (83M)** and includes the new controller in the offline inventory.
+- Validation: focused camera/Level 2/browser suite **35/35**; deterministic Level 2 matrix **11/11**; full Node suite **226 total / 223 passed / 0 failed / 3 intentional skips**; embedded JavaScript and module syntax checks passed; source technical validator **142/142** (Level 2 **37/37**); `git diff --check` passed. The production dist intentionally removes `window.__qa`, so that browser validator is unsupported against dist; dist marker, asset, offline-inventory and QA-exclusion checks passed. Physical iPad camera/framing and bedside clinical movement remain required.
+- Final release QA confirmed the single Level 2 game and concise setup at **1180×820 landscape** and **820×1180 portrait**, with no elbow calibration, pickup/grasp/release, circular-path or timing controls, no horizontal overflow and no console/page errors. Security review found **0 BLOCK** issues. The verified v57 distribution was published to the official HTTPS GitHub Pages site from commit `17cce74`.
+
+## 2026-08-26 v55 Level 2 outward shoulder horizontal abduction
+- Confirmed the easier Level 2 activity matches the supplied bedside example: the forearm remains supported and slides from midline outward toward the affected side, then returns to midline.
+- The selected affected wrist directly drives one large dim-sum object. No virtual pickup, grasp, release or dwell gate is used.
+- Level 2 remains limited to two non-duplicated graded activities: easier outward shoulder horizontal abduction, and harder supported forward reach followed by horizontal abduction/adduction circles.
+- App, manifest and service-worker identifiers are aligned at `v55-20260826-level2-outward-abduction`.
+- Focused Level 2/tracking/adaptive tests passed **57/57**; the full Node suite and embedded JavaScript checks passed. Source technical validation passed **202/202** (Level 2: **97/97**). iPad landscape and portrait QA showed both cards, loaded images and no horizontal overflow.
+
+## 2026-08-26 v54 Level 2 simplified to two graded games
+- Reduced the Level 2 library to two non-duplicated supported activities only.
+- Easier: tabletop shoulder horizontal abduction/adduction from midline toward the affected side and back.
+- Harder: supported forward shoulder flexion with elbow extension, followed by shoulder horizontal abduction/adduction in a circular path.
+- Reused the existing selected-affected-arm-only tracking and ordered path safeguards; removed the visible Level 2 show/hide and auto-rotation picker.
+- App, manifest and service-worker identifiers are aligned at `v54-20260826-level2-two-graded-games`.
+
+## 2026-08-26 v53 Level 2 shoulder horizontal flexion/extension restored
+- Restored the first Level 2 supported game’s patient-facing name as 「肩水平屈曲／伸展」 instead of the ambiguous internal legacy label 「雙手患側外滑」.
+- Clarified the movement sequence: supported outward slide toward the affected side = shoulder horizontal extension; return to midline = shoulder horizontal flexion.
+- The game remains the first independent Level 2 activity and continues to track only the selected affected wrist while allowing the unaffected hand to assist.
+- Added a regression test that locks the visible picker label, theme title, movement wording and first-position registration.
+- App, manifest and service-worker identifiers are aligned at `v53-20260826-level2-horizontal-flexion-extension`.
+
+## 2026-08-26 v52 Level 5 right-hand label correction
+- Fixed the v51 selected-side-only regression that rejected the anatomical right hand. Current MediaPipe Tasks Hand Landmarker labels the raw unmirrored decoded camera frame anatomically; v51 incorrectly applied the legacy MediaPipe Hands swap a second time.
+- CSS `scaleX(-1)` remains presentation-only and cannot change side selection. The conversion now swaps only when inference pixels are explicitly mirrored.
+- Level 5 still requests two candidates and fails closed when handedness is missing or only the opposite hand is present; candidate zero, the unaffected hand and a therapist hand are never fallbacks.
+- Deterministic tests cover selected right and left hands for unmirrored and actually mirrored inference inputs, plus missing/opposite-only rejection.
+- App, manifest, and service-worker identifiers are aligned at `v52-20260826-right-hand-label-fix`.
+
+## 2026-08-26 v50 fixed zero-degree start
+- Level 3 and Level 4 now use the participant-specific calibrated 0° position as the only start and return position for every object and repetition. The previous 10°/20° randomized starts were removed from controller logic, setup details, rules and English localization.
+- Target choices are unchanged: Level 3 remains 30°/40°/50°/60° and Level 4 remains 60°–180° in 10° increments. Automatic baseline calibration, target hold, selected-arm-only tracking and scoring-after-return remain unchanged.
+- App, manifest and service-worker markers are aligned to `v50-20260826-zero-degree-start`.
+
 ## 2026-08-26 v49 offline clinical release
 - Public/offline packaging now removes the Research Mode button and backend placeholder code and excludes all research, diagnostic sandbox, QA, test, archive and secret/config paths.
 - The deterministic build makes every release file readable and generates a complete same-origin service-worker inventory. The v49 app, manifest and cache markers are aligned to `v49-20260826-offline-release`.
@@ -1215,3 +1296,95 @@ Original prompt: Fix Level 6–7 interactions: make light clothes-peg press dete
 
 - Public and offline builds now remove all embedded browser QA automation hooks, including synthetic pose input, virtual time control and `window.__qa`.
 - The source build retains these hooks for automated regression testing, while release guards fail if any QA-only entry appears in `dist/public`.
+
+## 2026-08-26 — v51 fixed 0° shoulder start and Level 5 affected-hand grasp/release
+
+- Level 3 and Level 4 repetitions now always begin and return to the participant-specific camera baseline labelled 0°. The former 10°/20° randomized starts and related instructions were removed; therapist-selected target and hold options are unchanged.
+- Level 5 Hand Landmarker now requests up to two hands and admits only the configured anatomical affected side. An opposite, assisting, or therapist hand cannot silently replace the affected hand; uncertain handedness fails closed.
+- Level 5 grasp/release accepts two visibly curled fingers for grasp and two visibly reopened fingers for release even when reach-related foreshortening shifts the personalized aggregate score.
+- Short tracking gaps may preserve the held object visually, but stale landmarks cannot accumulate pickup or release dwell.
+- App, manifest, and service-worker identifiers are aligned at `v51-20260826-zero-start-level5-grasp`.
+- Validation passed: full Node suite 208 total / 205 passed / 0 failed / 3 intentional skips; source technical validation 211/211; JavaScript syntax and `git diff --check` passed.
+- Physical iPad/Samsung bedside testing remains necessary for partial hemiparetic hand visibility, crossed hands, therapist hand entry, camera handedness classification, two-hand inference performance, lighting, and occlusion during reach.
+
+## 2026-08-26 — v52 Level 5 right-hand label correction
+
+- Corrected a regression that inverted MediaPipe Hand Landmarker labels for the raw, unmirrored camera frames used by inference. CSS mirroring now affects display coordinates only.
+- Right and left affected-hand selections both retain strict selected-side admission; missing handedness and opposite-hand-only detections still fail closed without falling back to a therapist or unaffected hand.
+- Added deterministic tests for raw-camera right/left labels, explicitly mirrored inference pixels, and fail-closed opposite-hand rejection.
+- App, manifest, and service-worker identifiers are aligned at `v52-20260826-right-hand-label-fix`.
+## 2026-08-26 Level 2 outward shoulder-horizontal-abduction game v55
+
+- The easier Level 2 activity now matches the supplied reference: supported affected forearm starts at midline and slides outward toward the affected side.
+- The selected anatomical affected wrist directly drives one large game object. The old contact, dwell, virtual pickup, grasp and release gates are bypassed.
+- Reaching the outward target gives immediate positive feedback and scores once. Returning to midline only rearms the next repetition and is not labelled as a separate training movement.
+- The harder Level 2 forward-reach-then-circle activity remains available, with no duplicate games added.
+- Build markers aligned to `v55-20260826-level2-outward-abduction`.
+## 2026-08-26 — v59 Level 2 real supported-slide tracking
+
+- The bedside recording showed one valid outward repetition, followed by repeated full supported slides that stayed visually at the midline because the controller's fixed elbow-to-wrist displacement ratio rejected real camera perspective and forearm geometry.
+- Level 2 now drives progress from the selected affected wrist relative to the torso and affected-side outward axis, matching the original simple tabletop wipe interaction. The selected elbow must remain visible but no longer blocks progress or controls the object.
+- Selected anatomical side, torso-relative normalization, mirror invariance, missing-landmark fail-closed behavior, generation replay protection, one-score-per-outward endpoint, and return-to-midline re-arming remain intact. Elbow-only movement still produces zero progress.
+- Added a deterministic recording-like regression in which the wrist moves outward while elbow image displacement remains small.
+- Release identifiers advanced to `v59-20260826-level2-real-slide-tracking`.
+
+## v60 Level 2 midline and natural-sway repair
+- Level 2 baseline now accumulates only while the selected affected wrist is at the body midline; an outward starting pose clears pending samples and prompts the patient to return to centre.
+- Natural small trunk sway near the outward endpoint is admitted with `maxTorsoLean: .24`; genuine larger sustained lean and torso translation remain fail-closed.
+- Added deterministic regressions for wrong-start recovery, recording-like natural sway, preserved large-lean rejection, and the complete wrong-start → midline calibration → outward score flow.
+- Release identifiers advanced to `v60-20260826-level2-midline-sway-fix`.
+- Focused Level 2/tracking/layout/camera tests passed 63/63; the complete Node suite, embedded JavaScript checks, controller syntax and `git diff --check` passed.
+
+## 2026-08-26 — v61 Level 6 functional-task redesign (chopstick dim sum / cloth-peg laundry)
+
+- Level 6 (internal id `67`) is redesigned around the approved FTHUE-HK design: setup now offers exactly two therapist-supervised functional tasks — `筷子點心` / Chopstick Dim Sum and `衣夾晾衫` / Cloth-Peg Laundry — replacing the former bare three-finger pinch mode and the unrelated flowers/cards/mahjong/cooking themes. Cooking remains unavailable at every level, unchanged from v59.
+- Both tasks are controlled solely by the existing selected-anatomical-arm shoulder-flexion controller: fixed participant-specific 0° start, discrete OT-goniometer-measured target choices of 60–70–80–90–100–110–120°, target/hold/return phases, and fail-closed behaviour on stale, duplicate, or lost pose — with no opposite-arm fallback. Reaching target once scores and requires an explicit return to 0° before the next repetition can score again.
+- The website does not identify real chopsticks or pegs, does not measure pinch or grasp force, and does not detect actual grasp/release for normal-flow Level 6; Pose shoulder/elbow/wrist angle is the sole admission and scoring signal (`isGrossTabletop()`/`readGrossPoseHand()` always report `isGrasping:false`). On reaching target, task-specific visuals play: virtual chopsticks pick up dim sum (har gao, siu mai, beef ball) into a rice bowl, or a virtual peg clips a garment/sock/towel onto a Hong Kong drying line.
+- The prior bare/peg/chopsticks pinch- and grasp-detection code (aperture thresholds, hysteresis, `readHandGesture`) is preserved unchanged and still exercised by its own tests, but is reachable only from the separate pilot-study research track — never from the normal patient-facing Level 6 setup screen.
+- Updated safety checklist (5 items, goniometer/no-tool-detection wording), safety-gate title and concise note, calibration brief (`CALIB_LEVEL_BRIEF['67']`), Level 6 level-select card copy, and the full Traditional Chinese/English localization pairs for both tasks, both themes, and the new setup/rules/prompt strings.
+- Added `window.__qa.selectLevel6Task(taskId)` and `window.__qa.availableActivityThemes(level)` QA hooks (both stripped from the public build like all other `window.__qa` methods) to support deterministic setup/theme-sync testing.
+- Rewrote `tests/level67-interactions.test.mjs` for the two-task model (theme/task sync, shoulder-target validation, task-specific rendering, hand/tool-detection-cannot-gate, iPad portrait/landscape/compact-viewport layout) and updated the affected assertions in `tests/ui-layout.test.mjs`, `tests/shoulder-flexion-levels.test.mjs`, `tests/assisted-stick-mode.test.mjs`, and `tests/tracking-regression.test.mjs` to match the new copy and the added third `state.level==='67'` branch in the shoulder-target-options renderer.
+- Extended `sandbox/level4-6-technical-validation/run-level4-6-technical-validation.mjs`: the Level 6 launch-matrix now expects `gameType:'dwell'` for both `chopstick_dimsum` and `peg_laundry` (was `'pinch'`), the safety-copy check matches the new goniometer-target wording, and the report's scope/limitation text now accurately describes Pose-only shoulder-flexion control instead of thumb-index aperture detection.
+- Release identifiers advanced to `v62-20260827-level6-games-restored` (`manifest.webmanifest`, `service-worker.js`, and the in-page service-worker registration marker in `index.html`).
+- Validation passed: full Node suite 239 passed / 0 failed / 3 pre-existing unrelated skips; source technical validation 138/138 (21/21 for Level 6); embedded JavaScript syntax checks (`tools/checkjs.sh`) and `git diff --check` passed; `dist/public` rebuilt cleanly with all `window.__qa`/research-mode hooks stripped and the v61 marker present in all three build files.
+- Levels 2–5 and the pilot-study research track are unchanged by this session; `/home/user/workspace/ych_rehab_games_gh_pages_publish` was not touched, and no commit, push, publish, or deploy was performed.
+
+## 2026-08-27 v62 Level 6 games restored
+- Corrected the v61 Level 6 catalog without reintroducing legacy duplicates. The final six choices are: 插花 / Flower Arranging; 筷子點心 / Chopstick Dim Sum; 衣夾晾衫 / Cloth-Peg Laundry; 啤牌 / Playing Cards; 麻雀 / Mahjong; 煮蛋炒飯 / Cook Egg Fried Rice. Legacy `dimsum` and `laundry` Level 6 entries remain removed.
+- Restored the four non-tool v60 activities as shoulder-flexion dwell tasks. Kept the two v61 replacements as additional choices and synchronized activity cards, task IDs, themes, setup controls, titles, instructions, rendering and launch behavior.
+- Chopstick Dim Sum now requires the selected affected hand: index + middle slightly extended opens/releases, slightly flexed closes/picks up, and selected-arm shoulder flexion transports. Cloth-Peg Laundry reuses the selected affected-hand tripod aperture/open-release interaction, with shoulder flexion for transport. Neither normal-flow tool task uses pose-only dwell pickup/release.
+- Both tool tasks accept one fresh decoded generation only, preserve anatomical selected-side identity, reject the opposite/therapist hand, fail closed on missing required landmarks, and cannot arm from a static closed grasp. Deterministic tests cover open→close pickup, shoulder transport, open release, stale-frame idempotence, wrong-hand rejection, partial landmarks and static-grasp rejection for both tasks.
+- Removed per-game/activity difficulty metadata under every activity title across Levels 2–6 in both Traditional Chinese and English while preserving the main FTHUE level labels. Standardized the restored English Level 6 titles.
+- Aligned app, manifest and service-worker markers to `v62-20260827-level6-games-restored`; rebuilt `dist/public` with **134 files (83M)**. The public build excludes authoring, research and QA hooks as required.
+- Validation: Level 6 focused suite **23/23**; tracking regression **29/29**; final full Node suite **250 total / 247 passed / 0 failed / 3 intentional skips**; technical validator **148/148** (Level 6 **31/31**); all `tools/checkjs.sh` blocks and module syntax checks passed; `git diff --check` passed.
+- Playwright iPad QA passed **22/22** at **820×1180 portrait** and **1180×820 landscape**. Normal clicks verified the exact six-card catalog, all six setup-title synchronizations, bilingual switching, no activity difficulty labels across every level/language, essential tool instructions, no horizontal overflow and no console/page errors. Screenshots, inventory, runner and JSON results are in `/home/user/workspace/ych_rehab_qa_artifacts/v62-level6-games-restored/` and were visually inspected.
+- Limitation: deterministic/browser testing cannot replace bedside verification of real affected-hand landmark quality, tool occlusion, lighting, physical chopstick/peg handling, shoulder movement tolerance or iPad camera performance. No commit, push, publish or deployment was performed.
+
+## 2026-08-27 v63 Level 6 angle selector removed
+- Removed the complete shared shoulder-target card from normal FTHUE Level 6 setup only. Level 3 still renders 30°/40°/50°/60° and Level 4 still renders 60°–180° in 10° steps, including their existing therapist details.
+- Level 6 now always initializes the existing conservative internal shoulder-transport endpoint at 60° and ignores target-angle injection; no therapist selection is required or exposed. The six-task catalog and interaction engines are unchanged, including selected index/middle open-close for Chopstick Dim Sum and selected-hand tripod open-close for Cloth-Peg Laundry.
+- Updated Traditional Chinese/English landing, setup, calibration and safety copy to describe functional shoulder transport without a goniometer or 60–120° choice. App/manifest/cache markers are aligned to `v63-20260827-level6-no-angle-selector`.
+- Added regression and technical-validator coverage proving the Level 6 target card is hidden while Levels 3/4 retain their exact selectors, and proving Level 6 keeps the fixed internal endpoint. Focused shoulder/Level 6/layout/language tests passed 72/72; module/inline syntax and `git diff --check` passed.
+- Rebuilt `dist/public` with 134 files (83M); source and public markers align and the public bundle contains no Level 6 goniometer note or 60–120° setup wording.
+- Final validation complete: full Node suite **251 total / 248 passed / 0 failed / 3 intentional skips**; source technical validator **151/151** (Level 2 **37**, Level 3 **21**, Level 4 **21**, Level 5 **40**, Level 6 **32**); all module and inline JavaScript syntax checks plus `git diff --check` passed. The production bundle intentionally strips `window.__qa`, so the interactive technical validator is source-only; separate `dist/public` marker, selector-guard, forbidden-copy, asset-exclusion and JavaScript syntax audits passed.
+- Playwright iPad QA passed at **820×1180 portrait** and **1180×820 landscape** using normal clicks. Level 3 retained exactly **30°/40°/50°/60°**, Level 4 retained exactly **60°–180° in 10° steps**, and Level 6 showed no shoulder-target card in Traditional Chinese or English. All six Level 6 task buttons synchronized their titles/previews, no horizontal overflow or console/page errors occurred, and all eight screenshots were visually inspected with no clipping, overlap or selector leakage found. Evidence is in `/home/user/workspace/ych_rehab_qa_artifacts/v63-level6-no-angle-selector/`.
+- Limitation: automated and simulated-landmark QA does not replace bedside testing with the affected hand, real chopsticks/cloth pegs, tool occlusion, ward lighting, shoulder tolerance, or the target iPad/Safari camera. No commit, push, publish or deployment was performed.
+
+## 2026-08-27 v64 Level 6 duplicate task picker removed
+- Removed the duplicated Level 6 task picker from setup; the six-task catalog is selected once from the game-select screen only. Full results in `v64-level6-no-duplicate-task-picker-results-20260827.md`.
+
+## 2026-08-28 v65 Level 6 tripod pinch across all games
+- Unified all six Level 6 activities on the selected-affected-hand tripod pinch (thumb–index–middle) interaction with per-patient calibration; shoulder flexion still transports. Full results in `v65-level6-tripod-pinch-all-games-results-20260828.md`.
+
+## 2026-08-28 v66 Level 6 calibration fresh-frame fix
+- Fixed the bedside failure where Level 6 calibration never detected the hand: the calibration loop consumed only fresh decoded frames and the stale-frame admission path starved it. Calibration now admits the same fresh-generation frames as gameplay while keeping all fail-closed identity/staleness gates. Suite 273 total / 270 passed / 3 skips; validator 165/165; published as `v66-20260828-level6-calibration-fresh-frame` and verified live.
+
+## 2026-08-28 v67 bedside usability fixes (four ward recordings)
+- Addressed four distinct failures observed in five bedside screen recordings from 26–28 Aug 2026.
+- **Level 2 permanent torso pause**: torso gates widened (maxTorsoTranslation .14→.20, maxTorsoLean .24→.32); slow postural drift is absorbed by an EMA baseline adaptation (alpha .06) applied only while the hand rests near midline below the return threshold; a sustained torso reject (≥75 consecutive frames) with the wrist at midline now clears the baseline and re-runs the 5-frame midline capture (reason `hold-at-midline`, prompt 「患手保持中線／重新對位」) instead of pausing forever. Genuine large single-frame trunk lean still fails closed.
+- **Level 3/4 unreachable return window**: each phase now also accepts an adaptive floor path — the estimated angle must be at or below 45% of the selected excursion (relativeReturnCap 0.45) AND within 6° of the rolling per-phase minimum (returnFloorToleranceDeg 6). Oblique bedside cameras that never read below ~30–44° can now complete repetitions; hovering above the relative cap never counts. The near-zero absolute window and target attainment are unchanged; this remains a game gate, not a goniometric claim.
+- **Level 6 calibration never completing**: per-stage progress survives momentary hand-landmark dropouts up to `CALIB_DROPOUT_GRACE_MS` 1500ms (previously any dropout reset everything); the light-close stage accumulates evidence (`closedHoldMs` with per-tick delta capped at 120ms, done at ≥450ms cumulative or 10 closed samples) and resets only on a clear reopen; checklist items now flip ○→✓ via `renderCalibCheck` in addition to turning green.
+- **Level 6 release nearly impossible**: personal pinch thresholds recalibrated to enter = closedMean+gap×0.56, exit = +0.70, open = min(openMean−gap×0.02, closedMean+gap×0.80); `computePinchState` adds an asymmetric reopen path (far digit fully open AND near digit past mid-reopen) and an OR-path separation check, so a hemiplegic hand that reopens unevenly can release without near-full symmetric extension. Hysteresis ordering closedMean<enter<exit<open, both-digit requirements, MAX_HOLD_MS 5000 and RELEASE_DIFFICULTY_LIMIT 3 safety nets are preserved. Level 5 grasp thresholds untouched.
+- Markers aligned to `v67-20260828-bedside-usability-fixes`; new `tests/v67-bedside-usability.test.mjs` (10 regression tests over all four fixes); pinned assertions updated in tracking-regression and level2 tests.
+- Validation: full Node suite **283 total / 280 passed / 0 failed / 3 intentional skips**; source technical validator **165/165**; `tools/checkjs.sh`, module `node --check` and `git diff --check` passed; `dist/public` rebuilt (134 files, 83M) with aligned v67 markers and all QA hooks stripped; Playwright iPad QA at 820×1180 portrait and 1180×820 landscape visually inspected (home, Level 2 flow, Level 6 catalog and calibration checklist ○ items) with no clipping, overflow or console errors — evidence in `/home/user/workspace/ych_rehab_qa_artifacts/v67-bedside-usability/`.
+- Limitation: simulated-landmark and fake-camera QA cannot replace bedside verification of real affected-hand reopen asymmetry, dropout patterns, ward lighting or iPad camera performance.

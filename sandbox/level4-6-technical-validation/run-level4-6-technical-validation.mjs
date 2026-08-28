@@ -52,8 +52,14 @@ async function state(page) {
 
 async function start(page, level, theme = "dimsum", dwellMs = 300) {
   await page.evaluate(
-    ({ level, theme, dwellMs }) =>
-      window.__qa.startGame({ level, theme, mode: "basic", duration: 180, dwellMs, affectedSide: "right" }),
+    ({ level, theme, dwellMs }) => {
+      const level6Task = level === "67"
+        ? ({ chopstick_dimsum: "chopsticks", peg_laundry: "peg" }[theme] || theme)
+        : undefined;
+      window.__qa.startGame({
+        level, theme, level6Task, mode: "basic", duration: 180, dwellMs, affectedSide: "right",
+      });
+    },
     { level, theme, dwellMs },
   );
   return state(page);
@@ -212,6 +218,8 @@ try {
   await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
   await page.waitForFunction(() => window.__qa && window.advanceTime, null, { timeout: 15000 });
 
+  // Level 6 normal flow (internal id "67") uses selected affected-hand tripod
+  // pinch for all six themes. Pose is not an interaction dependency.
   const expectedTypes = { "2": "dwell", "3": "dwell", "4": "dwell", "5": "grasp", "67": "pinch" };
   const displayLevel = { "2": "2", "3": "3", "4": "4", "5": "5", "67": "6" };
   for (const level of Object.keys(expectedTypes)) {
@@ -221,10 +229,11 @@ try {
     );
     for (const theme of themes) {
       const launch = await start(page, level, theme);
+      const expectedType = expectedTypes[level];
       check(displayLevel[level], "launch matrix", `${theme} launches with the correct engine`,
         launch.screen === "game" &&
         launch.level === level &&
-        launch.gameType === expectedTypes[level] &&
+        launch.gameType === expectedType &&
         itemsDoNotOverlap(launch.items) &&
         itemsDoNotCoverTargets(launch.items, launch.targets),
         {
@@ -235,6 +244,122 @@ try {
         });
     }
   }
+  const level6Themes = await page.evaluate(() =>
+    window.__qa.themes("67").map(theme => theme.id));
+  check("6", "availability", "exact restored Level 6 catalog has six choices and no legacy duplicates",
+    JSON.stringify(level6Themes) === JSON.stringify([
+      "flowers", "chopstick_dimsum", "peg_laundry", "cards", "mahjong", "cooking",
+    ]) && !level6Themes.includes("dimsum") && !level6Themes.includes("laundry"),
+    { themes: level6Themes });
+
+  const level6TaskByTheme = {
+    flowers:"flowers", chopstick_dimsum:"chopsticks", peg_laundry:"peg",
+    cards:"cards", mahjong:"mahjong", cooking:"cooking",
+  };
+  for (const [theme, task] of Object.entries(level6TaskByTheme)) {
+    const locked = await page.evaluate(({theme,task}) => {
+      window.__qa.selectLevel("67");
+      window.__qa.selectActivity(theme);
+      const setup = window.__qa.state();
+      const title = document.getElementById("settingsTitle")?.textContent.trim() || "";
+      const instructions = document.getElementById("settingsContext")?.textContent.trim() || "";
+      document.querySelector('[data-side="right"]')?.click();
+      const afterSide = window.__qa.state();
+      window.__qa.startGame({duration:60,affectedSide:"right"});
+      const launched = window.__qa.state();
+      return {
+        setup, afterSide, launched, title, instructions,
+        taskCard:!!document.getElementById("level67ToolCard"),
+        taskButtons:document.querySelectorAll("#screen-start [data-level6-task]").length,
+        expectedTask:task,
+      };
+    }, {theme,task});
+    check("6", "locked activity", `${theme} stays locked from library through setup and launch`,
+      locked.setup.theme===theme && locked.setup.level6Task===task
+      && locked.setup.level6LockedTheme===theme
+      && locked.afterSide.theme===theme && locked.afterSide.level6Task===task
+      && locked.launched.theme===theme && locked.launched.level6Task===task
+      && locked.launched.level6LockedTheme===theme
+      && locked.title.length>0 && locked.instructions.includes(locked.title)
+      && !locked.taskCard && locked.taskButtons===0,
+      locked);
+  }
+
+  for (const task of Object.values(level6TaskByTheme)) {
+    const flow = await page.evaluate(taskId => {
+      const send = (gesture, count, extra = {}) => {
+        for (let index = 0; index < count; index++) {
+          window.__qa.setLevel6ToolFrame({
+            gesture, stepMs:120, poseMissing:["shoulder","elbow","wrist"], ...extra,
+          });
+        }
+        return window.__qa.level6ToolState();
+      };
+      window.__qa.startGame({level:"67", level6Task:taskId, shoulderTargetDeg:90,
+        duration:60, affectedSide:"right"});
+      const layout=window.__qa.level67Layout();
+      const pair=layout.items.map(item=>({item,target:layout.targets.find(target=>target.type===item.type)}))
+        .find(value=>value.target);
+      if(!pair) throw new Error("No matching Level 6 item/target");
+      const at=point=>({nx:point.x/layout.canvas.width,ny:point.y/layout.canvas.height});
+      const prepared = send("open",5,at(pair.item));
+      const picked = send("closed",5,{...at(pair.item),apertures:{index:.10,middle:.15}});
+      const transported = send("closed",30,{...at(pair.target),apertures:{index:.10,middle:.15}});
+      const released = send("open",8,at(pair.target));
+      return {prepared,picked,transported,released,target:pair.target};
+    }, task);
+    check("6", "tripod pinch", `${task} requires open-light-close, hand transport, and reopen`,
+      flow.prepared.handOpenPrep && flow.picked.grabCount === 1 && !!flow.picked.held
+      && Math.hypot(flow.transported.heldPosition?.x-flow.target.x,
+        flow.transported.heldPosition?.y-flow.target.y)<90
+      && flow.transported.shoulder.gameReady===false
+      && flow.released.held === null && flow.released.correctCount === 1,
+      flow);
+
+    const rejected = await page.evaluate(taskId => {
+      const send = (gesture, count, extra = {}) => {
+        for (let index = 0; index < count; index++) {
+          window.__qa.setLevel6ToolFrame({gesture,stepMs:120,...extra});
+        }
+        return window.__qa.level6ToolState();
+      };
+      const start = () => window.__qa.startGame({level:"67",level6Task:taskId,
+        shoulderTargetDeg:90,duration:60,affectedSide:"right"});
+      start(); send("open",5); const generation=window.__qa.level6ToolState().frameGeneration;
+      const stale=send("closed",6,{generation});
+      start(); send("open",5); const wrong=send("closed",6,{handSide:"left"});
+      start(); send("open",5);
+      const partial=send("closed",6,{missingHand:[12]});
+      start(); const staticClosed=send("closed",24);
+      start(); send("open",5); const missingSide=send("closed",6,{handSide:"missing"});
+      start(); send("open",5); const uncertainSide=send("closed",6,{handednessConfidence:.30});
+      return {stale,wrong,partial,staticClosed,missingSide,uncertainSide};
+    }, task);
+    check("6", "tool safety", `${task} rejects stale, wrong-hand, partial and static-closed input`,
+      Object.values(rejected).every(value => value.held === null && value.grabCount === 0)
+      && !rejected.stale.handDetected && !rejected.wrong.handDetected
+      && !rejected.partial.handDetected && !rejected.staticClosed.handOpenPrep,
+      rejected);
+  }
+
+  const activityDifficultyLabels = await page.evaluate(() => {
+    const result = [];
+    for (const language of ["zh-Hant","en"]) {
+      window.YCHLanguage.setLanguage(language);
+      for (const level of ["2","3","4","5","67"]) {
+        window.__qa.selectLevel(level);
+        const cards=[...document.querySelectorAll("#activityGrid .activity-card")];
+        result.push({language,level,count:cards.length,
+          metadata:cards.filter(card=>card.querySelector(".ac-meta")).length,
+          hasLabel:cards.some(card=>/難度|Difficulty/i.test(
+            `${card.textContent} ${card.getAttribute("aria-label")||""}`))});
+      }
+    }
+    return result;
+  });
+  check("6", "activity library", "no per-game difficulty label is rendered at any level in either language",
+    activityDifficultyLabels.every(row=>row.count>0 && row.metadata===0 && !row.hasLabel),
+    {rows:activityDifficultyLabels});
 
   const gestures = await page.evaluate(() => ({
     graspOneFinger: window.__qa.gestureProbe.grasp([0.6, 1, 1, 1, 1], false, "any"),
@@ -252,13 +377,104 @@ try {
   check("5", "gesture", "two curled fingers trigger configured grasp", gestures.graspTwoFingers.isGrasping, gestures.graspTwoFingers);
   check("5", "gesture", "one reopened finger does not release held item", gestures.graspOneFingerReopen.isGrasping, gestures.graspOneFingerReopen);
   check("5", "gesture", "two reopened major fingers release held item", !gestures.graspTwoFingerRelease.isGrasping, gestures.graspTwoFingerRelease);
-  check("6", "gesture", "pinch enters below normalized aperture threshold", gestures.pinchEnter.isPinching, gestures.pinchEnter);
-  check("6", "gesture", "pinch hysteresis retains hold between enter and exit thresholds", gestures.pinchHysteresisHold.isPinching, gestures.pinchHysteresisHold);
-  check("6", "gesture", "pinch exits above normalized release threshold", !gestures.pinchExit.isPinching, gestures.pinchExit);
-  check("6", "gesture", "clearly separated fingers arm a new pinch", gestures.pinchOpen.isSeparated, gestures.pinchOpen);
+  // Pinch-probe checks below cover the preserved research-only bare-hand path.
+  check("6", "gesture (research track only)", "pinch enters below normalized aperture threshold", gestures.pinchEnter.isPinching, gestures.pinchEnter);
+  check("6", "gesture (research track only)", "pinch hysteresis retains hold between enter and exit thresholds", gestures.pinchHysteresisHold.isPinching, gestures.pinchHysteresisHold);
+  check("6", "gesture (research track only)", "pinch exits above normalized release threshold", !gestures.pinchExit.isPinching, gestures.pinchExit);
+  check("6", "gesture (research track only)", "clearly separated fingers arm a new pinch", gestures.pinchOpen.isSeparated, gestures.pinchOpen);
   check("5", "safety", "malformed grasp landmarks fail safely", gestures.invalidGrasp.valid === false && !gestures.invalidGrasp.isGrasping, gestures.invalidGrasp);
-  check("6", "safety", "malformed pinch landmarks fail safely", gestures.invalidPinch.valid === false && !gestures.invalidPinch.isPinching, gestures.invalidPinch);
+  check("6", "safety (research track only)", "malformed pinch landmarks fail safely", gestures.invalidPinch.valid === false && !gestures.invalidPinch.isPinching, gestures.invalidPinch);
 
+  // Level 2 production validation: exactly one fail-closed, torso-relative,
+  // selected-arm tabletop shoulder-horizontal-abduction activity.
+  const level2Availability = await page.evaluate(() => ({
+    themes:window.__qa.themes("2").map(theme=>theme.id),
+    sessions:window.__qa.level4SessionThemes(),
+  }));
+  check("2","availability","exactly one Level 2 activity is available",
+    JSON.stringify(level2Availability.themes)===JSON.stringify(["bilateral"])
+      && JSON.stringify(level2Availability.sessions)===JSON.stringify(["bilateral"]),
+    level2Availability);
+  await start(page,"2","mahjongwash");
+  const level2Fallback=await page.evaluate(()=>({
+    theme:window.__qa.state().theme,
+    elbowBar:document.getElementById("level4CalibBar").classList.contains("show"),
+  }));
+  check("2","availability","unsupported direct launch fails closed to bilateral",
+    level2Fallback.theme==="bilateral",level2Fallback);
+  check("2","calibration","Level 2 never shows elbow calibration",
+    level2Fallback.elbowBar===false,level2Fallback);
+
+  const level2Midline={
+    leftShoulder:{x:.40,y:.30},rightShoulder:{x:.60,y:.30},
+    leftElbow:{x:.47,y:.52},rightElbow:{x:.53,y:.52},
+    leftWrist:{x:.50,y:.68},rightWrist:{x:.50,y:.68},
+    leftHip:{x:.42,y:.72},rightHip:{x:.58,y:.72},
+  };
+  const level2RightOut={
+    ...level2Midline,rightElbow:{x:.61,y:.52},rightWrist:{x:.68,y:.68},
+  };
+  const level2LeftOut={
+    ...level2Midline,leftElbow:{x:.39,y:.52},leftWrist:{x:.32,y:.68},
+  };
+  async function level2Cycle(side,outward){
+    await start(page,"2","bilateral");
+    await page.evaluate(({midline,outward})=>{
+      window.__qa.setLevel3Pose({...midline,frames:5});
+      window.__qa.setLevel3Pose({...outward,frames:8});
+    },{midline:level2Midline,outward});
+    const reached=await page.evaluate(()=>({
+      motion:window.__qa.level3LateralState(),game:window.__qa.state(),
+    }));
+    await page.evaluate(midline=>window.__qa.setLevel3Pose({...midline,frames:8}),level2Midline);
+    const returned=await page.evaluate(()=>window.__qa.level3LateralState());
+    return {reached,returned};
+  }
+  const rightCycle=await level2Cycle("right",level2RightOut);
+  const leftCycle=await page.evaluate(async ({midline,outward})=>{
+    window.__qa.startGame({level:"2",theme:"bilateral",affectedSide:"left",duration:180});
+    window.__qa.setLevel3Pose({...midline,frames:5});
+    window.__qa.setLevel3Pose({...outward,frames:8});
+    return {motion:window.__qa.level3LateralState(),game:window.__qa.state()};
+  },{midline:level2Midline,outward:level2LeftOut});
+  check("2","symmetry","left and right selected arms produce symmetric outward progress",
+    rightCycle.reached.motion.targetHits===1&&leftCycle.motion.targetHits===1
+      && Math.abs(rightCycle.reached.motion.progress-leftCycle.motion.progress)<.001,
+    {right:rightCycle.reached.motion,left:leftCycle.motion});
+  check("2","repetition","outward scores once and return to midline rearms",
+    rightCycle.reached.game.correctCount===1&&rightCycle.reached.game.grabCount===0
+      && rightCycle.returned.phase==="outward",
+    rightCycle);
+
+  await start(page,"2","bilateral");
+  const level2Rejected=await page.evaluate(({midline,outward})=>{
+    window.__qa.setLevel3Pose({...midline,frames:5});
+    const wristOnly=window.__qa.setLevel3Pose({...midline,rightWrist:outward.rightWrist});
+    const torso=window.__qa.setLevel3Pose({
+      leftShoulder:{x:.48,y:.30},rightShoulder:{x:.68,y:.30},
+      leftElbow:{x:.55,y:.52},rightElbow:{x:.69,y:.52},
+      leftWrist:{x:.58,y:.68},rightWrist:{x:.76,y:.68},
+      leftHip:{x:.50,y:.72},rightHip:{x:.66,y:.72},
+    });
+    const missing=window.__qa.setLevel3Pose({...outward,missing:["rightElbow"]});
+    const score=window.__qa.state().correctCount;
+    return {wristOnly,torso,missing,score};
+  },{midline:level2Midline,outward:level2RightOut});
+  check("2","tracking","recording-like supported slide starts moving without a fixed elbow ratio",
+    level2Rejected.wristOnly.reason==="tracking"
+      && level2Rejected.wristOnly.progress>0
+      && level2Rejected.score===0,
+    level2Rejected.wristOnly);
+  check("2","fail closed","meaningful torso translation is rejected",
+    level2Rejected.torso.reason==="torso-translation"&&level2Rejected.score===0,
+    level2Rejected.torso);
+  check("2","fail closed","missing selected landmarks are rejected",
+    /^missing-/.test(level2Rejected.missing.reason)&&level2Rejected.score===0,
+    level2Rejected.missing);
+
+  // Retain the old standalone-module probes as unreachable source reference.
+  // They are not production Level 2 validation and create no reported checks.
+  if(false){
   const l4Layout = await start(page, "2");
   const itemY = Math.min(...l4Layout.items.map(item => item.y));
   const targetY = Math.max(...l4Layout.targets.map(target => target.y));
@@ -625,12 +841,14 @@ try {
   await calibrateLevel4(page, level4OccludedStartPose, level4OccludedReachPose);
   await level4Pose(page, level4OccludedReachPose, 10);
   const level4OccludedReach = await page.evaluate(() => window.__qa.level4ReachState());
-  check("2", "table occlusion", "affected elbow extension remains playable when the opposite shoulder is hidden",
+  check("legacy", "table occlusion", "affected elbow extension remains playable when the opposite shoulder is hidden",
     level4OccludedReach.framingReady && level4OccludedReach.progress > 0.80,
     level4OccludedReach);
+  }
 
-  // Generic grasp/drop flow is specific to Level 5. Level 2 supported motion
-  // and Level 6–7 pinch/tool flows have dedicated state-machine checks below.
+  // Generic grasp/drop flow below is specific to Level 5. Level 2 supported
+  // motion is covered separately above, and the two Level 6 selected-hand
+  // tool flows are covered by their deterministic gesture checks above.
   for (const level of ["5"]) {
     const label = displayLevel[level];
     await start(page, level);
@@ -669,7 +887,7 @@ try {
   // ================================================================
   // P0 clinical safety review checks (mandatory gate, rest/stop,
   // Level 4 compensation prompt, Level 5 hold timeout and repeated
-  // release difficulty, Level 6 bare-hand wording, camera failures).
+  // release difficulty, Level 6 no-angle-selector wording, camera failures).
   // ================================================================
   const safetyConstants = await page.evaluate(() => window.__qa.safety.constants());
   check("5", "safety", "maximum carry duration defaults to a conservative 5 seconds",
@@ -717,9 +935,35 @@ try {
     notes["5"].includes("患臂離桌") && notes["5"].includes("伸手")
     && notes["5"].includes("輕合") && notes["5"].includes("張手")
     && !notes["5"].includes("握拳") && !notes["5"].includes("握緊"), { note: notes["5"] });
-  check("6", "safety copy", "Level 6 concise note retains off-table tool-specific pinch/release",
-    notes["67"].includes("患臂離桌") && notes["67"].includes("按玩法捏放"),
+  check("6", "safety copy", "Level 6 concise note requires tripod pinch without shoulder/elbow wording",
+    notes["67"].includes("患手三指張開") && notes["67"].includes("輕捏拿起")
+    && notes["67"].includes("張開放下")
+    && !/量角器|60[–-]120|角度|肩屈曲|手肘|抬高手臂/.test(notes["67"]),
     { note: notes["67"] });
+
+  const selectorMatrix = await page.evaluate(() => {
+    const inspect = level => {
+      window.__qa.selectLevel(level);
+      window.__qa.selectActivity(level === "67" ? "flowers" : "dimsum");
+      const card = document.getElementById("shoulderTargetCard");
+      return {
+        hidden: card.hidden,
+        values: [...document.querySelectorAll("#shoulderTargetOptions [data-shoulder-target]")]
+          .map(button => Number(button.dataset.shoulderTarget)),
+      };
+    };
+    return { level3: inspect("3"), level4: inspect("4"), level6: inspect("67") };
+  });
+  check("3", "setup", "Level 3 keeps its 30–60 degree selector",
+    selectorMatrix.level3.hidden === false
+      && JSON.stringify(selectorMatrix.level3.values) === JSON.stringify([30,40,50,60]),
+    selectorMatrix.level3);
+  check("4", "setup", "Level 4 keeps its 60–180 degree selector",
+    selectorMatrix.level4.hidden === false
+      && JSON.stringify(selectorMatrix.level4.values) === JSON.stringify([60,70,80,90,100,110,120,130,140,150,160,170,180]),
+    selectorMatrix.level4);
+  check("6", "setup", "Level 6 hides the complete shoulder target selector panel",
+    selectorMatrix.level6.hidden === true, selectorMatrix.level6);
 
   const bodyText = await page.evaluate(() => document.body.innerText);
   check("5", "safety copy", "no patient-facing 握拳/握緊 wording remains in the interface",
@@ -847,7 +1091,7 @@ const result = {
   generated_at: new Date().toISOString(),
   base_url: baseUrl,
   scope: "Independent technical verification for FTHUE Levels 2–6",
-  limitation: "Not clinical validation; Level 6 aperture detection does not measure pinch force.",
+  limitation: "Not clinical validation; all six normal-flow Level 6 activities use fresh selected affected-hand tripod-pinch frames for open, light close, hand-position transport, and reopen. Shoulder and elbow motion are not interaction dependencies. The software does not identify physical tools or measure pinch/grip force.",
   summary: {
     total: tests.length + errors.filter(error => !tests.includes(error)).length,
     passed: tests.filter(test => test.passed).length,
@@ -890,7 +1134,7 @@ const lines = [
   "",
   "## Interpretation boundary",
   "",
-  "This is reproducible software technical verification only. It does not establish clinical validity, treatment efficacy, safety in real patients, or medical-device equivalence. Level 6 measures normalized thumb-index aperture state and does not measure pinch force. Compensation, muscle tone and spasticity are never detected automatically: they are therapist observations entered manually. Safety-control behaviour verified here is software behaviour only and still requires supervised bedside testing on the target iPad.",
+  "This is reproducible software technical verification only. It does not establish clinical validity, treatment efficacy, safety in real patients, or medical-device equivalence. All six normal-flow Level 6 activities use the selected affected hand and fresh Hand Landmarker frames for tripod-pinch open preparation, light/asymmetric close, hand-position transport and stabilized reopen. No shoulder or elbow angle controls readiness, pickup, progress, transport, release or scoring. Missing, uncertain, partial, stale, repeated-generation or wrong-side hand input fails closed. The software neither identifies physical tools nor measures pinch/grip force. The research-only tool path remains separate. Compensation, muscle tone and spasticity are never detected automatically: they are therapist observations entered manually. Safety-control behaviour verified here is software behaviour only and still requires supervised bedside testing on the target iPad.",
   "",
   "## Checks",
   "",

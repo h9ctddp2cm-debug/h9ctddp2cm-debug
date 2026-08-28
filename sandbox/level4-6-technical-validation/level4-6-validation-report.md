@@ -1,16 +1,16 @@
 # Level 4–6 Technical Validation Report
 
-Generated: 2026-08-26T01:40:41.401Z
+Generated: 2026-08-28T14:01:04.850Z
 
-Result: **PASS** (211/211 checks passed)
+Result: **PASS** (165/165 checks passed)
 
 | FTHUE level | Passed | Failed |
 |---|---:|---:|
-| 2 | 106 | 0 |
-| 3 | 20 | 0 |
-| 4 | 20 | 0 |
+| 2 | 37 | 0 |
+| 3 | 21 | 0 |
+| 4 | 21 | 0 |
 | 5 | 40 | 0 |
-| 6 | 25 | 0 |
+| 6 | 46 | 0 |
 
 ## Verified scope
 
@@ -26,21 +26,11 @@ Result: **PASS** (211/211 checks passed)
 
 ## Interpretation boundary
 
-This is reproducible software technical verification only. It does not establish clinical validity, treatment efficacy, safety in real patients, or medical-device equivalence. Level 6 measures normalized thumb-index aperture state and does not measure pinch force. Compensation, muscle tone and spasticity are never detected automatically: they are therapist observations entered manually. Safety-control behaviour verified here is software behaviour only and still requires supervised bedside testing on the target iPad.
+This is reproducible software technical verification only. It does not establish clinical validity, treatment efficacy, safety in real patients, or medical-device equivalence. All six normal-flow Level 6 activities use the selected affected hand and fresh Hand Landmarker frames for tripod-pinch open preparation, light/asymmetric close, hand-position transport and stabilized reopen. No shoulder or elbow angle controls readiness, pickup, progress, transport, release or scoring. Missing, uncertain, partial, stale, repeated-generation or wrong-side hand input fails closed. The software neither identifies physical tools nor measures pinch/grip force. The research-only tool path remains separate. Compensation, muscle tone and spasticity are never detected automatically: they are therapist observations entered manually. Safety-control behaviour verified here is software behaviour only and still requires supervised bedside testing on the target iPad.
 
 ## Checks
 
 - PASS | Level 2 | launch matrix | bilateral launches with the correct engine
-- PASS | Level 2 | launch matrix | tsuenwan launches with the correct engine
-- PASS | Level 2 | launch matrix | dimsum launches with the correct engine
-- PASS | Level 2 | launch matrix | flowers launches with the correct engine
-- PASS | Level 2 | launch matrix | laundry launches with the correct engine
-- PASS | Level 2 | launch matrix | cards launches with the correct engine
-- PASS | Level 2 | launch matrix | mahjong launches with the correct engine
-- PASS | Level 2 | launch matrix | wipewindow launches with the correct engine
-- PASS | Level 2 | launch matrix | bowling launches with the correct engine
-- PASS | Level 2 | launch matrix | mahjongwash launches with the correct engine
-- PASS | Level 2 | launch matrix | buspay launches with the correct engine
 - PASS | Level 3 | launch matrix | tsuenwan launches with the correct engine
 - PASS | Level 3 | launch matrix | dimsum launches with the correct engine
 - PASS | Level 3 | launch matrix | flowers launches with the correct engine
@@ -59,88 +49,49 @@ This is reproducible software technical verification only. It does not establish
 - PASS | Level 5 | launch matrix | cards launches with the correct engine
 - PASS | Level 5 | launch matrix | mahjong launches with the correct engine
 - PASS | Level 6 | launch matrix | flowers launches with the correct engine
-- PASS | Level 6 | launch matrix | dimsum launches with the correct engine
-- PASS | Level 6 | launch matrix | laundry launches with the correct engine
+- PASS | Level 6 | launch matrix | chopstick_dimsum launches with the correct engine
+- PASS | Level 6 | launch matrix | peg_laundry launches with the correct engine
 - PASS | Level 6 | launch matrix | cards launches with the correct engine
 - PASS | Level 6 | launch matrix | mahjong launches with the correct engine
 - PASS | Level 6 | launch matrix | cooking launches with the correct engine
+- PASS | Level 6 | availability | exact restored Level 6 catalog has six choices and no legacy duplicates
+- PASS | Level 6 | locked activity | flowers stays locked from library through setup and launch
+- PASS | Level 6 | locked activity | chopstick_dimsum stays locked from library through setup and launch
+- PASS | Level 6 | locked activity | peg_laundry stays locked from library through setup and launch
+- PASS | Level 6 | locked activity | cards stays locked from library through setup and launch
+- PASS | Level 6 | locked activity | mahjong stays locked from library through setup and launch
+- PASS | Level 6 | locked activity | cooking stays locked from library through setup and launch
+- PASS | Level 6 | tripod pinch | flowers requires open-light-close, hand transport, and reopen
+- PASS | Level 6 | tool safety | flowers rejects stale, wrong-hand, partial and static-closed input
+- PASS | Level 6 | tripod pinch | chopsticks requires open-light-close, hand transport, and reopen
+- PASS | Level 6 | tool safety | chopsticks rejects stale, wrong-hand, partial and static-closed input
+- PASS | Level 6 | tripod pinch | peg requires open-light-close, hand transport, and reopen
+- PASS | Level 6 | tool safety | peg rejects stale, wrong-hand, partial and static-closed input
+- PASS | Level 6 | tripod pinch | cards requires open-light-close, hand transport, and reopen
+- PASS | Level 6 | tool safety | cards rejects stale, wrong-hand, partial and static-closed input
+- PASS | Level 6 | tripod pinch | mahjong requires open-light-close, hand transport, and reopen
+- PASS | Level 6 | tool safety | mahjong rejects stale, wrong-hand, partial and static-closed input
+- PASS | Level 6 | tripod pinch | cooking requires open-light-close, hand transport, and reopen
+- PASS | Level 6 | tool safety | cooking rejects stale, wrong-hand, partial and static-closed input
+- PASS | Level 6 | activity library | no per-game difficulty label is rendered at any level in either language
 - PASS | Level 5 | gesture | one curled finger cannot trigger grasp
 - PASS | Level 5 | gesture | two curled fingers trigger configured grasp
 - PASS | Level 5 | gesture | one reopened finger does not release held item
 - PASS | Level 5 | gesture | two reopened major fingers release held item
-- PASS | Level 6 | gesture | pinch enters below normalized aperture threshold
-- PASS | Level 6 | gesture | pinch hysteresis retains hold between enter and exit thresholds
-- PASS | Level 6 | gesture | pinch exits above normalized release threshold
-- PASS | Level 6 | gesture | clearly separated fingers arm a new pinch
+- PASS | Level 6 | gesture (research track only) | pinch enters below normalized aperture threshold
+- PASS | Level 6 | gesture (research track only) | pinch hysteresis retains hold between enter and exit thresholds
+- PASS | Level 6 | gesture (research track only) | pinch exits above normalized release threshold
+- PASS | Level 6 | gesture (research track only) | clearly separated fingers arm a new pinch
 - PASS | Level 5 | safety | malformed grasp landmarks fail safely
-- PASS | Level 6 | safety | malformed pinch landmarks fail safely
-- PASS | Level 2 | layout | targets remain forward of tabletop source items
-- PASS | Level 2 | two-pose calibration | fresh flexed therapist mark succeeds exactly once
-- PASS | Level 2 | two-pose calibration | fresh extended therapist mark succeeds exactly once
-- PASS | Level 2 | two-pose calibration | two fresh marks make Level 4 calibrated and game-ready
-- PASS | Level 2 | two-pose calibration | flexed then extended capture calibrates and returns to progress 0
-- PASS | Level 2 | two-pose calibration | unmarked flexed pose waits for the explicit flexed therapist capture
-- PASS | Level 2 | two-pose calibration | insufficient endpoint separation requests a retry with diagnostics
-- PASS | Level 2 | two-pose calibration | therapist buttons mark both endpoints manually
-- PASS | Level 2 | two-pose calibration | manual calibration still returns to 0 at the flexed endpoint
-- PASS | Level 2 | two-pose calibration | fresh flexed therapist mark succeeds exactly once
-- PASS | Level 2 | two-pose calibration | fresh extended therapist mark succeeds exactly once
-- PASS | Level 2 | two-pose calibration | two fresh marks make Level 4 calibrated and game-ready
-- PASS | Level 2 | drift guard | small elbow-angle jitter cannot move the object by itself
-- PASS | Level 2 | completion gate | partial elbow extension moves upward but cannot complete placement
-- PASS | Level 2 | two-pose calibration | fresh flexed therapist mark succeeds exactly once
-- PASS | Level 2 | two-pose calibration | fresh extended therapist mark succeeds exactly once
-- PASS | Level 2 | two-pose calibration | two fresh marks make Level 4 calibrated and game-ready
-- PASS | Level 2 | elbow-only control | non-elbow landmark changes cannot change direct elbow progress or create an elevation signal
-- PASS | Level 2 | two-pose calibration | fresh flexed therapist mark succeeds exactly once
-- PASS | Level 2 | two-pose calibration | fresh extended therapist mark succeeds exactly once
-- PASS | Level 2 | two-pose calibration | two fresh marks make Level 4 calibrated and game-ready
-- PASS | Level 2 | elbow-only control | elbow extension moves the object upward without a secondary shoulder-elevation gate
-- PASS | Level 2 | compound movement | elbow flexion lowers the object while the wrist remains forward
-- PASS | Level 2 | elbow-only control | elbow flexion returns the object downward without a secondary shoulder-elevation gate
-- PASS | Level 2 | two-pose calibration | fresh flexed therapist mark succeeds exactly once
-- PASS | Level 2 | two-pose calibration | fresh extended therapist mark succeeds exactly once
-- PASS | Level 2 | two-pose calibration | two fresh marks make Level 4 calibrated and game-ready
-- PASS | Level 2 | vertical elbow mapping | dimsum maps extension upward and flexion downward without elbow-driven horizontal drift
-- PASS | Level 2 | two-pose calibration | fresh flexed therapist mark succeeds exactly once
-- PASS | Level 2 | two-pose calibration | fresh extended therapist mark succeeds exactly once
-- PASS | Level 2 | two-pose calibration | two fresh marks make Level 4 calibrated and game-ready
-- PASS | Level 2 | vertical elbow mapping | wipewindow maps extension upward and flexion downward without elbow-driven horizontal drift
-- PASS | Level 2 | two-pose calibration | fresh flexed therapist mark succeeds exactly once
-- PASS | Level 2 | two-pose calibration | fresh extended therapist mark succeeds exactly once
-- PASS | Level 2 | two-pose calibration | two fresh marks make Level 4 calibrated and game-ready
-- PASS | Level 2 | vertical elbow mapping | bowling maps extension upward and flexion downward without elbow-driven horizontal drift
-- PASS | Level 2 | two-pose calibration | fresh flexed therapist mark succeeds exactly once
-- PASS | Level 2 | two-pose calibration | fresh extended therapist mark succeeds exactly once
-- PASS | Level 2 | two-pose calibration | two fresh marks make Level 4 calibrated and game-ready
-- PASS | Level 2 | vertical elbow mapping | mahjongwash maps extension upward and flexion downward without elbow-driven horizontal drift
-- PASS | Level 2 | two-pose calibration | fresh flexed therapist mark succeeds exactly once
-- PASS | Level 2 | two-pose calibration | fresh extended therapist mark succeeds exactly once
-- PASS | Level 2 | two-pose calibration | two fresh marks make Level 4 calibrated and game-ready
-- PASS | Level 2 | vertical elbow mapping | buspay maps extension upward and flexion downward without elbow-driven horizontal drift
-- PASS | Level 2 | two-pose calibration | fresh flexed therapist mark succeeds exactly once
-- PASS | Level 2 | two-pose calibration | fresh extended therapist mark succeeds exactly once
-- PASS | Level 2 | two-pose calibration | two fresh marks make Level 4 calibrated and game-ready
-- PASS | Level 2 | elbow carry | unheld Level 4 cursor remains the real wrist point for item selection
-- PASS | Level 2 | elbow carry | ordinary Level 4 pickup captures a stable carry lane
-- PASS | Level 2 | elbow carry | held standard Level 4 item keeps its fixed carry X across elbow extension
-- PASS | Level 2 | elbow carry | held standard Level 4 item moves upward on elbow extension
-- PASS | Level 2 | elbow carry | held standard Level 4 item moves downward on elbow flexion
-- PASS | Level 2 | two-pose calibration | fresh flexed therapist mark succeeds exactly once
-- PASS | Level 2 | two-pose calibration | fresh extended therapist mark succeeds exactly once
-- PASS | Level 2 | two-pose calibration | two fresh marks make Level 4 calibrated and game-ready
-- PASS | Level 2 | independent mechanics | wipe-window keeps the real wrist path rather than a carry lane
-- PASS | Level 2 | two-pose calibration | fresh flexed therapist mark succeeds exactly once
-- PASS | Level 2 | two-pose calibration | fresh extended therapist mark succeeds exactly once
-- PASS | Level 2 | two-pose calibration | two fresh marks make Level 4 calibrated and game-ready
-- PASS | Level 2 | ordered arc cycle | shoulder abduction activates the lateral signal only after the calibrated extension, holds reach steady, pauses on elbow flexion and ends at the flexed start
-- PASS | Level 2 | independent mechanics | bowling arms only from flexed start and commits one extension roll
-- PASS | Level 2 | independent mechanics | mahjong-wash requires extension then the side-correct arc before washing
-- PASS | Level 2 | independent mechanics | bus pays once after elbow forward, then needs horizontal return plus flexed return to re-arm
-- PASS | Level 2 | two-pose calibration | fresh flexed therapist mark succeeds exactly once
-- PASS | Level 2 | two-pose calibration | fresh extended therapist mark succeeds exactly once
-- PASS | Level 2 | two-pose calibration | two fresh marks make Level 4 calibrated and game-ready
-- PASS | Level 2 | table occlusion | affected elbow extension remains playable when the opposite shoulder is hidden
+- PASS | Level 6 | safety (research track only) | malformed pinch landmarks fail safely
+- PASS | Level 2 | availability | exactly one Level 2 activity is available
+- PASS | Level 2 | availability | unsupported direct launch fails closed to bilateral
+- PASS | Level 2 | calibration | Level 2 never shows elbow calibration
+- PASS | Level 2 | symmetry | left and right selected arms produce symmetric outward progress
+- PASS | Level 2 | repetition | outward scores once and return to midline rearms
+- PASS | Level 2 | tracking | recording-like supported slide starts moving without a fixed elbow ratio
+- PASS | Level 2 | fail closed | meaningful torso translation is rejected
+- PASS | Level 2 | fail closed | missing selected landmarks are rejected
 - PASS | Level 5 | flow | prepared gesture and hold acquire an item
 - PASS | Level 5 | flow | correct placement increments the correct count
 - PASS | Level 5 | flow | prepared gesture and hold acquire an item
@@ -183,7 +134,10 @@ This is reproducible software technical verification only. It does not establish
 - PASS | Level 3 | safety copy | Level 3 concise note retains off-table arm and full framing
 - PASS | Level 4 | safety copy | Level 4 concise note retains off-table arm and full framing
 - PASS | Level 5 | safety copy | Level 5 concise note retains off-table reach and loose hand sequence
-- PASS | Level 6 | safety copy | Level 6 concise note retains off-table tool-specific pinch/release
+- PASS | Level 6 | safety copy | Level 6 concise note requires tripod pinch without shoulder/elbow wording
+- PASS | Level 3 | setup | Level 3 keeps its 30–60 degree selector
+- PASS | Level 4 | setup | Level 4 keeps its 60–180 degree selector
+- PASS | Level 6 | setup | Level 6 hides the complete shoulder target selector panel
 - PASS | Level 5 | safety copy | no patient-facing 握拳/握緊 wording remains in the interface
 - PASS | Level 2 | rest/stop | large 休息 and 停止 controls are always visible during play
 - PASS | Level 2 | rest/stop | rest pauses active game timing
