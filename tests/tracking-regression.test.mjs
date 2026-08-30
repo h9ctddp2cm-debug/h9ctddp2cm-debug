@@ -39,7 +39,7 @@ test("portrait phones keep the camera inline in a compact preview instead of ful
   assert.match(publicSource, /height:min\(25dvh,210px\)/);
   assert.ok(publicSource.includes("videoEl.setAttribute('webkit-playsinline', '')"));
   assert.ok(publicSource.includes("videoEl.controls = false"));
-  assert.match(serviceWorkerSource, /fthue-rehab-v67-20260828-bedside-usability-fixes/);
+  assert.match(serviceWorkerSource, /fthue-rehab-v69-20260830-dimsum-order/);
 });
 
 test("Levels 3 and 4 can use Pose when tabletop hands occlude the finger model", () => {
@@ -181,9 +181,9 @@ test("all items stay clear of targets and can be parked in blank space", () => {
 test("offline worker forces the current build instead of serving the stale game", () => {
   const manifest = JSON.parse(readFileSync(path.join(root, "manifest.webmanifest"), "utf8"));
   assert.ok(publicSource.includes('updateViaCache:"none"'));
-  assert.match(serviceWorkerSource, /fthue-rehab-v67-20260828-bedside-usability-fixes/);
-  assert.ok(publicSource.includes('const LEVEL_APP_BUILD = "v67-20260828-bedside-usability-fixes"'));
-  assert.equal(manifest.start_url, "./index.html?build=v67-20260828-bedside-usability-fixes");
+  assert.match(serviceWorkerSource, /fthue-rehab-v69-20260830-dimsum-order/);
+  assert.ok(publicSource.includes('const LEVEL_APP_BUILD = "v69-20260830-dimsum-order"'));
+  assert.equal(manifest.start_url, "./index.html?build=v69-20260830-dimsum-order");
   assert.ok(publicSource.includes('const levelAppHadController = Boolean(navigator.serviceWorker.controller)'));
   assert.ok(publicSource.includes('if (!levelAppHadController || levelAppReloading) return'));
   assert.ok(publicSource.includes('navigator.serviceWorker.addEventListener("controllerchange"'));
@@ -239,7 +239,7 @@ test("Level 5 grasp requires two curled fingers and releases after two visibly r
 });
 
 test("Level 5 calibration accepts the participant's available opening range without long holds", () => {
-  assert.match(publicSource, /now\s*-\s*c\.openStart\s*>=\s*750/);
+  assert.match(publicSource, /c\.openHoldMs\s*>=\s*750/);
   assert.match(publicSource, /openMean\s*\+\s*0\.035/);
   assert.match(publicSource, /c\.closedHoldMs\s*>=\s*450\s*\|\|\s*c\.closedScores\.length\s*>=\s*10/);
   assert.match(publicSource, /openMean\s*\+\s*gap\s*\*\s*\(isPegMode\(\)\s*\?\s*0\.24\s*:\s*0\.48\)/);

@@ -298,7 +298,16 @@ try {
       window.__qa.startGame({level:"67", level6Task:taskId, shoulderTargetDeg:90,
         duration:60, affectedSide:"right"});
       const layout=window.__qa.level67Layout();
-      const pair=layout.items.map(item=>({item,target:layout.targets.find(target=>target.type===item.type)}))
+      // v69: the chopstick activity is order-driven — items go to one central big
+      // plate and only still-needed order types score.
+      const neededTypes = layout.dimsumOrder
+        ? layout.dimsumOrder.lines.filter(l=>l.placed<l.need).map(l=>l.type)
+        : null;
+      const pair=layout.items.map(item=>({item,target:neededTypes
+        ? (neededTypes.includes(item.type)
+          ? layout.targets.find(target=>target.type==="dimsum_plate")
+          : null)
+        : layout.targets.find(target=>target.type===item.type)}))
         .find(value=>value.target);
       if(!pair) throw new Error("No matching Level 6 item/target");
       const at=point=>({nx:point.x/layout.canvas.width,ny:point.y/layout.canvas.height});

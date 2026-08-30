@@ -278,9 +278,18 @@ async function runToolGestureFlow(page, task) {
       duration: 60, affectedSide: 'right',
     });
     const layout = window.__qa.level67Layout();
+    // v69: the chopstick task is order-driven — every dim sum goes to the single
+    // central big plate, and only types still needed by the current order score.
+    const neededTypes = layout.dimsumOrder
+      ? layout.dimsumOrder.lines.filter(l => l.placed < l.need).map(l => l.type)
+      : null;
     const pair = layout.items.map(item => ({
       item,
-      target: layout.targets.find(value => value.type === item.type),
+      target: neededTypes
+        ? (neededTypes.includes(item.type)
+          ? layout.targets.find(value => value.type === 'dimsum_plate')
+          : null)
+        : layout.targets.find(value => value.type === item.type),
     })).find(value => value.target);
     if (!pair) throw new Error('Level 6 layout has no item matching a visible target');
     const { item, target } = pair;
