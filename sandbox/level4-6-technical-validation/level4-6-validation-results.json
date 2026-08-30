@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-30T09:43:51.418Z",
+  "generated_at": "2026-08-30T12:54:46.139Z",
   "base_url": "http://127.0.0.1:4173",
   "scope": "Independent technical verification for FTHUE Levels 2–6",
   "limitation": "Not clinical validation; all six normal-flow Level 6 activities use fresh selected affected-hand tripod-pinch frames for open, light close, hand-position transport, and reopen. Shoulder and elbow motion are not interaction dependencies. The software does not identify physical tools or measure pinch/grip force.",
@@ -384,8 +384,8 @@
               "r": 100
             },
             {
-              "label": "麵",
-              "type": "noodle",
+              "label": "青菜",
+              "type": "veg",
               "x": 590,
               "y": 442.8,
               "r": 100
@@ -460,8 +460,8 @@
               "r": 100
             },
             {
-              "label": "麵",
-              "type": "noodle",
+              "label": "青菜",
+              "type": "veg",
               "x": 590,
               "y": 442.8,
               "r": 100
@@ -529,15 +529,15 @@
           },
           "items": [
             {
-              "label": "紅花",
-              "type": "redflower",
+              "label": "黃花",
+              "type": "yellowflower",
               "x": 259.6,
               "y": 442.8,
               "r": 100
             },
             {
-              "label": "黃花",
-              "type": "yellowflower",
+              "label": "紅花",
+              "type": "redflower",
               "x": 590,
               "y": 442.8,
               "r": 100
@@ -618,15 +618,15 @@
           },
           "items": [
             {
-              "label": "紅花",
-              "type": "redflower",
+              "label": "黃花",
+              "type": "yellowflower",
               "x": 259.6,
               "y": 442.8,
               "r": 100
             },
             {
-              "label": "黃花",
-              "type": "yellowflower",
+              "label": "紅花",
+              "type": "redflower",
               "x": 590,
               "y": 442.8,
               "r": 100
@@ -694,15 +694,15 @@
           },
           "items": [
             {
-              "label": "紅花",
-              "type": "redflower",
+              "label": "黃花",
+              "type": "yellowflower",
               "x": 259.6,
               "y": 442.8,
               "r": 100
             },
             {
-              "label": "黃花",
-              "type": "yellowflower",
+              "label": "紅花",
+              "type": "redflower",
               "x": 590,
               "y": 442.8,
               "r": 100
@@ -777,17 +777,17 @@
               "r": 100
             },
             {
-              "label": "牛肉球",
-              "type": "chop_beefball",
+              "label": "燒賣",
+              "type": "chop_siumai",
               "x": 920.4,
               "y": 442.8,
               "r": 100
             },
             {
-              "label": "蝦餃",
-              "type": "chop_hargau",
-              "x": 657.9663213995545,
-              "y": 195.34375890088597,
+              "label": "燒賣",
+              "type": "chop_siumai",
+              "x": 550.2495554294924,
+              "y": 348.88315710534994,
               "r": 100
             }
           ],
@@ -858,17 +858,17 @@
               "r": 100
             },
             {
-              "label": "牛肉球",
-              "type": "chop_beefball",
+              "label": "燒賣",
+              "type": "chop_siumai",
               "x": 920.4,
               "y": 442.8,
               "r": 100
             },
             {
-              "label": "蝦餃",
-              "type": "chop_hargau",
-              "x": 633.1627502202102,
-              "y": 383.6998430913442,
+              "label": "燒賣",
+              "type": "chop_siumai",
+              "x": 550.2495554294924,
+              "y": 348.88315710534994,
               "r": 100
             }
           ],
@@ -926,17 +926,17 @@
               "r": 100
             },
             {
-              "label": "牛肉球",
-              "type": "chop_beefball",
+              "label": "燒賣",
+              "type": "chop_siumai",
               "x": 920.4,
               "y": 442.8,
               "r": 100
             },
             {
-              "label": "蝦餃",
-              "type": "chop_hargau",
-              "x": 633.1627502202102,
-              "y": 383.6998430913442,
+              "label": "燒賣",
+              "type": "chop_siumai",
+              "x": 550.2495554294924,
+              "y": 348.88315710534994,
               "r": 100
             }
           ],
@@ -987,8 +987,8 @@
           },
           "items": [
             {
-              "label": "毛巾→衣夾",
-              "type": "peg_towel",
+              "label": "襪→衣夾",
+              "type": "peg_sock",
               "x": 259.6,
               "y": 442.8,
               "r": 100
@@ -1001,8 +1001,8 @@
               "r": 100
             },
             {
-              "label": "上衣→衣夾",
-              "type": "peg_tshirt",
+              "label": "襪→衣夾",
+              "type": "peg_sock",
               "x": 920.4,
               "y": 442.8,
               "r": 100
@@ -1076,8 +1076,8 @@
           },
           "items": [
             {
-              "label": "毛巾→衣夾",
-              "type": "peg_towel",
+              "label": "襪→衣夾",
+              "type": "peg_sock",
               "x": 259.6,
               "y": 442.8,
               "r": 100
@@ -1090,8 +1090,8 @@
               "r": 100
             },
             {
-              "label": "上衣→衣夾",
-              "type": "peg_tshirt",
+              "label": "襪→衣夾",
+              "type": "peg_sock",
               "x": 920.4,
               "y": 442.8,
               "r": 100
@@ -1152,8 +1152,8 @@
           },
           "items": [
             {
-              "label": "毛巾→衣夾",
-              "type": "peg_towel",
+              "label": "襪→衣夾",
+              "type": "peg_sock",
               "x": 259.6,
               "y": 442.8,
               "r": 100
@@ -1166,8 +1166,8 @@
               "r": 100
             },
             {
-              "label": "上衣→衣夾",
-              "type": "peg_tshirt",
+              "label": "襪→衣夾",
+              "type": "peg_sock",
               "x": 920.4,
               "y": 442.8,
               "r": 100
@@ -1469,15 +1469,15 @@
           },
           "items": [
             {
-              "label": "二筒",
-              "type": "yitung",
+              "label": "一筒",
+              "type": "yatung",
               "x": 259.6,
               "y": 442.8,
               "r": 100
             },
             {
-              "label": "一筒",
-              "type": "yatung",
+              "label": "二筒",
+              "type": "yitung",
               "x": 590,
               "y": 442.8,
               "r": 100
@@ -1558,15 +1558,15 @@
           },
           "items": [
             {
-              "label": "二筒",
-              "type": "yitung",
+              "label": "一筒",
+              "type": "yatung",
               "x": 259.6,
               "y": 442.8,
               "r": 100
             },
             {
-              "label": "一筒",
-              "type": "yatung",
+              "label": "二筒",
+              "type": "yitung",
               "x": 590,
               "y": 442.8,
               "r": 100
@@ -1634,15 +1634,15 @@
           },
           "items": [
             {
-              "label": "二筒",
-              "type": "yitung",
+              "label": "一筒",
+              "type": "yatung",
               "x": 259.6,
               "y": 442.8,
               "r": 100
             },
             {
-              "label": "一筒",
-              "type": "yatung",
+              "label": "二筒",
+              "type": "yitung",
               "x": 590,
               "y": 442.8,
               "r": 100
@@ -1710,15 +1710,15 @@
           },
           "items": [
             {
-              "label": "麵",
-              "type": "noodle",
+              "label": "青菜",
+              "type": "veg",
               "x": 259.6,
               "y": 442.8,
               "r": 100
             },
             {
-              "label": "麵",
-              "type": "noodle",
+              "label": "青菜",
+              "type": "veg",
               "x": 590,
               "y": 442.8,
               "r": 100
@@ -1780,7 +1780,7 @@
             "mode": "pinch",
             "stable": false,
             "candidate": false,
-            "candidateAt": 2279.3999996185303
+            "candidateAt": 2234.0999994277954
           },
           "cursor": {
             "x": 259.6,
@@ -1861,7 +1861,7 @@
             "mode": "pinch",
             "stable": true,
             "candidate": true,
-            "candidateAt": 2880.800000190735
+            "candidateAt": 2835.5999994277954
           },
           "cursor": {
             "x": 259.6,
@@ -1942,7 +1942,7 @@
             "mode": "pinch",
             "stable": true,
             "candidate": true,
-            "candidateAt": 6485.300000190735
+            "candidateAt": 6441.5
           },
           "cursor": {
             "x": 1032.800769490499,
@@ -2020,7 +2020,7 @@
             "mode": "pinch",
             "stable": false,
             "candidate": false,
-            "candidateAt": 7446.300000190735
+            "candidateAt": 7402.699999809265
           },
           "cursor": {
             "x": 1033.4658895134244,
@@ -2347,7 +2347,7 @@
             "mode": "pinch",
             "stable": true,
             "candidate": true,
-            "candidateAt": 14365
+            "candidateAt": 14316.5
           },
           "cursor": {
             "x": 590,
@@ -2589,7 +2589,7 @@
             "mode": "pinch",
             "stable": false,
             "candidate": false,
-            "candidateAt": 17631.199999809265
+            "candidateAt": 17583
           },
           "cursor": {
             "x": 259.6,
@@ -2658,7 +2658,7 @@
           "isGrasping": true,
           "handOpenPrep": false,
           "frameGeneration": 10,
-          "held": "牛肉球",
+          "held": "蝦餃",
           "heldPosition": {
             "x": 259.6,
             "y": 442.8
@@ -2670,7 +2670,7 @@
             "mode": "pinch",
             "stable": true,
             "candidate": true,
-            "candidateAt": 18233.099999427795
+            "candidateAt": 18184.699999809265
           },
           "cursor": {
             "x": 259.6,
@@ -2739,7 +2739,7 @@
           "isGrasping": true,
           "handOpenPrep": false,
           "frameGeneration": 40,
-          "held": "牛肉球",
+          "held": "蝦餃",
           "heldPosition": {
             "x": 587.6857243556873,
             "y": 662.8478102821438
@@ -2751,7 +2751,7 @@
             "mode": "pinch",
             "stable": true,
             "candidate": true,
-            "candidateAt": 21845.39999961853
+            "candidateAt": 21793.89999961853
           },
           "cursor": {
             "x": 587.6857243556873,
@@ -2829,7 +2829,7 @@
             "mode": "pinch",
             "stable": false,
             "candidate": false,
-            "candidateAt": 22808.800000190735
+            "candidateAt": 22756.300000190735
           },
           "cursor": {
             "x": 587.6857243556873,
@@ -3156,7 +3156,7 @@
             "mode": "pinch",
             "stable": true,
             "candidate": true,
-            "candidateAt": 29695.39999961853
+            "candidateAt": 29639.39999961853
           },
           "cursor": {
             "x": 590,
@@ -3398,7 +3398,7 @@
             "mode": "pinch",
             "stable": false,
             "candidate": false,
-            "candidateAt": 32959.800000190735
+            "candidateAt": 32903.89999961853
           },
           "cursor": {
             "x": 590,
@@ -3479,7 +3479,7 @@
             "mode": "pinch",
             "stable": true,
             "candidate": true,
-            "candidateAt": 33560.39999961853
+            "candidateAt": 33504.800000190735
           },
           "cursor": {
             "x": 590,
@@ -3560,7 +3560,7 @@
             "mode": "pinch",
             "stable": true,
             "candidate": true,
-            "candidateAt": 37163.699999809265
+            "candidateAt": 37108.099999427795
           },
           "cursor": {
             "x": 756.530898467395,
@@ -3638,7 +3638,7 @@
             "mode": "pinch",
             "stable": false,
             "candidate": false,
-            "candidateAt": 38124.599999427795
+            "candidateAt": 38068.89999961853
           },
           "cursor": {
             "x": 756.530898467395,
@@ -3965,7 +3965,7 @@
             "mode": "pinch",
             "stable": true,
             "candidate": true,
-            "candidateAt": 44991.099999427795
+            "candidateAt": 44935.5
           },
           "cursor": {
             "x": 590,
@@ -4207,7 +4207,7 @@
             "mode": "pinch",
             "stable": false,
             "candidate": false,
-            "candidateAt": 48250.199999809265
+            "candidateAt": 48199.199999809265
           },
           "cursor": {
             "x": 259.6,
@@ -4276,7 +4276,7 @@
           "isGrasping": true,
           "handOpenPrep": false,
           "frameGeneration": 10,
-          "held": "黑桃",
+          "held": "紅心",
           "heldPosition": {
             "x": 259.6,
             "y": 442.8
@@ -4288,7 +4288,7 @@
             "mode": "pinch",
             "stable": true,
             "candidate": true,
-            "candidateAt": 48851
+            "candidateAt": 48799.800000190735
           },
           "cursor": {
             "x": 259.6,
@@ -4357,10 +4357,10 @@
           "isGrasping": true,
           "handOpenPrep": false,
           "frameGeneration": 40,
-          "held": "黑桃",
+          "held": "紅心",
           "heldPosition": {
-            "x": 1032.800769490499,
-            "y": 720.2520020351017
+            "x": 755.1757992137201,
+            "y": 719.8213034930626
           },
           "score": 0,
           "correctCount": 0,
@@ -4369,11 +4369,11 @@
             "mode": "pinch",
             "stable": true,
             "candidate": true,
-            "candidateAt": 52454.599999427795
+            "candidateAt": 52403.39999961853
           },
           "cursor": {
-            "x": 1032.800769490499,
-            "y": 720.2520020351017
+            "x": 755.1757992137201,
+            "y": 719.8213034930626
           },
           "shoulder": {
             "level": "67",
@@ -4447,11 +4447,11 @@
             "mode": "pinch",
             "stable": false,
             "candidate": false,
-            "candidateAt": 53415.699999809265
+            "candidateAt": 53364.39999961853
           },
           "cursor": {
-            "x": 1033.4658895134244,
-            "y": 720.490670812004
+            "x": 755.4864613002109,
+            "y": 719.9949601088257
           },
           "shoulder": {
             "level": "67",
@@ -4509,8 +4509,8 @@
           }
         },
         "target": {
-          "type": "spade",
-          "x": 1036,
+          "type": "heart",
+          "x": 758,
           "y": 721.4,
           "w": 260,
           "h": 161.2
@@ -4774,7 +4774,7 @@
             "mode": "pinch",
             "stable": true,
             "candidate": true,
-            "candidateAt": 60289.39999961853
+            "candidateAt": 60238.39999961853
           },
           "cursor": {
             "x": 590,
@@ -5016,7 +5016,7 @@
             "mode": "pinch",
             "stable": false,
             "candidate": false,
-            "candidateAt": 63551.599999427795
+            "candidateAt": 63510.800000190735
           },
           "cursor": {
             "x": 259.6,
@@ -5097,7 +5097,7 @@
             "mode": "pinch",
             "stable": true,
             "candidate": true,
-            "candidateAt": 64152.199999809265
+            "candidateAt": 64111.39999961853
           },
           "cursor": {
             "x": 259.6,
@@ -5178,7 +5178,7 @@
             "mode": "pinch",
             "stable": true,
             "candidate": true,
-            "candidateAt": 67755.5999994278
+            "candidateAt": 67714.69999980927
           },
           "cursor": {
             "x": 1032.800769490499,
@@ -5256,7 +5256,7 @@
             "mode": "pinch",
             "stable": false,
             "candidate": false,
-            "candidateAt": 68716.80000019073
+            "candidateAt": 68675.80000019073
           },
           "cursor": {
             "x": 1033.4658895134244,
@@ -5583,7 +5583,7 @@
             "mode": "pinch",
             "stable": true,
             "candidate": true,
-            "candidateAt": 75591.69999980927
+            "candidateAt": 75550.19999980927
           },
           "cursor": {
             "x": 590,
@@ -5825,7 +5825,7 @@
             "mode": "pinch",
             "stable": false,
             "candidate": false,
-            "candidateAt": 78852.30000019073
+            "candidateAt": 78809.5999994278
           },
           "cursor": {
             "x": 259.6,
@@ -5906,7 +5906,7 @@
             "mode": "pinch",
             "stable": true,
             "candidate": true,
-            "candidateAt": 79452.89999961853
+            "candidateAt": 79410.0999994278
           },
           "cursor": {
             "x": 259.6,
@@ -5987,7 +5987,7 @@
             "mode": "pinch",
             "stable": true,
             "candidate": true,
-            "candidateAt": 83057
+            "candidateAt": 83013.30000019073
           },
           "cursor": {
             "x": 755.1757992137201,
@@ -6065,7 +6065,7 @@
             "mode": "pinch",
             "stable": false,
             "candidate": false,
-            "candidateAt": 84017.69999980927
+            "candidateAt": 83974
           },
           "cursor": {
             "x": 755.4864613002109,
@@ -6392,7 +6392,7 @@
             "mode": "pinch",
             "stable": true,
             "candidate": true,
-            "candidateAt": 90882
+            "candidateAt": 90840.39999961853
           },
           "cursor": {
             "x": 590,
@@ -6977,8 +6977,8 @@
             },
             "items": [
               {
-                "label": "叉燒包",
-                "type": "charsiu",
+                "label": "燒賣",
+                "type": "siumai",
                 "x": 927.8176813436096,
                 "y": 590.4,
                 "r": 68.64
@@ -6986,8 +6986,8 @@
             ],
             "targets": [
               {
-                "label": "叉燒包",
-                "type": "charsiu",
+                "label": "燒賣",
+                "type": "siumai",
                 "x": 932.2,
                 "y": 590.4,
                 "w": 250,
@@ -7002,15 +7002,15 @@
           "instantProgress": 0,
           "phase": "outward",
           "targetHits": 1,
-          "valid": true,
-          "reason": "tracking",
-          "newFrame": true,
+          "valid": false,
+          "reason": "duplicate-generation",
+          "newFrame": false,
           "frame": {
-            "fresh": true,
+            "fresh": false,
             "generation": 21
           },
           "affectedSide": "right",
-          "cursorX": 680.9097542665983,
+          "cursorX": 657.7595847904525,
           "cursorY": 590.4,
           "targetX": 932.2,
           "itemX": 594.3261973331697
@@ -7167,8 +7167,8 @@
         },
         "items": [
           {
-            "label": "叉燒包",
-            "type": "charsiu",
+            "label": "糯米雞",
+            "type": "lotusrice",
             "x": 259.6,
             "y": 344.4,
             "r": 77.88000000000001
@@ -7249,8 +7249,8 @@
         },
         "items": [
           {
-            "label": "叉燒包",
-            "type": "charsiu",
+            "label": "糯米雞",
+            "type": "lotusrice",
             "x": 259.6,
             "y": 344.4,
             "r": 77.88000000000001

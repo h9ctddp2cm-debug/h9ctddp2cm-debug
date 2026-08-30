@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v69-20260830-dimsum-order";
+const CACHE_VERSION = "fthue-rehab-v70-20260830-tool-pinch";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");
