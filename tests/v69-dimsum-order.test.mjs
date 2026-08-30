@@ -54,8 +54,8 @@ test('order mode uses a single central big-plate target instead of two bowls', (
 /* ---------------- Source contract: order-driven matching ---------------- */
 
 test('both drop paths use order-quantity matching for the big plate', () => {
-  const graspPath = /const dimsumOrderDrop = isDimsumOrderGame\(\) && onPlate\.type === 'dimsum_plate';[\s\S]{0,200}dimsumOrderAccepts\(heldItem\)/;
-  const dwellPath = /const dwellDimsumOrderDrop = isDimsumOrderGame\(\) && onPlate\.type === 'dimsum_plate';[\s\S]{0,200}dimsumOrderAccepts\(heldItem\)/;
+  const graspPath = /const dimsumOrderDrop = isDimsumOrderGame\(\) && onPlate\.type === 'dimsum_plate';[\s\S]{0,320}dimsumOrderAccepts\(heldItem\)/;
+  const dwellPath = /const dwellDimsumOrderDrop = isDimsumOrderGame\(\) && onPlate\.type === 'dimsum_plate';[\s\S]{0,320}dimsumOrderAccepts\(heldItem\)/;
   assert.match(publicSource, graspPath);
   assert.match(publicSource, dwellPath);
   // Successful order drops are recorded on the plate before scoring.

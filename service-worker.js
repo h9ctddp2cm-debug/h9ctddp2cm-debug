@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v70-20260830-tool-pinch";
+const CACHE_VERSION = "fthue-rehab-v72-20260830-laundry-fridge";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

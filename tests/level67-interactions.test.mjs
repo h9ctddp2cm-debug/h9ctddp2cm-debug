@@ -278,16 +278,22 @@ async function runToolGestureFlow(page, task) {
       duration: 60, affectedSide: 'right',
     });
     const layout = window.__qa.level67Layout();
-    // v69: the chopstick task is order-driven — every dim sum goes to the single
-    // central big plate, and only types still needed by the current order score.
-    const neededTypes = layout.dimsumOrder
-      ? layout.dimsumOrder.lines.filter(l => l.placed < l.need).map(l => l.type)
+    // v69/v71: the chopstick and peg tasks are order-driven — every item goes to
+    // the single central target (big plate / drying rack), and only types still
+    // needed by the current order score.
+    const orderInfo = layout.dimsumOrder
+      ? { lines: layout.dimsumOrder.lines, targetType: 'dimsum_plate' }
+      : (layout.laundryOrder
+        ? { lines: layout.laundryOrder.lines, targetType: 'laundry_rack' }
+        : null);
+    const neededTypes = orderInfo
+      ? orderInfo.lines.filter(l => l.placed < l.need).map(l => l.type)
       : null;
     const pair = layout.items.map(item => ({
       item,
       target: neededTypes
         ? (neededTypes.includes(item.type)
-          ? layout.targets.find(value => value.type === 'dimsum_plate')
+          ? layout.targets.find(value => value.type === orderInfo.targetType)
           : null)
         : layout.targets.find(value => value.type === item.type),
     })).find(value => value.target);

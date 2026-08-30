@@ -7024,6 +7024,29 @@ const imgHargau = new Image(); imgHargau.src = 'img/hargau.png';
 // v69 筷子點心落單模式：牛肉球真實相片 + 中央雞公大碟（用家提供相片，已去背）
 const imgBeefballReal = new Image(); imgBeefballReal.src = 'img/beefball_real.png';
 const imgRoosterPlate = new Image(); imgRoosterPlate.src = 'img/rooster_plate.png';
+// v71 晾衫單：真實衣物相片＋白色晾衫架
+const imgLaundryRack = new Image(); imgLaundryRack.src = 'img/laundry_rack.png';
+// v72 雪櫃收納遊戲相片（用戶提供嘅真實食物相）
+const imgFridgeOpen = new Image(); imgFridgeOpen.src = 'img/fridge_open.png';
+const imgFridgeCharsiuRice = new Image(); imgFridgeCharsiuRice.src = 'img/fridge_charsiu_rice.png';
+const imgFridgeRibs = new Image(); imgFridgeRibs.src = 'img/fridge_ribs.png';
+const imgFridgeTofu = new Image(); imgFridgeTofu.src = 'img/fridge_tofu.png';
+const imgFridgeShrimp = new Image(); imgFridgeShrimp.src = 'img/fridge_shrimp.png';
+const imgFridgeMeatball = new Image(); imgFridgeMeatball.src = 'img/fridge_meatball.png';
+const imgFridgeSpinach = new Image(); imgFridgeSpinach.src = 'img/fridge_spinach.png';
+const imgFridgeChoysum = new Image(); imgFridgeChoysum.src = 'img/fridge_choysum.png';
+const imgFridgeNapa = new Image(); imgFridgeNapa.src = 'img/fridge_napa.png';
+const imgFridgePumpkin = new Image(); imgFridgePumpkin.src = 'img/fridge_pumpkin.png';
+const imgFridgeMilk = new Image(); imgFridgeMilk.src = 'img/fridge_milk.png';
+const imgFridgeFish = new Image(); imgFridgeFish.src = 'img/fridge_fish.png';
+const imgFridgeSnowpea = new Image(); imgFridgeSnowpea.src = 'img/fridge_snowpea.png';
+const imgLaundryShirt1 = new Image(); imgLaundryShirt1.src = 'img/laundry_shirt1.png';
+const imgLaundryShirt2 = new Image(); imgLaundryShirt2.src = 'img/laundry_shirt2.png';
+const imgLaundryBoxers = new Image(); imgLaundryBoxers.src = 'img/laundry_boxers.png';
+const imgLaundryJeans = new Image(); imgLaundryJeans.src = 'img/laundry_jeans.png';
+const imgLaundrySkirt = new Image(); imgLaundrySkirt.src = 'img/laundry_skirt.png';
+const imgLaundryVest = new Image(); imgLaundryVest.src = 'img/laundry_vest.png';
+const imgLaundrySocks = new Image(); imgLaundrySocks.src = 'img/laundry_socks.png';
 const imgCharsiu = new Image(); imgCharsiu.src = 'img/charsiu.png';
 const imgLotusrice = new Image(); imgLotusrice.src = 'img/lotusrice.png';
 const imgSteamerSiumai = new Image(); imgSteamerSiumai.src = 'img/advanced/steamer_siumai.png';
@@ -7647,8 +7670,20 @@ const THEMES = {
       ];
     },
   }),
+  fridge: mkTheme({
+    id:'fridge', title:'雪櫃收納',
+    goal:'將買返嚟嘅餸菜逐樣放入雪櫃',
+    itemWord:'食物', difficulty:'中等', targetStyle:'panel',
+    thumbnail:'img/fridge_open.png', thumbnailAlt:'雪櫃',
+    categoriesFor(){
+      return FRIDGE_ORDER_DEFS.map(d=>({
+        type:d.type, itemLabel:d.label, targetLabel:'雪櫃',
+        scale:1.0, color:'#2E6DA4', img:d.img(),
+      }));
+    },
+  }),
 };
-const THEME_ORDER = ['wipewindow','bowling','mahjongwash','buspay','flowers','dimsum','laundry','cards','mahjong','cooking'];
+const THEME_ORDER = ['wipewindow','bowling','mahjongwash','buspay','flowers','dimsum','laundry','fridge','cards','mahjong','cooking'];
 const LEVEL3_THEME_VARIANTS = {
   dimsum:[
     { type:'siumai', itemLabel:'燒賣', targetLabel:'燒賣', img:imgSiumai, targetImg:imgSteamerSiumai, scale:0.66, color:'#1A6B5A' },
@@ -7794,6 +7829,257 @@ function dimsumOrderPlace(item){
     }, 2600);
   }
 }
+/* ---- Level 6 衣夾晾衫「晾衫單」任務（v71）----
+   病人手持真實衣夾（畫面唔畫虛擬衣夾）。系統發出晾衫指令（例：請將3件恤衫放上晾衫架），
+   病人逐件衣物夾到中央大晾衫架；架上會顯示已晾好嘅衣物，逐件累積。完成一張單 →
+   拍手聲＋廣東話「好叻呀」→ 稍後自動出新指令，直至療程時間完結。只偵測已選患手嘅開合；
+   不識別真實衣夾、不量度捏力、不作任何臨床評估。研究模式（pilot）唔行呢個玩法。 */
+const LAUNDRY_ORDER_MENU = [
+  { type:'laundry_shirt',  label:'恤衫',   unit:'件' },
+  { type:'laundry_boxers', label:'孖煙通', unit:'條' },
+  { type:'laundry_jeans',  label:'牛仔褲', unit:'條' },
+  { type:'laundry_skirt',  label:'半截裙', unit:'條' },
+  { type:'laundry_vest',   label:'底衫',   unit:'件' },
+  { type:'laundry_socks',  label:'襪',     unit:'對' },
+];
+// v71 晾衫單物件（真實衣物相片；恤衫有兩款設計，同屬「恤衫」一類）
+const LAUNDRY_ORDER_DEFS = [
+  { type:'laundry_shirt',  label:'恤衫',   img:()=>imgLaundryShirt1 },
+  { type:'laundry_shirt',  label:'恤衫',   img:()=>imgLaundryShirt2 },
+  { type:'laundry_boxers', label:'孖煙通', img:()=>imgLaundryBoxers },
+  { type:'laundry_jeans',  label:'牛仔褲', img:()=>imgLaundryJeans },
+  { type:'laundry_skirt',  label:'半截裙', img:()=>imgLaundrySkirt },
+  { type:'laundry_vest',   label:'底衫',   img:()=>imgLaundryVest },
+  { type:'laundry_socks',  label:'襪',     img:()=>imgLaundrySocks },
+];
+// 晾衫架橫桿上嘅掛衫位（相對架闊度嘅 x 比例；由左至右輪流使用）
+const LAUNDRY_RACK_SLOTS = [-0.34, -0.215, -0.09, 0.035, 0.16, 0.285, 0.385, -0.28, -0.03, 0.22];
+let laundryOrder = null;          // {lines:[{type,label,unit,need,placed}], done}
+let laundryRackContents = [];     // [{img, fx}]
+let laundryOrdersCompleted = 0;
+let laundryOrderCelebrateUntil = 0;
+let laundryOrderTimerId = null;
+let laundryOrderBannerRect = null;
+function isLaundryOrderGame(){
+  return state.level === '67' && state.theme === 'peg_laundry' && !research.active;
+}
+function resetLaundryOrderGame(){
+  laundryOrderBannerRect = null;
+  laundryOrder = null;
+  laundryRackContents = [];
+  laundryOrdersCompleted = 0;
+  laundryOrderCelebrateUntil = 0;
+  if(laundryOrderTimerId){ clearTimeout(laundryOrderTimerId); laundryOrderTimerId = null; }
+}
+function laundryOrderText(){
+  if(!laundryOrder) return '';
+  return '請將' + laundryOrder.lines.map(l=>l.need + l.unit + l.label).join('、') + '放上晾衫架。';
+}
+function newLaundryOrder(){
+  const pool = LAUNDRY_ORDER_MENU.slice();
+  for(let i = pool.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  // 第一張單只晾一款衣物（簡單啲）；之後每張單 2–3 款、每款 1–3 件，
+  // 總件數上限唔會超過掛衫位數目。
+  const lineCount = laundryOrdersCompleted === 0 ? 1 : 2 + Math.floor(Math.random() * 2);
+  laundryOrder = {
+    lines: pool.slice(0, lineCount).map(m=>({
+      type:m.type, label:m.label, unit:m.unit,
+      need: lineCount === 1 ? 3 : 1 + Math.floor(Math.random() * 3), placed:0,
+    })),
+    done: false,
+  };
+  laundryRackContents = [];
+  laundryOrderCelebrateUntil = 0;
+  try{ speakCantonese(laundryOrderText(), {rate:.82}); }catch(e){}
+  // 換新單後，畫面上可能仍是舊單嘅衣物：確保至少有一件係新單需要嘅
+  if(foods.length) ensureFoodCount();
+  return laundryOrder;
+}
+function laundryOrderLineFor(type){
+  if(!laundryOrder || laundryOrder.done) return null;
+  return laundryOrder.lines.find(l=>l.type === type) || null;
+}
+function laundryOrderAccepts(item){
+  const line = laundryOrderLineFor(item && item.targetType);
+  return !!line && line.placed < line.need;
+}
+function laundryOrderPlace(item){
+  const line = laundryOrderLineFor(item && item.targetType);
+  if(!line) return;
+  line.placed++;
+  const fx = LAUNDRY_RACK_SLOTS[laundryRackContents.length % LAUNDRY_RACK_SLOTS.length];
+  laundryRackContents.push({ img: (item && item.img) || null, fx });
+  if(laundryOrder.lines.every(l=>l.placed >= l.need)){
+    laundryOrder.done = true;
+    laundryOrdersCompleted++;
+    laundryOrderCelebrateUntil = nowMs() + 2600;
+    try{ playApplauseSound(); }catch(e){}
+    try{ speakCantonese('好叻呀！晾好晒喇！', {rate:.85}); }catch(e){}
+    if(laundryOrderTimerId) clearTimeout(laundryOrderTimerId);
+    laundryOrderTimerId = setTimeout(()=>{
+      laundryOrderTimerId = null;
+      if(isLaundryOrderGame() && state.running) newLaundryOrder();
+    }, 2600);
+  }
+}
+/* ---- Level 5 雪櫃收納遊戲（v72）----
+   情境：買完餸返屋企，將購物袋入面嘅食物逐樣放入雪櫃。
+   Level 5 握放訓練：喺購物袋口攞起食物 → 運送上雪櫃 → 喺雪櫃入面搵空位放低。
+   放置位置自由，但唔可以同已放低嘅食物重疊（會「相撞」被拒絕，唔扣分），
+   病人要自己規劃擺位先至放得晒全部食物。研究模式（pilot）唔行呢個玩法。
+   照舊只偵測已選患手嘅開合；唔識別真實物件、唔作任何臨床評估。 */
+const FRIDGE_ORDER_DEFS = [
+  { type:'fridge_charsiu_rice', label:'叉燒飯', img:()=>imgFridgeCharsiuRice },
+  { type:'fridge_ribs',         label:'排骨',   img:()=>imgFridgeRibs },
+  { type:'fridge_tofu',         label:'豆腐',   img:()=>imgFridgeTofu },
+  { type:'fridge_shrimp',       label:'蝦',     img:()=>imgFridgeShrimp },
+  { type:'fridge_meatball',     label:'肉丸',   img:()=>imgFridgeMeatball },
+  { type:'fridge_spinach',      label:'菠菜',   img:()=>imgFridgeSpinach },
+  { type:'fridge_choysum',      label:'菜心',   img:()=>imgFridgeChoysum },
+  { type:'fridge_napa',         label:'黃芽白', img:()=>imgFridgeNapa },
+  { type:'fridge_pumpkin',      label:'南瓜',   img:()=>imgFridgePumpkin },
+  { type:'fridge_milk',         label:'牛奶',   img:()=>imgFridgeMilk },
+  { type:'fridge_fish',         label:'魚',     img:()=>imgFridgeFish },
+  { type:'fridge_snowpea',      label:'荷蘭豆', img:()=>imgFridgeSnowpea },
+];
+// 雪櫃內部可放置區（相對雪櫃相片顯示矩形嘅比例；避開門邊同外框）
+const FRIDGE_INTERIOR = { left:0.05, right:0.95, top:0.07, bottom:0.93 };
+let fridgeQueue = [];            // 今輪要放入雪櫃嘅食物次序（FRIDGE_ORDER_DEFS index）
+let fridgeQueueIndex = 0;
+let fridgePlacedFoods = [];      // [{img,label,fx,fy}] fx/fy 相對雪櫃顯示矩形
+let fridgeRoundsCompleted = 0;
+let fridgeCelebrateUntil = 0;
+let fridgeCrashUntil = 0;        // 「相撞」提示顯示到幾時
+let fridgeCrashMsg = '';
+let fridgeCrashPoint = null;     // {fx,fy} 最近一次相撞位置（畫提示圈）
+let fridgeRoundTimerId = null;
+let fridgeBannerRect = null;
+function isFridgeGame(){
+  return state.level === '5' && state.theme === 'fridge' && !research.active;
+}
+function resetFridgeGame(){
+  fridgeBannerRect = null;
+  fridgeQueue = [];
+  fridgeQueueIndex = 0;
+  fridgePlacedFoods = [];
+  fridgeRoundsCompleted = 0;
+  fridgeCelebrateUntil = 0;
+  fridgeCrashUntil = 0;
+  fridgeCrashMsg = '';
+  fridgeCrashPoint = null;
+  if(fridgeRoundTimerId){ clearTimeout(fridgeRoundTimerId); fridgeRoundTimerId = null; }
+}
+function fridgeCurrentDef(){
+  if(!fridgeQueue.length || fridgeQueueIndex >= fridgeQueue.length) return null;
+  return FRIDGE_ORDER_DEFS[fridgeQueue[fridgeQueueIndex]] || null;
+}
+function newFridgeRound(){
+  const order = FRIDGE_ORDER_DEFS.map((d, i)=>i);
+  for(let i = order.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  fridgeQueue = order;
+  fridgeQueueIndex = 0;
+  fridgePlacedFoods = [];
+  fridgeCelebrateUntil = 0;
+  fridgeCrashUntil = 0;
+  fridgeCrashMsg = '';
+  fridgeCrashPoint = null;
+  try{ speakCantonese('買完餸返嚟喇！請將啲食物一樣一樣放入雪櫃。', {rate:.82}); }catch(e){}
+  // v72 修正：開局時 spawnInitialFoods() 行先過本函數，嗰陣隊列仲未有，
+  // 而之後嘅補貨路徑全部有 `if(foods.length)` 門檻——所以呢度必須無條件補貨，
+  // 否則第一輪永遠冇食物出現。
+  ensureFoodCount();
+  return fridgeQueue;
+}
+// 購物袋位置（食物生成點；喺畫面底部，離雪櫃有一段運送距離）
+function fridgeBagSpot(cw, ch, r){
+  const portrait = isPortrait();
+  return { x: cw * (portrait ? 0.50 : 0.42), y: ch - r - (portrait ? 96 : 56) };
+}
+// 雪櫃相片實際顯示矩形（aspect-fit，同 drawFridgeTarget 同一計法）
+function fridgeInteriorRect(t){
+  let rw = t.w, rh = t.h;
+  if(t.img && t.img.complete && t.img.naturalWidth > 0){
+    const ratio = t.img.naturalWidth / t.img.naturalHeight;
+    rw = t.w; rh = rw / ratio;
+    if(rh > t.h){ rh = t.h; rw = rh * ratio; }
+  }
+  const x0 = t.x - rw / 2, y0 = t.y - rh / 2;
+  return {
+    x0, y0, rw, rh,
+    left: x0 + rw * FRIDGE_INTERIOR.left,
+    right: x0 + rw * FRIDGE_INTERIOR.right,
+    top: y0 + rh * FRIDGE_INTERIOR.top,
+    bottom: y0 + rh * FRIDGE_INTERIOR.bottom,
+  };
+}
+// 放入雪櫃後嘅食物顯示半徑（12 樣要放得晒，但唔可以細到睇唔清）
+function fridgePlacedRadius(rect){
+  // v72：橫向時指令牌遮咗雪櫃上半部，剩低嘅窄帶要細啲嘅半徑先夠位放晒 12 樣。
+  const landscape = gameCanvas.width > gameCanvas.height;
+  return Math.min(rect.rh * (landscape ? 0.105 : 0.135), rect.rw * (landscape ? 0.058 : 0.075));
+}
+function fridgeNoteCrash(x, y, rect, msg){
+  const speakable = nowMs() >= fridgeCrashUntil;
+  fridgeCrashUntil = nowMs() + 1600;
+  fridgeCrashMsg = msg;
+  fridgeCrashPoint = { fx:(x - rect.x0) / rect.rw, fy:(y - rect.y0) / rect.rh };
+  if(speakable){ try{ speakCantonese(msg, {rate:.9}); }catch(e){} }
+}
+// 嘗試將手上食物放入雪櫃 (x,y)。成功 → 記低位置並前進下一樣；
+// 出界或同已放食物「相撞」→ 拒絕（唔扣分，食物返購物袋再試）。
+function fridgeTryPlace(item, x, y, target){
+  if(!isFridgeGame() || !item || item.targetType === 'distractor') return false;
+  const def = fridgeCurrentDef();
+  if(!def || item.targetType !== def.type) return false;
+  const rect = fridgeInteriorRect(target);
+  const pr = fridgePlacedRadius(rect);
+  if(x < rect.left + pr * 0.6 || x > rect.right - pr * 0.6
+    || y < rect.top + pr * 0.6 || y > rect.bottom - pr * 0.6){
+    fridgeNoteCrash(x, y, rect, '要放入雪櫃入面呀。');
+    return false;
+  }
+  // v72：橫向時指令牌會遮住雪櫃上半部——唔收呢啲位置，
+  // 否則食物放完匿咗喺牌後面，患者會以為唔見咗。同 crash 一樣唔扣分。
+  if(fridgeBannerRect
+    && x > fridgeBannerRect.left - pr * 0.25 && x < fridgeBannerRect.right + pr * 0.25
+    && y > fridgeBannerRect.top - pr * 0.25 && y < fridgeBannerRect.bottom + pr * 0.25){
+    fridgeNoteCrash(x, y, rect, '呢個位俾指示牌遮住，放低啲第二度啦。');
+    return false;
+  }
+  for(const p of fridgePlacedFoods){
+    const px = rect.x0 + p.fx * rect.rw;
+    const py = rect.y0 + p.fy * rect.rh;
+    if(Math.hypot(x - px, y - py) < pr * 2 * 0.85){
+      fridgeNoteCrash(x, y, rect, '嗰個位放咗' + p.label + '喇，試下第二度啦。');
+      return false;
+    }
+  }
+  fridgePlacedFoods.push({
+    img: (item && item.img) || null, label: item.label,
+    fx: (x - rect.x0) / rect.rw, fy: (y - rect.y0) / rect.rh,
+  });
+  fridgeQueueIndex++;
+  fridgeCrashUntil = 0;
+  fridgeCrashPoint = null;
+  if(fridgeQueue.length && fridgeQueueIndex >= fridgeQueue.length){
+    fridgeRoundsCompleted++;
+    fridgeCelebrateUntil = nowMs() + 2600;
+    try{ playApplauseSound(); }catch(e){}
+    try{ speakCantonese('好叻呀！全部餸菜都放入雪櫃喇！', {rate:.85}); }catch(e){}
+    if(fridgeRoundTimerId) clearTimeout(fridgeRoundTimerId);
+    fridgeRoundTimerId = setTimeout(()=>{
+      fridgeRoundTimerId = null;
+      if(isFridgeGame() && state.running) newFridgeRound();
+    }, 2600);
+  }
+  return true;
+}
 let level3RoundVariant = null;
 let level3PreviousVariantType = '';
 function level3VariantPool(themeId = state.theme){
@@ -7821,6 +8107,8 @@ function themeAvailableForLevel(themeId, level = state.level){
   // which are replaced (without duplicates) by the v61 chopstick/peg tasks.
   if(level === '67') return ['flowers','chopstick_dimsum','peg_laundry','cards','mahjong','cooking'].includes(themeId);
   if(['wipewindow','bowling','mahjongwash','buspay','bilateral'].includes(themeId)) return false;
+  // v72 雪櫃收納係 Level 5 專屬玩法（握放 + 位置規劃）
+  if(themeId === 'fridge') return level === '5';
   return themeId !== 'cooking';
 }
 function availableThemeOrder(level = state.level){
@@ -8006,6 +8294,24 @@ let cogTimerId = null;
 // scale = 相對於基礎 food radius 的顯示尺寸倍數（彌補畫面內容實際包封率差異）
 // 活動物件 defs 現由主題（theme）及級別決定，見 getActivityDefs()
 function getActivityDefs(){
+  // v71 晾衫單模式：改用真實衣物相片（唔畫虛擬衣夾——病人手持真實衣夾操作）
+  if(isLaundryOrderGame()){
+    return LAUNDRY_ORDER_DEFS.map(d=>{
+      const im = d.img();
+      return { type:d.type, label:d.label, img:im,
+        drawItem:(ctx,x,y,r)=>drawDimsumPhoto(ctx,x,y,r,im),
+        targetType:d.type, drawScale:0.95, labelGap:1.06, scale:1.05, color:'#2E6DA4' };
+    });
+  }
+  // v72 雪櫃收納模式：只生成「下一樣」要放嘅食物（購物袋逐樣攞）
+  if(isFridgeGame()){
+    const def = fridgeCurrentDef();
+    if(!def) return [];
+    const im = def.img();
+    return [{ type:def.type, label:def.label, img:im,
+      drawItem:(ctx,x,y,r)=>drawDimsumPhoto(ctx,x,y,r,im),
+      targetType:def.type, drawScale:0.95, labelGap:1.06, scale:1.05, color:'#2E6DA4' }];
+  }
   return getCategories().map(c=>({
     type: c.type, label: c.itemLabel, img: c.img || null,
     drawItem: c.drawItem || null, targetType: c.type,
@@ -8295,6 +8601,8 @@ function initGame(){
   lastLevelShown = -1;  // reset 升級追蹤，讓 initGame 後首次 spawn 觸發 tier 0 banner
   heldItem = null; foods = []; targets = [];
   resetDimsumOrderGame();  // v69 筷子點心落單狀態一併清齊
+  resetLaundryOrderGame(); // v71 晾衫單狀態一併清齊
+  resetFridgeGame();       // v72 雪櫃收納狀態一併清齊
   releaseDwellStart = 0; releaseDwellPlate = null;
   basicOpenStart = 0; basicGraspStart = 0; basicGraspCandidate = ''; basicGraspArmed = false;
   basicContactCandidate = ''; basicContactUntil = 0;
@@ -8352,6 +8660,8 @@ function initGame(){
     setupTargets();
     spawnInitialFoods();
     if(isDimsumOrderGame()) newDimsumOrder();  // v69：開局即落第一張單（讀出＋橫幅顯示）
+    if(isLaundryOrderGame()) newLaundryOrder(); // v71：開局即出第一張晾衫單
+    if(isFridgeGame()) newFridgeRound(); // v72：開局即出今輪買餸清單
   }
 
   // 重置 dwell 計時器
@@ -8461,6 +8771,31 @@ function setupTargets(){
     const th = tw * 0.80;
     targets = [{ type:'dimsum_plate', label:'大碟', img:imgRoosterPlate, drawIcon:null,
       style:'bigplate', x:cw / 2, y:ch - th / 2 - 14, w:tw, h:th, color:'#2E6DA4' }];
+    return;
+  }
+  if(isLaundryOrderGame()){
+    // v71 晾衫單模式：中央一個大型白色晾衫架（真實相片），所有衣物都晾呢度，
+    // 配對規則由晾衫單數量控制（laundryOrderAccepts）而唔係目標類型。
+    const rackRatio = (imgLaundryRack.naturalWidth > 0 && imgLaundryRack.naturalHeight > 0)
+      ? imgLaundryRack.naturalWidth / imgLaundryRack.naturalHeight : 779 / 453;
+    let tw = portrait ? Math.min(cw * 0.88, 700) : Math.min(cw * 0.46, 620);
+    let th = tw / rackRatio;
+    const rackMaxH = portrait ? ch * 0.34 : ch * 0.40;
+    if(th > rackMaxH){ th = rackMaxH; tw = th * rackRatio; }
+    targets = [{ type:'laundry_rack', label:'晾衫架', img:imgLaundryRack, drawIcon:null,
+      style:'rack', x:cw / 2, y:ch - th / 2 - 12, w:tw, h:th, color:'#2E6DA4' }];
+    return;
+  }
+  if(isFridgeGame()){
+    // v72 雪櫃收納：上方一個大雪櫃（真實相片，開門），食物由下方購物袋逐樣放入。
+    const fridgeRatio = (imgFridgeOpen.naturalWidth > 0 && imgFridgeOpen.naturalHeight > 0)
+      ? imgFridgeOpen.naturalWidth / imgFridgeOpen.naturalHeight : 627 / 350;
+    let tw = portrait ? Math.min(cw * 0.92, 780) : Math.min(cw * 0.52, 640);
+    let th = tw / fridgeRatio;
+    const fridgeMaxH = portrait ? ch * 0.40 : ch * 0.46;
+    if(th > fridgeMaxH){ th = fridgeMaxH; tw = th * fridgeRatio; }
+    targets = [{ type:'fridge', label:'雪櫃', img:imgFridgeOpen, drawIcon:null,
+      style:'fridge', x:cw / 2, y:th / 2 + ch * (portrait ? 0.115 : 0.13), w:tw, h:th, color:'#2E6DA4' }];
     return;
   }
   if(isLevel3Tabletop()){
@@ -8583,7 +8918,7 @@ function getInstructionExclusionRect(cw, ch, padding){
     .filter(el=>el && !el.classList.contains('hidden') && getComputedStyle(el).display !== 'none')
     .map(el=>el.getBoundingClientRect())
     .filter(rect=>rect.width > 0 && rect.height > 0);
-  if(!rects.length && !(isDimsumOrderGame() && dimsumOrderBannerRect)) return null;
+  if(!rects.length && !(isDimsumOrderGame() && dimsumOrderBannerRect) && !(isLaundryOrderGame() && laundryOrderBannerRect) && !(isFridgeGame() && fridgeBannerRect)) return null;
   const pad = padding || 18;
   // Preserve separate exclusion islands. Combining the left HUD and right instructions into
   // one bounding rectangle incorrectly blocked the entire central upper workspace.
@@ -8596,6 +8931,8 @@ function getInstructionExclusionRect(cw, ch, padding){
   // v69: the canvas-drawn dim sum order banner is an exclusion island too, so
   // freshly spawned dim sum never hide underneath it.
   if(isDimsumOrderGame() && dimsumOrderBannerRect) islands.push(dimsumOrderBannerRect);
+  if(isLaundryOrderGame() && laundryOrderBannerRect) islands.push(laundryOrderBannerRect);
+  if(isFridgeGame() && fridgeBannerRect) islands.push(fridgeBannerRect);
   return islands;
 }
 
@@ -8617,8 +8954,14 @@ function ensureFoodsClearOfInstructions(){
   if(!exclusion) return;
   const defs = getDimSumDefs();
   foods.forEach((food, index)=>{
-    if(food.isDistractor || !circleOverlapsRect(food.x, food.y, food.r, exclusion)) return;
+    // v72 修正：揸住緊嘅食物絕對唔可以被重新生成——否則 heldItem 指住舊物件，
+    // 會變出孤兒複製品；食物已移除亦無需處理。
+    if(food.isDistractor || food.held || food.removed) return;
+    if(!circleOverlapsRect(food.x, food.y, food.r, exclusion)) return;
     const def = defs.find(item=>item.type === food.type) || defs[0];
+    // v72 修正：雪櫃模式完成一輪後 defs 係空（def undefined），
+    // 直接跳過而唔係讓 makeFoodAt 讀 undefined.scale 爆錯。
+    if(!def) return;
     const others = foods.filter((_, otherIndex)=>otherIndex !== index);
     foods[index] = makeFoodAt(def, others);
   });
@@ -8698,6 +9041,12 @@ function getDimSumDefs(){
     const neededDefs = defs.filter(d=>needed.includes(d.type));
     if(neededDefs.length) return neededDefs;
   }
+  // 晾衫單模式：同樣優先生成仍然需要嘅衣物類型
+  if(isLaundryOrderGame() && laundryOrder && !laundryOrder.done){
+    const needed = laundryOrder.lines.filter(l=>l.placed < l.need).map(l=>l.type);
+    const neededDefs = defs.filter(d=>needed.includes(d.type));
+    if(neededDefs.length) return neededDefs;
+  }
   return defs;
 }
 
@@ -8755,6 +9104,11 @@ function makeFoodAt(def, existingFoods){
   if(isLevel3Tabletop() || isShoulderFlexionLevel()){
     return createFood(isShoulderFlexionLevel()?cw*(portrait?.68:.58):cw*.50, ch * 0.72);
   }
+  if(isFridgeGame() && def.targetType !== 'distractor'){
+    // v72：食物喺購物袋口出現（畫面底部），患者攞起再向上運送到雪櫃。
+    const spot = fridgeBagSpot(cw, ch, r);
+    return createFood(spot.x, spot.y);
+  }
   const clearsProtectedZones = (x, y) => {
     if(circleOverlapsRect(x, y, r, instructionExclusion)) return false;
     // No starting item may cover a destination. Previously this protection was
@@ -8795,7 +9149,11 @@ function makeFoodAt(def, existingFoods){
         : [[0.22,0.45],[0.50,0.45],[0.78,0.45]])
       : (dimSumTheme
         ? [[0.22,0.42],[0.50,0.54],[0.78,0.42]]
-        : [[0.22,0.54],[0.50,0.54],[0.78,0.54]])));
+        : (isLaundryOrderGame()
+          // v71 修正：橫向大晾衫架佔據畫面底部，較低嘅預設 slots 會同架
+          // 保護區相撞而全部被拒，令 spawn 跌入 fallback 造成間歇性重疊。
+          ? [[0.24,0.36],[0.50,0.36],[0.76,0.36]]
+          : [[0.22,0.54],[0.50,0.54],[0.78,0.54]]))));
   const activeCount = existingFoods.filter(food => !food.removed).length;
   for(let offset=0; offset<slotRatios.length; offset++){
     const slot = slotRatios[(activeCount + offset) % slotRatios.length];
@@ -8838,6 +9196,8 @@ function spawnDistractor(existingFoods){
 // 目標：畫面上保持 3 個活動配對物件 + N 個 distractor 動物（N = getDistractorCount()）
 const DIM_SUM_TARGET = 3;
 function dimSumTargetCount(){
+  // v72 雪櫃收納：一次只有一樣食物（放晒 12 樣之間嘅慶祝空檔係 0）
+  if(isFridgeGame()) return fridgeCurrentDef() ? 1 : 0;
   if(isLevel3Tabletop() || isShoulderFlexionLevel()) return 1;
   return isLevel4Tabletop() ? 2 : DIM_SUM_TARGET;
 }
@@ -8886,6 +9246,27 @@ function ensureFoodCount(){
         sacrifice.removed = true;
         foods.push(spawnDimSum(foods));
       }
+    }
+  }
+  // 晾衫單模式：確保畫面上至少有一件仍然需要嘅衣物，避免死結
+  if(isLaundryOrderGame() && laundryOrder && !laundryOrder.done){
+    const needed = laundryOrder.lines.filter(l=>l.placed < l.need).map(l=>l.type);
+    const hasNeeded = foods.some(f=>!f.removed && needed.includes(f.targetType));
+    if(needed.length && !hasNeeded){
+      const sacrifice = foods.find(f=>!f.removed && !f.held && isDimSum(f) && !needed.includes(f.targetType));
+      if(sacrifice){
+        sacrifice.removed = true;
+        foods.push(spawnDimSum(foods));
+      }
+    }
+  }
+  // 雪櫃收納模式：畫面上唯一嗰樣食物必須係「下一樣」，避免死結
+  if(isFridgeGame()){
+    const def = fridgeCurrentDef();
+    if(def && !foods.some(f=>!f.removed && f.targetType === def.type)){
+      const sacrifice = foods.find(f=>!f.removed && !f.held && isDimSum(f));
+      if(sacrifice) sacrifice.removed = true;
+      if(!foods.some(f=>!f.removed && f.targetType === def.type)) foods.push(spawnDimSum(foods));
     }
   }
 }
@@ -10167,11 +10548,18 @@ function updateGameLogic(){
         if(elapsed >= DWELL_MS){
           // 放下（落單模式同樣改由單上數量判斷，保持兩條放下路徑一致）
           const dwellDimsumOrderDrop = isDimsumOrderGame() && onPlate.type === 'dimsum_plate';
+          const dwellLaundryOrderDrop = isLaundryOrderGame() && onPlate.type === 'laundry_rack';
+          const dwellFridgeDrop = isFridgeGame() && onPlate.type === 'fridge';
           const dwellDropMatched = dwellDimsumOrderDrop
             ? dimsumOrderAccepts(heldItem)
-            : onPlate.type === heldItem.targetType;
+            : (dwellLaundryOrderDrop
+              ? laundryOrderAccepts(heldItem)
+              : (dwellFridgeDrop
+                ? fridgeTryPlace(heldItem, heldPoint.x, heldPoint.y, onPlate)
+                : onPlate.type === heldItem.targetType));
           if(dwellDropMatched){
             if(dwellDimsumOrderDrop) dimsumOrderPlace(heldItem);
+            else if(dwellLaundryOrderDrop) laundryOrderPlace(heldItem);
             score += 10; correctCount++;
             wrongStreak = 0;
             triggerFeedback(true);
@@ -10181,6 +10569,10 @@ function updateGameLogic(){
             // 升級檢查：若 correctCount 到 5/10/15/20，顯示新規則
             showLevelUpBanner();
             dimsumReward();
+          } else if(dwellFridgeDrop){
+            // v72 相撞／出界：唔扣分、唔計錯（規劃擺位係訓練一部分），食物返購物袋再試
+            triggerFeedback(false);
+            researchLog('drop_fridge_reject', {item:heldItem.label});
           } else {
             score = Math.max(0, score - 3);
             wrongStreak++; totalWrong++;
@@ -10537,11 +10929,18 @@ function updateGraspLogic(){
           pilotRecordPlacement(onPlate, now);
           // 落單模式：配對改由單上數量判斷（夾多咗或唔在單上計錯）；其他模式維持類型配對。
           const dimsumOrderDrop = isDimsumOrderGame() && onPlate.type === 'dimsum_plate';
+          const laundryOrderDrop = isLaundryOrderGame() && onPlate.type === 'laundry_rack';
+          const fridgeDrop = isFridgeGame() && onPlate.type === 'fridge';
           const dropMatched = dimsumOrderDrop
             ? dimsumOrderAccepts(heldItem)
-            : heldItem.targetType === onPlate.type;
+            : (laundryOrderDrop
+              ? laundryOrderAccepts(heldItem)
+              : (fridgeDrop
+                ? fridgeTryPlace(heldItem, cursorX, cursorY, onPlate)
+                : heldItem.targetType === onPlate.type));
           if(dropMatched){
             if(dimsumOrderDrop) dimsumOrderPlace(heldItem);
+            else if(laundryOrderDrop) laundryOrderPlace(heldItem);
             score += 10; correctCount++;
             pilotBump('correct');
             wrongStreak = 0;
@@ -10553,6 +10952,10 @@ function updateGraspLogic(){
             // 升級檢查：若 correctCount 到 5/10/15/20，顯示新規則
             showLevelUpBanner();
             dimsumReward();
+          } else if(fridgeDrop){
+            // v72 相撞／出界：唔扣分、唔計錯（規劃擺位係訓練一部分），食物返購物袋再試
+            triggerFeedback(false);
+            researchLog('drop_fridge_reject', {item:heldItem.label});
           } else {
             score = Math.max(0, score - 3);
             wrongStreak++; totalWrong++;
@@ -10763,7 +11166,8 @@ function drawDimsumOrderBanner(ctx, cw, ch){
   const bx = cw / 2 - bw / 2;
   // Sit below any DOM HUD/instruction islands that share this horizontal span,
   // so the order text is never hidden behind the score pills or hint boxes.
-  let by = 10;
+  // v72：橫向時頂部 DOM 按鈕列（返回／暫停等）會遮住橫額，橫額要由按鈕列下面開始
+  let by = isPortrait() ? 10 : 76;
   const islands = getInstructionExclusionRect(cw, ch, 6);
   if(islands){
     for(const isl of islands){
@@ -10795,6 +11199,258 @@ function drawDimsumOrderBanner(ctx, cw, ch){
   ctx.font = `bold ${titleSize}px ${font}`;
   ctx.fillText(title, cw / 2, by + pad * 0.6);
   ctx.fillStyle = celebrating ? 'rgba(255,255,255,0.92)' : '#5A5142';
+  ctx.font = `bold ${progSize}px ${font}`;
+  ctx.fillText(prog, cw / 2, by + pad * 0.6 + titleSize + 8);
+  ctx.restore();
+}
+
+// v71 晾衫單：大型白色晾衫架（真實相片）＋已晾好嘅衣物逐件累積掛喺架頂橫桿
+function drawLaundryRackTarget(ctx, t){
+  ctx.save();
+  // 架底陰影
+  ctx.fillStyle = 'rgba(0,0,0,0.14)';
+  ctx.beginPath();
+  ctx.ellipse(t.x, t.y + t.h * 0.46, t.w * 0.46, t.h * 0.06, 0, 0, Math.PI * 2);
+  ctx.fill();
+  let rw = t.w, rh = t.h;
+  if(t.img && t.img.complete && t.img.naturalWidth > 0){
+    const ratio = t.img.naturalWidth / t.img.naturalHeight;
+    rw = t.w; rh = rw / ratio;
+    if(rh > t.h){ rh = t.h; rw = rh * ratio; }
+    ctx.drawImage(t.img, t.x - rw / 2, t.y - rh / 2, rw, rh);
+  } else {
+    drawDryingPole(ctx, t.x, t.y, Math.min(t.w, t.h) * 0.45);
+  }
+  // 已晾好嘅衣物（等病人知道自己晾咗幾多件）
+  const railY = t.y - rh * 0.42;
+  for(const c of laundryRackContents){
+    const px = t.x + c.fx * rw;
+    if(c.img && c.img.complete && c.img.naturalWidth > 0){
+      const iw = c.img.naturalWidth, ih = c.img.naturalHeight;
+      let dh = rh * 0.66, dw = dh * iw / ih;
+      const maxW = rw * 0.20;
+      if(dw > maxW){ dw = maxW; dh = dw * ih / iw; }
+      ctx.drawImage(c.img, px - dw / 2, railY, dw, dh);
+    }
+  }
+  // hover：游標帶住衣物埋架時嘅提示外框
+  if(t._hover){
+    ctx.strokeStyle = t.color || '#2E6DA4';
+    ctx.lineWidth = 8;
+    rrPath(ctx, t.x - rw / 2 - 10, t.y - rh / 2 - 10, rw + 20, rh + 20, 22);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// v71 晾衫單橫幅：顯示而家張單（例：晾衫訓練：請將3件恤衫放上晾衫架）同每款進度
+function drawLaundryOrderBanner(ctx, cw, ch){
+  if(!isLaundryOrderGame() || !laundryOrder) return;
+  const celebrating = nowMs() < laundryOrderCelebrateUntil;
+  const title = celebrating ? '👏 好叻呀！晾好晒喇！' : '晾衫訓練：' + laundryOrderText();
+  const prog = laundryOrder.lines
+    .map(l=>l.label + ' ' + Math.min(l.placed, l.need) + '/' + l.need)
+    .join('　');
+  let titleSize = Math.max(26, Math.round(cw * 0.028));
+  let progSize = Math.round(titleSize * 0.8);
+  const font = '"PingFang TC","Noto Sans TC",-apple-system,sans-serif';
+  ctx.save();
+  ctx.font = `bold ${titleSize}px ${font}`;
+  let titleW = ctx.measureText(title).width;
+  ctx.font = `bold ${progSize}px ${font}`;
+  let progW = ctx.measureText(prog).width;
+  const pad = 20;
+  // 橫向中央下方係大晾衫架，橫額收窄避免遮住兩側衣物生成位；唔夠位就縮字
+  const maxBw = isPortrait() ? cw - 24 : Math.min(cw - 24, cw * 0.44);
+  const widest = () => Math.max(titleW, progW);
+  if(widest() + pad * 2 > maxBw){
+    const fit = Math.max(0.5, (maxBw - pad * 2) / widest());
+    titleSize = Math.max(18, Math.floor(titleSize * fit));
+    progSize = Math.max(15, Math.floor(titleSize * 0.8));
+    ctx.font = `bold ${titleSize}px ${font}`;
+    titleW = ctx.measureText(title).width;
+    ctx.font = `bold ${progSize}px ${font}`;
+    progW = ctx.measureText(prog).width;
+  }
+  const bw = Math.min(maxBw, Math.max(titleW, progW) + pad * 2);
+  const bh = titleSize + progSize + pad * 1.9;
+  const bx = cw / 2 - bw / 2;
+  // v72：橫向時頂部 DOM 按鈕列（返回／暫停等）會遮住橫額，橫額要由按鈕列下面開始
+  let by = isPortrait() ? 10 : 76;
+  const islands = getInstructionExclusionRect(cw, ch, 6);
+  if(islands){
+    for(const isl of islands){
+      if(isl !== laundryOrderBannerRect && isl.right > bx && isl.left < bx + bw) by = Math.max(by, isl.bottom + 6);
+    }
+  }
+  by = Math.min(by, ch * 0.34 - bh);
+  const prevRect = laundryOrderBannerRect;
+  laundryOrderBannerRect = {left:bx - 10, top:by - 10, right:bx + bw + 10, bottom:by + bh + 10};
+  if(!prevRect
+    || Math.abs(prevRect.left - laundryOrderBannerRect.left) > 8
+    || Math.abs(prevRect.right - laundryOrderBannerRect.right) > 8
+    || Math.abs(prevRect.bottom - laundryOrderBannerRect.bottom) > 8){
+    ensureFoodsClearOfInstructions();
+  }
+  ctx.fillStyle = celebrating ? 'rgba(27,111,74,0.94)' : 'rgba(255,255,255,0.94)';
+  rrPath(ctx, bx, by, bw, bh, 18);
+  ctx.fill();
+  ctx.strokeStyle = celebrating ? '#14523A' : '#1A6B5A';
+  ctx.lineWidth = 3;
+  rrPath(ctx, bx, by, bw, bh, 18);
+  ctx.stroke();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = celebrating ? '#FFFFFF' : '#173F32';
+  ctx.font = `bold ${titleSize}px ${font}`;
+  ctx.fillText(title, cw / 2, by + pad * 0.6);
+  ctx.fillStyle = celebrating ? 'rgba(255,255,255,0.92)' : '#5A5142';
+  ctx.font = `bold ${progSize}px ${font}`;
+  ctx.fillText(prog, cw / 2, by + pad * 0.6 + titleSize + 8);
+  ctx.restore();
+}
+
+// v72 雪櫃收納：大雪櫃（真實相片）＋已放入嘅食物＋相撞提示圈＋下方購物袋
+function drawFridgeTarget(ctx, t){
+  ctx.save();
+  const rect = fridgeInteriorRect(t);
+  const rw = rect.rw, rh = rect.rh;
+  // 櫃底陰影
+  ctx.fillStyle = 'rgba(0,0,0,0.14)';
+  ctx.beginPath();
+  ctx.ellipse(t.x, rect.y0 + rh + rh * 0.03, rw * 0.46, rh * 0.05, 0, 0, Math.PI * 2);
+  ctx.fill();
+  if(t.img && t.img.complete && t.img.naturalWidth > 0){
+    ctx.drawImage(t.img, rect.x0, rect.y0, rw, rh);
+  } else {
+    ctx.fillStyle = '#EAF2F8';
+    rrPath(ctx, rect.x0, rect.y0, rw, rh, 18);
+    ctx.fill();
+  }
+  // 已放入雪櫃嘅食物（俾病人見到自己放咗幾多、放咗喺邊）
+  const pr = fridgePlacedRadius(rect);
+  for(const p of fridgePlacedFoods){
+    const px = rect.x0 + p.fx * rw;
+    const py = rect.y0 + p.fy * rh;
+    if(p.img && p.img.complete && p.img.naturalWidth > 0){
+      drawDimsumPhoto(ctx, px, py, pr, p.img);
+    } else {
+      ctx.fillStyle = '#C9DCEB';
+      ctx.beginPath(); ctx.arc(px, py, pr * 0.8, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+  // 相撞提示：紅色虛線圈提住「呢度放咗嘢」
+  if(nowMs() < fridgeCrashUntil && fridgeCrashPoint){
+    const cx = rect.x0 + fridgeCrashPoint.fx * rw;
+    const cy = rect.y0 + fridgeCrashPoint.fy * rh;
+    ctx.strokeStyle = '#C0392B';
+    ctx.lineWidth = 5;
+    ctx.setLineDash([10, 8]);
+    ctx.beginPath(); ctx.arc(cx, cy, pr, 0, Math.PI * 2); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  // hover：游標帶住食物埋雪櫃時嘅提示外框
+  if(t._hover){
+    ctx.strokeStyle = t.color || '#2E6DA4';
+    ctx.lineWidth = 8;
+    rrPath(ctx, rect.x0 - 10, rect.y0 - 10, rw + 20, rh + 20, 22);
+    ctx.stroke();
+  }
+  // 下方購物袋（食物生成點；喺 targets pass 畫，等食物疊喺袋口上面）
+  const bagR = (foods.find(f=>!f.removed && !f.held) || foods[0] || {r:100}).r || 100;
+  const spot = fridgeBagSpot(gameCanvas.width, gameCanvas.height, bagR);
+  const bw = bagR * 2.5, bh = bagR * 1.9;
+  const bx = spot.x, byTop = spot.y - bh * 0.32;
+  ctx.fillStyle = 'rgba(0,0,0,0.10)';
+  ctx.beginPath();
+  ctx.ellipse(bx, byTop + bh, bw * 0.5, bh * 0.07, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#B98A55';
+  ctx.beginPath();
+  ctx.moveTo(bx - bw / 2, byTop);
+  ctx.lineTo(bx + bw / 2, byTop);
+  ctx.lineTo(bx + bw / 2 - bw * 0.06, byTop + bh);
+  ctx.lineTo(bx - bw / 2 + bw * 0.06, byTop + bh);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#A5763F';
+  ctx.fillRect(bx - bw / 2 + bw * 0.015, byTop, bw * 0.97, bh * 0.14);
+  const remaining = Math.max(0, fridgeQueue.length - fridgeQueueIndex);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const bagFont = Math.max(20, Math.round(bh * 0.16));
+  ctx.fillStyle = '#5C3D1E';
+  ctx.font = `bold ${bagFont}px "PingFang TC","Noto Sans TC",-apple-system,sans-serif`;
+  ctx.fillText('買餸袋', bx, byTop + bh * 0.62);
+  ctx.font = `bold ${Math.round(bagFont * 0.82)}px "PingFang TC","Noto Sans TC",-apple-system,sans-serif`;
+  ctx.fillText('仲有 ' + remaining + ' 樣', bx, byTop + bh * 0.82);
+  ctx.restore();
+}
+
+// v72 雪櫃收納橫幅：顯示訓練指令、進度、相撞提示同慶祝訊息
+function drawFridgeOrderBanner(ctx, cw, ch){
+  if(!isFridgeGame() || !fridgeQueue.length) return;
+  const celebrating = nowMs() < fridgeCelebrateUntil;
+  const crashing = !celebrating && nowMs() < fridgeCrashUntil && fridgeCrashMsg;
+  const nextDef = fridgeCurrentDef();
+  const title = celebrating ? '👏 好叻呀！全部餸菜都入好雪櫃喇！'
+    : (crashing ? fridgeCrashMsg : '收餸訓練：請將購物袋嘅食物逐樣放入雪櫃');
+  const prog = '已放入 ' + fridgePlacedFoods.length + '／' + fridgeQueue.length + ' 樣'
+    + (nextDef ? '　而家請放：' + nextDef.label : '');
+  let titleSize = Math.max(26, Math.round(cw * 0.028));
+  let progSize = Math.round(titleSize * 0.8);
+  const font = '"PingFang TC","Noto Sans TC",-apple-system,sans-serif';
+  ctx.save();
+  ctx.font = `bold ${titleSize}px ${font}`;
+  let titleW = ctx.measureText(title).width;
+  ctx.font = `bold ${progSize}px ${font}`;
+  let progW = ctx.measureText(prog).width;
+  const pad = 20;
+  const maxBw = cw - 24;
+  const widest = () => Math.max(titleW, progW);
+  if(widest() + pad * 2 > maxBw){
+    const fit = Math.max(0.5, (maxBw - pad * 2) / widest());
+    titleSize = Math.max(18, Math.floor(titleSize * fit));
+    progSize = Math.max(15, Math.floor(titleSize * 0.8));
+    ctx.font = `bold ${titleSize}px ${font}`;
+    titleW = ctx.measureText(title).width;
+    ctx.font = `bold ${progSize}px ${font}`;
+    progW = ctx.measureText(prog).width;
+  }
+  const bw = Math.min(maxBw, Math.max(titleW, progW) + pad * 2);
+  const bh = titleSize + progSize + pad * 1.9;
+  const bx = cw / 2 - bw / 2;
+  // v72：橫向時頂部 DOM 按鈕列（返回／暫停等）會遮住橫額，橫額要由按鈕列下面開始
+  let by = isPortrait() ? 10 : 76;
+  const islands = getInstructionExclusionRect(cw, ch, 6);
+  if(islands){
+    for(const isl of islands){
+      if(isl !== fridgeBannerRect && isl.right > bx && isl.left < bx + bw) by = Math.max(by, isl.bottom + 6);
+    }
+  }
+  by = Math.min(by, ch * 0.30 - bh);
+  const prevRect = fridgeBannerRect;
+  fridgeBannerRect = {left:bx - 10, top:by - 10, right:bx + bw + 10, bottom:by + bh + 10};
+  if(!prevRect
+    || Math.abs(prevRect.left - fridgeBannerRect.left) > 8
+    || Math.abs(prevRect.right - fridgeBannerRect.right) > 8
+    || Math.abs(prevRect.bottom - fridgeBannerRect.bottom) > 8){
+    ensureFoodsClearOfInstructions();
+  }
+  ctx.fillStyle = celebrating ? 'rgba(27,111,74,0.94)'
+    : (crashing ? 'rgba(192,87,26,0.94)' : 'rgba(255,255,255,0.94)');
+  rrPath(ctx, bx, by, bw, bh, 18);
+  ctx.fill();
+  ctx.strokeStyle = celebrating ? '#14523A' : (crashing ? '#8F3E0F' : '#1A6B5A');
+  ctx.lineWidth = 3;
+  rrPath(ctx, bx, by, bw, bh, 18);
+  ctx.stroke();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = (celebrating || crashing) ? '#FFFFFF' : '#173F32';
+  ctx.font = `bold ${titleSize}px ${font}`;
+  ctx.fillText(title, cw / 2, by + pad * 0.6);
+  ctx.fillStyle = (celebrating || crashing) ? 'rgba(255,255,255,0.92)' : '#5A5142';
   ctx.font = `bold ${progSize}px ${font}`;
   ctx.fillText(prog, cw / 2, by + pad * 0.6 + titleSize + 8);
   ctx.restore();
@@ -10914,6 +11570,8 @@ function renderGame(){
     if(t.style === 'panel'){ drawPanelTarget(ctx, t, LBL_SIZE); continue; }
     if(t.style === 'steamer'){ drawSteamerTarget(ctx, t, LBL_SIZE); continue; }
     if(t.style === 'bigplate'){ drawBigPlateTarget(ctx, t); continue; }
+    if(t.style === 'rack'){ drawLaundryRackTarget(ctx, t); continue; }
+    if(t.style === 'fridge'){ drawFridgeTarget(ctx, t); continue; }
     ctx.save();
     // 磮子半徑（以 小盄邊 t.w/t.h 中較少伊確保圓形）
     const plateR = Math.min(t.w, t.h) / 2;
@@ -11015,6 +11673,8 @@ function renderGame(){
 
   // 筷子點心落單模式：頂部中央顯示落單內容同進度
   drawDimsumOrderBanner(ctx, cw, ch);
+  drawLaundryOrderBanner(ctx, cw, ch);
+  drawFridgeOrderBanner(ctx, cw, ch);
 
   // 游標：大圓點 + 停留進度環 / 握放手勢圖示
   const cursorPoint = displayCursorPoint();
@@ -15397,6 +16057,23 @@ window.__qa = {
         plateCount: dimsumPlateContents.length,
         ordersCompleted: dimsumOrdersCompleted,
       } : null,
+      laundryOrder: (isLaundryOrderGame() && laundryOrder) ? {
+        done: laundryOrder.done,
+        lines: laundryOrder.lines.map(l=>({type:l.type, need:l.need, placed:l.placed})),
+        rackCount: laundryRackContents.length,
+        ordersCompleted: laundryOrdersCompleted,
+      } : null,
+      fridgeGame: (isFridgeGame() && fridgeQueue.length) ? {
+        placed: fridgePlacedFoods.length,
+        total: fridgeQueue.length,
+        next: fridgeCurrentDef() ? fridgeCurrentDef().type : null,
+        roundsCompleted: fridgeRoundsCompleted,
+        placedFoods: fridgePlacedFoods.map(p=>({fx:+p.fx.toFixed(4), fy:+p.fy.toFixed(4)})),
+        banner: fridgeBannerRect ? {left:Math.round(fridgeBannerRect.left), right:Math.round(fridgeBannerRect.right), top:Math.round(fridgeBannerRect.top), bottom:Math.round(fridgeBannerRect.bottom)} : null,
+        interior: (()=>{ const ft = targets.find(t=>t.style==='fridge'||t.type==='fridge'); if(!ft) return null;
+          const r2 = fridgeInteriorRect(ft); const pr2 = fridgePlacedRadius(r2);
+          return {left:Math.round(r2.left), right:Math.round(r2.right), top:Math.round(r2.top), bottom:Math.round(r2.bottom), pr:Math.round(pr2)}; })(),
+      } : null,
       insideCanvas:targets.every(t=>t.x-t.w/2 >= 0 && t.x+t.w/2 <= gameCanvas.width &&
         t.y-t.h/2 >= 0 && t.y+t.h/2 <= gameCanvas.height) &&
         activeFoods.every(f=>f.x-f.r >= 0 && f.x+f.r <= gameCanvas.width &&
@@ -16349,7 +17026,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v70-20260830-tool-pinch";
+  const LEVEL_APP_BUILD = "v72-20260830-laundry-fridge";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

@@ -1,15 +1,15 @@
 # Level 4–6 Technical Validation Report
 
-Generated: 2026-08-30T12:54:46.139Z
+Generated: 2026-08-30T14:35:45.945Z
 
-Result: **PASS** (165/165 checks passed)
+Result: **PASS** (166/166 checks passed)
 
 | FTHUE level | Passed | Failed |
 |---|---:|---:|
 | 2 | 37 | 0 |
 | 3 | 21 | 0 |
 | 4 | 21 | 0 |
-| 5 | 40 | 0 |
+| 5 | 41 | 0 |
 | 6 | 46 | 0 |
 
 ## Verified scope
@@ -46,6 +46,7 @@ This is reproducible software technical verification only. It does not establish
 - PASS | Level 5 | launch matrix | flowers launches with the correct engine
 - PASS | Level 5 | launch matrix | dimsum launches with the correct engine
 - PASS | Level 5 | launch matrix | laundry launches with the correct engine
+- PASS | Level 5 | launch matrix | fridge launches with the correct engine
 - PASS | Level 5 | launch matrix | cards launches with the correct engine
 - PASS | Level 5 | launch matrix | mahjong launches with the correct engine
 - PASS | Level 6 | launch matrix | flowers launches with the correct engine

@@ -300,12 +300,17 @@ try {
       const layout=window.__qa.level67Layout();
       // v69: the chopstick activity is order-driven — items go to one central big
       // plate and only still-needed order types score.
-      const neededTypes = layout.dimsumOrder
-        ? layout.dimsumOrder.lines.filter(l=>l.placed<l.need).map(l=>l.type)
+      // v69/v71: chopstick and peg-laundry activities are order-driven — items
+      // go to one central big plate / drying rack and only still-needed order
+      // types score.
+      const order = layout.dimsumOrder || layout.laundryOrder || null;
+      const neededTypes = order
+        ? order.lines.filter(l=>l.placed<l.need).map(l=>l.type)
         : null;
+      const orderTargetType = layout.dimsumOrder ? "dimsum_plate" : "laundry_rack";
       const pair=layout.items.map(item=>({item,target:neededTypes
         ? (neededTypes.includes(item.type)
-          ? layout.targets.find(target=>target.type==="dimsum_plate")
+          ? layout.targets.find(target=>target.type===orderTargetType)
           : null)
         : layout.targets.find(target=>target.type===item.type)}))
         .find(value=>value.target);
