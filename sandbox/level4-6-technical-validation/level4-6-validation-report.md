@@ -1,14 +1,14 @@
 # Level 4–6 Technical Validation Report
 
-Generated: 2026-08-30T14:35:45.945Z
+Generated: 2026-08-30T15:05:24.768Z
 
-Result: **PASS** (166/166 checks passed)
+Result: **PASS** (168/168 checks passed)
 
 | FTHUE level | Passed | Failed |
 |---|---:|---:|
 | 2 | 37 | 0 |
-| 3 | 21 | 0 |
-| 4 | 21 | 0 |
+| 3 | 22 | 0 |
+| 4 | 22 | 0 |
 | 5 | 41 | 0 |
 | 6 | 46 | 0 |
 
@@ -31,12 +31,14 @@ This is reproducible software technical verification only. It does not establish
 ## Checks
 
 - PASS | Level 2 | launch matrix | bilateral launches with the correct engine
+- PASS | Level 3 | launch matrix | bowlinglane launches with the correct engine
 - PASS | Level 3 | launch matrix | tsuenwan launches with the correct engine
 - PASS | Level 3 | launch matrix | dimsum launches with the correct engine
 - PASS | Level 3 | launch matrix | flowers launches with the correct engine
 - PASS | Level 3 | launch matrix | laundry launches with the correct engine
 - PASS | Level 3 | launch matrix | cards launches with the correct engine
 - PASS | Level 3 | launch matrix | mahjong launches with the correct engine
+- PASS | Level 4 | launch matrix | bowlinglane launches with the correct engine
 - PASS | Level 4 | launch matrix | tsuenwan launches with the correct engine
 - PASS | Level 4 | launch matrix | dimsum launches with the correct engine
 - PASS | Level 4 | launch matrix | flowers launches with the correct engine

@@ -25,6 +25,7 @@ cp "$ROOT/level4-video-freshness.js" "$DIST/level4-video-freshness.js"
 cp "$ROOT/shoulder-flexion-controller.js" "$DIST/shoulder-flexion-controller.js"
 cp "$ROOT/fthue-adaptive-progression.js" "$DIST/fthue-adaptive-progression.js"
 cp -R "$ROOT/img" "$DIST/img"
+cp -R "$ROOT/audio" "$DIST/audio"
 
 # The three Level 4 real-life instructional GIFs must always ship so the guide
 # works with no network. They contain no faces, logos or identifiable people.

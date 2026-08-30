@@ -2714,8 +2714,176 @@ function drawLevel4VerticalReachGuide(ctx, cw, ch){
   ctx.fillText('屈肘 ↓', point.x, bottom+24);
   ctx.restore();
 }
+/* ==================== v73 保齡球場景（Level 3/4 肩前屈） ====================
+   純視覺同音效獎勵層：只讀取 shoulderFlexionState 嘅進度／達標訊號。
+   同 updateShoulderFlexionGame 嘅臨床註解一致：呢層完全唔加任何手部接觸、
+   拾起停留、握力或放開訊號，亦唔會改變達標判定。 */
+const bowlingStrike={phase:'idle',startedMs:0,impactPlayed:false,pinSeeds:null};
+const BOWLING_ROLL_MS=620,BOWLING_FALL_MS=680;
+function isBowlingLaneTheme(){return isShoulderFlexionLevel()&&state.theme==='bowlinglane';}
+function resetBowlingStrike(){bowlingStrike.phase='idle';bowlingStrike.startedMs=0;bowlingStrike.impactPlayed=false;bowlingStrike.pinSeeds=null;}
+function startBowlingStrike(){
+  if(bowlingStrike.phase!=='idle')return;
+  bowlingStrike.phase='roll';bowlingStrike.startedMs=nowMs();bowlingStrike.impactPlayed=false;
+  bowlingStrike.pinSeeds=Array.from({length:10},()=>({
+    rot:(Math.random()*0.8+0.9)*(Math.random()<0.5?-1:1),
+    dx:(Math.random()*2-1),dy:Math.random(),delay:Math.random()*140,
+  }));
+}
+/* 「好波」歡呼聲：本地離線音檔（audio/haobo_cheer.mp3），經已解鎖嘅
+   AudioContext 播放。fetch 只限同源資產，離線時由 service worker cache 供應。 */
+let haoboCheerBuffer=null,haoboCheerLoading=false;
+function preloadHaoboCheer(){
+  if(haoboCheerBuffer||haoboCheerLoading)return;
+  haoboCheerLoading=true;
+  try{
+    const actx=getAudioCtx();
+    fetch('audio/haobo_cheer.mp3')
+      .then(r=>{if(!r.ok)throw new Error('audio fetch failed');return r.arrayBuffer();})
+      .then(b=>actx.decodeAudioData(b))
+      .then(buf=>{haoboCheerBuffer=buf;})
+      .catch(()=>{haoboCheerLoading=false;});
+  }catch(e){haoboCheerLoading=false;}
+}
+function playHaoboCheer(){
+  try{
+    const actx=getAudioCtx();
+    if(!haoboCheerBuffer){preloadHaoboCheer();return;}
+    const src=actx.createBufferSource();src.buffer=haoboCheerBuffer;
+    const g=actx.createGain();g.gain.value=1.0;
+    src.connect(g);g.connect(actx.destination);src.start();
+  }catch(e){}
+}
+function playPinCrashSound(){
+  // 短促木樽相撞聲（WebAudio 合成，無外部音檔）
+  try{
+    const actx=getAudioCtx();const t0=actx.currentTime;
+    for(let i=0;i<6;i++){
+      const when=t0+i*0.028+Math.random()*0.015;
+      const dur=0.06+Math.random()*0.05;
+      const len=Math.max(1,Math.floor(actx.sampleRate*dur));
+      const buf=actx.createBuffer(1,len,actx.sampleRate);
+      const data=buf.getChannelData(0);
+      for(let s=0;s<len;s++)data[s]=(Math.random()*2-1)*Math.pow(1-s/len,1.6);
+      const src=actx.createBufferSource();src.buffer=buf;
+      const bp=actx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=420+Math.random()*380;bp.Q.value=0.9;
+      const g=actx.createGain();g.gain.value=0.30*(1-i*0.12);
+      src.connect(bp);bp.connect(g);g.connect(actx.destination);
+      src.start(when);src.stop(when+dur+0.02);
+    }
+  }catch(e){}
+}
+function updateBowlingStrike(){
+  if(bowlingStrike.phase==='idle')return;
+  const t=nowMs()-bowlingStrike.startedMs;
+  if(bowlingStrike.phase==='roll'&&t>=BOWLING_ROLL_MS){
+    bowlingStrike.phase='impact';
+    if(!bowlingStrike.impactPlayed){
+      bowlingStrike.impactPlayed=true;
+      playPinCrashSound();playApplauseSound();playHaoboCheer();
+    }
+  }
+  if(bowlingStrike.phase==='impact'&&t>=BOWLING_ROLL_MS+BOWLING_FALL_MS)bowlingStrike.phase='down';
+}
+function bowlingLaneGeometry(cw,ch){
+  const laneX=cw*(ch>cw?.68:.58);
+  const pw=Math.min(cw*(ch>cw?0.44:0.32),400);
+  const bgW=imgBowlingAlleyBg.naturalWidth||768,bgH=imgBowlingAlleyBg.naturalHeight||1028;
+  const topSrcH=bgH*0.545;
+  const topH=pw*(topSrcH/bgW);
+  const pinBaseY=ch*0.315;
+  const py0=pinBaseY-topH*0.885;
+  const py1=ch*0.885;
+  return {laneX,pw,py0,py1,topH,topSrcH,bgW,bgH,pinBaseY};
+}
+function drawBowlingBallSprite(ctx,x,y,r){
+  ctx.save();
+  ctx.beginPath();ctx.ellipse(x,y+r*0.92,r*0.85,r*0.22,0,0,Math.PI*2);
+  ctx.fillStyle='rgba(0,0,0,0.16)';ctx.fill();
+  if(imgBowlingBall.complete&&imgBowlingBall.naturalWidth>0)ctx.drawImage(imgBowlingBall,x-r,y-r,r*2,r*2);
+  else{ctx.fillStyle='#0F5F53';ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();}
+  ctx.restore();
+}
+function drawBowlingBallItem(ctx,x,y,r){
+  // 滾動／撞擊動畫進行中由場景接手畫波，避免出現兩個波
+  if(isBowlingLaneTheme()&&bowlingStrike.phase!=='idle')return;
+  const prog=isBowlingLaneTheme()?clamp01(Number(shoulderFlexionState.progress)||0):0;
+  drawBowlingBallSprite(ctx,x,y,r*(1-0.45*prog));
+}
+function drawBowlingPins(ctx,g){
+  const ph=g.topH*0.26,pwid=ph*0.3125;
+  const rows=[[0],[-0.5,0.5],[-1,0,1],[-1.5,-0.5,0.5,1.5]];
+  const t=nowMs()-bowlingStrike.startedMs;
+  let idx=0;
+  for(let r=0;r<rows.length;r++){
+    const rowY=g.pinBaseY-r*ph*0.14;
+    const rowScale=1-r*0.06;
+    const spread=g.pw*0.115;
+    for(const off of rows[r]){
+      const px=g.laneX+off*spread;
+      let rot=0,dx=0,dy=0;
+      if(bowlingStrike.phase==='impact'||bowlingStrike.phase==='down'){
+        const seed=bowlingStrike.pinSeeds?bowlingStrike.pinSeeds[idx%10]:{rot:1.4,dx:0.5,dy:0.3,delay:0};
+        const ft=bowlingStrike.phase==='down'?1:clamp01((t-BOWLING_ROLL_MS-seed.delay)/Math.max(1,BOWLING_FALL_MS-140));
+        const e=1-Math.pow(1-ft,2.2);
+        rot=seed.rot*1.35*e;
+        dx=seed.dx*g.pw*0.16*e;
+        dy=-seed.dy*ph*0.10*e+e*ph*0.22;
+      }
+      ctx.save();
+      ctx.translate(px+dx,rowY+dy);
+      ctx.rotate(rot);
+      const w=pwid*rowScale,h=ph*rowScale;
+      if(imgBowlingPin.complete&&imgBowlingPin.naturalWidth>0)ctx.drawImage(imgBowlingPin,-w/2,-h,w,h);
+      else{ctx.fillStyle='#f6efe2';ctx.fillRect(-w/2,-h,w,h);}
+      ctx.restore();
+      idx++;
+    }
+  }
+}
+function drawBowlingRollBall(ctx,g){
+  if(bowlingStrike.phase==='idle')return;
+  const t=nowMs()-bowlingStrike.startedMs;
+  if(bowlingStrike.phase!=='roll'&&t>BOWLING_ROLL_MS+200)return;
+  const p=clamp01(t/BOWLING_ROLL_MS);
+  const startY=gameCanvas.height*0.34;
+  const endY=g.pinBaseY-g.topH*0.05;
+  const y=startY+(endY-startY)*(p*p*0.4+p*0.6);
+  const baseR=isPortrait()?104:138;
+  const rr=Math.max(10,baseR*(0.55-0.30*p));
+  drawBowlingBallSprite(ctx,g.laneX,y,rr);
+}
+function drawBowlingAlleyScene(ctx,cw,ch){
+  const g=bowlingLaneGeometry(cw,ch);
+  updateBowlingStrike();
+  preloadHaoboCheer();
+  const x0=g.laneX-g.pw/2;
+  ctx.save();
+  rrPath(ctx,x0,g.py0,g.pw,g.py1-g.py0,18);
+  ctx.clip();
+  if(imgBowlingAlleyBg.complete&&imgBowlingAlleyBg.naturalWidth>0){
+    ctx.drawImage(imgBowlingAlleyBg,0,0,g.bgW,g.topSrcH,x0,g.py0,g.pw,g.topH);
+    ctx.drawImage(imgBowlingAlleyBg,0,g.topSrcH,g.bgW,g.bgH-g.topSrcH,x0,g.py0+g.topH,g.pw,g.py1-(g.py0+g.topH));
+  }else{
+    ctx.fillStyle='#d9b573';ctx.fillRect(x0,g.py0,g.pw,g.py1-g.py0);
+  }
+  drawBowlingPins(ctx,g);
+  drawBowlingRollBall(ctx,g);
+  ctx.restore();
+  ctx.save();
+  ctx.strokeStyle='rgba(17,95,83,.55)';ctx.lineWidth=5;
+  rrPath(ctx,x0,g.py0,g.pw,g.py1-g.py0,18);ctx.stroke();
+  // 頂部空間唔夠（橫向 iPad）就唔畫，側欄已顯示目標角度
+  if(g.py0>=34){
+    const target=shoulderFlexionState.selectedTargetDeg??'—';
+    ctx.fillStyle='#155f53';ctx.font='800 16px "PingFang TC","Noto Sans TC",sans-serif';ctx.textAlign='center';
+    ctx.fillText('目標 '+target+'°',g.laneX,g.py0-12);
+  }
+  ctx.restore();
+}
 function drawShoulderFlexionGuide(ctx,cw,ch){
   if(!isShoulderFlexionLevel()) return;
+  if(state.theme==='bowlinglane'){ drawBowlingAlleyScene(ctx,cw,ch); return; }
   const x=cw*(ch>cw?.68:.58),bottom=ch*.80,top=ch*.32;
   const target=shoulderFlexionState.selectedTargetDeg??'—';
   ctx.save();ctx.strokeStyle='rgba(17,95,83,.62)';ctx.lineWidth=6;ctx.setLineDash([14,10]);
@@ -7038,6 +7206,10 @@ const imgFridgeChoysum = new Image(); imgFridgeChoysum.src = 'img/fridge_choysum
 const imgFridgeNapa = new Image(); imgFridgeNapa.src = 'img/fridge_napa.png';
 const imgFridgePumpkin = new Image(); imgFridgePumpkin.src = 'img/fridge_pumpkin.png';
 const imgFridgeMilk = new Image(); imgFridgeMilk.src = 'img/fridge_milk.png';
+/* v73 保齡球場景資產（Level 3/4 肩前屈獎勵畫面） */
+const imgBowlingAlleyBg = new Image(); imgBowlingAlleyBg.src = 'img/bowling_alley_bg.png';
+const imgBowlingPin = new Image(); imgBowlingPin.src = 'img/bowling_pin.png';
+const imgBowlingBall = new Image(); imgBowlingBall.src = 'img/bowling_ball.png';
 const imgFridgeFish = new Image(); imgFridgeFish.src = 'img/fridge_fish.png';
 const imgFridgeSnowpea = new Image(); imgFridgeSnowpea.src = 'img/fridge_snowpea.png';
 const imgLaundryShirt1 = new Image(); imgLaundryShirt1.src = 'img/laundry_shirt1.png';
@@ -7480,6 +7652,12 @@ const THEMES = {
       drawIcon:(ctx,x,y,s)=>drawTsuenWanPhotoCard(ctx,photo.img,x,y,s*1.35),
     }));},
   }),
+  bowlinglane: mkTheme({
+    id:'bowlinglane',title:'荃灣保齡球場',goal:'抬高患側上肢到目標角度，保齡球就會滾上球道，撞冧全部樽',
+    itemWord:'保齡球',difficulty:'肩前屈抬臂',targetStyle:'panel',
+    thumbnail:'img/bowling_alley_bg.png',thumbnailAlt:'懷舊荃灣保齡球場木球道同十個保齡球樽',
+    categoriesFor(){ return LEVEL3_THEME_VARIANTS.bowlinglane; },
+  }),
   bilateral: mkTheme({
     id:'bilateral', title:'檯面肩水平外展',
     goal:'患側前臂承托，由中線向患側外滑，再返回中線',
@@ -7683,8 +7861,15 @@ const THEMES = {
     },
   }),
 };
-const THEME_ORDER = ['wipewindow','bowling','mahjongwash','buspay','flowers','dimsum','laundry','fridge','cards','mahjong','cooking'];
+const THEME_ORDER = ['wipewindow','bowling','mahjongwash','buspay','bowlinglane','flowers','dimsum','laundry','fridge','cards','mahjong','cooking'];
 const LEVEL3_THEME_VARIANTS = {
+  bowlinglane:[
+    { type:'bowlingball', itemLabel:'保齡球', targetLabel:'球樽', color:'#0F5F53',
+      drawScale:0.85, labelGap:1.05,
+      drawItem:(ctx,x,y,r)=>drawBowlingBallItem(ctx,x,y,r),
+      drawIcon:(ctx,x,y,s)=>drawBowlingBallSprite(ctx,x,y,s*0.9),
+    },
+  ],
   dimsum:[
     { type:'siumai', itemLabel:'燒賣', targetLabel:'燒賣', img:imgSiumai, targetImg:imgSteamerSiumai, scale:0.66, color:'#1A6B5A' },
     { type:'hargau', itemLabel:'蝦餃', targetLabel:'蝦餃', img:imgHargau, targetImg:imgSteamerHargau, scale:0.76, color:'#E07B39' },
@@ -8109,6 +8294,8 @@ function themeAvailableForLevel(themeId, level = state.level){
   if(['wipewindow','bowling','mahjongwash','buspay','bilateral'].includes(themeId)) return false;
   // v72 雪櫃收納係 Level 5 專屬玩法（握放 + 位置規劃）
   if(themeId === 'fridge') return level === '5';
+  // v73 保齡球場景係 Level 3/4 肩前屈專屬（純視覺獎勵層，不改互動判定）
+  if(themeId === 'bowlinglane') return level === '3' || level === '4';
   return themeId !== 'cooking';
 }
 function availableThemeOrder(level = state.level){
@@ -8120,7 +8307,7 @@ function availableThemeOrder(level = state.level){
   }
   if(level === '3' || level === '4'){
     // Same visual choices, different OT-selected shoulder-flexion band.
-    return ['tsuenwan','dimsum','flowers','laundry','cards','mahjong'];
+    return ['bowlinglane','tsuenwan','dimsum','flowers','laundry','cards','mahjong'];
   }
   if(level === '4'){
     return ['dimsum','wipewindow','bowling','mahjongwash','buspay'];
@@ -8599,7 +8786,7 @@ function initGame(){
   shoulderHoldInterruptedSpoken = false;
   hideTargetHoldCountdown();
   lastLevelShown = -1;  // reset 升級追蹤，讓 initGame 後首次 spawn 觸發 tier 0 banner
-  heldItem = null; foods = []; targets = [];
+  heldItem = null; foods = []; targets = []; resetBowlingStrike();
   resetDimsumOrderGame();  // v69 筷子點心落單狀態一併清齊
   resetLaundryOrderGame(); // v71 晾衫單狀態一併清齊
   resetFridgeGame();       // v72 雪櫃收納狀態一併清齊
@@ -8812,6 +8999,11 @@ function setupTargets(){
     return;
   }
   if(isShoulderFlexionLevel()){
+    if(state.theme==='bowlinglane'){
+      // v73 保齡球：十個樽由場景直接繪畫，唔使用通用目標盤
+      targets=[];
+      return;
+    }
     const tw=Math.min(cw*.38,320);
     const th=tw*(style==='steamer'?.74:.62);
     const category=cats[0];
@@ -10695,6 +10887,7 @@ function updateShoulderFlexionGame(){
     }
     shoulderFlexionCycleAwarded=false;
     advanceLevel3RoundVariant();
+    resetBowlingStrike();
     foods=[];
     spawnInitialFoods();
   }
@@ -10719,6 +10912,7 @@ function updateShoulderFlexionGame(){
   if(shoulderFlexionState.targetReady&&!shoulderFlexionCycleAwarded){
     shoulderFlexionCycleAwarded=true;
     triggerFeedback(true);
+    if(state.theme==='bowlinglane')startBowlingStrike();
     researchLog('shoulder_target_reached',{
       estimated_deg:Math.round(estimated),
       target_deg:target,
@@ -11634,6 +11828,8 @@ function renderGame(){
   // 食物
   for(const f of foods){
     if(f.removed) continue;
+    // v73 保齡球滾動／冧樽期間，波同標籤由場景層接手，避免半空浮字
+    if(isBowlingLaneTheme() && bowlingStrike.phase!=='idle') continue;
     ctx.save();
     if(f.drawItem){
       // 主題自繪物件（麻雀 / 啤牌 / 煮飯 / 插花 / 晾衫）＋大字標籤
@@ -17026,7 +17222,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v72-20260830-laundry-fridge";
+  const LEVEL_APP_BUILD = "v73-20260830-bowling";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 
