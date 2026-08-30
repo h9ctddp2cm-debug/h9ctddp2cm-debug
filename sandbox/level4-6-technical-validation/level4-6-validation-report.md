@@ -1,6 +1,6 @@
 # Level 4–6 Technical Validation Report
 
-Generated: 2026-08-30T15:35:15.891Z
+Generated: 2026-08-30T17:13:41.276Z
 
 Result: **PASS** (168/168 checks passed)
 
@@ -32,16 +32,16 @@ This is reproducible software technical verification only. It does not establish
 
 - PASS | Level 2 | launch matrix | bilateral launches with the correct engine
 - PASS | Level 3 | launch matrix | bowlinglane launches with the correct engine
+- PASS | Level 3 | launch matrix | basketball launches with the correct engine
 - PASS | Level 3 | launch matrix | tsuenwan launches with the correct engine
 - PASS | Level 3 | launch matrix | dimsum launches with the correct engine
-- PASS | Level 3 | launch matrix | flowers launches with the correct engine
 - PASS | Level 3 | launch matrix | laundry launches with the correct engine
 - PASS | Level 3 | launch matrix | cards launches with the correct engine
 - PASS | Level 3 | launch matrix | mahjong launches with the correct engine
 - PASS | Level 4 | launch matrix | bowlinglane launches with the correct engine
+- PASS | Level 4 | launch matrix | basketball launches with the correct engine
 - PASS | Level 4 | launch matrix | tsuenwan launches with the correct engine
 - PASS | Level 4 | launch matrix | dimsum launches with the correct engine
-- PASS | Level 4 | launch matrix | flowers launches with the correct engine
 - PASS | Level 4 | launch matrix | laundry launches with the correct engine
 - PASS | Level 4 | launch matrix | cards launches with the correct engine
 - PASS | Level 4 | launch matrix | mahjong launches with the correct engine

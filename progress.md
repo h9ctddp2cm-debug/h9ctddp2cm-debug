@@ -1446,3 +1446,16 @@ Original prompt: Fix Level 6–7 interactions: make light clothes-peg press dete
 - 安全不變量：場景屬純視覺／音效獎勵層，只讀 shoulderFlexionState，唔加任何手部接觸／揸握／放開訊號；research track（!research.active）唔受影響；L5 雪櫃、L67 筷子點心完全不變。
 - 新資產：img/teahouse_bg.png、img/steamer_empty.png（AI 生成後壓縮）。
 - 測試：tests/v74-teahouse.test.mjs 12 項新測試；全套 374 pass / 0 fail / 3 skip；validator 168/168；iPad QA 820×1180＋1180×820 截圖已目視檢查（ych_rehab_qa_artifacts/v74/）。
+
+## v75-20260831-design（2026-08-31）
+- 依照用戶 30–31 Aug 設計圖（IMG_1549 箭咀、IMG_1550 茶樓、IMG_1554 保齡球、IMG_1555 雪櫃、插花設計圖）全面重整場景；所有新視覺資產一律由用戶設計圖裁剪（flower_01–08、leaf_01–08、flower_vase、th_plate 852×413、th_tray 977×447、bball_court、bball_ball；例外：fridge_wide.png 1597×935 為 AI 闊雪櫃）。
+- L3/4 保齡球場放大：pwFit 修正 landscape 溢出，球道貼滿場景框，球樽/球更大更清楚。
+- L3/4 新主題「籃球」（荃灣屋邨球場背景，規則同保齡球邏輯完全一樣）：籃球隨抬肩縮細升向籃框，達標後 startBasketballShot() 入樽動畫＋歡呼；純視覺獎勵層，只讀 shoulderFlexionState，contract test 掃描禁止任何手部接觸／揸握／放開識別字（v73/v74/v75 場景區塊同一標準）。
+- L3/4 模擬茶樓依設計圖重排：中間大碟（th_plate）＋碟上蒸籠，下方托盤（th_tray，貼畫面底）載細碟點心，右側大型綠色向上箭咀（drawTeahouseUpArrow）提示抬肩方向；幾何測試改為 v75 設計（laneX=cw*0.5、碟上蒸籠、托盤貼底、正向移行距離）。
+- L5 插花按設計重做：16 款花葉材（用戶相片裁剪）、新花瓶、底部調色盤一行揀花，功能鍵（花⇄葉／旋轉／放大縮小／復原／清除／完成作品）保留；鏡頭畫面保留喺場景後面，病人見到自己隻手先可以安全對準抓握。
+- L5 雪櫃改用闊身雪櫃相，landscape 橫向佔滿全屏（tw=min(cw*0.97,1160)、maxH ch*0.64），食物加大（fridgeBoost landscape 1.35／portrait 1.25）。食物喺 landscape 會視覺上疊喺雪櫃相底部裝飾邊之前（刻意「企喺雪櫃前面」層次）；validator itemsDoNotCoverTargets 為 fridge 主題改用「生成點中心必須完全喺雪櫃矩形以下」不變量（保留向上搬運距離；其他主題維持圓對矩形零重疊檢查）。
+- L6 工具開合自適應偵測（曬衫夾＋筷子夾唔到嘅修復）：TOOL_ADAPT_MIN_SAMPLES=90、MIN_SPAN=0.030、TOO_CLOSE_SCALE=0.55；病人實際開合幅度自動學習個人化 enter/nearExit/farExit/open/scoreOpen 閾值（lo+span×0.42/0.58/0.72/0.85），幅度不足即 fail-closed（thresholds=null 回退預設）；雙指同時重開先算放開（單指漂移永不觸發釋放）；HUD 實時顯示開合%＋「手太貼近鏡頭」提示；resetToolPinchAdapt 喺 session reset＋每 rep 兩處清空。
+- HUD 修正：iPad portrait 頂部按鈕换行至第二行（~y90–145），.adv-panel top 72→152px，指示卡唔再被 休息/停止 按鈕遮住（插花／麻雀直向截圖驗證）。
+- 測試：tests/v75-adaptive-tool.test.mjs 9 項新測試（源碼合約＋行為：靜止唔學習、真開合有序學習、單指漂移安全、reset 清空）；v70/v72/v73/v74/tracking-regression 測試全部更新對應 v75 幾何／主題清單；全套 386 total / 383 pass / 0 fail / 3 intentional skips；validator 168/168；checkjs + git diff --check 乾淨。
+- dist 重建：185 檔案，v75-20260831-design 標記 ×3 對齊，QA hooks 0 命中；iPad Playwright QA 820×1180＋1180×820 七個場景截圖全部目視檢查（ych_rehab_qa_artifacts/v75/）。
+- 限制：模擬 landmark QA 不能取代病房實機（真衣夾／筷子、偏癱手形、病房光線、iPad 鏡頭）驗證；茶樓碟/托盤相內有畫上點心屬設計圖原有內容。

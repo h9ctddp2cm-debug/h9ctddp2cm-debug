@@ -71,7 +71,7 @@ test('isTeahouseDimsumMode gating (functional): L3/L4 + dimsum + teahouse + not 
 
 test('teahouse scene replaces guide + generic targets, and only there', () => {
   assert.match(publicSource, /if\(isTeahouseDimsumMode\(\)\)\{ drawTeahouseScene\(ctx,cw,ch\); return; \}/);
-  assert.match(publicSource, /if\(state\.theme==='bowlinglane'\|\|isTeahouseDimsumMode\(\)\)\{\s*\/\/ v73[^]{0,120}\s*targets=\[\];\s*return;/);
+  assert.match(publicSource, /if\(state\.theme==='bowlinglane'\|\|state\.theme==='basketball'\|\|isTeahouseDimsumMode\(\)\)\{\s*\/\/ v73[^]{0,120}\s*targets=\[\];\s*return;/);
 });
 
 /* ---------------- Safety invariants ---------------- */
@@ -88,10 +88,10 @@ test('teahouse scene block admits no hand-contact/grip/release signal', () => {
 
 test('serve starts only from the existing targetReady award point', () => {
   assert.match(publicSource,
-    /if\(state\.theme==='bowlinglane'\)startBowlingStrike\(\);\s*if\(isTeahouseDimsumMode\(\)\)startTeahouseServe\(\);/);
+    /if\(state\.theme==='bowlinglane'\)startBowlingStrike\(\);\s*if\(state\.theme==='basketball'\)startBasketballShot\(\);\s*if\(isTeahouseDimsumMode\(\)\)startTeahouseServe\(\);/);
   // and is reset with the other per-rep / per-session resets
-  assert.match(publicSource, /resetBowlingStrike\(\);\s*resetTeahouseServe\(\);\s*foods=\[\];/);
-  assert.match(publicSource, /targets = \[\]; resetBowlingStrike\(\); resetTeahouseServe\(\);/);
+  assert.match(publicSource, /resetBowlingStrike\(\);\s*resetBasketballShot\(\);\s*resetTeahouseServe\(\);\s*foods=\[\];/);
+  assert.match(publicSource, /targets = \[\]; resetBowlingStrike\(\); resetBasketballShot\(\); resetTeahouseServe\(\);/);
 });
 
 test('item drawing is skipped while the serve animation owns the dim sum', () => {
@@ -116,6 +116,9 @@ function buildServeModule(){
     speakCantonese: (t) => spoken.push(t),
     clamp01: (v) => Math.max(0, Math.min(1, v)),
     rrPath: () => {},
+    // v75: teahouseGeometry reads the user-designed plate/tray sprite ratios
+    imgThPlate: {naturalWidth: 852, naturalHeight: 413},
+    imgThTray: {naturalWidth: 977, naturalHeight: 447},
   };
   const keys = Object.keys(env);
   const fn = new Function(...keys, scene + `
@@ -169,19 +172,28 @@ test('teahouse geometry stays on canvas in both orientations and aligns with the
   const {mod} = buildServeModule();
   for(const [cw, ch] of [[820, 1180], [1180, 820]]){
     const g = mod.teahouseGeometry(cw, ch);
-    const portrait = ch > cw;
-    // steamer/plates fully inside the canvas
-    assert.ok(g.steamerX - g.plateW / 2 > 0, `plate left edge on canvas ${cw}x${ch}`);
-    assert.ok(g.steamerX + g.plateW / 2 < cw, `plate right edge on canvas ${cw}x${ch}`);
-    assert.ok(g.steamerY - g.sw / 2 > 0, `steamer top on canvas ${cw}x${ch}`);
-    assert.ok(g.dishY + g.dishW * 0.15 < ch, `lower dish on canvas ${cw}x${ch}`);
-    // steamer sits above the rising item's top stop (ch*0.34); dish below start (ch*0.78)
-    assert.ok(g.steamerY < ch * 0.34, `steamer above item top stop ${cw}x${ch}`);
-    assert.ok(g.dishY > ch * 0.78, `dish below item start ${cw}x${ch}`);
-    // shares the item lane X used by updateShoulderFlexionGame
-    assert.equal(g.laneX, cw * (portrait ? .68 : .58), `lane alignment ${cw}x${ch}`);
-    assert.equal(g.steamerX, g.laneX);
+    // v75 user design: big plate + steamer sprite centred near the top,
+    // wooden tray hugging the bottom edge, dim sum travels dish → steamer.
+    assert.equal(g.laneX, cw * 0.5, `lane centred ${cw}x${ch}`);
+    // plate sprite fully on canvas, with headroom for the target-degrees text
+    assert.ok(g.laneX - g.plateW / 2 >= 0, `plate left edge on canvas ${cw}x${ch}`);
+    assert.ok(g.laneX + g.plateW / 2 <= cw, `plate right edge on canvas ${cw}x${ch}`);
+    assert.ok(g.plateY - g.plateH / 2 >= 0, `plate top on canvas ${cw}x${ch}`);
+    // steamer landing point stays inside the plate sprite
+    assert.ok(Math.abs(g.steamerX - g.laneX) < g.plateW / 2, `steamer inside plate ${cw}x${ch}`);
+    assert.ok(g.steamerY > g.plateY - g.plateH / 2 && g.steamerY < g.plateY + g.plateH / 2,
+      `steamer vertical inside plate ${cw}x${ch}`);
+    // tray pinned to the bottom edge, on canvas horizontally
+    assert.ok(Math.abs((g.trayY + g.trayH / 2) - ch) < 1e-6, `tray hugs bottom ${cw}x${ch}`);
+    assert.ok(cw / 2 - g.trayW / 2 >= 0, `tray on canvas ${cw}x${ch}`);
+    // the small dish (item start) sits on the tray, clearly below the plate,
+    // so the rise from dish to steamer keeps a positive travel distance
+    assert.ok(g.dishY > g.plateY + g.plateH / 2, `dish below plate ${cw}x${ch}`);
+    assert.ok(g.dishY - g.dishW * 0.18 > g.plateY + g.plateH * 0.62,
+      `item lane travel positive ${cw}x${ch}`);
   }
+  // the item lane override anchors the rising dim sum to this geometry
+  assert.match(publicSource, /laneX=tg\.laneX;bottom=tg\.dishY-tg\.dishW\*0\.18;top=tg\.plateY\+tg\.plateH\*0\.62;/);
 });
 
 /* ---------------- Localization & untouched siblings ---------------- */

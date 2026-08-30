@@ -40,6 +40,14 @@ function itemsDoNotCoverTargets(items, targets) {
     const right = target.x + target.w / 2;
     const top = target.y - target.h / 2;
     const bottom = target.y + target.h / 2;
+    if (target.type === "fridge") {
+      // v75: the fridge photo intentionally spans almost the full canvas, so
+      // the shopping-bag food circle may visually stand "in front of" the
+      // fridge's lower edge on landscape. The meaningful invariant is that the
+      // food SPAWNS fully below the fridge rectangle (outside the drop zone),
+      // preserving the upward transport distance.
+      return item.y > bottom;
+    }
     const nearestX = Math.max(left, Math.min(item.x, right));
     const nearestY = Math.max(top, Math.min(item.y, bottom));
     return Math.hypot(item.x - nearestX, item.y - nearestY) >= item.r;

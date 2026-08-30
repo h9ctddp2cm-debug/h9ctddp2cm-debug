@@ -2735,7 +2735,7 @@ function startTeahouseServe(){
   if(teahouseServe.phase!=='idle')return;
   const item=foods.find(f=>!f.removed);
   teahouseServe.phase='fly';teahouseServe.startedMs=nowMs();
-  teahouseServe.fromX=item?item.x:gameCanvas.width*(isPortrait()?0.68:0.58);
+  teahouseServe.fromX=item?item.x:gameCanvas.width*0.5;
   teahouseServe.fromY=item?item.y:gameCanvas.height*0.34;
   teahouseServe.img=item?item.img:null;
   teahouseServe.label=item?item.label:'';
@@ -2751,16 +2751,47 @@ function updateTeahouseServe(){
   }
 }
 function teahouseGeometry(cw,ch){
+  // v75 按用戶設計重排：大碟＋蒸籠 sprite 置中上方，木托盤貼底，中間大箭咀
   const portrait=ch>cw;
-  const laneX=cw*(portrait?.68:.58);
-  const sw=Math.min(cw*(portrait?0.42:0.24),300);
-  const steamerX=laneX;
-  const steamerY=ch*(portrait?0.235:0.26);
-  const plateY=steamerY+sw*0.34;
-  const plateW=sw*1.6;
-  const dishY=ch*0.815;
-  const dishW=sw*0.95;
-  return {laneX,sw,steamerX,steamerY,plateW,plateY,dishY,dishW};
+  const laneX=cw*0.5;
+  const pRatio=(imgThPlate.naturalHeight||413)/(imgThPlate.naturalWidth||852);
+  const plateW=Math.min(cw*(portrait?0.90:0.62),720);
+  const plateH=plateW*pRatio;
+  const plateY=plateH*0.52+ch*0.055; // sprite 中心 y（頂部留返目標角度字位）
+  const tRatio=(imgThTray.naturalHeight||447)/(imgThTray.naturalWidth||977);
+  const trayW=Math.min(cw*(portrait?0.97:0.74),880);
+  const trayH=trayW*tRatio;
+  const trayY=ch-trayH*0.50;
+  // 蒸籠喺大碟 sprite 內嘅相對位置（點心飛入嘅落點）
+  const steamerX=laneX+plateW*0.02;
+  const steamerY=(plateY-plateH/2)+plateH*0.26;
+  const sw=plateW*0.36;
+  // 托盤上嘅白色細碟（點心起點）
+  const dishW=Math.min(trayW*0.24,190);
+  const dishY=trayY-trayH*0.05;
+  return {laneX,sw,steamerX,steamerY,plateW,plateH,plateY,trayW,trayH,trayY,dishY,dishW};
+}
+function drawTeahouseUpArrow(ctx,x,y0,y1,t){
+  // 設計圖款：綠色粗箭咀，白邊，向上脈動
+  const h=y0-y1;
+  if(h<60)return;
+  const pulse=0.5+0.5*Math.sin((t||0)*0.004);
+  const w=Math.max(30,Math.min(52,h*0.16));
+  const headH=Math.min(h*0.42,w*1.35),shaftW=w*0.52;
+  ctx.save();
+  ctx.globalAlpha=0.62+0.30*pulse;
+  ctx.beginPath();
+  ctx.moveTo(x,y1);
+  ctx.lineTo(x+w,y1+headH);
+  ctx.lineTo(x+shaftW/2,y1+headH);
+  ctx.lineTo(x+shaftW/2,y0);
+  ctx.lineTo(x-shaftW/2,y0);
+  ctx.lineTo(x-shaftW/2,y1+headH);
+  ctx.lineTo(x-w,y1+headH);
+  ctx.closePath();
+  ctx.fillStyle='#3E9B4F';ctx.fill();
+  ctx.lineWidth=4;ctx.strokeStyle='rgba(255,255,255,0.92)';ctx.stroke();
+  ctx.restore();
 }
 function drawTeahousePlateEllipse(ctx,x,y,w,h){
   ctx.save();
@@ -2803,40 +2834,48 @@ function drawTeahouseScene(ctx,cw,ch){
     const s=Math.max(cw/iw,ch/ih),dw=iw*s,dh=ih*s;
     ctx.drawImage(imgTeahouseBg,(cw-dw)/2,(ch-dh)/2,dw,dh);
   }else{ctx.fillStyle='#c9a267';ctx.fillRect(0,0,cw,ch);}
-  // 上方大碟＋空蒸籠（達標後點心飛入去）
-  drawTeahousePlateEllipse(ctx,g.steamerX,g.plateY,g.plateW,g.plateW*0.34);
-  if(imgSteamerEmpty.complete&&imgSteamerEmpty.naturalWidth>0)
-    ctx.drawImage(imgSteamerEmpty,g.steamerX-g.sw/2,g.steamerY-g.sw*0.5,g.sw,g.sw);
-  else{ctx.fillStyle='#d8a95c';ctx.beginPath();ctx.arc(g.steamerX,g.steamerY,g.sw*0.42,0,Math.PI*2);ctx.fill();}
-  // 下方細碟：點心由呢度隨住抬肩升上去
-  drawTeahousePlateEllipse(ctx,g.laneX,g.dishY,g.dishW,g.dishW*0.30);
   const t=nowMs()-teahouseServe.startedMs;
+  // 上方：用戶設計嘅大碟＋蒸籠 sprite（達標後點心飛入去）
+  if(imgThPlate.complete&&imgThPlate.naturalWidth>0){
+    ctx.drawImage(imgThPlate,g.laneX-g.plateW/2,g.plateY-g.plateH/2,g.plateW,g.plateH);
+  }else{
+    drawTeahousePlateEllipse(ctx,g.laneX,g.plateY,g.plateW,g.plateW*0.34);
+    if(imgSteamerEmpty.complete&&imgSteamerEmpty.naturalWidth>0)
+      ctx.drawImage(imgSteamerEmpty,g.steamerX-g.sw/2,g.steamerY-g.sw*0.5,g.sw,g.sw);
+  }
+  // 下方：用戶設計嘅木托盤 sprite ＋ 白色細碟（點心由呢度隨住抬肩升上去）
+  if(imgThTray.complete&&imgThTray.naturalWidth>0){
+    ctx.drawImage(imgThTray,g.laneX-g.trayW/2,g.trayY-g.trayH/2,g.trayW,g.trayH);
+  }
+  drawTeahousePlateEllipse(ctx,g.laneX,g.dishY,g.dishW,g.dishW*0.30);
+  // 中間：綠色向上大箭咀（提示抬高手臂將點心送上蒸籠）
+  drawTeahouseUpArrow(ctx,g.laneX+g.plateW*0.36,g.dishY-g.dishW*0.34,g.plateY+g.plateH*0.58,nowMs());
   if(teahouseServe.phase==='fly'){
     const p=clamp01(t/TEAHOUSE_FLY_MS),e=1-Math.pow(1-p,2.4);
     const x=teahouseServe.fromX+(g.steamerX-teahouseServe.fromX)*e;
-    const y=teahouseServe.fromY+(g.steamerY-g.sw*0.10-teahouseServe.fromY)*e;
-    drawTeahouseDimsumSprite(ctx,teahouseServe.img,x,y,g.sw*(0.34-0.10*e));
+    const y=teahouseServe.fromY+(g.steamerY-teahouseServe.fromY)*e;
+    drawTeahouseDimsumSprite(ctx,teahouseServe.img,x,y,g.sw*(0.30-0.09*e));
   }else if(teahouseServe.phase==='steam'||teahouseServe.phase==='rest'){
-    drawTeahouseDimsumSprite(ctx,teahouseServe.img,g.steamerX,g.steamerY-g.sw*0.10,g.sw*0.24);
-    drawTeahouseSteam(ctx,g.steamerX,g.steamerY-g.sw*0.42,g.sw,t);
+    drawTeahouseDimsumSprite(ctx,teahouseServe.img,g.steamerX,g.steamerY-g.sw*0.06,g.sw*0.21);
+    drawTeahouseSteam(ctx,g.steamerX,g.steamerY-g.sw*0.34,g.sw,t);
     // 讚賞橫額
-    const bw=Math.min(cw*0.5,300),bh=54,bx=g.steamerX-bw/2,by=g.plateY+g.plateW*0.20;
+    const bw=Math.min(cw*0.5,300),bh=54,bx=g.laneX-bw/2,by=g.plateY+g.plateH*0.72;
     ctx.save();
     rrPath(ctx,bx,by,bw,bh,14);
     ctx.fillStyle='rgba(255,255,255,0.94)';ctx.fill();
     ctx.lineWidth=3;ctx.strokeStyle='#1A6B5A';ctx.stroke();
     ctx.fillStyle='#B3402A';ctx.font='800 26px "PingFang TC","Noto Sans TC",sans-serif';
     ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText('醒目！繼續！',g.steamerX,by+bh/2+1);
+    ctx.fillText('醒目！繼續！',g.laneX,by+bh/2+1);
     ctx.restore();
   }
   // 目標角度提示（頂部唔夠位就唔畫，側欄已顯示目標角度）
-  const topY=g.steamerY-g.sw*0.55;
+  const topY=g.plateY-g.plateH/2;
   if(topY>=34){
     const target=shoulderFlexionState.selectedTargetDeg??'—';
     ctx.save();
     ctx.fillStyle='#155f53';ctx.font='800 16px "PingFang TC","Noto Sans TC",sans-serif';ctx.textAlign='center';
-    ctx.fillText('目標 '+target+'°',g.steamerX,topY-8);
+    ctx.fillText('目標 '+target+'°',g.laneX,Math.max(20,topY-10));
     ctx.restore();
   }
 }
@@ -2913,11 +2952,14 @@ function updateBowlingStrike(){
 }
 function bowlingLaneGeometry(cw,ch){
   const laneX=cw*(ch>cw?.68:.58);
-  const pw=Math.min(cw*(ch>cw?0.44:0.32),400);
   const bgW=imgBowlingAlleyBg.naturalWidth||768,bgH=imgBowlingAlleyBg.naturalHeight||1028;
   const topSrcH=bgH*0.545;
-  const topH=pw*(topSrcH/bgW);
   const pinBaseY=ch*0.315;
+  // v75: 放大版面，但頂部（品牌牆＋樽陣）永遠唔可以出畫面 —
+  // 用高度反推最大 panel 闊度，landscape 由呢個 cap 話事。
+  const pwFit=(pinBaseY-2)/0.885*(bgW/topSrcH);
+  const pw=Math.min(cw*(ch>cw?0.56:0.44),560,pwFit);
+  const topH=pw*(topSrcH/bgW);
   const py0=pinBaseY-topH*0.885;
   const py1=ch*0.885;
   return {laneX,pw,py0,py1,topH,topSrcH,bgW,bgH,pinBaseY};
@@ -3007,9 +3049,133 @@ function drawBowlingAlleyScene(ctx,cw,ch){
   }
   ctx.restore();
 }
+/* ==================== v75 荃灣籃球場景（Level 3/4 肩前屈） ====================
+   純視覺同音效獎勵層：只讀取 shoulderFlexionState 嘅進度／達標訊號。
+   同 v73 保齡球場景一樣：呢層完全唔會改變抬臂達標判定，亦唔加任何新輸入。 */
+const basketballShot={phase:'idle',startedMs:0,swishPlayed:false};
+const BBALL_FLY_MS=700,BBALL_DROP_MS=620;
+function isBasketballTheme(){return isShoulderFlexionLevel()&&state.theme==='basketball';}
+function resetBasketballShot(){basketballShot.phase='idle';basketballShot.startedMs=0;basketballShot.swishPlayed=false;}
+function startBasketballShot(){
+  if(basketballShot.phase!=='idle')return;
+  basketballShot.phase='fly';basketballShot.startedMs=nowMs();basketballShot.swishPlayed=false;
+}
+function playSwishSound(){
+  // 籃網「唰」一聲（WebAudio 合成，無外部音檔）
+  try{
+    const actx=getAudioCtx();const t0=actx.currentTime;
+    const dur=0.22,len=Math.max(1,Math.floor(actx.sampleRate*dur));
+    const buf=actx.createBuffer(1,len,actx.sampleRate);
+    const data=buf.getChannelData(0);
+    for(let s=0;s<len;s++)data[s]=(Math.random()*2-1)*Math.pow(1-s/len,2.2);
+    const srcN=actx.createBufferSource();srcN.buffer=buf;
+    const bp=actx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=2600;bp.Q.value=0.7;
+    const g=actx.createGain();g.gain.value=0.5;
+    srcN.connect(bp);bp.connect(g);g.connect(actx.destination);
+    srcN.start(t0);srcN.stop(t0+dur+0.02);
+  }catch(e){}
+}
+function updateBasketballShot(){
+  if(basketballShot.phase==='idle')return;
+  const t=nowMs()-basketballShot.startedMs;
+  if(basketballShot.phase==='fly'&&t>=BBALL_FLY_MS){
+    basketballShot.phase='drop';
+    if(!basketballShot.swishPlayed){
+      basketballShot.swishPlayed=true;
+      playSwishSound();playApplauseSound();playHaoboCheer();
+    }
+  }
+  if(basketballShot.phase==='drop'&&t>=BBALL_FLY_MS+BBALL_DROP_MS)basketballShot.phase='down';
+}
+function basketballGeometry(cw,ch){
+  const laneX=cw*(ch>cw?.68:.58);
+  const pw=Math.min(cw*(ch>cw?0.56:0.46),580);
+  const bgW=imgBballCourt.naturalWidth||800,bgH=imgBballCourt.naturalHeight||768;
+  const py0=ch*0.055,py1=ch*0.885;
+  const s=Math.max(pw/bgW,(py1-py0)/bgH);
+  const dw=bgW*s,dh=bgH*s;
+  const dx=laneX-dw/2,dy=py0;
+  // 籃框喺相入面嘅相對位置（荃灣屋邨球場相：籃框圈心）
+  const rimX=dx+dw*0.370,rimY=dy+dh*0.242;
+  return {laneX,pw,py0,py1,dx,dy,dw,dh,rimX,rimY};
+}
+function drawBasketballSprite(ctx,x,y,r){
+  ctx.save();
+  ctx.beginPath();ctx.ellipse(x,y+r*0.95,r*0.8,r*0.20,0,0,Math.PI*2);
+  ctx.fillStyle='rgba(0,0,0,0.15)';ctx.fill();
+  if(imgBballBall.complete&&imgBballBall.naturalWidth>0){
+    const iw=imgBballBall.naturalWidth,ih=imgBballBall.naturalHeight;
+    let dw2,dh2;
+    if(iw>=ih){dw2=r*2;dh2=r*2*ih/iw;}else{dh2=r*2;dw2=r*2*iw/ih;}
+    ctx.drawImage(imgBballBall,x-dw2/2,y-dh2/2,dw2,dh2);
+  }else{ctx.fillStyle='#D2691E';ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();}
+  ctx.restore();
+}
+function drawBasketballBallItem(ctx,x,y,r){
+  // 投籃動畫進行中由場景接手畫波，避免出現兩個波
+  if(isBasketballTheme()&&basketballShot.phase!=='idle')return;
+  const prog=isBasketballTheme()?clamp01(Number(shoulderFlexionState.progress)||0):0;
+  drawBasketballSprite(ctx,x,y,r*(1-0.40*prog));
+}
+function drawBasketballShotBall(ctx,g){
+  if(basketballShot.phase==='idle')return;
+  const t=nowMs()-basketballShot.startedMs;
+  const startX=g.laneX,startY=gameCanvas.height*0.34;
+  const baseR=isPortrait()?96:126;
+  if(basketballShot.phase==='fly'){
+    const p=clamp01(t/BBALL_FLY_MS),e=1-Math.pow(1-p,2.0);
+    const x=startX+(g.rimX-startX)*e;
+    const arc=Math.max(60,(startY-g.rimY)*0.35);
+    const y=startY+(g.rimY-startY)*e-Math.sin(p*Math.PI)*arc;
+    drawBasketballSprite(ctx,x,y,Math.max(12,baseR*(0.55-0.28*p)));
+  }else if(basketballShot.phase==='drop'&&t<=BBALL_FLY_MS+BBALL_DROP_MS){
+    const p=clamp01((t-BBALL_FLY_MS)/BBALL_DROP_MS);
+    const y=g.rimY+p*p*g.dh*0.10;
+    ctx.save();ctx.globalAlpha=1-p*0.85;
+    drawBasketballSprite(ctx,g.rimX,y,Math.max(8,baseR*0.26*(1-p*0.4)));
+    ctx.restore();
+  }
+}
+function drawBasketballCourtScene(ctx,cw,ch){
+  const g=basketballGeometry(cw,ch);
+  updateBasketballShot();
+  preloadHaoboCheer();
+  const x0=g.laneX-g.pw/2;
+  ctx.save();
+  rrPath(ctx,x0,g.py0,g.pw,g.py1-g.py0,18);
+  ctx.clip();
+  if(imgBballCourt.complete&&imgBballCourt.naturalWidth>0){
+    ctx.drawImage(imgBballCourt,g.dx,g.dy,g.dw,g.dh);
+  }else{
+    ctx.fillStyle='#7fb2a2';ctx.fillRect(x0,g.py0,g.pw,g.py1-g.py0);
+  }
+  drawBasketballShotBall(ctx,g);
+  if(basketballShot.phase==='drop'||basketballShot.phase==='down'){
+    const bw=Math.min(cw*0.42,260),bh=52,bx=g.laneX-bw/2,by=g.py0+(g.py1-g.py0)*0.52;
+    ctx.save();
+    rrPath(ctx,bx,by,bw,bh,14);
+    ctx.fillStyle='rgba(255,255,255,0.94)';ctx.fill();
+    ctx.lineWidth=3;ctx.strokeStyle='#1A6B5A';ctx.stroke();
+    ctx.fillStyle='#B3402A';ctx.font='800 26px "PingFang TC","Noto Sans TC",sans-serif';
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('好波！入咗！',g.laneX,by+bh/2+1);
+    ctx.restore();
+  }
+  ctx.restore();
+  ctx.save();
+  ctx.strokeStyle='rgba(17,95,83,.55)';ctx.lineWidth=5;
+  rrPath(ctx,x0,g.py0,g.pw,g.py1-g.py0,18);ctx.stroke();
+  if(g.py0>=34){
+    const target=shoulderFlexionState.selectedTargetDeg??'—';
+    ctx.fillStyle='#155f53';ctx.font='800 16px "PingFang TC","Noto Sans TC",sans-serif';ctx.textAlign='center';
+    ctx.fillText('目標 '+target+'°',g.laneX,g.py0-12);
+  }
+  ctx.restore();
+}
 function drawShoulderFlexionGuide(ctx,cw,ch){
   if(!isShoulderFlexionLevel()) return;
   if(state.theme==='bowlinglane'){ drawBowlingAlleyScene(ctx,cw,ch); return; }
+  if(state.theme==='basketball'){ drawBasketballCourtScene(ctx,cw,ch); return; }
   if(isTeahouseDimsumMode()){ drawTeahouseScene(ctx,cw,ch); return; }
   const x=cw*(ch>cw?.68:.58),bottom=ch*.80,top=ch*.32;
   const target=shoulderFlexionState.selectedTargetDeg??'—';
@@ -6016,6 +6182,7 @@ function exitToLevelSelection(){
   releaseDwellPlate = null;
   isGrasping = false;
   handOpenPrep = false;
+  resetToolPinchAdapt();
   qaHand = null;
   promptRulesEnabled = true;
   setPromptSlot('rules');
@@ -6624,7 +6791,7 @@ function interpretHandResults(results, inputMirrored=false){
         // It does not require reopening to a theoretical maximum.
         isOpenPrep:!pinchHeld && pinch.isSeparated,
         pinchRatio:pinch.ratio, pinchIndexRatio:pinch.indexRatio,
-        pinchMiddleRatio:pinch.middleRatio, lm, source:'tripod-pinch' };
+        pinchMiddleRatio:pinch.middleRatio, pinchScale:pinch.scale, lm, source:'tripod-pinch' };
     }
     const usePalmCursor = state.gameType === 'grasp' || isGrossTabletop();
     const nx = interactionX(usePalmCursor ? palmX : tip.x);
@@ -6841,6 +7008,71 @@ function computePinchState(lm, isPinchingPrev){
 const TOOL_PINCH_DEFAULTS = {
   enter:0.52, nearExit:0.58, farExit:0.62, nearOpen:0.62, farOpen:0.68, scoreOpen:0.70,
 };
+/* v75: in-game adaptive tool aperture. Bedside reports (30 Aug): with the real
+   peg/chopsticks in a tripod grip some hands can NEVER reach the default (or a
+   mis-calibrated) reopen threshold, so pickup never arms and a held item never
+   releases. This tracker records the participant's OWN recent near/far digit
+   ratios during play and, once genuine open-close movement is observed
+   (enough samples AND enough span), re-derives every threshold as a percentile
+   of that personal range. Fail-closed: until the movement gate passes, the
+   calibrated/default thresholds stay in force. Safety semantics unchanged —
+   release still requires BOTH digits to clear their own reopen point, entry
+   still needs the combined aperture to close, and the 60 ms stabiliser plus
+   dual-digit rule still mean a single drifting landmark can never release an
+   item. Camera-observed motion only: no tool identification, no force. */
+const TOOL_ADAPT_MIN_SAMPLES = 90;
+const TOOL_ADAPT_MIN_SPAN = 0.030;
+const TOOL_ADAPT_MAX_SAMPLES = 300;
+const TOOL_HAND_TOO_CLOSE_SCALE = 0.55;
+const toolPinchAdapt = { near:[], far:[], combo:[], counter:0, thresholds:null };
+let lastToolPinchLive = null; // {ratio, nearRatio, farRatio, scale, at}
+function resetToolPinchAdapt(){
+  toolPinchAdapt.near.length = 0;
+  toolPinchAdapt.far.length = 0;
+  toolPinchAdapt.combo.length = 0;
+  toolPinchAdapt.counter = 0;
+  toolPinchAdapt.thresholds = null;
+  lastToolPinchLive = null;
+}
+function toolAdaptRange(vals){
+  if(vals.length < TOOL_ADAPT_MIN_SAMPLES) return null;
+  const s = vals.slice().sort((a,b)=>a-b);
+  const lo = s[Math.floor(s.length * 0.08)];
+  const hi = s[Math.min(s.length - 1, Math.floor(s.length * 0.92))];
+  const span = hi - lo;
+  return Number.isFinite(span) ? { lo, hi, span } : null;
+}
+function updateToolPinchAdapt(nearRatio, farRatio, ratio){
+  const push = (arr, v)=>{ arr.push(v); if(arr.length > TOOL_ADAPT_MAX_SAMPLES) arr.shift(); };
+  push(toolPinchAdapt.near, nearRatio);
+  push(toolPinchAdapt.far, farRatio);
+  push(toolPinchAdapt.combo, ratio);
+  // Recompute every 10 frames — percentiles over ≤300 samples are cheap but
+  // there is no need to sort on every camera frame.
+  if((toolPinchAdapt.counter++ % 10) !== 0 && toolPinchAdapt.thresholds) return;
+  const nr = toolAdaptRange(toolPinchAdapt.near);
+  const fr = toolAdaptRange(toolPinchAdapt.far);
+  const cr = toolAdaptRange(toolPinchAdapt.combo);
+  // Movement gate: a static posture (open, closed or fist) never produces the
+  // required span, so a hand that is not actually opening and closing keeps
+  // the fail-closed calibrated/default thresholds.
+  if(!nr || !fr || !cr || cr.span < TOOL_ADAPT_MIN_SPAN ||
+     nr.span < TOOL_ADAPT_MIN_SPAN * 0.8 || fr.span < TOOL_ADAPT_MIN_SPAN * 0.8){
+    toolPinchAdapt.thresholds = null;
+    return;
+  }
+  // Percentile positions keep entry < release < open strictly ordered inside
+  // the participant's own achievable range.
+  toolPinchAdapt.thresholds = {
+    enter: Math.min(0.68, cr.lo + cr.span * 0.42),
+    nearExit: nr.lo + nr.span * 0.58,
+    farExit: fr.lo + fr.span * 0.58,
+    nearOpen: nr.lo + nr.span * 0.72,
+    farOpen: fr.lo + fr.span * 0.72,
+    scoreOpen: Math.max(0.10, cr.lo + cr.span * 0.85),
+    adaptive: true,
+  };
+}
 function computeToolPinchState(lm, isPinchingPrev){
   if(!hasFiniteHandLandmarks(lm, [0,4,5,8,9,12,17])){
     return { isPinching:false, ratio:null, isSeparated:false, score:0, valid:false };
@@ -6859,13 +7091,22 @@ function computeToolPinchState(lm, isPinchingPrev){
   const nearRatio = Math.min(indexRatio, middleRatio);
   const farRatio = Math.max(indexRatio, middleRatio);
   const ratio = nearRatio * 0.68 + farRatio * 0.32;
-  const t = (!research.active && state.personalToolPinch) ? state.personalToolPinch : TOOL_PINCH_DEFAULTS;
+  if(!research.active){
+    updateToolPinchAdapt(nearRatio, farRatio, ratio);
+    lastToolPinchLive = { ratio, nearRatio, farRatio, scale, at: nowMs() };
+  }
+  // v75 threshold priority: live adaptive range (reflects the hand + tool +
+  // camera distance actually in front of the lens right now) → tool-in-hand
+  // calibration → conservative defaults. Fail-closed at every step.
+  const t = (!research.active && toolPinchAdapt.thresholds)
+    || (!research.active && state.personalToolPinch)
+    || TOOL_PINCH_DEFAULTS;
   // Release still requires BOTH digits to clear the reopen point of their own
   // measured tool range — one drifting landmark can never release an item.
   const bothReopened = nearRatio >= t.nearExit && farRatio >= t.farExit;
   const isPinching = isPinchingPrev ? !bothReopened : (ratio <= t.enter);
   return {
-    isPinching, ratio, indexRatio, middleRatio, nearRatio, farRatio,
+    isPinching, ratio, indexRatio, middleRatio, nearRatio, farRatio, scale,
     isSeparated: nearRatio >= t.nearOpen && farRatio >= t.farOpen,
     score: Math.max(0, Math.min(1, 1 - (ratio / Math.max(t.scoreOpen, 0.001)))),
     valid:true,
@@ -7105,6 +7346,13 @@ function startCalibLoop(){
               c.toolVals.push(value);
               if(c.toolVals.length > 240) c.toolVals.shift();
             }
+            // v75: a hand too close to the lens compresses the normalised
+            // aperture range and starves the tool range gate — tell the
+            // participant to move back instead of failing silently.
+            if(isLevel6RealToolTask() && Number.isFinite(res.pinchScale) &&
+                res.pinchScale >= TOOL_HAND_TOO_CLOSE_SCALE){
+              hint.textContent = '手太貼近鏡頭，請後移少少，俾成隻手入鏡。';
+            }
             const openQualifies = isLevel6RealToolTask()
               ? toolCalibOpenQualifies(c.toolVals, value)
               : (Number.isFinite(value) && calibLooksOpen(res));
@@ -7343,6 +7591,7 @@ const imgRoosterPlate = new Image(); imgRoosterPlate.src = 'img/rooster_plate.pn
 const imgLaundryRack = new Image(); imgLaundryRack.src = 'img/laundry_rack.png';
 // v72 雪櫃收納遊戲相片（用戶提供嘅真實食物相）
 const imgFridgeOpen = new Image(); imgFridgeOpen.src = 'img/fridge_open.png';
+const imgFridgeWide = new Image(); imgFridgeWide.src = 'img/fridge_wide.png'; // v75 橫向闊身雪櫃
 const imgFridgeCharsiuRice = new Image(); imgFridgeCharsiuRice.src = 'img/fridge_charsiu_rice.png';
 const imgFridgeRibs = new Image(); imgFridgeRibs.src = 'img/fridge_ribs.png';
 const imgFridgeTofu = new Image(); imgFridgeTofu.src = 'img/fridge_tofu.png';
@@ -7359,7 +7608,11 @@ const imgBowlingPin = new Image(); imgBowlingPin.src = 'img/bowling_pin.png';
 const imgBowlingBall = new Image(); imgBowlingBall.src = 'img/bowling_ball.png';
 /* v74 模擬茶樓場景資產（Level 3/4 點心主題「模擬茶樓」顯示模式） */
 const imgTeahouseBg = new Image(); imgTeahouseBg.src = 'img/teahouse_bg.png';
+const imgBballCourt = new Image(); imgBballCourt.src = 'img/bball_court.png';
+const imgBballBall = new Image(); imgBballBall.src = 'img/bball_ball.png';
 const imgSteamerEmpty = new Image(); imgSteamerEmpty.src = 'img/steamer_empty.png';
+const imgThPlate = new Image(); imgThPlate.src = 'img/th_plate.png';
+const imgThTray = new Image(); imgThTray.src = 'img/th_tray.png';
 const imgFridgeFish = new Image(); imgFridgeFish.src = 'img/fridge_fish.png';
 const imgFridgeSnowpea = new Image(); imgFridgeSnowpea.src = 'img/fridge_snowpea.png';
 const imgLaundryShirt1 = new Image(); imgLaundryShirt1.src = 'img/laundry_shirt1.png';
@@ -7808,6 +8061,12 @@ const THEMES = {
     thumbnail:'img/bowling_alley_bg.png',thumbnailAlt:'懷舊荃灣保齡球場木球道同十個保齡球樽',
     categoriesFor(){ return LEVEL3_THEME_VARIANTS.bowlinglane; },
   }),
+  basketball: mkTheme({
+    id:'basketball',title:'荃灣籃球場',goal:'抬高患側上肢到目標角度，籃球就會飛上籃框，好波入咗！',
+    itemWord:'籃球',difficulty:'肩前屈抬臂',targetStyle:'panel',
+    thumbnail:'img/bball_court.png',thumbnailAlt:'荃灣屋邨籃球場，兩邊住宅大廈，遠處山景',
+    categoriesFor(){ return LEVEL3_THEME_VARIANTS.basketball; },
+  }),
   bilateral: mkTheme({
     id:'bilateral', title:'檯面肩水平外展',
     goal:'患側前臂承托，由中線向患側外滑，再返回中線',
@@ -8011,13 +8270,20 @@ const THEMES = {
     },
   }),
 };
-const THEME_ORDER = ['wipewindow','bowling','mahjongwash','buspay','bowlinglane','flowers','dimsum','laundry','fridge','cards','mahjong','cooking'];
+const THEME_ORDER = ['wipewindow','bowling','mahjongwash','buspay','bowlinglane','basketball','flowers','dimsum','laundry','fridge','cards','mahjong','cooking'];
 const LEVEL3_THEME_VARIANTS = {
   bowlinglane:[
     { type:'bowlingball', itemLabel:'保齡球', targetLabel:'球樽', color:'#0F5F53',
       drawScale:0.85, labelGap:1.05,
       drawItem:(ctx,x,y,r)=>drawBowlingBallItem(ctx,x,y,r),
       drawIcon:(ctx,x,y,s)=>drawBowlingBallSprite(ctx,x,y,s*0.9),
+    },
+  ],
+  basketball:[
+    { type:'basketball', itemLabel:'籃球', targetLabel:'籃框', color:'#C0392B',
+      drawScale:0.85, labelGap:1.05,
+      drawItem:(ctx,x,y,r)=>drawBasketballBallItem(ctx,x,y,r),
+      drawIcon:(ctx,x,y,s)=>drawBasketballSprite(ctx,x,y,s*0.9),
     },
   ],
   dimsum:[
@@ -8357,7 +8623,8 @@ function fridgeInteriorRect(t){
 function fridgePlacedRadius(rect){
   // v72：橫向時指令牌遮咗雪櫃上半部，剩低嘅窄帶要細啲嘅半徑先夠位放晒 12 樣。
   const landscape = gameCanvas.width > gameCanvas.height;
-  return Math.min(rect.rh * (landscape ? 0.105 : 0.135), rect.rw * (landscape ? 0.058 : 0.075));
+  // v75：雪櫃放大咗，放入去嘅食物都跟住加大
+  return Math.min(rect.rh * (landscape ? 0.130 : 0.150), rect.rw * (landscape ? 0.072 : 0.085));
 }
 function fridgeNoteCrash(x, y, rect, msg){
   const speakable = nowMs() >= fridgeCrashUntil;
@@ -8446,6 +8713,8 @@ function themeAvailableForLevel(themeId, level = state.level){
   if(themeId === 'fridge') return level === '5';
   // v73 保齡球場景係 Level 3/4 肩前屈專屬（純視覺獎勵層，不改互動判定）
   if(themeId === 'bowlinglane') return level === '3' || level === '4';
+  // v75 荃灣籃球場景都係 Level 3/4 肩前屈專屬（純視覺獎勵層，不改互動判定）
+  if(themeId === 'basketball') return level === '3' || level === '4';
   return themeId !== 'cooking';
 }
 function availableThemeOrder(level = state.level){
@@ -8457,7 +8726,7 @@ function availableThemeOrder(level = state.level){
   }
   if(level === '3' || level === '4'){
     // Same visual choices, different OT-selected shoulder-flexion band.
-    return ['bowlinglane','tsuenwan','dimsum','flowers','laundry','cards','mahjong'];
+    return ['bowlinglane','basketball','tsuenwan','dimsum','laundry','cards','mahjong'];
   }
   if(level === '4'){
     return ['dimsum','wipewindow','bowling','mahjongwash','buspay'];
@@ -8936,7 +9205,7 @@ function initGame(){
   shoulderHoldInterruptedSpoken = false;
   hideTargetHoldCountdown();
   lastLevelShown = -1;  // reset 升級追蹤，讓 initGame 後首次 spawn 觸發 tier 0 banner
-  heldItem = null; foods = []; targets = []; resetBowlingStrike(); resetTeahouseServe();
+  heldItem = null; foods = []; targets = []; resetBowlingStrike(); resetBasketballShot(); resetTeahouseServe();
   resetDimsumOrderGame();  // v69 筷子點心落單狀態一併清齊
   resetLaundryOrderGame(); // v71 晾衫單狀態一併清齊
   resetFridgeGame();       // v72 雪櫃收納狀態一併清齊
@@ -8946,6 +9215,7 @@ function initGame(){
   gripActive = false;
   isGrasping = false;
   handOpenPrep = false;
+  resetToolPinchAdapt();
   detectedGestureState = {mode:'', stable:false, candidate:false, candidateAt:0};
   lastAcceptedToolHandGeneration = -1;
   cursorX = -1; cursorY = -1;
@@ -9124,15 +9394,16 @@ function setupTargets(){
     return;
   }
   if(isFridgeGame()){
-    // v72 雪櫃收納：上方一個大雪櫃（真實相片，開門），食物由下方購物袋逐樣放入。
-    const fridgeRatio = (imgFridgeOpen.naturalWidth > 0 && imgFridgeOpen.naturalHeight > 0)
-      ? imgFridgeOpen.naturalWidth / imgFridgeOpen.naturalHeight : 627 / 350;
-    let tw = portrait ? Math.min(cw * 0.92, 780) : Math.min(cw * 0.52, 640);
+    // v75 雪櫃收納：改用橫向闊身四門雪櫃相片，橫向盡量佔滿成個屏幕闊度，
+    // 食物照舊由下方購物袋逐樣放入（保留向上運送距離）。
+    const fridgeRatio = (imgFridgeWide.naturalWidth > 0 && imgFridgeWide.naturalHeight > 0)
+      ? imgFridgeWide.naturalWidth / imgFridgeWide.naturalHeight : 1597 / 935;
+    let tw = Math.min(cw * 0.97, portrait ? 900 : 1160);
     let th = tw / fridgeRatio;
-    const fridgeMaxH = portrait ? ch * 0.40 : ch * 0.46;
+    const fridgeMaxH = portrait ? ch * 0.44 : ch * 0.64;
     if(th > fridgeMaxH){ th = fridgeMaxH; tw = th * fridgeRatio; }
-    targets = [{ type:'fridge', label:'雪櫃', img:imgFridgeOpen, drawIcon:null,
-      style:'fridge', x:cw / 2, y:th / 2 + ch * (portrait ? 0.115 : 0.13), w:tw, h:th, color:'#2E6DA4' }];
+    targets = [{ type:'fridge', label:'雪櫃', img:imgFridgeWide, drawIcon:null,
+      style:'fridge', x:cw / 2, y:th / 2 + ch * (portrait ? 0.105 : 0.03), w:tw, h:th, color:'#2E6DA4' }];
     return;
   }
   if(isLevel3Tabletop()){
@@ -9149,7 +9420,7 @@ function setupTargets(){
     return;
   }
   if(isShoulderFlexionLevel()){
-    if(state.theme==='bowlinglane'||isTeahouseDimsumMode()){
+    if(state.theme==='bowlinglane'||state.theme==='basketball'||isTeahouseDimsumMode()){
       // v73 保齡球／v74 模擬茶樓：目標（球樽／蒸籠）由場景直接繪畫，唔使用通用目標盤
       targets=[];
       return;
@@ -9401,13 +9672,15 @@ function makeFoodAt(def, existingFoods){
   // Safety default for public Level 5: larger objects are easier to pick up with a
   // light, non-forceful grasp and easier to release.
   const level5Boost = (!research.active && state.level === '5') ? 1.18 : 1;
+  // v75：雪櫃遊戲食物再加大（用戶反映食物太細）
+  const fridgeBoost = isFridgeGame() ? (portrait ? 1.25 : 1.35) : 1;
   const baseR = (isShoulderFlexionLevel() ? (portrait ? 104 : 138)
     : (isLevel4Tabletop() ? (portrait ? 78 : 104)
       : (portrait ? (advancedPilot ? 62 : 72) : 100))) * level5Boost;
   // Task-specific strata: FTHUE 6 and 7 use progressively smaller objects.
   const level67DimSum = state.level === '67' && dimSumTheme;
   const requestedR = baseR * (isShoulderFlexionLevel() ? 1 : (def.scale || 1.0)) *
-    (research.active ? pilotStratum().itemScale : 1) * (level67DimSum ? 1.5 : 1);
+    (research.active ? pilotStratum().itemScale : 1) * (level67DimSum ? 1.5 : 1) * fridgeBoost;
   // On compact portrait canvases the 1.5× size is capped only when necessary
   // to preserve a clear three-item layout and an unobstructed instruction area.
   const maxLevel67DimSumR = portrait
@@ -11038,6 +11311,7 @@ function updateShoulderFlexionGame(){
     shoulderFlexionCycleAwarded=false;
     advanceLevel3RoundVariant();
     resetBowlingStrike();
+    resetBasketballShot();
     resetTeahouseServe();
     foods=[];
     spawnInitialFoods();
@@ -11052,8 +11326,12 @@ function updateShoulderFlexionGame(){
   const estimated=Math.max(0,Number(shoulderFlexionState.estimatedAngle)||0);
   const visualProgress=clamp01(Number(shoulderFlexionState.progress)||0);
   const cw=gameCanvas.width,ch=gameCanvas.height;
-  const laneX=cw*(ch>cw?.68:.58);
-  const bottom=ch*.78,top=ch*.34;
+  let laneX=cw*(ch>cw?.68:.58),bottom=ch*.78,top=ch*.34;
+  if(isTeahouseDimsumMode()){
+    // v75 設計版面：點心喺托盤細碟起步，沿中線升上大碟蒸籠下方
+    const tg=teahouseGeometry(cw,ch);
+    laneX=tg.laneX;bottom=tg.dishY-tg.dishW*0.18;top=tg.plateY+tg.plateH*0.62;
+  }
   if(item){
     item.x=laneX;
     item.y=bottom-(bottom-top)*visualProgress;
@@ -11064,6 +11342,7 @@ function updateShoulderFlexionGame(){
     shoulderFlexionCycleAwarded=true;
     triggerFeedback(true);
     if(state.theme==='bowlinglane')startBowlingStrike();
+    if(state.theme==='basketball')startBasketballShot();
     if(isTeahouseDimsumMode())startTeahouseServe();
     researchLog('shoulder_target_reached',{
       estimated_deg:Math.round(estimated),
@@ -11089,12 +11368,36 @@ function updateShoulderFlexionGame(){
 }
 
 /* ---------- 握放模式邏輯 ---------- */
+/* v75: live aperture feedback for the real-tool tasks. The participant (and
+   supervising therapist) can see, as a percentage of the participant's OWN
+   currently-effective open/close range, how far the hand has reopened — which
+   makes an unreachable threshold visible instead of silent. Also warns when
+   the hand fills too much of the frame: a too-close hand starves both the
+   calibration range gate and the in-game adaptive tracker. Display only —
+   never drives pickup or release. */
+function toolPinchLiveHint(){
+  if(!isLevel6RealToolTask() || research.active) return null;
+  const live = lastToolPinchLive;
+  if(!live || nowMs() - live.at > 900) return null;
+  if(live.scale >= TOOL_HAND_TOO_CLOSE_SCALE) return { warn:'手太貼近鏡頭，請後移少少' };
+  const t = toolPinchAdapt.thresholds || state.personalToolPinch || TOOL_PINCH_DEFAULTS;
+  const closedRef = t.enter * 0.9;
+  const openRef = Math.max(closedRef + 0.05, (t.nearOpen + t.farOpen) / 2);
+  const pct = Math.round(100 * Math.max(0, Math.min(1,
+    (live.ratio - closedRef) / (openRef - closedRef))));
+  return { pct };
+}
 function setActionPrompt(main, detail){
   const statusBar = document.getElementById('statusBar');
   if(!statusBar) return;
   if(main === '等待偵測手部'){
     main = '鏡頭對準';
     detail = '';
+  }
+  const toolHint = toolPinchLiveHint();
+  if(toolHint){
+    if(toolHint.warn) detail = toolHint.warn;
+    else detail = (detail ? detail + '｜' : '') + '開合 ' + toolHint.pct + '%';
   }
   if(window.YCHLanguage){
     main = window.YCHLanguage.text(main);
@@ -11982,6 +12285,8 @@ function renderGame(){
     if(f.removed) continue;
     // v73 保齡球滾動／冧樽期間，波同標籤由場景層接手，避免半空浮字
     if(isBowlingLaneTheme() && bowlingStrike.phase!=='idle') continue;
+    // v75 籃球投籃動畫進行中，波同標籤由場景層接手
+    if(isBasketballTheme() && basketballShot.phase!=='idle') continue;
     // v74 模擬茶樓：點心飛入蒸籠／蒸緊嗰陣由場景層接手畫，避免出現兩件點心
     if(isTeahouseDimsumMode() && teahouseServe.phase!=='idle') continue;
     ctx.save();
@@ -12335,19 +12640,26 @@ const ADV_IMG = {};
 const ADV_ASSETS = [
   'rice_bowl','eggs','spring_onion','oil_bottle','egg_beaten','onion_chopped',
   'plate_empty','salt_dish','wok','friedrice','stove_knob','board_knife',
-  'fl_rose','fl_chrys','fl_sunflower','fl_gerbera','fl_tulip','fl_lily',
-  'leaf_blade','leaf_euca','vase',
+  'v75f_01','v75f_02','v75f_03','v75f_04','v75f_05','v75f_06','v75f_07','v75f_08',
+  'v75l_01','v75l_02','v75l_03','v75l_04','v75l_05','v75l_06','v75l_07','v75l_08','v75_vase',
   'mahjong_atlas','cards_atlas'
 ];
 ['red','blue','yellow','green'].forEach(c=>{
   ['g_tshirt','g_socks','g_shorts','g_vest','g_trousers','g_jacket','basket']
     .forEach(g=> ADV_ASSETS.push(g + '_' + c));
 });
+// v75 插花素材（由用戶設計圖逐格裁出，唔係 AI 生成）
+const V75_IMG_SRC = {};
+for(let i=1;i<=8;i++){
+  V75_IMG_SRC['v75f_0'+i] = 'img/flower_0'+i+'.png';
+  V75_IMG_SRC['v75l_0'+i] = 'img/leaf_0'+i+'.png';
+}
+V75_IMG_SRC['v75_vase'] = 'img/flower_vase.png';
 function advImg(name){
   if(!ADV_IMG[name]){
     const im = new Image();
     im.decoding = 'async';
-    im.src = 'img/advanced/' + name + '.png';
+    im.src = V75_IMG_SRC[name] || ('img/advanced/' + name + '.png');
     ADV_IMG[name] = im;
   }
   return ADV_IMG[name];
@@ -12531,7 +12843,9 @@ function buildAdvDom(){
 .keepsake canvas.sig{width:100%;height:120px;border:2px dashed #c9c2b4;border-radius:12px;background:#fff;touch-action:none;}
 .sig-hint{font-size:12px;color:#6a6a6a;margin-top:4px;}
 @media (min-width:521px) and (orientation:portrait){
-  .adv-panel{width:min(43vw,310px);right:10px;top:72px;}
+  /* v75: top buttons wrap to a second row (~y90-145) on iPad portrait, so keep the
+     panel below them to avoid the 休息/停止 buttons covering the instructions. */
+  .adv-panel{width:min(43vw,310px);right:10px;top:152px;}
 }
 @media (max-height:520px){ .adv-panel{top:64px;padding:5px 8px 6px;width:min(300px,38vw);} .adv-panel .ap-text{font-size:15px;} }
 `;
@@ -14854,15 +15168,26 @@ function laundryRender(ctx){
    完成後可打名／簽名，下載 PNG 留念（名字只留在此頁記憶中）。
    ================================================================== */
 const FLOWER_KINDS = [
-  { key:'fl_rose',      name:'玫瑰' },
-  { key:'fl_chrys',     name:'菊花' },
-  { key:'fl_sunflower', name:'太陽花' },
-  { key:'fl_gerbera',   name:'非洲菊' },
-  { key:'fl_tulip',     name:'鬱金香' },
-  { key:'fl_lily',      name:'百合' },
-  { key:'leaf_blade',   name:'長葉' },
-  { key:'leaf_euca',    name:'尤加利葉' },
+  // 第一批：花（全部裁自用戶設計圖）
+  { key:'v75f_01', name:'紅玫瑰' },
+  { key:'v75f_02', name:'橙玫瑰' },
+  { key:'v75f_03', name:'粉紅玫瑰' },
+  { key:'v75f_04', name:'黃菊花' },
+  { key:'v75f_05', name:'橙菊花' },
+  { key:'v75f_06', name:'小雛菊' },
+  { key:'v75f_07', name:'百合' },
+  { key:'v75f_08', name:'蘭花' },
+  // 第二批：葉（全部裁自用戶設計圖）
+  { key:'v75l_01', name:'黃金葉' },
+  { key:'v75l_02', name:'尤加利葉' },
+  { key:'v75l_03', name:'斑葉' },
+  { key:'v75l_04', name:'蕨葉' },
+  { key:'v75l_05', name:'情人草' },
+  { key:'v75l_06', name:'米蘭葉' },
+  { key:'v75l_07', name:'龜背葉' },
+  { key:'v75l_08', name:'紅葉' },
 ];
+const FLOWERS_PER_PAGE = 8;
 const flowers = {
   active:false, palette:[], placed:[], sel:-1, msg:'', layout:null, idSeq:1,
   name:'', sigStrokes:[], palettePage:0, movingId:'', moveOrigin:null,
@@ -14873,32 +15198,25 @@ const flowers = {
   },
 };
 function flowersSetup(){
+  // v75 按用戶設計重排：花瓶置中，花材一行 8 格排喺畫面底部（似一盤花材），
+  // 鏡頭畫面保留喺背後（病人要見到自己隻手先可以安全對準抓握）。
   const cw = gameCanvas.width, ch = gameCanvas.height;
-  const narrow = cw < 700, phone = cw < 520, portrait = ch > cw;
-  const sideRight = affectedSideSign() > 0;
-  const cols = 2;
-  const size = Math.max(phone ? 82 : (narrow ? 96 : 108),
-    Math.min(phone ? 104 : (narrow ? 126 : 144), Math.min(cw, ch) * 0.18));
-  const batch = FLOWER_KINDS.slice(flowers.palettePage*4, flowers.palettePage*4 + 4);
-  flowers.palette = batch.map((k, i)=>{
-    const col = i % cols, row = Math.floor(i / cols);
-    return {
-      id:'pal' + (flowers.palettePage*4+i), kind:k.key, name:k.name,
-      x: cw/2 + (col - 0.5) * Math.min(size*0.94, cw*0.18),
-      y: ch*(isLevel4Tabletop() ? 0.70 : (phone ? 0.43 : (portrait ? 0.39 : 0.36))) +
-        row * (size*(isLevel4Tabletop() ? 0.78 : 0.92)),
-      r: size*0.46, size,
-    };
-  });
-  const vaseH = Math.min(ch*(isLevel4Tabletop() ? 0.28 : (phone ? 0.32 : (portrait ? 0.38 : 0.42))),
-    isLevel4Tabletop() ? 230 : (phone ? 250 : 320));
+  const portrait = ch > cw;
+  const batch = FLOWER_KINDS.slice(flowers.palettePage*FLOWERS_PER_PAGE,
+    flowers.palettePage*FLOWERS_PER_PAGE + FLOWERS_PER_PAGE);
+  const gap = Math.min(cw*0.118, portrait ? 96 : 140);
+  const size = Math.min(gap*0.94, portrait ? 92 : 120);
+  const rowY = ch - size*0.62 - 8;
+  flowers.palette = batch.map((k, i)=>({
+    id:'pal' + (flowers.palettePage*FLOWERS_PER_PAGE+i), kind:k.key, name:k.name,
+    x: cw/2 + (i - (FLOWERS_PER_PAGE-1)/2) * gap,
+    y: rowY,
+    r: size*0.50, size,
+  }));
+  const vaseH = Math.min(ch*(portrait ? 0.34 : 0.42), 400);
   flowers.layout = {
-    vase:{ x: isLevel4Tabletop() ? cw*0.50 : cw * (sideRight
-             ? (phone ? 0.74 : (portrait ? 0.75 : 0.78))
-             : (phone ? 0.26 : (portrait ? 0.25 : 0.22))),
-           y: isLevel4Tabletop() ? ch*0.43 : ch - vaseH*0.5 - 10,
-           w: Math.min(cw*(phone ? 0.42 : 0.38), vaseH*0.88), h: vaseH },
-    size,
+    vase:{ x: cw*0.5, y: ch - size*1.30 - vaseH*0.5, w: vaseH*0.68, h: vaseH },
+    size, trayTop: rowY - size*0.62,
   };
   carrier.reset();
   flowersPanel();
@@ -14913,9 +15231,9 @@ function flowersPanel(){
     metric:'完成後可以寫上名字、簽名，下載作品 PNG 留念。',
     pct: Math.min(1, flowers.placed.length / 8),
     buttons:[
-      { label:'換一批花材', onClick:()=>{
+      { label:'花 ⇄ 葉', onClick:()=>{
           flowers.palettePage = (flowers.palettePage + 1) % 2;
-          flowersSetup(); flowers.msg = flowers.palettePage ? '現在顯示第二批花材。' : '現在顯示第一批花材。';
+          flowersSetup(); flowers.msg = flowers.palettePage ? '現在顯示葉材。' : '現在顯示花材。';
           flowersPanel();
         } },
       { label:'↻ 旋轉', onClick:()=> flowersAdjust('rot') },
@@ -15051,7 +15369,7 @@ function drawVaseScene(ctx, L, opts){
       ctx.stroke(); ctx.restore();
     }
   });
-  drawSprite(ctx, advImg('vase'), vase.x, vase.y, vase.h, { shadow:true });
+  drawSprite(ctx, advImg('v75_vase'), vase.x, vase.y, vase.h, { shadow:true });
   if(o.name){
     ctx.save();
     ctx.font = 'bold ' + Math.round(vase.h*0.14) + 'px "PingFang TC","Noto Sans TC",serif';
@@ -15064,24 +15382,19 @@ function drawVaseScene(ctx, L, opts){
 function flowersRender(ctx){
   const cw = gameCanvas.width, ch = gameCanvas.height;
   const L = flowers.layout || (flowersSetup(), flowers.layout);
-  ctx.save();
-  const g0 = ctx.createLinearGradient(0, ch*0.28, 0, ch);
-  g0.addColorStop(0, 'rgba(255,255,255,0.66)');
-  g0.addColorStop(1, 'rgba(232,226,214,0.94)');
-  ctx.fillStyle = g0;
-  rrPath(ctx, 8, ch*0.28, cw-16, ch*0.70, 20); ctx.fill();
-  ctx.restore();
+  // v75：唔再鋪大塊白色背景——鏡頭畫面要透出嚟，病人先見到自己隻手（安全對準）。
   drawLevel4MidlineGuide(ctx);
-
-  // 一般模式用花材架；Level 4沿中央走廊排列，不加側邊空白框。
-  if(!isLevel4Tabletop()){
-    ctx.save();
-    ctx.fillStyle = 'rgba(255,255,255,0.72)';
-    const pw = (flowers.palette[1] ? Math.abs(flowers.palette[1].x - flowers.palette[0].x) : 0);
-    const palTop = ch*(advNarrow() ? 0.44 : 0.30);
-    rrPath(ctx, 8, palTop, (pw ? pw + L.size*1.1 : L.size*1.2), ch*0.98 - palTop, 16);
-    ctx.fill(); ctx.restore();
-  }
+  // 底部花材盤（半透明木色長條）
+  ctx.save();
+  const trayTop = L.trayTop != null ? L.trayTop : ch*0.84;
+  const g0 = ctx.createLinearGradient(0, trayTop, 0, ch);
+  g0.addColorStop(0, 'rgba(214,178,130,0.82)');
+  g0.addColorStop(1, 'rgba(178,136,88,0.90)');
+  ctx.fillStyle = g0;
+  rrPath(ctx, 6, trayTop, cw-12, ch - trayTop - 4, 14); ctx.fill();
+  ctx.strokeStyle = 'rgba(120,84,46,0.9)'; ctx.lineWidth = 3;
+  rrPath(ctx, 6, trayTop, cw-12, ch - trayTop - 4, 14); ctx.stroke();
+  ctx.restore();
 
   const hover = carrier.hoverId;
   for(const p of flowers.palette){
@@ -15092,6 +15405,17 @@ function flowersRender(ctx){
       ctx.restore();
     }
     drawSprite(ctx, advImg(p.kind), p.x, p.y, p.size);
+    // v75：每格花材下面標名（大字白邊，方便老友記認）
+    ctx.save();
+    const fs = Math.max(14, Math.round(p.size*0.19));
+    ctx.font = 'bold ' + fs + 'px "PingFang TC","Noto Sans TC",sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.lineWidth = Math.max(3, fs*0.28);
+    ctx.strokeStyle = 'rgba(255,255,255,0.95)';
+    ctx.strokeText(p.name, p.x, p.y + p.size*0.46);
+    ctx.fillStyle = '#4a2f14';
+    ctx.fillText(p.name, p.x, p.y + p.size*0.46);
+    ctx.restore();
   }
 
   drawVaseScene(ctx, L, { name: flowers.name });
@@ -17377,7 +17701,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v74-20260831-teahouse";
+  const LEVEL_APP_BUILD = "v75-20260831-design";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

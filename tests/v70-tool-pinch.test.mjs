@@ -103,14 +103,18 @@ test('after genuine open-close movement, only the top of the range qualifies', (
 /* ---------------- Behavioural: computeToolPinchState ---------------- */
 
 function extractToolPinch(personal){
+  // v75: computeToolPinchState now feeds the in-game adaptive tracker, so the
+  // harness compiles that block too (fresh per extraction — histories empty,
+  // fail-closed to the personal/default thresholds under test).
   const defaults = publicSource.match(/const TOOL_PINCH_DEFAULTS = \{[\s\S]*?\};/);
+  const adapt = publicSource.match(/const TOOL_ADAPT_MIN_SAMPLES[\s\S]*?function updateToolPinchAdapt[\s\S]*?\n\}/);
   const fn = publicSource.match(/function computeToolPinchState\(lm, isPinchingPrev\)\{[\s\S]*?\n\}/);
-  assert.ok(defaults && fn, 'computeToolPinchState not found');
+  assert.ok(defaults && adapt && fn, 'computeToolPinchState not found');
   const hasFinite = (lm, idxs) => idxs.every(i => lm[i]
     && Number.isFinite(lm[i].x) && Number.isFinite(lm[i].y) && Number.isFinite(lm[i].z));
-  const factory = new Function('hasFiniteHandLandmarks', 'research', 'state',
-    defaults[0] + '\n' + fn[0] + '\nreturn computeToolPinchState;');
-  return factory(hasFinite, {active: false}, {personalToolPinch: personal || null});
+  const factory = new Function('hasFiniteHandLandmarks', 'research', 'state', 'nowMs',
+    defaults[0] + '\n' + adapt[0] + '\n' + fn[0] + '\nreturn computeToolPinchState;');
+  return factory(hasFinite, {active: false}, {personalToolPinch: personal || null}, () => 0);
 }
 
 // Same geometry as the QA synthetic hand: fixed palm, fingertip gaps supplied.

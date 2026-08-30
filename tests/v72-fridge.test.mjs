@@ -50,7 +50,7 @@ test('fridge order defs cover all 12 requested foods', () => {
 /* ---------------- Source contract: layout & rendering ---------------- */
 
 test('fridge target sits at the top, grocery bag spawn at the bottom', () => {
-  assert.match(publicSource, /type:'fridge', label:'雪櫃', img:imgFridgeOpen[\s\S]{0,120}style:'fridge', x:cw \/ 2, y:th \/ 2 \+ ch \* \(portrait \? 0\.115 : 0\.13\)/);
+  assert.match(publicSource, /type:'fridge', label:'雪櫃', img:imgFridgeWide[\s\S]{0,120}style:'fridge', x:cw \/ 2, y:th \/ 2 \+ ch \* \(portrait \? 0\.105 : 0\.03\)/);
   assert.match(publicSource, /if\(t\.style === 'fridge'\)\{ drawFridgeTarget\(ctx, t\); continue; \}/);
   assert.match(publicSource, /function fridgeBagSpot\(cw, ch, r\)\{[\s\S]{0,200}ch - r - \(portrait \? 96 : 56\)/);
   // Placed foods are drawn inside the fridge so the patient sees progress.
@@ -142,7 +142,7 @@ return {isFridgeGame, resetFridgeGame, newFridgeRound, fridgeCurrentDef,
 }
 
 // A fake fridge target with no image: interior rect = plain w×h box.
-// rect: x0=200 y0=130 rw=600 rh=340; pr = min(340*.135, 600*.075) = 45.
+// rect: x0=200 y0=130 rw=600 rh=340; pr = min(340*.150, 600*.085) = 51 (v75 大雪櫃大食物).
 const T = {x: 500, y: 300, w: 600, h: 340, img: null};
 const item = (def) => ({targetType: def.type, label: def.label, img: null});
 
@@ -201,7 +201,7 @@ test('placing on an occupied spot crashes and names the blocking food', () => {
   const first = mod.fridgeCurrentDef();
   assert.equal(mod.fridgeTryPlace(item(first), 500, 300, T), true);
   const second = mod.fridgeCurrentDef();
-  // Same spot → crash; nearby-but-clear spot → success (pr=45, min gap 82.8px).
+  // Same spot → crash; nearby-but-clear spot → success (pr=51, min gap 86.7px).
   assert.equal(mod.fridgeTryPlace(item(second), 510, 300, T), false);
   assert.match(mod.crashMsg, new RegExp(first.label));
   assert.equal(mod.queueIndex, 1);
@@ -213,7 +213,7 @@ test('finishing all 12 foods triggers applause, praise and an auto next round', 
   const {mod, calls} = makeFridgeModule();
   mod.newFridgeRound();
   const spots = [];
-  for(let i = 0; i < 12; i++) spots.push({x: 260 + (i % 6) * 90, y: 190 + Math.floor(i / 6) * 130});
+  for(let i = 0; i < 12; i++) spots.push({x: 270 + (i % 6) * 90, y: 200 + Math.floor(i / 6) * 130});
   for(let i = 0; i < 12; i++){
     const def = mod.fridgeCurrentDef();
     assert.equal(mod.fridgeTryPlace(item(def), spots[i].x, spots[i].y, T), true, `food ${i}`);
@@ -250,8 +250,8 @@ test('placed-food radius allows all 12 foods to fit with planning', () => {
   const {mod} = makeFridgeModule();
   const rect = mod.fridgeInteriorRect(T);
   const pr = mod.fridgePlacedRadius(rect);
-  assert.ok(Math.abs(pr - 45) < 1e-9);
+  assert.ok(Math.abs(pr - 51) < 1e-9);
   // 6×2 grid with 90/130px spacing stays inside the interior margins.
-  assert.ok(260 - pr * 0.6 >= rect.left && 710 + pr * 0.6 <= rect.right);
-  assert.ok(190 - pr * 0.6 >= rect.top && 320 + pr * 0.6 <= rect.bottom);
+  assert.ok(270 - pr * 0.6 >= rect.left && 720 + pr * 0.6 <= rect.right);
+  assert.ok(200 - pr * 0.6 >= rect.top && 330 + pr * 0.6 <= rect.bottom);
 });
