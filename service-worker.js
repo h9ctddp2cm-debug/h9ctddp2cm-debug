@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v67-20260828-bedside-usability-fixes";
+const CACHE_VERSION = "fthue-rehab-v69-20260830-dimsum-order";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

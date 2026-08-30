@@ -1259,7 +1259,7 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
             </figure>
             <figure>
               <img src="img/advanced/hand_chopsticks.gif"
-                alt="患手三指輕捏拿起點心，移到飯碗，再張開放下"
+                alt="患手三指輕捏拿起點心，移到中央大碟，再張開放下"
                 loading="lazy" decoding="async"
                 data-testid="gif-level-6-chopsticks">
               <figcaption>筷子點心</figcaption>
@@ -2300,7 +2300,7 @@ const state = {
   graspType: 'any',      // fixed: open-hand detection
   affectedSide: '',      // normal play: therapist must choose left or right before calibration
   qaMode: false,         // QA-only: 經 hook 注入游標，不需相機
-  calibration:{ detectedStart:0, openStart:0, closedHoldMs:0, closedTickAt:0, lastSeenAt:0, detectedDone:false,
+  calibration:{ detectedStart:0, openHoldMs:0, openTickAt:0, moreOpenMs:0, closedHoldMs:0, closedTickAt:0, lastSeenAt:0, detectedDone:false,
     openDone:false, closedDone:false, ready:false, openScores:[], closedScores:[] },
   personalGraspEnter:null, personalGraspExit:null,
   personalPinchEnter:null, personalPinchExit:null, personalPinchOpen:null,
@@ -2463,7 +2463,7 @@ const research = {
   safetyClearance:'',
   cog:{ active:false, prompt:null, shownAt:0, nextAt:0, index:0, lastResult:'' },
   ruleSwitchOn:false, ruleSwitchAt:0,
-  calibration:{ detectedStart:0, openStart:0, closedHoldMs:0, closedTickAt:0, lastSeenAt:0, detectedDone:false,
+  calibration:{ detectedStart:0, openHoldMs:0, openTickAt:0, moreOpenMs:0, closedHoldMs:0, closedTickAt:0, lastSeenAt:0, detectedDone:false,
     openDone:false, closedDone:false, ready:false, openScores:[], closedScores:[] },
   personalGraspEnter:null, personalGraspExit:null,
   personalPinchEnter:null, personalPinchExit:null, personalPinchOpen:null,
@@ -3465,7 +3465,7 @@ window.renderCalibLevelBrief = renderCalibLevelBrief;
 window.CALIB_LEVEL_BRIEF = CALIB_LEVEL_BRIEF;
 
 function resetResearchCalibration(){
-  research.calibration = { detectedStart:0, openStart:0, closedHoldMs:0, closedTickAt:0, lastSeenAt:0, detectedDone:false,
+  research.calibration = { detectedStart:0, openHoldMs:0, openTickAt:0, moreOpenMs:0, closedHoldMs:0, closedTickAt:0, lastSeenAt:0, detectedDone:false,
     openDone:false, closedDone:false, ready:false, openScores:[], closedScores:[] };
   research.personalGraspEnter = null;
   research.personalGraspExit = null;
@@ -3477,7 +3477,7 @@ function resetResearchCalibration(){
   });
 }
 function resetNormalCalibration(){
-  state.calibration = { detectedStart:0, openStart:0, closedHoldMs:0, closedTickAt:0, lastSeenAt:0, detectedDone:false,
+  state.calibration = { detectedStart:0, openHoldMs:0, openTickAt:0, moreOpenMs:0, closedHoldMs:0, closedTickAt:0, lastSeenAt:0, detectedDone:false,
     openDone:false, closedDone:false, ready:false, openScores:[], closedScores:[] };
   state.personalGraspEnter = null;
   state.personalGraspExit = null;
@@ -4319,7 +4319,7 @@ const LEVEL6_TASKS = {
     id:'chopsticks', theme:'chopstick_dimsum',
     gameType:'pinch',
     label:'筷子點心', labelEn:'Chopstick Dim Sum',
-    hint:'患手三指張開，輕捏拿起點心，移到飯碗，再張開放下',
+    hint:'睇落單指示，患手三指輕捏拿起點心，放入中央大碟，再張開放下',
     actionCue:'三指張開 → 輕捏拿起 → 移動 → 張開放下',
   },
   peg:{
@@ -6240,6 +6240,9 @@ function interpretHandResults(results, inputMirrored=false){
     return { detected:true, nx, ny,
       isGrasping:stabiliseDetectedGesture(grasp.isGrasping, 'grasp'),
       graspScore: grasp.score,
+      // v68: calibration needs the raw finger-visibility counts to confirm the
+      // hand is actually open before sampling the "open" baseline.
+      graspOpenCount: grasp.openCount, graspCurledCount: grasp.curledCount,
       isOpenPrep: !grasp.isGrasping, lm };
     }
   }
@@ -6542,6 +6545,24 @@ function updateCalibrationCopy(){
 }
 
 const CALIB_DROPOUT_GRACE_MS = 1500;
+// v68: the open stage must sample an actually open hand. The old blind 750ms
+// timer captured whatever posture followed first detection - a participant who
+// closed the hand early poisoned the "open" baseline with closed-hand scores,
+// making the light-close criterion permanently unreachable (30 Aug Level 5
+// home recording: detect lag ~1.5s, fist already formed when sampling began).
+function calibLooksOpen(res){
+  if(isPinchMode() || isPegMode()) return res.isOpenPrep === true;
+  if(Number.isFinite(res.graspOpenCount) && Number.isFinite(res.graspCurledCount)){
+    // Two clearly extended fingers, or at most one curled finger, is open
+    // enough for a limited-extension stroke hand.
+    return res.graspOpenCount >= 2 || res.graspCurledCount <= 1;
+  }
+  return res.isOpenPrep === true;
+}
+function calibOpenStageHint(){
+  if(isPegMode()) return '請先放鬆打開。';
+  return isPinchMode() ? '請先張開手指。' : '請先張開手。';
+}
 function renderCalibCheck(id, done){
   const el = document.getElementById(id);
   if(!el) return;
@@ -6604,13 +6625,24 @@ function startCalibLoop(){
         if(isGraspStyleMode()){
           const value = isPinchMode() ? res.pinchRatio : res.graspScore;
           if(!c.openDone){
-            if(Number.isFinite(value)) c.openScores.push(value);
-            if(!c.openStart) c.openStart = now;
-            if(now - c.openStart >= 750){
-              c.openDone = true;
-              c.closedHoldMs = 0;
-              c.closedTickAt = 0;
-              hint.textContent = isPinchMode() ? '而家輕捏。' : '而家輕合手。';
+            // v68: accumulate qualifying open-hand time instead of a blind
+            // timer, and only sample the baseline from frames that actually
+            // look open. A closed or transitioning hand no longer completes
+            // this stage or pollutes openScores.
+            const previousOpenTick = c.openTickAt;
+            c.openTickAt = now;
+            if(Number.isFinite(value) && calibLooksOpen(res)){
+              c.openScores.push(value);
+              const openDelta = Number.isFinite(previousOpenTick) && previousOpenTick > 0
+                ? Math.min(120, now - previousOpenTick) : 0;
+              c.openHoldMs = (c.openHoldMs || 0) + openDelta;
+              if(c.openHoldMs >= 750){
+                c.openDone = true;
+                c.closedHoldMs = 0;
+                c.closedTickAt = 0;
+                c.moreOpenMs = 0;
+                hint.textContent = isPinchMode() ? '而家輕捏。' : '而家輕合手。';
+              }
             }
           }else if(!c.closedDone && Number.isFinite(value)){
             const openMean = medianValue(c.openScores);
@@ -6626,6 +6658,7 @@ function startCalibLoop(){
             const previousTick = c.closedTickAt;
             c.closedTickAt = now;
             if(changedEnough){
+              c.moreOpenMs = 0;
               c.closedScores.push(value);
               // Accumulate qualifying light-close time instead of demanding one
               // unbroken hold. Closing the hand often drops the landmarker for
@@ -6642,6 +6675,31 @@ function startCalibLoop(){
                 ? value >= openMean - 0.010
                 : value <= openMean + 0.004;
               if(clearlyOpenAgain) c.closedHoldMs = 0;
+              // v68: a hand that stays clearly MORE open than the stored
+              // "open" baseline means the baseline itself was captured from a
+              // closed or transitioning hand. Recapture the open baseline
+              // instead of leaving the light-close criterion unreachable.
+              const moreOpenThanBaseline = isPinchMode()
+                ? value >= openMean + Math.max(0.020, openMean * 0.035)
+                : isPegMode()
+                  ? value <= openMean - Math.max(0.006, openMean * 0.015)
+                  : value <= openMean - 0.035;
+              if(moreOpenThanBaseline){
+                const moreOpenDelta = Number.isFinite(previousTick) && previousTick > 0
+                  ? Math.min(120, now - previousTick) : 0;
+                c.moreOpenMs = (c.moreOpenMs || 0) + moreOpenDelta;
+                if(c.moreOpenMs >= 600){
+                  c.openDone = false;
+                  c.openScores = [];
+                  c.openHoldMs = 0;
+                  c.openTickAt = 0;
+                  c.closedScores = [];
+                  c.closedHoldMs = 0;
+                  c.closedTickAt = 0;
+                  c.moreOpenMs = 0;
+                  hint.textContent = calibOpenStageHint();
+                }
+              }
             }
           }
         } else {
@@ -6730,11 +6788,14 @@ function startCalibLoop(){
           ? nowMs() - c.lastSeenAt : Infinity;
         if(lostForMs > CALIB_DROPOUT_GRACE_MS){
           c.detectedStart = 0;
-          c.openStart = 0;
+          c.openHoldMs = 0;
+          c.openTickAt = 0;
+          c.moreOpenMs = 0;
           c.closedHoldMs = 0;
           c.closedTickAt = 0;
         }else{
           c.closedTickAt = 0;
+          c.openTickAt = 0;
         }
       }
       calibDotEmaX = -1; calibDotEmaY = -1;
@@ -6759,6 +6820,9 @@ let gameRAF = null;
 // 圖片資源
 const imgSiumai = new Image(); imgSiumai.src = 'img/siumai.png';
 const imgHargau = new Image(); imgHargau.src = 'img/hargau.png';
+// v69 筷子點心落單模式：牛肉球真實相片 + 中央雞公大碟（用家提供相片，已去背）
+const imgBeefballReal = new Image(); imgBeefballReal.src = 'img/beefball_real.png';
+const imgRoosterPlate = new Image(); imgRoosterPlate.src = 'img/rooster_plate.png';
 const imgCharsiu = new Image(); imgCharsiu.src = 'img/charsiu.png';
 const imgLotusrice = new Image(); imgLotusrice.src = 'img/lotusrice.png';
 const imgSteamerSiumai = new Image(); imgSteamerSiumai.src = 'img/advanced/steamer_siumai.png';
@@ -7090,7 +7154,7 @@ function drawRiceBowl(ctx, x, y, s){
   ctx.restore();
 }
 function drawBeefBall(ctx, x, y, r){
-  // 沒有現成牛肉丸圖檔，程序繪製一顆有光澤的丸子並插上竹籤示意。
+  // 後備繪圖：真實相片載入失敗時，程序繪製一顆有光澤的肉球並插上竹籤示意。
   ctx.save();
   const grad = ctx.createRadialGradient(x - r*0.25, y - r*0.3, r*0.15, x, y, r*0.85);
   grad.addColorStop(0, '#8B5A3C');
@@ -7107,21 +7171,17 @@ function drawBeefBall(ctx, x, y, r){
   ctx.stroke();
   ctx.restore();
 }
-function drawChopsticksHolding(ctx, x, y, r, itemDrawer){
-  // 大型高對比虛擬筷子（不偵測真實筷子/夾握），夾住指定點心並停在游標位置。
-  ctx.save();
-  const spread = r*0.34;
-  ctx.strokeStyle = '#8B5A2B';
-  ctx.lineCap = 'round';
-  ctx.lineWidth = Math.max(6, r*0.16);
-  ctx.beginPath();
-  ctx.moveTo(x - spread, y - r*1.9); ctx.lineTo(x - r*0.06, y - r*0.08);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(x + spread, y - r*1.9); ctx.lineTo(x + r*0.06, y - r*0.08);
-  ctx.stroke();
-  if(itemDrawer) itemDrawer(ctx, x, y + r*0.05, r*0.86);
-  ctx.restore();
+function drawDimsumPhoto(ctx, x, y, r, img){
+  // v69：畫面只顯示點心真實相片，不畫任何虛擬筷子——病人手持真實筷子操作，
+  // 畫面上再顯示筷子會造成視覺混亂。相片以長邊貼齊 2r 保持縱橫比。
+  if(img && img.complete && img.naturalWidth > 0){
+    const iw = img.naturalWidth, ih = img.naturalHeight;
+    let dw = r * 2, dh = dw * ih / iw;
+    if(ih > iw){ dh = r * 2; dw = dh * iw / ih; }
+    ctx.drawImage(img, x - dw/2, y - dh/2, dw, dh);
+  } else {
+    drawBeefBall(ctx, x, y, r);
+  }
 }
 function drawDryingPole(ctx, x, y, s){
   // 香港常見曬衫竹笆（晾衫棍架），懸掛在畫面上方作為晾衫目標。
@@ -7261,10 +7321,10 @@ const THEMES = {
     },
   }),
   chopstick_dimsum: mkTheme({
-    id:'chopstick_dimsum', title:'筷子點心', goal:'患手三指張開、輕捏拿起；移到飯碗，再張開放下',
+    id:'chopstick_dimsum', title:'筷子點心', goal:'睇落單指示，患手三指輕捏拿起指定點心，放入中央大碟',
     itemWord:'點心', difficulty:'三點捏握運送', targetStyle:'panel',
     thumbnail:'img/hargau.png', thumbnailAlt:'蝦餃點心，代表筷子點心任務',
-    verbFor(){ return '患手三指輕捏拿起點心，移到飯碗，再張開放下'; },
+    verbFor(){ return '睇落單指示，患手三指輕捏拿起點心，移到中央大碟，再張開放下'; },
     actionLabelFor(){ return '三指張開 → 輕捏拿起 → 移動 → 張開放下；只偵測已選患手'; },
     categoriesFor(){ return LEVEL3_THEME_VARIANTS.chopstick_dimsum; },
   }),
@@ -7411,25 +7471,22 @@ const LEVEL3_THEME_VARIANTS = {
     drawItem:(ctx,x,y,r)=>drawCard(ctx,x,y,r,suit),
     drawIcon:(ctx,x,y,s)=>drawCard(ctx,x,y,s*0.85,suit),
   })),
-  // Level 6 筷子點心：患手兩指開合控制虛擬筷子夾放點心，肩屈曲運送至飯碗；不識別真實筷子或量度捏力。
+  // Level 6 筷子點心（v69 落單模式）：病人手持真實筷子，畫面不畫虛擬筷子，只顯示點心真實相片；
+  // 患手兩指開合驅動夾起/放下，肩屈曲運送至中央大碟；不識別真實筷子或量度捏力。
   chopstick_dimsum:[
-    { type:'chop_hargau', itemLabel:'蝦餃→筷子', targetLabel:'飯碗', color:'#E07B39',
-      drawScale:0.92, labelGap:1.05,
-      drawItem:(ctx,x,y,r)=>drawChopsticksHolding(ctx,x,y,r,(c2,x2,y2,r2)=>{
-        const img=imgHargau; if(img&&img.complete&&img.naturalWidth>0){ c2.drawImage(img,x2-r2,y2-r2,r2*2,r2*2); } else { drawBeefBall(c2,x2,y2,r2); }
-      }),
+    { type:'chop_hargau', itemLabel:'蝦餃', targetLabel:'大碟', color:'#E07B39',
+      img:imgHargau, drawScale:0.92, labelGap:1.05,
+      drawItem:(ctx,x,y,r)=>drawDimsumPhoto(ctx,x,y,r,imgHargau),
       drawIcon:(ctx,x,y,s)=>drawRiceBowl(ctx,x,y,s),
     },
-    { type:'chop_siumai', itemLabel:'燒賣→筷子', targetLabel:'飯碗', color:'#1A6B5A',
-      drawScale:0.92, labelGap:1.05,
-      drawItem:(ctx,x,y,r)=>drawChopsticksHolding(ctx,x,y,r,(c2,x2,y2,r2)=>{
-        const img=imgSiumai; if(img&&img.complete&&img.naturalWidth>0){ c2.drawImage(img,x2-r2,y2-r2,r2*2,r2*2); } else { drawBeefBall(c2,x2,y2,r2); }
-      }),
+    { type:'chop_siumai', itemLabel:'燒賣', targetLabel:'大碟', color:'#1A6B5A',
+      img:imgSiumai, drawScale:0.92, labelGap:1.05,
+      drawItem:(ctx,x,y,r)=>drawDimsumPhoto(ctx,x,y,r,imgSiumai),
       drawIcon:(ctx,x,y,s)=>drawRiceBowl(ctx,x,y,s),
     },
-    { type:'chop_beefball', itemLabel:'牛肉丸→筷子', targetLabel:'飯碗', color:'#8E4B35',
-      drawScale:0.92, labelGap:1.05,
-      drawItem:(ctx,x,y,r)=>drawChopsticksHolding(ctx,x,y,r,(c2,x2,y2,r2)=>drawBeefBall(c2,x2,y2,r2)),
+    { type:'chop_beefball', itemLabel:'牛肉球', targetLabel:'大碟', color:'#8E4B35',
+      img:imgBeefballReal, drawScale:0.92, labelGap:1.05,
+      drawItem:(ctx,x,y,r)=>drawDimsumPhoto(ctx,x,y,r,imgBeefballReal),
       drawIcon:(ctx,x,y,s)=>drawRiceBowl(ctx,x,y,s),
     },
   ],
@@ -7452,6 +7509,90 @@ const LEVEL3_THEME_VARIANTS = {
     },
   ],
 };
+/* ---- Level 6 筷子點心「落單」任務（v69）----
+   病人手持真實筷子（畫面不畫虛擬筷子）。系統隨機「落單」（例：我想食2個牛肉球，3個蝦餃），
+   病人逐件夾到中央大碟；碟上會顯示已放好嘅點心，等病人知道進度。完成一張單 → 拍手聲鼓勵
+   → 稍後自動出新單，直至療程時間完結。只偵測已選患手嘅兩指開合；不識別真實筷子、
+   不量度捏力、不作任何臨床評估。研究模式（pilot）唔行呢個玩法。 */
+const DIMSUM_ORDER_MENU = [
+  { type:'chop_beefball', label:'牛肉球', img:()=>imgBeefballReal },
+  { type:'chop_hargau',  label:'蝦餃',   img:()=>imgHargau },
+  { type:'chop_siumai',  label:'燒賣',   img:()=>imgSiumai },
+];
+// 碟上擺位（相對碟中心嘅比例座標），輪流使用避免重疊
+const DIMSUM_PLATE_SLOTS = [
+  {fx:-0.16,fy:-0.05},{fx:0.11,fy:-0.09},{fx:0.24,fy:0.05},
+  {fx:-0.28,fy:0.07},{fx:-0.03,fy:0.09},{fx:0.14,fy:0.19},
+  {fx:-0.18,fy:0.20},{fx:0.02,fy:-0.20},{fx:0.28,fy:0.19},{fx:-0.30,fy:-0.14},
+];
+let dimsumOrder = null;          // {lines:[{type,label,need,placed}], done}
+let dimsumPlateContents = [];    // [{img, fx, fy}]
+let dimsumOrdersCompleted = 0;
+let dimsumOrderCelebrateUntil = 0;
+let dimsumOrderTimerId = null;
+let dimsumOrderBannerRect = null;
+function isDimsumOrderGame(){
+  return state.level === '67' && state.theme === 'chopstick_dimsum' && !research.active;
+}
+function resetDimsumOrderGame(){
+  dimsumOrderBannerRect = null;
+  dimsumOrder = null;
+  dimsumPlateContents = [];
+  dimsumOrdersCompleted = 0;
+  dimsumOrderCelebrateUntil = 0;
+  if(dimsumOrderTimerId){ clearTimeout(dimsumOrderTimerId); dimsumOrderTimerId = null; }
+}
+function dimsumOrderText(){
+  if(!dimsumOrder) return '';
+  return '我想食' + dimsumOrder.lines.map(l=>l.need + '個' + l.label).join('，') + '。';
+}
+function newDimsumOrder(){
+  const pool = DIMSUM_ORDER_MENU.slice();
+  for(let i = pool.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  dimsumOrder = {
+    lines: pool.slice(0, 2).map(m=>({
+      type:m.type, label:m.label, need:2 + Math.floor(Math.random()*3), placed:0,
+    })),
+    done: false,
+  };
+  dimsumPlateContents = [];
+  dimsumOrderCelebrateUntil = 0;
+  try{ speakCantonese(dimsumOrderText(), {rate:.82}); }catch(e){}
+  // 換新單後，畫面上可能仍是舊單嘅點心：確保至少有一件係新單需要嘅
+  if(foods.length) ensureFoodCount();
+  return dimsumOrder;
+}
+function dimsumOrderLineFor(type){
+  if(!dimsumOrder || dimsumOrder.done) return null;
+  return dimsumOrder.lines.find(l=>l.type === type) || null;
+}
+function dimsumOrderAccepts(item){
+  const line = dimsumOrderLineFor(item && item.targetType);
+  return !!line && line.placed < line.need;
+}
+function dimsumOrderPlace(item){
+  const line = dimsumOrderLineFor(item && item.targetType);
+  if(!line) return;
+  line.placed++;
+  const menu = DIMSUM_ORDER_MENU.find(m=>m.type === item.targetType);
+  const slot = DIMSUM_PLATE_SLOTS[dimsumPlateContents.length % DIMSUM_PLATE_SLOTS.length];
+  dimsumPlateContents.push({ img: menu ? menu.img() : null, fx:slot.fx, fy:slot.fy });
+  if(dimsumOrder.lines.every(l=>l.placed >= l.need)){
+    dimsumOrder.done = true;
+    dimsumOrdersCompleted++;
+    dimsumOrderCelebrateUntil = nowMs() + 2600;
+    try{ playApplauseSound(); }catch(e){}
+    try{ speakCantonese('好嘢！上齊點心喇！多謝晒！', {rate:.85}); }catch(e){}
+    if(dimsumOrderTimerId) clearTimeout(dimsumOrderTimerId);
+    dimsumOrderTimerId = setTimeout(()=>{
+      dimsumOrderTimerId = null;
+      if(isDimsumOrderGame() && state.running) newDimsumOrder();
+    }, 2600);
+  }
+}
 let level3RoundVariant = null;
 let level3PreviousVariantType = '';
 function level3VariantPool(themeId = state.theme){
@@ -7832,6 +7973,36 @@ function playWrongSound(){
     });
   }catch(e){}
 }
+function playApplauseSound(){
+  // 拍手聲：多下短促帶通雜訊脈衝，模擬一班人拍手（WebAudio 合成，無外部音檔）
+  try{
+    const ctx = getAudioCtx();
+    const t0 = ctx.currentTime;
+    const clapCount = 22;
+    for(let i = 0; i < clapCount; i++){
+      const when = t0 + i * 0.072 + Math.random() * 0.03;
+      const dur = 0.05 + Math.random() * 0.03;
+      const len = Math.max(1, Math.floor(ctx.sampleRate * dur));
+      const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      for(let s = 0; s < len; s++){
+        data[s] = (Math.random() * 2 - 1) * Math.pow(1 - s / len, 2.2);
+      }
+      const srcNode = ctx.createBufferSource();
+      srcNode.buffer = buf;
+      const bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = 900 + Math.random() * 900;
+      bp.Q.value = 1.1;
+      const g = ctx.createGain();
+      const fade = i < 4 ? (i + 1) / 4 : (i > clapCount - 6 ? (clapCount - i) / 6 : 1);
+      g.gain.value = 0.22 * fade * (0.7 + Math.random() * 0.5);
+      srcNode.connect(bp); bp.connect(g); g.connect(ctx.destination);
+      srcNode.start(when);
+      srcNode.stop(when + dur + 0.02);
+    }
+  }catch(e){}
+}
 function showFeedback(correct){
   const el = document.getElementById('feedbackOverlay');
   el.textContent = correct ? '✓' : '✕';
@@ -7922,6 +8093,7 @@ function initGame(){
   hideTargetHoldCountdown();
   lastLevelShown = -1;  // reset 升級追蹤，讓 initGame 後首次 spawn 觸發 tier 0 banner
   heldItem = null; foods = []; targets = [];
+  resetDimsumOrderGame();  // v69 筷子點心落單狀態一併清齊
   releaseDwellStart = 0; releaseDwellPlate = null;
   basicOpenStart = 0; basicGraspStart = 0; basicGraspCandidate = ''; basicGraspArmed = false;
   basicContactCandidate = ''; basicContactUntil = 0;
@@ -7978,6 +8150,7 @@ function initGame(){
     if(advCurrent) advTeardown();   // 由進階活動切回點心配對：清走進階 UI
     setupTargets();
     spawnInitialFoods();
+    if(isDimsumOrderGame()) newDimsumOrder();  // v69：開局即落第一張單（讀出＋橫幅顯示）
   }
 
   // 重置 dwell 計時器
@@ -8079,6 +8252,16 @@ function setupTargets(){
   const portrait = isPortrait();
   const style = getTheme().targetStyle || 'panel';
   const cats = getCategories();
+  if(isDimsumOrderGame()){
+    // v69 落單模式：中央一隻大空碟（雞公碟真實相片），所有點心都放呢度，
+    // 配對規則由落單數量控制（dimsumOrderAccepts）而唔係目標類型。
+    // 橫向要留返上半空間畀三件點心＋落單橫額，碟改細（v69 landscape fix）
+    const tw = Math.min(portrait ? cw * 0.58 : cw * 0.30, 560);
+    const th = tw * 0.80;
+    targets = [{ type:'dimsum_plate', label:'大碟', img:imgRoosterPlate, drawIcon:null,
+      style:'bigplate', x:cw / 2, y:ch - th / 2 - 14, w:tw, h:th, color:'#2E6DA4' }];
+    return;
+  }
   if(isLevel3Tabletop()){
     const tw = Math.min(cw * 0.30, 250);
     const th = tw * (style === 'steamer' ? 0.74 : 0.62);
@@ -8199,16 +8382,20 @@ function getInstructionExclusionRect(cw, ch, padding){
     .filter(el=>el && !el.classList.contains('hidden') && getComputedStyle(el).display !== 'none')
     .map(el=>el.getBoundingClientRect())
     .filter(rect=>rect.width > 0 && rect.height > 0);
-  if(!rects.length) return null;
+  if(!rects.length && !(isDimsumOrderGame() && dimsumOrderBannerRect)) return null;
   const pad = padding || 18;
   // Preserve separate exclusion islands. Combining the left HUD and right instructions into
   // one bounding rectangle incorrectly blocked the entire central upper workspace.
-  return rects.map(rect=>({
+  const islands = rects.map(rect=>({
     left:(rect.left - canvasRect.left) * scaleX - pad,
     top:(rect.top - canvasRect.top) * scaleY - pad,
     right:(rect.right - canvasRect.left) * scaleX + pad,
     bottom:(rect.bottom - canvasRect.top) * scaleY + pad,
   }));
+  // v69: the canvas-drawn dim sum order banner is an exclusion island too, so
+  // freshly spawned dim sum never hide underneath it.
+  if(isDimsumOrderGame() && dimsumOrderBannerRect) islands.push(dimsumOrderBannerRect);
+  return islands;
 }
 
 function circleOverlapsRect(x, y, radius, rect){
@@ -8302,7 +8489,15 @@ function parkHeldItemInBlankSpace(item){
 
 // 取得目前活動的配對物件 defs
 function getDimSumDefs(){
-  return getActivityDefs();
+  const defs = getActivityDefs();
+  // 落單模式：優先生成仍然需要嘅點心類型，確保病人有實際可夾嘅目標；
+  // 畫面上舊單食颩保留作輕度認知干擾（夾錯會扣分）。
+  if(isDimsumOrderGame() && dimsumOrder && !dimsumOrder.done){
+    const needed = dimsumOrder.lines.filter(l=>l.placed < l.need).map(l=>l.type);
+    const neededDefs = defs.filter(d=>needed.includes(d.type));
+    if(neededDefs.length) return neededDefs;
+  }
+  return defs;
 }
 
 // 建立單一項目（不重疊），可指定 def（dim sum or distractor）
@@ -8325,7 +8520,7 @@ function makeFoodAt(def, existingFoods){
   // to preserve a clear three-item layout and an unobstructed instruction area.
   const maxLevel67DimSumR = portrait
     ? Math.min(cw * 0.135, ch * 0.11)
-    : cw * 0.135;
+    : (isDimsumOrderGame() ? Math.min(cw * 0.135, ch * 0.13) : cw * 0.135);
   const shoulderFlexionMaxR=portrait
     ? Math.min(cw*.24,ch*.13)
     : Math.min(cw*.16,ch*.19);
@@ -8390,7 +8585,9 @@ function makeFoodAt(def, existingFoods){
     : (level67DimSum
       ? (portrait
         ? [[0.24,0.34],[0.76,0.34],[0.50,0.55]]
-        : [[0.22,0.39],[0.50,0.50],[0.78,0.39]])
+        : (isDimsumOrderGame()
+          ? [[0.20,0.30],[0.80,0.30],[0.50,0.44]]
+          : [[0.22,0.39],[0.50,0.50],[0.78,0.39]]))
       : (portrait
       ? (dimSumTheme
         ? [[0.22,0.34],[0.50,0.45],[0.78,0.34]]
@@ -8476,6 +8673,19 @@ function ensureFoodCount(){
   }
   if(distTarget === 0){
     foods.forEach(f=>{ if(isDistractor(f) && !f.held) f.removed = true; });
+  }
+  // 落單模式：確保畫面上至少有一件仍然需要嘅點心，
+  // 避免全部位置被唔需要嘅點心霸住造成死結。
+  if(isDimsumOrderGame() && dimsumOrder && !dimsumOrder.done){
+    const needed = dimsumOrder.lines.filter(l=>l.placed < l.need).map(l=>l.type);
+    const hasNeeded = foods.some(f=>!f.removed && needed.includes(f.targetType));
+    if(needed.length && !hasNeeded){
+      const sacrifice = foods.find(f=>!f.removed && !f.held && isDimSum(f) && !needed.includes(f.targetType));
+      if(sacrifice){
+        sacrifice.removed = true;
+        foods.push(spawnDimSum(foods));
+      }
+    }
   }
 }
 
@@ -9754,8 +9964,13 @@ function updateGameLogic(){
         }
         const elapsed = now - dwellStartTime;
         if(elapsed >= DWELL_MS){
-          // 放下
-          if(onPlate.type === heldItem.targetType){
+          // 放下（落單模式同樣改由單上數量判斷，保持兩條放下路徑一致）
+          const dwellDimsumOrderDrop = isDimsumOrderGame() && onPlate.type === 'dimsum_plate';
+          const dwellDropMatched = dwellDimsumOrderDrop
+            ? dimsumOrderAccepts(heldItem)
+            : onPlate.type === heldItem.targetType;
+          if(dwellDropMatched){
+            if(dwellDimsumOrderDrop) dimsumOrderPlace(heldItem);
             score += 10; correctCount++;
             wrongStreak = 0;
             triggerFeedback(true);
@@ -10112,7 +10327,13 @@ function updateGraspLogic(){
         if(onPlate){
           pilotBump('release_success');
           pilotRecordPlacement(onPlate, now);
-          if(heldItem.targetType === onPlate.type){
+          // 落單模式：配對改由單上數量判斷（夾多咗或唔在單上計錯）；其他模式維持類型配對。
+          const dimsumOrderDrop = isDimsumOrderGame() && onPlate.type === 'dimsum_plate';
+          const dropMatched = dimsumOrderDrop
+            ? dimsumOrderAccepts(heldItem)
+            : heldItem.targetType === onPlate.type;
+          if(dropMatched){
+            if(dimsumOrderDrop) dimsumOrderPlace(heldItem);
             score += 10; correctCount++;
             pilotBump('correct');
             wrongStreak = 0;
@@ -10258,6 +10479,119 @@ function drawSteamerTarget(ctx, t, LBL_SIZE){
   ctx.restore();
 }
 
+// v69 筷子點心落單模式：中央大碟（雞公碟真實相片）＋已放上碟嘅點心
+function drawBigPlateTarget(ctx, t){
+  ctx.save();
+  // 碟底陰影
+  ctx.fillStyle = 'rgba(0,0,0,0.16)';
+  ctx.beginPath();
+  ctx.ellipse(t.x, t.y + t.h * 0.42, t.w * 0.44, t.h * 0.09, 0, 0, Math.PI * 2);
+  ctx.fill();
+  let plateW = t.w, plateH = t.h;
+  if(t.img && t.img.complete && t.img.naturalWidth > 0){
+    const ratio = t.img.naturalWidth / t.img.naturalHeight;
+    plateW = t.w; plateH = plateW / ratio;
+    if(plateH > t.h){ plateH = t.h; plateW = plateH * ratio; }
+    ctx.drawImage(t.img, t.x - plateW / 2, t.y - plateH / 2, plateW, plateH);
+  } else {
+    drawRiceBowl(ctx, t.x, t.y, Math.min(t.w, t.h) * 0.45);
+  }
+  // 已放好嘅點心（等病人知道自己上咗幾多件）
+  const itemR = Math.min(plateW, plateH) * 0.135;
+  for(const p of dimsumPlateContents){
+    const px = t.x + p.fx * plateW, py = t.y + p.fy * plateH;
+    if(p.img && p.img.complete && p.img.naturalWidth > 0){
+      const iw = p.img.naturalWidth, ih = p.img.naturalHeight;
+      let dw = itemR * 2, dh = dw * ih / iw;
+      if(ih > iw){ dh = itemR * 2; dw = dh * iw / ih; }
+      ctx.drawImage(p.img, px - dw / 2, py - dh / 2, dw, dh);
+    } else {
+      drawBeefBall(ctx, px, py, itemR);
+    }
+  }
+  // hover：游標帶住點心埋碟時嘅提示外框
+  if(t._hover){
+    ctx.strokeStyle = t.color || '#2E6DA4';
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.ellipse(t.x, t.y, plateW * 0.5 + 8, plateH * 0.5 + 8, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// v69 落單橫幅：顯示而家張單（例：我想食2個牛肉球，3個蝦餃）同每款進度
+function drawDimsumOrderBanner(ctx, cw, ch){
+  if(!isDimsumOrderGame() || !dimsumOrder) return;
+  const celebrating = nowMs() < dimsumOrderCelebrateUntil;
+  const title = celebrating ? '👏 好嘢！上齊點心喇！' : '落單：' + dimsumOrderText();
+  const prog = dimsumOrder.lines
+    .map(l=>l.label + ' ' + Math.min(l.placed, l.need) + '/' + l.need)
+    .join('　');
+  let titleSize = Math.max(26, Math.round(cw * 0.028));
+  let progSize = Math.round(titleSize * 0.8);
+  const font = '"PingFang TC","Noto Sans TC",-apple-system,sans-serif';
+  ctx.save();
+  ctx.font = `bold ${titleSize}px ${font}`;
+  let titleW = ctx.measureText(title).width;
+  ctx.font = `bold ${progSize}px ${font}`;
+  let progW = ctx.measureText(prog).width;
+  const pad = 20;
+  // 橫向中央下方係大碟，橫額必須窄過兩側點心生成位（v69 landscape fix）：
+  // 收窄到最多 38% 畫面闊，唔夠位就縮字（下限 18px，語音會讀埋落單內容）。
+  const maxBw = isPortrait() ? cw - 24 : Math.min(cw - 24, cw * 0.38);
+  const widest = () => Math.max(titleW, progW);
+  if(widest() + pad * 2 > maxBw){
+    const fit = Math.max(0.5, (maxBw - pad * 2) / widest());
+    titleSize = Math.max(18, Math.floor(titleSize * fit));
+    progSize = Math.max(15, Math.floor(titleSize * 0.8));
+    ctx.font = `bold ${titleSize}px ${font}`;
+    titleW = ctx.measureText(title).width;
+    ctx.font = `bold ${progSize}px ${font}`;
+    progW = ctx.measureText(prog).width;
+  }
+  const bw = Math.min(maxBw, Math.max(titleW, progW) + pad * 2);
+  const bh = titleSize + progSize + pad * 1.9;
+  const bx = cw / 2 - bw / 2;
+  // Sit below any DOM HUD/instruction islands that share this horizontal span,
+  // so the order text is never hidden behind the score pills or hint boxes.
+  let by = 10;
+  const islands = getInstructionExclusionRect(cw, ch, 6);
+  if(islands){
+    for(const isl of islands){
+      if(isl.right > bx && isl.left < bx + bw) by = Math.max(by, isl.bottom + 6);
+    }
+  }
+  by = Math.min(by, ch * 0.34 - bh);
+  const prevRect = dimsumOrderBannerRect;
+  dimsumOrderBannerRect = {left:bx - 10, top:by - 10, right:bx + bw + 10, bottom:by + bh + 10};
+  // The first time the banner appears (or when a new order resizes it), push any
+  // dim sum hiding underneath out to clear space — initial spawn happens before
+  // the first render, so it cannot know the banner bounds yet.
+  if(!prevRect
+    || Math.abs(prevRect.left - dimsumOrderBannerRect.left) > 8
+    || Math.abs(prevRect.right - dimsumOrderBannerRect.right) > 8
+    || Math.abs(prevRect.bottom - dimsumOrderBannerRect.bottom) > 8){
+    ensureFoodsClearOfInstructions();
+  }
+  ctx.fillStyle = celebrating ? 'rgba(27,111,74,0.94)' : 'rgba(255,255,255,0.94)';
+  rrPath(ctx, bx, by, bw, bh, 18);
+  ctx.fill();
+  ctx.strokeStyle = celebrating ? '#14523A' : '#1A6B5A';
+  ctx.lineWidth = 3;
+  rrPath(ctx, bx, by, bw, bh, 18);
+  ctx.stroke();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = celebrating ? '#FFFFFF' : '#173F32';
+  ctx.font = `bold ${titleSize}px ${font}`;
+  ctx.fillText(title, cw / 2, by + pad * 0.6);
+  ctx.fillStyle = celebrating ? 'rgba(255,255,255,0.92)' : '#5A5142';
+  ctx.font = `bold ${progSize}px ${font}`;
+  ctx.fillText(prog, cw / 2, by + pad * 0.6 + titleSize + 8);
+  ctx.restore();
+}
+
 function renderLevel4WipeGame(ctx, cw, ch){
   const b = LEVEL4_WIPE_BOUNDS;
   const x = b.left*cw, y = b.top*ch;
@@ -10371,6 +10705,7 @@ function renderGame(){
   for(const t of targets){
     if(t.style === 'panel'){ drawPanelTarget(ctx, t, LBL_SIZE); continue; }
     if(t.style === 'steamer'){ drawSteamerTarget(ctx, t, LBL_SIZE); continue; }
+    if(t.style === 'bigplate'){ drawBigPlateTarget(ctx, t); continue; }
     ctx.save();
     // 磮子半徑（以 小盄邊 t.w/t.h 中較少伊確保圓形）
     const plateR = Math.min(t.w, t.h) / 2;
@@ -10469,6 +10804,9 @@ function renderGame(){
     }
     ctx.restore();
   }
+
+  // 筷子點心落單模式：頂部中央顯示落單內容同進度
+  drawDimsumOrderBanner(ctx, cw, ch);
 
   // 游標：大圓點 + 停留進度環 / 握放手勢圖示
   const cursorPoint = displayCursorPoint();
@@ -14031,7 +14369,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <script src="level4-three-games-module.js"></script>
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v67-20260828-bedside-usability-fixes";
+  const LEVEL_APP_BUILD = "v69-20260830-dimsum-order";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 
