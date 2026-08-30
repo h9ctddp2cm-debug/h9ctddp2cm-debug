@@ -60,7 +60,8 @@ test('bowlinglane gating: Levels 3/4 only (functional)', () => {
 
 test('bowlinglane variant drives the item visuals; pins are scene-drawn (no generic target)', () => {
   assert.match(publicSource, /bowlinglane:\[\s*\{ type:'bowlingball', itemLabel:'保齡球'/);
-  assert.match(publicSource, /if\(state\.theme==='bowlinglane'\)\{\s*\/\/ v73[^]{0,80}\s*targets=\[\];\s*return;/);
+  // v74 widened this branch to also cover the teahouse dim sum mode
+  assert.match(publicSource, /if\(state\.theme==='bowlinglane'\|\|isTeahouseDimsumMode\(\)\)\{\s*\/\/ v73[^]{0,120}\s*targets=\[\];\s*return;/);
   assert.match(publicSource, /if\(state\.theme==='bowlinglane'\)\{ drawBowlingAlleyScene\(ctx,cw,ch\); return; \}/);
 });
 

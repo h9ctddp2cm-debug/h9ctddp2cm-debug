@@ -1439,3 +1439,10 @@ Original prompt: Fix Level 6–7 interactions: make light clothes-peg press dete
 - `tests/v73-bowling.test.mjs` (8 tests): assets + dist audio copy, theme registration/order, functional level gating, variant/scene/no-generic-target contracts, safety banned-identifier scan, strike trigger + repetition re-rack anchors, functional strike state machine (roll→impact sounds-once→down→reset, 10 pin seeds, re-trigger no-op), lane geometry on-canvas in both iPad orientations.
 - Validation: full Node suite **365 total / 362 passed / 0 failed / 3 intentional skips**; technical validator **168/168** (×3 runs); `tools/checkjs.sh` + `git diff --check` passed; dist rebuilt with aligned `v73-20260830-bowling` markers ×3 and 0 QA-hook hits; audio shipped in dist + offline-assets. iPad Playwright QA (820×1180 L3 target 40° + 1180×820 L4 target 60°): calibration→lift→targetReady→ball rolls→all pins down→green tick→arm lowered→rep counted (score 10, streak 1/15)→pins re-racked, screenshots visually inspected (`ych_rehab_qa_artifacts/v73/`); 0 page errors; dist boot check passed.
 - Limitation: 好波 cheer generated with Gemini TTS — Cantonese pronunciation needs bedside verification on iPad speakers; simulated-landmark QA cannot replace real ward camera/lighting verification.
+
+## v74-20260831-teahouse（2026-08-31）
+- 點心主題（Level 3/4）新增「模擬茶樓」顯示模式（預設），活動選單點心卡下面有選擇框：「模擬茶樓」｜「看到自己」（原有鏡頭版本，完全保留）。
+- 模擬茶樓：全畫面茶樓背景（唔顯示病人自己嘅鏡頭影像），點心隨抬肩由下方細碟升起；達標後飛入竹蒸籠，冒蒸氣＋「醒目！繼續！」橫額＋廣東話讚賞語音（好叻呀！點心蒸好喇！）。
+- 安全不變量：場景屬純視覺／音效獎勵層，只讀 shoulderFlexionState，唔加任何手部接觸／揸握／放開訊號；research track（!research.active）唔受影響；L5 雪櫃、L67 筷子點心完全不變。
+- 新資產：img/teahouse_bg.png、img/steamer_empty.png（AI 生成後壓縮）。
+- 測試：tests/v74-teahouse.test.mjs 12 項新測試；全套 374 pass / 0 fail / 3 skip；validator 168/168；iPad QA 820×1180＋1180×820 截圖已目視檢查（ych_rehab_qa_artifacts/v74/）。
