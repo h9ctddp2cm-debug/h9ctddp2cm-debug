@@ -1279,6 +1279,7 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
             <span class="lv-line">六款活動都使用患手三點捏握，不需肩或肘角度</span>
             <span class="lv-line">六個功能活動：插花／筷子點心／衣夾晾衫／啤牌／麻雀／煮蛋炒飯</span>
             <span class="lv-line">先張開三指，輕輕合手拿起；用手的位置移動，再張開放下</span>
+            <span class="lv-line">筷子點心／衣夾晾衫：患手揸住真筷子／衣夾，校準時一齊揸住開合幾次</span>
             <span class="lv-line">只偵測已選患手的可見開合，不識別工具或量度力度</span>
           </p>
         </details>
@@ -2304,6 +2305,7 @@ const state = {
     openDone:false, closedDone:false, ready:false, openScores:[], closedScores:[] },
   personalGraspEnter:null, personalGraspExit:null,
   personalPinchEnter:null, personalPinchExit:null, personalPinchOpen:null,
+  personalToolPinch:null,   // v70: per-digit thresholds calibrated with the real tool in hand
   mirrorX:true,
   sessionMode:'training', // training | trial
   level4SessionThemes:['bilateral'],
@@ -2533,6 +2535,19 @@ function isLevel6(){ return !research.active && state.level === '67'; }
 function isLevel6Chopsticks(){ return isLevel6() && state.level6Task === 'chopsticks'; }
 function isLevel6Peg(){ return isLevel6() && state.level6Task === 'peg'; }
 function isLevel6ToolGestureTask(){ return isLevel6(); }
+/* v70: the chopstick and cloth-peg activities are played with the REAL tool in
+   the affected hand. The tool physically limits finger excursion, so these two
+   tasks calibrate and interpret the tripod aperture against the participant's
+   own tool-constrained range instead of bare-hand separation gates. Normal
+   flow only: the research track keeps its own predates-v70 tool modes. */
+function isLevel6RealToolTask(){
+  return isLevel6() && (state.level6Task === 'chopsticks' || state.level6Task === 'peg');
+}
+function level6ToolWords(){
+  return state.level6Task === 'peg'
+    ? { noun:'衣夾', open:'鬆開', close:'揸實' }
+    : { noun:'筷子', open:'揸開', close:'合埋' };
+}
 function affectedDirectionLabel(){
   if(isLevel4WipeGame()) return '伸肘向外畫弧';
   if(isLevel4Tabletop()) return isLevel3Tabletop()
@@ -3446,6 +3461,7 @@ const CALIB_LEVEL_BRIEF = {
      + '六款活動都用已選患手：先張開三指，輕捏拿起，用手的位置移動，再張開放下。<br>'
      + '<span lang="en">All six activities use the selected affected hand: open three fingers, lightly pinch to pick up, move with the hand, then reopen to release.</span><br>'
      + '可選插花、筷子點心、衣夾晾衫、啤牌、麻雀或煮蛋炒飯。六款活動都偵測已選患手三點捏握：先張開、輕捏拿起、用手的位置移動，再張開放下。網頁不識別實體工具，亦不量度握力或捏力。<br>'
+     + '筷子點心及衣夾晾衫由患手揸住真筷子／衣夾玩：校準同遊戲全程揸住工具，系統會對照參加者自己揸住工具時嘅開合幅度嚟判斷夾起與放開。<br>'
      + '<span style="color:#7d1a12;">注意：相機追蹤只控制遊戲，亦不作診斷或自動 FTHUE 分級。</span>',
 };
 function renderCalibLevelBrief(){
@@ -3484,6 +3500,7 @@ function resetNormalCalibration(){
   state.personalPinchEnter = null;
   state.personalPinchExit = null;
   state.personalPinchOpen = null;
+  state.personalToolPinch = null;
   ['calibDetectCheck','calibOpenCheck','calibCloseCheck'].forEach(id=>{
     renderCalibCheck(id, false);
   });
@@ -4319,15 +4336,15 @@ const LEVEL6_TASKS = {
     id:'chopsticks', theme:'chopstick_dimsum',
     gameType:'pinch',
     label:'筷子點心', labelEn:'Chopstick Dim Sum',
-    hint:'睇落單指示，患手三指輕捏拿起點心，放入中央大碟，再張開放下',
-    actionCue:'三指張開 → 輕捏拿起 → 移動 → 張開放下',
+    hint:'患手揸住真筷子。睇落單指示，合埋筷子夾起點心，放入中央大碟，再揸開筷子放下',
+    actionCue:'揸開筷子 → 合埋夾起 → 移動 → 揸開放下',
   },
   peg:{
     id:'peg', theme:'peg_laundry',
     gameType:'pinch',
     label:'衣夾晾衫', labelEn:'Cloth-Peg Laundry',
-    hint:'患手三指張開，輕捏拿起衣物，移到晾衫繩，再張開放下',
-    actionCue:'三指張開 → 輕捏拿起 → 移動 → 張開放下',
+    hint:'患手揸住真衣夾。揸實衣夾拿起衣物，移到晾衫繩，再鬆開衣夾放下',
+    actionCue:'鬆開衣夾 → 揸實拿起 → 移動 → 鬆開放下',
   },
   cards:{
     id:'cards', theme:'cards',
@@ -6218,7 +6235,9 @@ function interpretHandResults(results, inputMirrored=false){
     if(state.gameType === 'pinch'){
       // Normal Level 6 (all six tasks), plus the research bare-hand mode:
       // cursor is the centroid of thumb, index and middle fingertips.
-      const pinch = computePinchState(lm, isGrasping);
+      const pinch = isLevel6RealToolTask()
+        ? computeToolPinchState(lm, isGrasping)
+        : computePinchState(lm, isGrasping);
       const midX = (lm[4].x + lm[8].x + lm[12].x) / 3;
       const midY = (lm[4].y + lm[8].y + lm[12].y) / 3;
       // One stabilized state is the source of truth for both carrying and
@@ -6436,6 +6455,48 @@ function computePinchState(lm, isPinchingPrev){
     valid:true,
   };
 }
+/* v70: tool-in-hand tripod interpretation for the normal Level 6 chopstick and
+   cloth-peg tasks. With a real tool in the tripod grip the fingers can never
+   reach the bare-hand separation thresholds, and the middle finger usually
+   moves far less than the index. Entry uses the combined tripod aperture;
+   release and re-arm judge EACH digit against its own calibrated tool range,
+   so release still requires movement from BOTH digits (a single drifting
+   landmark cannot release an item) while a tool-constrained middle finger no
+   longer blocks release. Camera-observed hand motion only: the software does
+   not identify the physical tool, measure force, or make goniometric claims. */
+const TOOL_PINCH_DEFAULTS = {
+  enter:0.52, nearExit:0.58, farExit:0.62, nearOpen:0.62, farOpen:0.68, scoreOpen:0.70,
+};
+function computeToolPinchState(lm, isPinchingPrev){
+  if(!hasFiniteHandLandmarks(lm, [0,4,5,8,9,12,17])){
+    return { isPinching:false, ratio:null, isSeparated:false, score:0, valid:false };
+  }
+  const distance = (a,b)=>{
+    const dx = a.x-b.x, dy = a.y-b.y, dz = (a.z-b.z) * 0.35;
+    return Math.hypot(dx,dy,dz);
+  };
+  const palmLength = distance(lm[9], lm[0]);
+  const palmWidth = distance(lm[5], lm[17]) * 1.35;
+  const scale = Math.max(palmLength, palmWidth);
+  const indexGap = distance(lm[4], lm[8]);
+  const middleGap = distance(lm[4], lm[12]);
+  const indexRatio = scale < 0.001 ? 1 : indexGap / scale;
+  const middleRatio = scale < 0.001 ? 1 : middleGap / scale;
+  const nearRatio = Math.min(indexRatio, middleRatio);
+  const farRatio = Math.max(indexRatio, middleRatio);
+  const ratio = nearRatio * 0.68 + farRatio * 0.32;
+  const t = (!research.active && state.personalToolPinch) ? state.personalToolPinch : TOOL_PINCH_DEFAULTS;
+  // Release still requires BOTH digits to clear the reopen point of their own
+  // measured tool range — one drifting landmark can never release an item.
+  const bothReopened = nearRatio >= t.nearExit && farRatio >= t.farExit;
+  const isPinching = isPinchingPrev ? !bothReopened : (ratio <= t.enter);
+  return {
+    isPinching, ratio, indexRatio, middleRatio, nearRatio, farRatio,
+    isSeparated: nearRatio >= t.nearOpen && farRatio >= t.farOpen,
+    score: Math.max(0, Math.min(1, 1 - (ratio / Math.max(t.scoreOpen, 0.001)))),
+    valid:true,
+  };
+}
 const GESTURE_CONFIRM_MS = 60;
 let detectedGestureState = { mode:'', stable:false, candidate:false, candidateAt:0 };
 function stabiliseDetectedGesture(rawValue, mode){
@@ -6525,6 +6586,11 @@ function updateCalibrationCopy(){
   const closeCheck = document.getElementById('calibCloseCheck');
   if(isShoulderFlexionLevel()){
     hint.textContent = '已選患側肩、手肘及軀幹入鏡；患臂自然垂低。';
+  }else if(isLevel6RealToolTask()){
+    const w = level6ToolWords();
+    hint.textContent = '患手揸住' + w.noun + '入鏡。慢慢' + w.open + '、' + w.close + '幾次。';
+    openCheck.textContent = '○ ' + w.open + w.noun;
+    closeCheck.textContent = '○ ' + w.close + w.noun;
   }else if(isLevel6() || isLevel67BareMode()){
     hint.textContent = '拇指、食指、中指入鏡。先張開，再輕捏。';
     openCheck.textContent = '○ 張開三指';
@@ -6550,6 +6616,30 @@ const CALIB_DROPOUT_GRACE_MS = 1500;
 // closed the hand early poisoned the "open" baseline with closed-hand scores,
 // making the light-close criterion permanently unreachable (30 Aug Level 5
 // home recording: detect lag ~1.5s, fist already formed when sampling began).
+/* v70: tool-in-hand calibration. Holding real chopsticks or a cloth peg, the
+   hand can never satisfy the bare-hand open gate, so "open" is judged against
+   the participant's own tool-constrained aperture range. The open stage only
+   completes after genuine open-close movement is observed: a static posture —
+   open, closed or fist — never satisfies the range gate, which also prevents
+   the v68 poisoned-baseline failure in tool mode. */
+const TOOL_CALIB_MIN_RANGE = 0.030;
+const TOOL_CALIB_MIN_SAMPLES = 12;
+function toolCalibRange(vals){
+  if(!Array.isArray(vals) || vals.length < TOOL_CALIB_MIN_SAMPLES) return null;
+  const sorted = vals.slice().sort((a,b)=>a-b);
+  const lo = sorted[Math.floor(sorted.length * 0.08)];
+  const hi = sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.92))];
+  const span = hi - lo;
+  return Number.isFinite(span) ? { lo, hi, span } : null;
+}
+function toolCalibOpenQualifies(vals, value){
+  if(!Number.isFinite(value)) return false;
+  const range = toolCalibRange(vals);
+  if(!range || range.span < TOOL_CALIB_MIN_RANGE) return false;
+  // Only apertures near the top of the participant's own observed tool range
+  // count as open.
+  return value >= range.hi - range.span * 0.35;
+}
 function calibLooksOpen(res){
   if(isPinchMode() || isPegMode()) return res.isOpenPrep === true;
   if(Number.isFinite(res.graspOpenCount) && Number.isFinite(res.graspCurledCount)){
@@ -6560,6 +6650,10 @@ function calibLooksOpen(res){
   return res.isOpenPrep === true;
 }
 function calibOpenStageHint(){
+  if(isLevel6RealToolTask()){
+    const w = level6ToolWords();
+    return '請慢慢' + w.open + '同' + w.close + w.noun + '幾次。';
+  }
   if(isPegMode()) return '請先放鬆打開。';
   return isPinchMode() ? '請先張開手指。' : '請先張開手。';
 }
@@ -6631,8 +6725,21 @@ function startCalibLoop(){
             // this stage or pollutes openScores.
             const previousOpenTick = c.openTickAt;
             c.openTickAt = now;
-            if(Number.isFinite(value) && calibLooksOpen(res)){
+            if(isLevel6RealToolTask() && Number.isFinite(value)){
+              // v70: record the tool-constrained aperture range for this hand.
+              c.toolVals = c.toolVals || [];
+              c.toolVals.push(value);
+              if(c.toolVals.length > 240) c.toolVals.shift();
+            }
+            const openQualifies = isLevel6RealToolTask()
+              ? toolCalibOpenQualifies(c.toolVals, value)
+              : (Number.isFinite(value) && calibLooksOpen(res));
+            if(openQualifies){
               c.openScores.push(value);
+              if(isLevel6RealToolTask() && Number.isFinite(res.pinchIndexRatio) && Number.isFinite(res.pinchMiddleRatio)){
+                (c.openNear = c.openNear || []).push(Math.min(res.pinchIndexRatio, res.pinchMiddleRatio));
+                (c.openFar = c.openFar || []).push(Math.max(res.pinchIndexRatio, res.pinchMiddleRatio));
+              }
               const openDelta = Number.isFinite(previousOpenTick) && previousOpenTick > 0
                 ? Math.min(120, now - previousOpenTick) : 0;
               c.openHoldMs = (c.openHoldMs || 0) + openDelta;
@@ -6641,7 +6748,9 @@ function startCalibLoop(){
                 c.closedHoldMs = 0;
                 c.closedTickAt = 0;
                 c.moreOpenMs = 0;
-                hint.textContent = isPinchMode() ? '而家輕捏。' : '而家輕合手。';
+                hint.textContent = isLevel6RealToolTask()
+                  ? ('而家' + level6ToolWords().close + level6ToolWords().noun + '。')
+                  : (isPinchMode() ? '而家輕捏。' : '而家輕合手。');
               }
             }
           }else if(!c.closedDone && Number.isFinite(value)){
@@ -6660,6 +6769,10 @@ function startCalibLoop(){
             if(changedEnough){
               c.moreOpenMs = 0;
               c.closedScores.push(value);
+              if(isLevel6RealToolTask() && Number.isFinite(res.pinchIndexRatio) && Number.isFinite(res.pinchMiddleRatio)){
+                (c.closedNear = c.closedNear || []).push(Math.min(res.pinchIndexRatio, res.pinchMiddleRatio));
+                (c.closedFar = c.closedFar || []).push(Math.max(res.pinchIndexRatio, res.pinchMiddleRatio));
+              }
               // Accumulate qualifying light-close time instead of demanding one
               // unbroken hold. Closing the hand often drops the landmarker for
               // a moment, and a hard reset made this stage unreachable for
@@ -6694,6 +6807,8 @@ function startCalibLoop(){
                   c.openHoldMs = 0;
                   c.openTickAt = 0;
                   c.closedScores = [];
+                  c.openNear = []; c.openFar = [];
+                  c.closedNear = []; c.closedFar = [];
                   c.closedHoldMs = 0;
                   c.closedTickAt = 0;
                   c.moreOpenMs = 0;
@@ -6739,6 +6854,30 @@ function startCalibLoop(){
             openMean - gap * 0.02,
             closedMean + gap * 0.80
           );
+        }
+        // v70: per-digit thresholds from the tool-in-hand calibration. Each
+        // digit is judged against its own range because the middle finger
+        // rides the tool and moves far less than the index.
+        if(c.ready && isLevel6RealToolTask() && state.personalToolPinch == null &&
+            c.openScores.length && c.closedScores.length &&
+            (c.openNear || []).length && (c.closedNear || []).length){
+          const openMean = medianValue(c.openScores);
+          const closedMean = medianValue(c.closedScores);
+          const openNearMean = medianValue(c.openNear);
+          const closedNearMean = medianValue(c.closedNear);
+          const openFarMean = medianValue(c.openFar);
+          const closedFarMean = medianValue(c.closedFar);
+          const gapC = Math.max(0.025, openMean - closedMean);
+          const gapNear = Math.max(0.016, openNearMean - closedNearMean);
+          const gapFar = Math.max(0.020, openFarMean - closedFarMean);
+          state.personalToolPinch = {
+            enter: closedMean + gapC * 0.56,
+            nearExit: closedNearMean + gapNear * 0.62,
+            farExit: closedFarMean + gapFar * 0.62,
+            nearOpen: closedNearMean + gapNear * 0.74,
+            farOpen: closedFarMean + gapFar * 0.74,
+            scoreOpen: Math.max(0.10, closedMean + gapC * 0.80),
+          };
         }
         document.getElementById('btnStartGame').disabled = !c.ready;
         if(c.ready && !calibDetectedOnce){
@@ -6789,6 +6928,9 @@ function startCalibLoop(){
         if(lostForMs > CALIB_DROPOUT_GRACE_MS){
           c.detectedStart = 0;
           c.openHoldMs = 0;
+          c.toolVals = [];
+          c.openNear = []; c.openFar = [];
+          c.closedNear = []; c.closedFar = [];
           c.openTickAt = 0;
           c.moreOpenMs = 0;
           c.closedHoldMs = 0;
@@ -10168,6 +10310,13 @@ function setActionPrompt(main, detail){
 /* Short, mode-specific prompts. Tool modes use observable hand motion only:
    the camera does not identify the physical tool or measure force. */
 function graspPrompt(key){
+  if(isLevel6RealToolTask()){
+    const w = level6ToolWords();
+    if(key === 'prep') return w.open + w.noun;
+    if(key === 'hold') return w.close + w.noun + '拿起';
+    if(key === 'carry') return '保持夾住';
+    return w.open + w.noun + '放下';
+  }
   if(isLevel6() || isLevel67BareMode()){
     if(key === 'prep') return '張開三指';
     if(key === 'hold') return '三指輕捏';
@@ -11563,7 +11712,9 @@ function updateHeldReleasePrompt(){
   const key = advCurrent + ':' + held;
   if(key === heldPromptKey) return;
   heldPromptKey = key;
-  const text = isLevel67BareMode()
+  const text = isLevel6RealToolTask()
+    ? ('夾住咗。移到目標後' + level6ToolWords().open + level6ToolWords().noun + '放低。')
+    : isLevel67BareMode()
     ? '捏住咗。請張開三指放低。'
     : (isPegMode()
       ? '夾住咗。移到目標後放鬆打開夾仔。'
@@ -11575,7 +11726,9 @@ function updateHeldReleasePrompt(){
 
 function advDrawHeldReleasePrompt(ctx, held){
   if(!isGraspStyleMode() || !held || cursorX < 0) return;
-  const text = (advCurrent === 'mahjong' || advCurrent === 'cards')
+  const text = isLevel6RealToolTask()
+    ? ('已夾住 · ' + level6ToolWords().open + level6ToolWords().noun + '放下')
+    : (advCurrent === 'mahjong' || advCurrent === 'cards')
     ? '已拿住 · 移到放牌區'
     : (isLevel67BareMode()
       ? '已捏住 · 請張開三指放下'
@@ -14369,7 +14522,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <script src="level4-three-games-module.js"></script>
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v69-20260830-dimsum-order";
+  const LEVEL_APP_BUILD = "v70-20260830-tool-pinch";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 
