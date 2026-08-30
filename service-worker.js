@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v72-20260830-laundry-fridge";
+const CACHE_VERSION = "fthue-rehab-v73-20260830-bowling";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

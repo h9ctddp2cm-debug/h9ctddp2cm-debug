@@ -1,4 +1,5 @@
 self.__OFFLINE_ASSETS = [
+  "./audio/haobo_cheer.mp3",
   "./fthue-adaptive-progression.js",
   "./icons/app-icon.svg",
   "./icons/icon-192.png",
@@ -107,6 +108,9 @@ self.__OFFLINE_ASSETS = [
   "./img/advanced/vase.png",
   "./img/advanced/wok.png",
   "./img/beefball_real.png",
+  "./img/bowling_alley_bg.png",
+  "./img/bowling_ball.png",
+  "./img/bowling_pin.png",
   "./img/cat.png",
   "./img/charsiu.jpeg",
   "./img/charsiu.png",
