@@ -142,6 +142,8 @@ self.__OFFLINE_ASSETS = [
   "./img/lotusrice.png",
   "./img/rooster_plate.png",
   "./img/siumai.png",
+  "./img/steamer_empty.png",
+  "./img/teahouse_bg.png",
   "./index.html",
   "./level2-horizontal-abduction-controller.js",
   "./level4-elbow-calibration.js",

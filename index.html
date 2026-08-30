@@ -1019,6 +1019,12 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
   border-color:var(--teal); outline:none; box-shadow:0 8px 22px rgba(26,107,90,.13);
 }
 .activity-card:focus-visible{ outline:4px solid rgba(26,107,90,.18); outline-offset:2px; }
+.dimsum-mode-bar{ grid-column:1/-1; display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  background:#fff; border:2px solid rgba(26,107,90,.25); border-radius:16px; padding:12px 16px; }
+.dimsum-mode-bar .dm-label{ font-weight:800; color:var(--teal-dark); font-size:16px; }
+.dimsum-mode-bar .dm-btn{ border:2px solid rgba(26,107,90,.35); background:#f4faf8; color:#155f53;
+  font-weight:800; font-size:17px; padding:10px 18px; border-radius:12px; cursor:pointer; min-height:44px; }
+.dimsum-mode-bar .dm-btn.selected{ background:#1A6B5A; color:#fff; border-color:#1A6B5A; }
 .activity-card .ac-copy{ min-width:0; display:flex; flex-direction:column; align-items:flex-start; gap:8px; }
 .activity-card h3{ font-size:20px; margin:0; color:var(--teal-dark); font-weight:800; }
 .activity-card .ac-goal{ font-size:14px; line-height:1.55; color:#6f5310; font-weight:650; margin:0; }
@@ -2287,6 +2293,7 @@ const state = {
   shoulderTargetDeg: 60,
   shoulderExerciseMode: 'active', // Levels 3–4: active | assisted-stick
   theme: 'dimsum',      // 活動 id
+  dimsumSceneMode: 'teahouse', // Level 3/4 點心顯示模式：teahouse（模擬茶樓）| camera（看到自己＝原有鏡頭畫面）
   mode: 'single',       // single | dual
   duration: 300,        // total seconds
   labelFont: 36,        // label font size px
@@ -2709,6 +2716,125 @@ function drawLevel4VerticalReachGuide(ctx, cw, ch){
   ctx.fillText('屈肘 ↓', point.x, bottom+24);
   ctx.restore();
 }
+/* ==================== v74 模擬茶樓場景（Level 3/4 肩前屈・點心主題） ====================
+   純視覺同音效獎勵層：只讀取 shoulderFlexionState 嘅進度／達標訊號，
+   同 updateShoulderFlexionGame 嘅臨床註解一致：呢層完全唔加任何手部接觸、
+   拾起停留、握力或放開訊號，亦唔會改變達標判定。
+   「模擬茶樓」畀肩控制較好、唔需要實時睇住自己鏡頭影像嘅病人；
+   「看到自己」＝原有鏡頭畫面版本，喺活動選單點心卡下面嘅顯示模式選擇框揀。 */
+const teahouseServe={phase:'idle',startedMs:0,fromX:0,fromY:0,img:null,label:''};
+const TEAHOUSE_FLY_MS=520,TEAHOUSE_STEAM_MS=1100;
+function isTeahouseDimsumMode(){return isShoulderFlexionLevel()&&state.theme==='dimsum'&&state.dimsumSceneMode==='teahouse'&&!research.active;}
+function resetTeahouseServe(){teahouseServe.phase='idle';teahouseServe.startedMs=0;teahouseServe.img=null;teahouseServe.label='';}
+function startTeahouseServe(){
+  if(teahouseServe.phase!=='idle')return;
+  const item=foods.find(f=>!f.removed);
+  teahouseServe.phase='fly';teahouseServe.startedMs=nowMs();
+  teahouseServe.fromX=item?item.x:gameCanvas.width*(isPortrait()?0.68:0.58);
+  teahouseServe.fromY=item?item.y:gameCanvas.height*0.34;
+  teahouseServe.img=item?item.img:null;
+  teahouseServe.label=item?item.label:'';
+}
+function updateTeahouseServe(){
+  if(teahouseServe.phase==='idle')return;
+  const t=nowMs()-teahouseServe.startedMs;
+  if(teahouseServe.phase==='fly'&&t>=TEAHOUSE_FLY_MS){
+    teahouseServe.phase='steam';
+    try{speakCantonese('好叻呀！點心蒸好喇！');}catch(e){}
+  }else if(teahouseServe.phase==='steam'&&t>=TEAHOUSE_FLY_MS+TEAHOUSE_STEAM_MS){
+    teahouseServe.phase='rest'; // 點心留喺蒸籠，手臂放低完成一下先重置
+  }
+}
+function teahouseGeometry(cw,ch){
+  const portrait=ch>cw;
+  const laneX=cw*(portrait?.68:.58);
+  const sw=Math.min(cw*(portrait?0.42:0.24),300);
+  const steamerX=laneX;
+  const steamerY=ch*(portrait?0.235:0.26);
+  const plateY=steamerY+sw*0.34;
+  const plateW=sw*1.6;
+  const dishY=ch*0.815;
+  const dishW=sw*0.95;
+  return {laneX,sw,steamerX,steamerY,plateW,plateY,dishY,dishW};
+}
+function drawTeahousePlateEllipse(ctx,x,y,w,h){
+  ctx.save();
+  ctx.beginPath();ctx.ellipse(x,y+h*0.30,w*0.52,h*0.42,0,0,Math.PI*2);
+  ctx.fillStyle='rgba(0,0,0,0.13)';ctx.fill();
+  ctx.beginPath();ctx.ellipse(x,y,w*0.5,h*0.5,0,0,Math.PI*2);
+  ctx.fillStyle='#fdfbf4';ctx.fill();
+  ctx.lineWidth=Math.max(3,w*0.016);ctx.strokeStyle='#3f7d5c';ctx.stroke();
+  ctx.beginPath();ctx.ellipse(x,y,w*0.40,h*0.40,0,0,Math.PI*2);
+  ctx.lineWidth=Math.max(2,w*0.008);ctx.strokeStyle='rgba(63,125,92,0.5)';ctx.stroke();
+  ctx.restore();
+}
+function drawTeahouseSteam(ctx,x,y,s,t){
+  ctx.save();
+  for(let i=0;i<3;i++){
+    const ph=((t*0.001)+i*0.33)%1;
+    const yy=y-ph*s*0.42,xx=x+(i-1)*s*0.16+Math.sin(ph*6.283+i)*s*0.03;
+    const a=(1-ph)*0.5;
+    ctx.fillStyle='rgba(255,255,255,'+a.toFixed(3)+')';
+    ctx.beginPath();ctx.arc(xx,yy,s*(0.05+0.05*ph),0,Math.PI*2);ctx.fill();
+  }
+  ctx.restore();
+}
+function drawTeahouseDimsumSprite(ctx,img,x,y,r){
+  if(img&&img.complete&&img.naturalWidth>0){
+    const iw=img.naturalWidth,ih=img.naturalHeight;
+    let dw,dh;
+    if(iw>=ih){dw=r*2;dh=r*2*ih/iw;}else{dh=r*2;dw=r*2*iw/ih;}
+    ctx.drawImage(img,x-dw/2,y-dh/2,dw,dh);
+  }else{
+    ctx.fillStyle='#E8B04B';ctx.beginPath();ctx.arc(x,y,r*0.9,0,Math.PI*2);ctx.fill();
+  }
+}
+function drawTeahouseScene(ctx,cw,ch){
+  updateTeahouseServe();
+  const g=teahouseGeometry(cw,ch);
+  // 全畫布茶樓背景（cover-fit 置中）：模擬茶樓模式唔顯示病人自己嘅鏡頭影像
+  if(imgTeahouseBg.complete&&imgTeahouseBg.naturalWidth>0){
+    const iw=imgTeahouseBg.naturalWidth,ih=imgTeahouseBg.naturalHeight;
+    const s=Math.max(cw/iw,ch/ih),dw=iw*s,dh=ih*s;
+    ctx.drawImage(imgTeahouseBg,(cw-dw)/2,(ch-dh)/2,dw,dh);
+  }else{ctx.fillStyle='#c9a267';ctx.fillRect(0,0,cw,ch);}
+  // 上方大碟＋空蒸籠（達標後點心飛入去）
+  drawTeahousePlateEllipse(ctx,g.steamerX,g.plateY,g.plateW,g.plateW*0.34);
+  if(imgSteamerEmpty.complete&&imgSteamerEmpty.naturalWidth>0)
+    ctx.drawImage(imgSteamerEmpty,g.steamerX-g.sw/2,g.steamerY-g.sw*0.5,g.sw,g.sw);
+  else{ctx.fillStyle='#d8a95c';ctx.beginPath();ctx.arc(g.steamerX,g.steamerY,g.sw*0.42,0,Math.PI*2);ctx.fill();}
+  // 下方細碟：點心由呢度隨住抬肩升上去
+  drawTeahousePlateEllipse(ctx,g.laneX,g.dishY,g.dishW,g.dishW*0.30);
+  const t=nowMs()-teahouseServe.startedMs;
+  if(teahouseServe.phase==='fly'){
+    const p=clamp01(t/TEAHOUSE_FLY_MS),e=1-Math.pow(1-p,2.4);
+    const x=teahouseServe.fromX+(g.steamerX-teahouseServe.fromX)*e;
+    const y=teahouseServe.fromY+(g.steamerY-g.sw*0.10-teahouseServe.fromY)*e;
+    drawTeahouseDimsumSprite(ctx,teahouseServe.img,x,y,g.sw*(0.34-0.10*e));
+  }else if(teahouseServe.phase==='steam'||teahouseServe.phase==='rest'){
+    drawTeahouseDimsumSprite(ctx,teahouseServe.img,g.steamerX,g.steamerY-g.sw*0.10,g.sw*0.24);
+    drawTeahouseSteam(ctx,g.steamerX,g.steamerY-g.sw*0.42,g.sw,t);
+    // 讚賞橫額
+    const bw=Math.min(cw*0.5,300),bh=54,bx=g.steamerX-bw/2,by=g.plateY+g.plateW*0.20;
+    ctx.save();
+    rrPath(ctx,bx,by,bw,bh,14);
+    ctx.fillStyle='rgba(255,255,255,0.94)';ctx.fill();
+    ctx.lineWidth=3;ctx.strokeStyle='#1A6B5A';ctx.stroke();
+    ctx.fillStyle='#B3402A';ctx.font='800 26px "PingFang TC","Noto Sans TC",sans-serif';
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('醒目！繼續！',g.steamerX,by+bh/2+1);
+    ctx.restore();
+  }
+  // 目標角度提示（頂部唔夠位就唔畫，側欄已顯示目標角度）
+  const topY=g.steamerY-g.sw*0.55;
+  if(topY>=34){
+    const target=shoulderFlexionState.selectedTargetDeg??'—';
+    ctx.save();
+    ctx.fillStyle='#155f53';ctx.font='800 16px "PingFang TC","Noto Sans TC",sans-serif';ctx.textAlign='center';
+    ctx.fillText('目標 '+target+'°',g.steamerX,topY-8);
+    ctx.restore();
+  }
+}
 /* ==================== v73 保齡球場景（Level 3/4 肩前屈） ====================
    純視覺同音效獎勵層：只讀取 shoulderFlexionState 嘅進度／達標訊號。
    同 updateShoulderFlexionGame 嘅臨床註解一致：呢層完全唔加任何手部接觸、
@@ -2879,6 +3005,7 @@ function drawBowlingAlleyScene(ctx,cw,ch){
 function drawShoulderFlexionGuide(ctx,cw,ch){
   if(!isShoulderFlexionLevel()) return;
   if(state.theme==='bowlinglane'){ drawBowlingAlleyScene(ctx,cw,ch); return; }
+  if(isTeahouseDimsumMode()){ drawTeahouseScene(ctx,cw,ch); return; }
   const x=cw*(ch>cw?.68:.58),bottom=ch*.80,top=ch*.32;
   const target=shoulderFlexionState.selectedTargetDeg??'—';
   ctx.save();ctx.strokeStyle='rgba(17,95,83,.62)';ctx.lineWidth=6;ctx.setLineDash([14,10]);
@@ -4923,7 +5050,9 @@ function selectActivity(themeId){
   // gameplay. No setup control is allowed to rewrite the task/theme pair.
   if(state.level === '67' && !lockLevel6Activity(themeId)) return;
   const th = getTheme();
-  document.getElementById('settingsTitle').textContent = th.title;
+  document.getElementById('settingsTitle').textContent = th.title
+    + (themeId==='dimsum'&&(state.level==='3'||state.level==='4')
+      ? (state.dimsumSceneMode==='teahouse'?'（模擬茶樓）':'（看到自己）') : '');
   document.getElementById('settingsContext').textContent =
     currentLevel().tag + ' · ' + th.title + ' · ' + th.actionLabelFor(state.level)
     + (shoulderExerciseModeAvailable() ? ' · ' + shoulderExerciseProfile().label : '');
@@ -4988,6 +5117,24 @@ function renderActivityLibrary(){
     btn.setAttribute('aria-label', th.title + '：' + th.goal);
     btn.addEventListener('click', ()=> selectActivity(id));
     grid.appendChild(btn);
+    if(id==='dimsum'&&(state.level==='3'||state.level==='4')){
+      // v74 點心顯示模式選擇框：模擬茶樓（唔顯示鏡頭影像）｜看到自己（原有版本）
+      const bar=document.createElement('div');
+      bar.className='dimsum-mode-bar';
+      bar.innerHTML='<span class="dm-label">點心遊戲顯示模式</span>'
+        +'<button type="button" class="dm-btn" data-dimsum-mode="teahouse">模擬茶樓</button>'
+        +'<button type="button" class="dm-btn" data-dimsum-mode="camera">看到自己</button>';
+      const syncBar=()=>bar.querySelectorAll('.dm-btn').forEach(b=>b.classList.toggle('selected',b.dataset.dimsumMode===state.dimsumSceneMode));
+      bar.addEventListener('click',e=>{
+        const b=e.target.closest('[data-dimsum-mode]');
+        if(!b)return;
+        e.stopPropagation();
+        state.dimsumSceneMode=b.dataset.dimsumMode;
+        syncBar();
+      });
+      syncBar();
+      grid.appendChild(bar);
+    }
   });
 }
 
@@ -7151,6 +7298,9 @@ const imgFridgeMilk = new Image(); imgFridgeMilk.src = 'img/fridge_milk.png';
 const imgBowlingAlleyBg = new Image(); imgBowlingAlleyBg.src = 'img/bowling_alley_bg.png';
 const imgBowlingPin = new Image(); imgBowlingPin.src = 'img/bowling_pin.png';
 const imgBowlingBall = new Image(); imgBowlingBall.src = 'img/bowling_ball.png';
+/* v74 模擬茶樓場景資產（Level 3/4 點心主題「模擬茶樓」顯示模式） */
+const imgTeahouseBg = new Image(); imgTeahouseBg.src = 'img/teahouse_bg.png';
+const imgSteamerEmpty = new Image(); imgSteamerEmpty.src = 'img/steamer_empty.png';
 const imgFridgeFish = new Image(); imgFridgeFish.src = 'img/fridge_fish.png';
 const imgFridgeSnowpea = new Image(); imgFridgeSnowpea.src = 'img/fridge_snowpea.png';
 const imgLaundryShirt1 = new Image(); imgLaundryShirt1.src = 'img/laundry_shirt1.png';
@@ -8727,7 +8877,7 @@ function initGame(){
   shoulderHoldInterruptedSpoken = false;
   hideTargetHoldCountdown();
   lastLevelShown = -1;  // reset 升級追蹤，讓 initGame 後首次 spawn 觸發 tier 0 banner
-  heldItem = null; foods = []; targets = []; resetBowlingStrike();
+  heldItem = null; foods = []; targets = []; resetBowlingStrike(); resetTeahouseServe();
   resetDimsumOrderGame();  // v69 筷子點心落單狀態一併清齊
   resetLaundryOrderGame(); // v71 晾衫單狀態一併清齊
   resetFridgeGame();       // v72 雪櫃收納狀態一併清齊
@@ -8940,8 +9090,8 @@ function setupTargets(){
     return;
   }
   if(isShoulderFlexionLevel()){
-    if(state.theme==='bowlinglane'){
-      // v73 保齡球：十個樽由場景直接繪畫，唔使用通用目標盤
+    if(state.theme==='bowlinglane'||isTeahouseDimsumMode()){
+      // v73 保齡球／v74 模擬茶樓：目標（球樽／蒸籠）由場景直接繪畫，唔使用通用目標盤
       targets=[];
       return;
     }
@@ -10829,6 +10979,7 @@ function updateShoulderFlexionGame(){
     shoulderFlexionCycleAwarded=false;
     advanceLevel3RoundVariant();
     resetBowlingStrike();
+    resetTeahouseServe();
     foods=[];
     spawnInitialFoods();
   }
@@ -10854,6 +11005,7 @@ function updateShoulderFlexionGame(){
     shoulderFlexionCycleAwarded=true;
     triggerFeedback(true);
     if(state.theme==='bowlinglane')startBowlingStrike();
+    if(isTeahouseDimsumMode())startTeahouseServe();
     researchLog('shoulder_target_reached',{
       estimated_deg:Math.round(estimated),
       target_deg:target,
@@ -11771,6 +11923,8 @@ function renderGame(){
     if(f.removed) continue;
     // v73 保齡球滾動／冧樽期間，波同標籤由場景層接手，避免半空浮字
     if(isBowlingLaneTheme() && bowlingStrike.phase!=='idle') continue;
+    // v74 模擬茶樓：點心飛入蒸籠／蒸緊嗰陣由場景層接手畫，避免出現兩件點心
+    if(isTeahouseDimsumMode() && teahouseServe.phase!=='idle') continue;
     ctx.save();
     if(f.drawItem){
       // 主題自繪物件（麻雀 / 啤牌 / 煮飯 / 插花 / 晾衫）＋大字標籤
@@ -15378,7 +15532,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <script src="level4-three-games-module.js"></script>
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v73-20260830-bowling";
+  const LEVEL_APP_BUILD = "v74-20260831-teahouse";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 
