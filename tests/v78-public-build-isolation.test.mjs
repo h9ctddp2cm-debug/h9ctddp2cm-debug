@@ -129,3 +129,24 @@ test('browser cannot activate hidden/direct research calibration while public sa
   assert.equal(probe.level5Opened,true);
   assert.deepEqual(pageErrors,[]);
 });
+
+test('public Level 5 affected-side flow opens calibration without a runtime error',async t=>{
+  if(!browser) return t.skip('playwright unavailable');
+  const context=await browser.newContext({viewport:{width:1180,height:820}});
+  const page=await context.newPage();
+  const pageErrors=[];
+  page.on('pageerror',error=>pageErrors.push(error.message));
+  await page.goto(pathToFileURL(publicIndex).href,{waitUntil:'domcontentloaded'});
+
+  await page.locator('[data-session-level="5"][data-session-mode="training"]').click();
+  await page.locator('.activity-card[data-theme="laundry"]').click();
+  await page.locator('[data-side="right"]').click();
+  await page.locator('#btnGoCalib').click();
+  await page.waitForTimeout(100);
+
+  assert.equal(await page.locator('#screen-calib').evaluate(
+    element=>element.classList.contains('active'),
+  ),true);
+  assert.deepEqual(pageErrors,[]);
+  await context.close();
+});

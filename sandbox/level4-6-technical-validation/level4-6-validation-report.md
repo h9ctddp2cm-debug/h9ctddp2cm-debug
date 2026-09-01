@@ -1,16 +1,16 @@
 # Level 4–6 Technical Validation Report
 
-Generated: 2026-09-01T14:32:40.757Z
+Generated: 2026-09-01T15:52:25.614Z
 
-Result: **FAIL** (163/168 checks passed)
+Result: **PASS** (168/168 checks passed)
 
 | FTHUE level | Passed | Failed |
 |---|---:|---:|
-| 2 | 36 | 1 |
-| 3 | 21 | 1 |
-| 4 | 21 | 1 |
-| 5 | 40 | 1 |
-| 6 | 45 | 1 |
+| 2 | 37 | 0 |
+| 3 | 22 | 0 |
+| 4 | 22 | 0 |
+| 5 | 41 | 0 |
+| 6 | 46 | 0 |
 
 ## Verified scope
 
@@ -33,27 +33,27 @@ This is reproducible software technical verification only. It does not establish
 - PASS | Level 2 | launch matrix | bilateral launches with the correct engine
 - PASS | Level 3 | launch matrix | bowlinglane launches with the correct engine
 - PASS | Level 3 | launch matrix | basketball launches with the correct engine
-- FAIL | Level 3 | launch matrix | tsuenwan launches with the correct engine
+- PASS | Level 3 | launch matrix | tsuenwan launches with the correct engine
 - PASS | Level 3 | launch matrix | dimsum launches with the correct engine
 - PASS | Level 3 | launch matrix | laundry launches with the correct engine
 - PASS | Level 3 | launch matrix | cards launches with the correct engine
 - PASS | Level 3 | launch matrix | mahjong launches with the correct engine
 - PASS | Level 4 | launch matrix | bowlinglane launches with the correct engine
 - PASS | Level 4 | launch matrix | basketball launches with the correct engine
-- FAIL | Level 4 | launch matrix | tsuenwan launches with the correct engine
+- PASS | Level 4 | launch matrix | tsuenwan launches with the correct engine
 - PASS | Level 4 | launch matrix | dimsum launches with the correct engine
 - PASS | Level 4 | launch matrix | laundry launches with the correct engine
 - PASS | Level 4 | launch matrix | cards launches with the correct engine
 - PASS | Level 4 | launch matrix | mahjong launches with the correct engine
 - PASS | Level 5 | launch matrix | flowers launches with the correct engine
-- FAIL | Level 5 | launch matrix | dimsum launches with the correct engine
+- PASS | Level 5 | launch matrix | dimsum launches with the correct engine
 - PASS | Level 5 | launch matrix | laundry launches with the correct engine
 - PASS | Level 5 | launch matrix | fridge launches with the correct engine
 - PASS | Level 5 | launch matrix | cards launches with the correct engine
 - PASS | Level 5 | launch matrix | mahjong launches with the correct engine
 - PASS | Level 6 | launch matrix | flowers launches with the correct engine
 - PASS | Level 6 | launch matrix | chopstick_dimsum launches with the correct engine
-- FAIL | Level 6 | launch matrix | peg_laundry launches with the correct engine
+- PASS | Level 6 | launch matrix | peg_laundry launches with the correct engine
 - PASS | Level 6 | launch matrix | cards launches with the correct engine
 - PASS | Level 6 | launch matrix | mahjong launches with the correct engine
 - PASS | Level 6 | launch matrix | cooking launches with the correct engine
@@ -91,7 +91,7 @@ This is reproducible software technical verification only. It does not establish
 - PASS | Level 2 | availability | unsupported direct launch fails closed to bilateral
 - PASS | Level 2 | calibration | Level 2 never shows elbow calibration
 - PASS | Level 2 | symmetry | left and right selected arms produce symmetric outward progress
-- FAIL | Level 2 | repetition | outward scores once and return to midline rearms
+- PASS | Level 2 | repetition | outward scores once and return to midline rearms
 - PASS | Level 2 | tracking | recording-like supported slide starts moving without a fixed elbow ratio
 - PASS | Level 2 | fail closed | meaningful torso translation is rejected
 - PASS | Level 2 | fail closed | missing selected landmarks are rejected

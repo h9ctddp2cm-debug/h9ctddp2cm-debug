@@ -4158,19 +4158,9 @@ function renderCalibLevelBrief(){
 window.renderCalibLevelBrief = renderCalibLevelBrief;
 window.CALIB_LEVEL_BRIEF = CALIB_LEVEL_BRIEF;
 
-/* PUBLIC_BUILD_REMOVE_START: research calibration, protocol, export and rendering module */
-function resetResearchCalibration(){
-  research.calibration = { detectedStart:0, openHoldMs:0, openTickAt:0, moreOpenMs:0, closedHoldMs:0, closedTickAt:0, lastSeenAt:0, detectedDone:false,
-    openDone:false, closedDone:false, ready:false, openScores:[], closedScores:[] };
-  research.personalGraspEnter = null;
-  research.personalGraspExit = null;
-  research.personalPinchEnter = null;
-  research.personalPinchExit = null;
-  research.personalPinchOpen = null;
-  ['calibDetectCheck','calibOpenCheck','calibCloseCheck'].forEach(id=>{
-    renderCalibCheck(id, false);
-  });
-}
+// Shared patient calibration reset. Keep this outside every research-only
+// removal block because the sanitized public build calls it before opening
+// the camera calibration screen.
 function resetNormalCalibration(){
   state.calibration = { detectedStart:0, openHoldMs:0, openTickAt:0, moreOpenMs:0, closedHoldMs:0, closedTickAt:0, lastSeenAt:0, detectedDone:false,
     openDone:false, closedDone:false, ready:false, openScores:[], closedScores:[] };
@@ -4180,6 +4170,20 @@ function resetNormalCalibration(){
   state.personalPinchExit = null;
   state.personalPinchOpen = null;
   state.personalToolPinch = null;
+  ['calibDetectCheck','calibOpenCheck','calibCloseCheck'].forEach(id=>{
+    renderCalibCheck(id, false);
+  });
+}
+
+/* PUBLIC_BUILD_REMOVE_START: research calibration, protocol, export and rendering module */
+function resetResearchCalibration(){
+  research.calibration = { detectedStart:0, openHoldMs:0, openTickAt:0, moreOpenMs:0, closedHoldMs:0, closedTickAt:0, lastSeenAt:0, detectedDone:false,
+    openDone:false, closedDone:false, ready:false, openScores:[], closedScores:[] };
+  research.personalGraspEnter = null;
+  research.personalGraspExit = null;
+  research.personalPinchEnter = null;
+  research.personalPinchExit = null;
+  research.personalPinchOpen = null;
   ['calibDetectCheck','calibOpenCheck','calibCloseCheck'].forEach(id=>{
     renderCalibCheck(id, false);
   });
@@ -18861,7 +18865,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v79-20260901-calib-feedback";
+  const LEVEL_APP_BUILD = "v80-20260901-calibration-runtime-fix";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 
