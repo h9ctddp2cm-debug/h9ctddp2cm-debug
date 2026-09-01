@@ -146,7 +146,7 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
 /* ---------- CALIBRATION SCREEN ---------- */
 #screen-calib{ align-items:center; justify-content:center; padding:16px; position:relative; }
 .calib-wrap{
-  position:relative; width:100%; max-width:520px; aspect-ratio:4/3;
+  position:relative; width:min(66.667vw,calc(66.667vh * 4 / 3)); max-width:none; aspect-ratio:4/3;
   background:#111; border-radius:16px; overflow:hidden;
   border:2px solid var(--border); box-shadow:0 4px 16px rgba(0,0,0,0.2);
 }
@@ -173,6 +173,9 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
 .game-stage canvas#gameCanvas{
   position:absolute; inset:0; width:100%; height:100%; background:transparent;
 }
+.game-stage.white-game-background{ background:#fff; }
+.game-stage.white-game-background video#gameVideo{ opacity:0; }
+.game-stage.selfie-game-background video#gameVideo{ opacity:1; }
 /* Phones need the game and controls to remain visible while the camera is active.
    Keep the source video running at full capture resolution for MediaPipe, but show
    only a compact, non-interactive preview instead of filling the whole viewport. */
@@ -386,10 +389,11 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
   font:400 48px/1 "Apple Color Emoji","Segoe UI Emoji",sans-serif;
   filter:drop-shadow(0 2px 2px rgba(0,0,0,.24));
 }
+.action-hand-image{ object-fit:contain; }
 .action-copy{ display:flex; flex-direction:column; min-width:0; }
 
-/* v76 patient view for Levels 5–6. Keep one large action cue and move the
-   only essential session metric (time) away from the instruction area. */
+/* v77 patient view for Levels 5–6. Keep the action cue at the right edge in
+   a vertical card so it never sits over the central task object. */
 .game-stage.patient-simple-hud .hud{
   top:auto !important; right:auto; bottom:12px; left:12px;
   display:block !important; grid-template-columns:none !important;
@@ -402,33 +406,109 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
 .game-stage.patient-simple-hud .hud-item:last-child .hud-label{ font-size:12px; margin:0; }
 .game-stage.patient-simple-hud .hud-item:last-child .hud-value{ font-size:24px; }
 .game-stage.patient-simple-hud .prompt-zone{
-  top:78px !important; align-items:center; padding:0 10px;
+  top:50% !important; right:12px; bottom:auto; left:auto;
+  width:auto; transform:translateY(-50%);
+  align-items:flex-end; padding:0;
 }
 .game-stage.patient-simple-hud .prompt-row{
-  width:100%; justify-content:center; align-items:center;
+  width:auto; justify-content:flex-end; align-items:center;
 }
 .game-stage.patient-simple-hud .prompt-slot{ display:none !important; }
 .game-stage.patient-simple-hud .status-bar{
-  display:flex; align-items:center; justify-content:center; gap:10px;
-  width:auto; max-width:min(520px,82vw); min-height:72px;
-  padding:7px 18px 7px 10px; border-radius:22px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px;
+  width:158px; max-width:28vw; min-height:310px;
+  padding:12px 8px; border-radius:24px;
   border:4px solid rgba(255,255,255,.92); text-align:left;
   background:rgba(16,73,64,.94); box-shadow:0 7px 22px rgba(0,0,0,.32);
 }
+.game-stage.patient-simple-hud .action-emoji{
+  width:132px; height:132px; flex:0 0 132px;
+  font-size:104px;
+}
+.game-stage.patient-simple-hud .status-bar[data-gesture-cue="open"] .action-emoji{ font-size:132px; }
+.game-stage.patient-simple-hud .status-bar[data-gesture-cue="close"] .action-emoji{ font-size:88px; }
 .game-stage.patient-simple-hud .action-main{
-  font-size:clamp(25px,3.4vw,38px); line-height:1.05; white-space:nowrap;
+  font-size:clamp(25px,3.1vw,36px); line-height:1.05;
+  width:1.15em; writing-mode:horizontal-tb; text-orientation:mixed;
+  white-space:normal; word-break:break-all; overflow-wrap:anywhere;
+  text-align:center; letter-spacing:0;
+}
+html[lang^="en"] .game-stage.patient-simple-hud .action-main{
+  width:auto; max-width:96px; word-break:normal; overflow-wrap:normal;
+  line-height:1.08;
 }
 .game-stage.patient-simple-hud .action-detail{
   display:none;
 }
 .game-stage.patient-simple-hud .adv-panel{
-  width:auto; min-width:0; padding:0; border:0; background:transparent;
-  box-shadow:none; backdrop-filter:none;
+  left:12px; right:auto; top:72px; width:min(70vw,680px); min-width:0;
+  padding:8px 11px; border:0; background:rgba(255,255,255,.91);
+  box-shadow:0 3px 14px rgba(0,0,0,.18); backdrop-filter:blur(5px);
 }
-.game-stage.patient-simple-hud .adv-panel > :not(.adv-btnrow){ display:none; }
-.game-stage.patient-simple-hud .adv-btnrow{ top:0; }
+.game-stage.patient-simple-hud .adv-panel > :not(.ap-text):not(.adv-btnrow){ display:none; }
+.game-stage.patient-simple-hud .adv-panel .ap-text{
+  display:block; margin:0; -webkit-line-clamp:1; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis; font-size:clamp(17px,1.8vw,22px);
+}
+.game-stage.patient-simple-hud .adv-btnrow{ left:0; right:auto; }
+
+/* Public game screens are visual-first. Keep controls, score/time, object
+   labels, targets, angle numbers and the large hand symbol; remove prose,
+   technical diagnostics and therapist-facing sentence panels. */
+.game-stage.public-clean-hud .prompt-slot,
+.game-stage.public-clean-hud .adv-panel,
+.game-stage.public-clean-hud .cog-overlay,
+.game-stage.public-clean-hud .cook-motion-guide,
+.game-stage.public-clean-hud .therapist-btn{ display:none !important; }
+.game-stage.public-clean-hud:not(.patient-simple-hud) .status-bar{ display:none !important; }
+.game-stage.public-clean-hud.patient-simple-hud .action-copy{ display:none !important; }
+.game-stage.public-clean-hud.patient-simple-hud .status-bar{
+  width:158px; min-height:158px; padding:8px;
+  border:0; background:transparent; box-shadow:none;
+}
+.game-stage.public-clean-hud.patient-card-instruction .adv-panel{
+  display:block !important;
+  left:14px; right:auto; top:14px;
+  width:min(520px,44vw); min-width:0;
+  padding:9px 14px; border:0; border-radius:14px;
+  background:rgba(255,255,255,.94); box-shadow:0 3px 12px rgba(0,0,0,.16);
+}
+.game-stage.public-clean-hud.patient-card-instruction .adv-panel > :not(.ap-text){
+  display:none !important;
+}
+.game-stage.public-clean-hud.patient-card-instruction .adv-panel .ap-text{
+  display:block; margin:0; color:#124f45;
+  font-size:clamp(19px,2vw,25px); line-height:1.2;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.patient-game-instruction{
+  display:none; position:absolute; left:14px; top:14px; z-index:31;
+  max-width:44vw; padding:9px 14px; border-radius:14px;
+  background:rgba(255,255,255,.94); color:#124f45;
+  box-shadow:0 3px 12px rgba(0,0,0,.16);
+  font:900 clamp(19px,2vw,25px)/1.2 "PingFang TC","Noto Sans TC",sans-serif;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  pointer-events:none;
+}
+.game-stage.patient-level5-instruction .patient-game-instruction,
+.game-stage.patient-card-instruction .patient-game-instruction{ display:block; }
+
+/* Public Level 3–4 shoulder games keep only the two useful angle readings.
+   Therapist setup/status prose stays available outside the live patient view. */
+.game-stage.patient-shoulder-hud .prompt-zone{ display:none !important; }
+.game-stage.patient-shoulder-hud .level4-calib{
+  top:108px; width:min(238px,calc(100% - 24px)); padding:8px;
+}
+.game-stage.patient-shoulder-hud .level4-selected-arm,
+.game-stage.patient-shoulder-hud .level4-calib-hint,
+.game-stage.patient-shoulder-hud .level4-auto-progress,
+.game-stage.patient-shoulder-hud .level4-calib details{ display:none !important; }
+.game-stage.patient-shoulder-hud .level4-reading b,
+.game-stage.patient-shoulder-hud .level4-calib.shoulder-live .level4-reading:first-child b{
+  color:#075f63; font-size:44px;
+}
 @media (min-width:601px) and (max-width:900px) and (orientation:portrait){
-  .game-stage.patient-simple-hud .prompt-zone{ top:156px !important; }
+  .game-stage.patient-simple-hud .prompt-zone{ top:52% !important; }
 }
 
 .cog-overlay{
@@ -728,11 +808,11 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
 .pilot-phase-hud{ position:static; align-self:center; z-index:36; display:none; align-items:center; gap:10px; padding:7px 14px; border-radius:999px; background:rgba(18,86,74,.94); color:#fff; font:800 15px/1.2 "PingFang TC","Noto Sans TC",sans-serif; white-space:nowrap; pointer-events:none; }
 .pilot-phase-hud.show{ display:flex; }
 .pilot-phase-hud .pilot-phase-time{ font-variant-numeric:tabular-nums; }
-.pilot-rest{ position:absolute; inset:0; z-index:60; display:none; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:24px; background:rgba(12,38,34,.92); color:#fff; text-align:center; }
-.pilot-rest.show{ display:flex; }
-.pilot-rest strong{ font-size:clamp(26px,5vw,42px); font-weight:900; }
-.pilot-rest span{ font-size:clamp(16px,2.6vw,20px); font-weight:700; opacity:.92; }
-.pilot-rest .pilot-rest-count{ font-size:clamp(34px,7vw,58px); font-weight:900; font-variant-numeric:tabular-nums; }
+.session-rest{ position:absolute; inset:0; z-index:60; display:none; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:24px; background:rgba(12,38,34,.92); color:#fff; text-align:center; }
+.session-rest.show{ display:flex; }
+.session-rest strong{ font-size:clamp(26px,5vw,42px); font-weight:900; }
+.session-rest span{ font-size:clamp(16px,2.6vw,20px); font-weight:700; opacity:.92; }
+.session-rest .session-rest-count{ font-size:clamp(34px,7vw,58px); font-weight:900; font-variant-numeric:tabular-nums; }
 .pilot-cog{ position:static; align-self:center; z-index:44; width:min(440px,100%); display:none; flex-direction:column; gap:8px; padding:12px 14px; border-radius:14px; background:rgba(255,255,255,.96); border:2px solid var(--teal); box-shadow:0 6px 20px rgba(0,0,0,.18); text-align:center; pointer-events:auto; }
 .pilot-cog.show{ display:flex; }
 .pilot-cog.compact{ padding:9px 12px; gap:6px; }
@@ -876,12 +956,14 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
   .status-bar{ width:min(210px,46%); padding:7px 8px; }
   .action-main{ font-size:19px; }
   .action-detail{ font-size:11px; }
-  .game-stage.patient-simple-hud .prompt-zone{ top:72px !important; }
+  .game-stage.patient-simple-hud .prompt-zone{ top:52% !important; right:8px; }
   .game-stage.patient-simple-hud .status-bar{
-    min-height:64px; max-width:92vw; padding:5px 14px 5px 7px;
+    width:104px; max-width:25vw; min-height:246px; padding:10px 6px;
   }
-  .game-stage.patient-simple-hud .action-emoji{ width:52px; height:52px; flex-basis:52px; font-size:43px; }
-  .game-stage.patient-simple-hud .action-main{ font-size:25px; }
+  .game-stage.patient-simple-hud .action-emoji{ width:116px; height:116px; flex-basis:116px; }
+  .game-stage.patient-simple-hud .status-bar[data-gesture-cue="open"] .action-emoji{ font-size:116px; }
+  .game-stage.patient-simple-hud .status-bar[data-gesture-cue="close"] .action-emoji{ font-size:77px; }
+  .game-stage.patient-simple-hud .action-main{ font-size:27px; }
 }
 /* Narrow phones in portrait: keep every game control (incl. 休息 / 停止) on one
    reachable row instead of letting the row overflow off-screen. */
@@ -892,7 +974,12 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
   .game-control-btn.stop-btn{ min-width:60px !important; font-size:16px !important; }
   .game-control-btn.therapist-btn{ font-size:13px !important; }
   .prompt-zone{ top:142px; }
-  .game-stage.patient-simple-hud .prompt-zone{ top:68px !important; }
+  .game-stage.patient-simple-hud .prompt-zone{ top:54% !important; right:5px; }
+  .game-stage.patient-simple-hud .status-bar{ width:112px; max-width:28vw; min-height:246px; }
+  .game-stage.patient-simple-hud .action-emoji{ width:96px; height:96px; flex-basis:96px; }
+  .game-stage.patient-simple-hud .status-bar[data-gesture-cue="open"] .action-emoji{ font-size:96px; }
+  .game-stage.patient-simple-hud .status-bar[data-gesture-cue="close"] .action-emoji{ font-size:64px; }
+  .game-stage.patient-simple-hud .action-main{ font-size:23px; }
 }
 
 /* landscape adjustments */
@@ -1366,6 +1453,7 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
     </footer>
   </div>
 
+  <!-- PUBLIC_BUILD_REMOVE_START: complete research setup form -->
   <!-- ============ PILOT RESEARCH SETUP ============ -->
   <div id="screen-research" class="screen">
     <div class="research-card">
@@ -1530,6 +1618,7 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
       <button class="btn-secondary" id="btnResearchBack">返回主頁</button>
     </div>
   </div>
+  <!-- PUBLIC_BUILD_REMOVE_END -->
 
   <!-- ============ ACTIVITY LIBRARY SCREEN ============ -->
   <div id="screen-library" class="screen">
@@ -1768,6 +1857,8 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
       </div>
       <video id="gameVideo" playsinline webkit-playsinline autoplay muted></video>
       <canvas id="gameCanvas"></canvas>
+      <div id="patientGameInstruction" class="patient-game-instruction"
+        role="status" aria-live="polite"></div>
       <div class="cook-motion-guide" id="cookMotionGuide" aria-hidden="true"
         data-testid="panel-cooking-motion-guide">
         <img id="cookMotionGif" alt="">
@@ -1821,10 +1912,12 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
       <!-- Single prompt safe strip: phase pill, status + one-slot instruction,
            and the cognitive task panel. Nothing here overlaps the target band. -->
       <div class="prompt-zone" id="promptZone" data-testid="panel-prompt-zone">
+        <!-- PUBLIC_BUILD_REMOVE_START: research phase display -->
         <div class="pilot-phase-hud" id="pilotPhaseHud" role="status" aria-live="polite">
           <span id="pilotPhaseName">—</span>
           <span class="pilot-phase-time" id="pilotPhaseTime">00:00</span>
         </div>
+        <!-- PUBLIC_BUILD_REMOVE_END -->
         <div class="prompt-row">
           <div class="status-bar" id="statusBar" data-testid="text-status-bar">
             <span class="action-main">鏡頭對準</span>
@@ -1834,6 +1927,7 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
             <div id="persistentRules" class="secondary-rule">點心 → 同款碟</div>
           </div>
         </div>
+        <!-- PUBLIC_BUILD_REMOVE_START: research cognitive response controls -->
         <div class="pilot-cog" id="pilotCogPanel" role="group" aria-label="認知任務">
           <div class="pilot-cog-meta" id="pilotCogTarget">目標：紅色圓形</div>
           <div class="pilot-cog-prompt" id="pilotCogPrompt">—</div>
@@ -1843,12 +1937,13 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
           </div>
           <div class="pilot-cog-meta" id="pilotCogMeta"></div>
         </div>
+        <!-- PUBLIC_BUILD_REMOVE_END -->
       </div>
-      <div class="pilot-rest" id="pilotRestOverlay" role="status" aria-live="assertive">
-        <strong id="pilotRestTitle">休息</strong>
-        <span id="pilotRestBody">放下雙手，放鬆肩膀。</span>
-        <div class="pilot-rest-count" id="pilotRestCount">00:00</div>
-        <button type="button" id="btnPilotRestResume" data-testid="button-pilot-rest-resume" style="min-height:56px;padding:14px 22px;border:2px solid #fff;border-radius:12px;background:#fff;color:#0C3F35;font:900 19px/1.2 inherit;cursor:pointer;">患者已準備好，繼續訓練</button>
+      <div class="session-rest" id="sessionRestOverlay" role="status" aria-live="assertive">
+        <strong id="sessionRestTitle">休息</strong>
+        <span id="sessionRestBody">放下雙手，放鬆肩膀。</span>
+        <div class="session-rest-count" id="sessionRestCount">00:00</div>
+        <button type="button" id="btnSessionRestResume" data-testid="button-session-rest-resume" style="min-height:56px;padding:14px 22px;border:2px solid #fff;border-radius:12px;background:#fff;color:#0C3F35;font:900 19px/1.2 inherit;cursor:pointer;">患者已準備好，繼續訓練</button>
       </div>
       <div class="safety-pause" id="safetyPauseOverlay" role="alertdialog" aria-live="assertive"
         data-testid="panel-safety-pause">
@@ -1900,6 +1995,8 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
       </div>
       <div class="game-controls">
         <button class="game-control-btn" id="btnGameBack" aria-label="返回活動選擇">← 返回</button>
+        <button class="game-control-btn" id="btnSelfieBackground" aria-label="切換至自拍背景"
+          data-testid="button-selfie-background" hidden>自拍</button>
         <button class="game-control-btn therapist-btn" id="btnCompObserve" aria-label="治療師代償觀察記錄"
           data-testid="button-compensation-observe">代償觀察</button>
         <button class="game-control-btn" id="btnPause" aria-label="暫停遊戲">Ⅱ 暫停</button>
@@ -1941,6 +2038,7 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
             data-testid="button-delete-movement-video">刪除影片</button>
         </div>
       </section>
+      <!-- PUBLIC_BUILD_REMOVE_START: research results, protocol inputs and export controls -->
       <div class="research-result" id="researchResult"></div>
       <div class="research-post" id="researchPostPanel">
         <div class="result-field">
@@ -2329,6 +2427,7 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
       </div>
       <button class="btn-primary hidden" id="btnDownloadResearch">下載研究 CSV</button>
       <button class="btn-primary hidden" id="btnReturnSessionRecord">返回資料記錄並自動填寫</button>
+      <!-- PUBLIC_BUILD_REMOVE_END -->
       <button class="btn-primary" id="btnRetry">再玩一次</button>
       <button class="btn-secondary" id="btnHome">返回主頁</button>
     </div>
@@ -2376,6 +2475,7 @@ const state = {
   personalPinchEnter:null, personalPinchExit:null, personalPinchOpen:null,
   personalToolPinch:null,   // v70: per-digit thresholds calibrated with the real tool in hand
   mirrorX:true,
+  selfieMode:false,       // camera-view games start with a plain white background
   sessionMode:'training', // training | trial
   level4SessionThemes:['bilateral'],
   /* Adaptive progression: the app-side TRAINING stage/band only. The clinical
@@ -2384,6 +2484,7 @@ const state = {
   trainingStageLevel:'',
   trainingBand:'',
 };
+/* PUBLIC_BUILD_REMOVE_START: research state and protocol functions */
 const RESEARCH_VERSION = 'pilot-5.0.0-neuroscience';
 const PILOT_TRAINING_SCENARIOS = {
   '5':['flowers','dimsum','laundry','cards','mahjong'],
@@ -2540,6 +2641,7 @@ const research = {
   personalPinchEnter:null, personalPinchExit:null, personalPinchOpen:null,
   returnUrl:'',
 };
+/* PUBLIC_BUILD_REMOVE_END */
 function activeAffectedSide(){
   return research.active ? (research.affectedSide || 'left') : (state.affectedSide || 'right');
 }
@@ -2629,6 +2731,71 @@ function affectedDirectionLabel(){
       : '用患手三點捏握運送到功能目標');
   return activeAffectedSide() === 'right' ? '向畫面右外下方放置' : '向畫面左外下方放置';
 }
+function isPublicLevel5VerticalFlow(){
+  return !research.active && state.level === '5' &&
+    !['fridge','cards','mahjong'].includes(state.theme);
+}
+function isPublicLevel5DimsumLayout(){
+  return isPublicLevel5VerticalFlow() && state.theme === 'dimsum';
+}
+function publicLevel5DimsumGeometry(cw,ch){
+  const portrait = ch > cw;
+  // Portrait uses a broad triangle: one piece just inside the lower half and
+  // two pieces near the lower corners. The radius is derived from the actual
+  // centre distances, canvas edges and half-height boundary.
+  const ratios = portrait
+    ? [[0.50,0.64],[0.24,0.86],[0.76,0.86]]
+    : [[0.18,0.76],[0.50,0.76],[0.82,0.76]];
+  const slots = ratios.map(([x,y])=>({x:cw*x,y:ch*y}));
+  const visibleGap = Math.max(12,Math.min(24,Math.min(cw,ch)*0.025));
+  let maxRadius = Infinity;
+  slots.forEach(slot=>{
+    maxRadius = Math.min(maxRadius,slot.x,cw-slot.x,slot.y-ch/2,ch-slot.y);
+  });
+  for(let i=0;i<slots.length;i++){
+    for(let j=i+1;j<slots.length;j++){
+      maxRadius = Math.min(maxRadius,
+        (Math.hypot(slots[i].x-slots[j].x,slots[i].y-slots[j].y)-visibleGap)/2);
+    }
+  }
+  return {slots,visibleGap,maxRadius:Math.max(1,maxRadius)};
+}
+function publicLevel5DimsumSlot(index,cw,ch){
+  const geometry = publicLevel5DimsumGeometry(cw,ch);
+  return geometry.slots[index % geometry.slots.length];
+}
+function isPublicSideCardGame(){
+  return !research.active && (state.level === '5' || state.level === '67') &&
+    (state.theme === 'cards' || state.theme === 'mahjong');
+}
+function level5PatientInstructionText(){
+  const isLevel5Flow = isPublicLevel5VerticalFlow();
+  const isSideCardGame = isPublicSideCardGame();
+  if(!isLevel5Flow && !isSideCardGame) return '';
+  if(state.theme === 'laundry') return '拿起衣物，放到上方同色衫籃。';
+  if(state.theme === 'dimsum') return '拿起點心，放到上方同款蒸籠。';
+  if(state.theme === 'flowers') return '拿起花朵，放到上方花盆。';
+  if(state.theme === 'cards'){
+    const suit = (typeof cards !== 'undefined' && cards.suit) ? CARD_SUIT_NAME[cards.suit] : '';
+    if(isSideCardGame){
+      const side = activeAffectedSide() === 'right' ? '右邊' : '左邊';
+      return '拿起' + suit + '牌，放到' + side + '收牌區。';
+    }
+    return '拿起' + suit + '牌，放到上方收牌區。';
+  }
+  if(state.theme === 'mahjong'){
+    if(isSideCardGame){
+      const side = activeAffectedSide() === 'right' ? '右邊' : '左邊';
+      return '揀一組牌，放到' + side + '放牌區。';
+    }
+    return '揀一組牌，放到上方放牌區。';
+  }
+  return '';
+}
+function updatePatientGameInstruction(){
+  const el = document.getElementById('patientGameInstruction');
+  if(el) el.textContent = level5PatientInstructionText();
+}
 function affectedSelectionZone(){
   const cw = gameCanvas.width, ch = gameCanvas.height;
   if(isLevel4Tabletop()){
@@ -2638,12 +2805,14 @@ function affectedSelectionZone(){
       w:Math.min(270, cw * 0.46), h:Math.min(112, ch * 0.13),
     };
   }
-  const w = Math.min(220, cw * 0.22);
-  const h = Math.min(160, ch * 0.18);
+  const largePublicCardZone = isPublicSideCardGame();
+  const w = largePublicCardZone ? cw * 0.25 : Math.min(220, cw * 0.22);
+  const h = largePublicCardZone ? ch * 0.70 : Math.min(160, ch * 0.18);
   return {
     id:'affected-selection-zone',
-    x:affectedSideSign() > 0 ? cw * 0.86 : cw * 0.14,
-    y:ch * 0.78, w, h,
+    x:affectedSideSign() > 0 ? cw * (largePublicCardZone ? 0.875 : 0.86)
+      : cw * (largePublicCardZone ? 0.125 : 0.14),
+    y:ch * (largePublicCardZone ? 0.59 : 0.78), w, h,
   };
 }
 function level2HorizontalWipeLane(cw = gameCanvas.width, ch = gameCanvas.height){
@@ -2824,7 +2993,7 @@ function teahouseGeometry(cw,ch){
   const steamerY=(plateY-plateH/2)+plateH*0.26;
   const sw=plateW*0.36;
   // 托盤上嘅白色細碟（點心起點）
-  const dishW=Math.min(trayW*0.24,190);
+  const dishW=Math.min(trayW*0.48,380);
   const dishY=trayY-trayH*0.05;
   return {laneX,sw,steamerX,steamerY,plateW,plateH,plateY,trayW,trayH,trayY,dishY,dishW};
 }
@@ -2941,7 +3110,7 @@ function drawTeahouseScene(ctx,cw,ch){
    同 updateShoulderFlexionGame 嘅臨床註解一致：呢層完全唔加任何手部接觸、
    拾起停留、握力或放開訊號，亦唔會改變達標判定。 */
 const bowlingStrike={phase:'idle',startedMs:0,impactPlayed:false,pinSeeds:null};
-const BOWLING_ROLL_MS=620,BOWLING_FALL_MS=680;
+const BOWLING_ROLL_MS=620,BOWLING_FALL_MS=680,BOWLING_RESET_MS=900;
 function isBowlingLaneTheme(){return isShoulderFlexionLevel()&&state.theme==='bowlinglane';}
 function resetBowlingStrike(){bowlingStrike.phase='idle';bowlingStrike.startedMs=0;bowlingStrike.impactPlayed=false;bowlingStrike.pinSeeds=null;}
 function startBowlingStrike(){
@@ -3006,20 +3175,19 @@ function updateBowlingStrike(){
     }
   }
   if(bowlingStrike.phase==='impact'&&t>=BOWLING_ROLL_MS+BOWLING_FALL_MS)bowlingStrike.phase='down';
+  if(bowlingStrike.phase==='down'&&t>=BOWLING_ROLL_MS+BOWLING_FALL_MS+BOWLING_RESET_MS){
+    resetBowlingStrike();
+  }
 }
 function bowlingLaneGeometry(cw,ch){
-  const laneX=cw*(ch>cw?.68:.58);
+  const laneX=cw*0.5;
   const bgW=imgBowlingAlleyBg.naturalWidth||768,bgH=imgBowlingAlleyBg.naturalHeight||1028;
   const topSrcH=bgH*0.545;
   const pinBaseY=ch*0.315;
-  // v75: 放大版面，但頂部（品牌牆＋樽陣）永遠唔可以出畫面 —
-  // 用高度反推最大 panel 闊度，landscape 由呢個 cap 話事。
-  const pwFit=(pinBaseY-2)/0.885*(bgW/topSrcH);
-  const pw=Math.min(cw*(ch>cw?0.56:0.44),560,pwFit);
-  const topH=pw*(topSrcH/bgW);
-  const py0=pinBaseY-topH*0.885;
-  const py1=ch*0.885;
-  return {laneX,pw,py0,py1,topH,topSrcH,bgW,bgH,pinBaseY};
+  const pw=cw,py0=0,py1=ch,topH=ch*0.50;
+  const s=Math.max(cw/bgW,ch/bgH),dw=bgW*s,dh=bgH*s;
+  return {laneX,pw,py0,py1,topH,topSrcH,bgW,bgH,pinBaseY,
+    bgDx:(cw-dw)/2,bgDy:(ch-dh)/2,bgDw:dw,bgDh:dh};
 }
 function drawBowlingBallSprite(ctx,x,y,r){
   ctx.save();
@@ -3084,26 +3252,14 @@ function drawBowlingAlleyScene(ctx,cw,ch){
   preloadHaoboCheer();
   const x0=g.laneX-g.pw/2;
   ctx.save();
-  rrPath(ctx,x0,g.py0,g.pw,g.py1-g.py0,18);
-  ctx.clip();
+  ctx.rect(0,0,cw,ch);ctx.clip();
   if(imgBowlingAlleyBg.complete&&imgBowlingAlleyBg.naturalWidth>0){
-    ctx.drawImage(imgBowlingAlleyBg,0,0,g.bgW,g.topSrcH,x0,g.py0,g.pw,g.topH);
-    ctx.drawImage(imgBowlingAlleyBg,0,g.topSrcH,g.bgW,g.bgH-g.topSrcH,x0,g.py0+g.topH,g.pw,g.py1-(g.py0+g.topH));
+    ctx.drawImage(imgBowlingAlleyBg,g.bgDx,g.bgDy,g.bgDw,g.bgDh);
   }else{
-    ctx.fillStyle='#d9b573';ctx.fillRect(x0,g.py0,g.pw,g.py1-g.py0);
+    ctx.fillStyle='#d9b573';ctx.fillRect(0,0,cw,ch);
   }
   drawBowlingPins(ctx,g);
   drawBowlingRollBall(ctx,g);
-  ctx.restore();
-  ctx.save();
-  ctx.strokeStyle='rgba(17,95,83,.55)';ctx.lineWidth=5;
-  rrPath(ctx,x0,g.py0,g.pw,g.py1-g.py0,18);ctx.stroke();
-  // 頂部空間唔夠（橫向 iPad）就唔畫，側欄已顯示目標角度
-  if(g.py0>=34){
-    const target=shoulderFlexionState.selectedTargetDeg??'—';
-    ctx.fillStyle='#155f53';ctx.font='800 16px "PingFang TC","Noto Sans TC",sans-serif';ctx.textAlign='center';
-    ctx.fillText('目標 '+target+'°',g.laneX,g.py0-12);
-  }
   ctx.restore();
 }
 /* ==================== v75 荃灣籃球場景（Level 3/4 肩前屈） ====================
@@ -3145,13 +3301,14 @@ function updateBasketballShot(){
   if(basketballShot.phase==='drop'&&t>=BBALL_FLY_MS+BBALL_DROP_MS)basketballShot.phase='down';
 }
 function basketballGeometry(cw,ch){
-  const laneX=cw*(ch>cw?.68:.58);
-  const pw=Math.min(cw*(ch>cw?0.56:0.46),580);
+  const laneX=cw*0.5;
+  const pw=cw;
   const bgW=imgBballCourt.naturalWidth||800,bgH=imgBballCourt.naturalHeight||768;
-  const py0=ch*0.055,py1=ch*0.885;
-  const s=Math.max(pw/bgW,(py1-py0)/bgH);
+  const py0=0,py1=ch;
+  const s=Math.max(pw/bgW,(py1-py0)/bgH)*2;
   const dw=bgW*s,dh=bgH*s;
-  const dx=laneX-dw/2,dy=py0;
+  // Zoom around the main hoop: centre it and make it about twice the old size.
+  const dx=laneX-dw*0.370,dy=ch*0.25-dh*0.242;
   // 籃框喺相入面嘅相對位置（荃灣屋邨球場相：籃框圈心）
   const rimX=dx+dw*0.370,rimY=dy+dh*0.242;
   return {laneX,pw,py0,py1,dx,dy,dw,dh,rimX,rimY};
@@ -3160,6 +3317,8 @@ function drawBasketballSprite(ctx,x,y,r){
   ctx.save();
   ctx.beginPath();ctx.ellipse(x,y+r*0.95,r*0.8,r*0.20,0,0,Math.PI*2);
   ctx.fillStyle='rgba(0,0,0,0.15)';ctx.fill();
+  ctx.fillStyle='#E97824';ctx.strokeStyle='#4A2512';ctx.lineWidth=Math.max(4,r*.075);
+  ctx.beginPath();ctx.arc(x,y,r*.92,0,Math.PI*2);ctx.fill();ctx.stroke();
   if(imgBballBall.complete&&imgBballBall.naturalWidth>0){
     const iw=imgBballBall.naturalWidth,ih=imgBballBall.naturalHeight;
     let dw2,dh2;
@@ -3199,8 +3358,7 @@ function drawBasketballCourtScene(ctx,cw,ch){
   preloadHaoboCheer();
   const x0=g.laneX-g.pw/2;
   ctx.save();
-  rrPath(ctx,x0,g.py0,g.pw,g.py1-g.py0,18);
-  ctx.clip();
+  ctx.rect(0,0,cw,ch);ctx.clip();
   if(imgBballCourt.complete&&imgBballCourt.naturalWidth>0){
     ctx.drawImage(imgBballCourt,g.dx,g.dy,g.dw,g.dh);
   }else{
@@ -3217,15 +3375,6 @@ function drawBasketballCourtScene(ctx,cw,ch){
     ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.fillText('好波！入咗！',g.laneX,by+bh/2+1);
     ctx.restore();
-  }
-  ctx.restore();
-  ctx.save();
-  ctx.strokeStyle='rgba(17,95,83,.55)';ctx.lineWidth=5;
-  rrPath(ctx,x0,g.py0,g.pw,g.py1-g.py0,18);ctx.stroke();
-  if(g.py0>=34){
-    const target=shoulderFlexionState.selectedTargetDeg??'—';
-    ctx.fillStyle='#155f53';ctx.font='800 16px "PingFang TC","Noto Sans TC",sans-serif';ctx.textAlign='center';
-    ctx.fillText('目標 '+target+'°',g.laneX,g.py0-12);
   }
   ctx.restore();
 }
@@ -3344,7 +3493,7 @@ function resetSessionSafety(){
 
 function safetyLog(event, payload){
   try{
-    if(typeof researchLog === 'function' && research && research.active){
+    if(research.active && typeof researchLog === 'function' && research){
       researchLog(event, payload || {});
     }
   }catch(e){ /* logging must never break the session */ }
@@ -3572,9 +3721,9 @@ function startRest(){
   state.paused = true;
   sessionSafety.restCount++;
   sessionSafety.restStartedAtMs = nowMs();
-  const overlay = document.getElementById('pilotRestOverlay');
-  const title = document.getElementById('pilotRestTitle');
-  const body = document.getElementById('pilotRestBody');
+  const overlay = document.getElementById('sessionRestOverlay');
+  const title = document.getElementById('sessionRestTitle');
+  const body = document.getElementById('sessionRestBody');
   if(title) title.textContent = '休息';
   if(body) body.textContent = '放下雙手、放鬆肩膀。';
   if(overlay) overlay.classList.add('show');
@@ -3586,7 +3735,7 @@ function endRest(){
   sessionSafety.restTotalSec += elapsed;
   sessionSafety.restStartedAtMs = 0;
   restPauseActive = false;
-  const overlay = document.getElementById('pilotRestOverlay');
+  const overlay = document.getElementById('sessionRestOverlay');
   if(overlay && !(research.active && typeof pilotCurrentPhase === 'function'
       && pilotCurrentPhase() && pilotCurrentPhase().kind === 'rest')){
     overlay.classList.remove('show');
@@ -3625,7 +3774,7 @@ window.confirmStop = confirmStop;
 (function wireRestStop(){
   const rest = document.getElementById('btnGameRest');
   const stop = document.getElementById('btnGameStop');
-  const resume = document.getElementById('btnPilotRestResume');
+  const resume = document.getElementById('btnSessionRestResume');
   const cancel = document.getElementById('btnStopCancel');
   const row = document.getElementById('stopReasonRow');
   const pauseResume = document.getElementById('btnSafetyPauseResume');
@@ -3942,7 +4091,7 @@ function resetSafetyRuntime(){
   safetyPauseActive = false;
   hideSafetyPause();
   closeStopConfirm();
-  const restOverlay = document.getElementById('pilotRestOverlay');
+  const restOverlay = document.getElementById('sessionRestOverlay');
   if(restOverlay) restOverlay.classList.remove('show');
   const alertEl = document.getElementById('compAlert');
   if(alertEl){ alertEl.style.display = 'none'; alertEl.textContent = ''; }
@@ -4003,6 +4152,7 @@ function renderCalibLevelBrief(){
 window.renderCalibLevelBrief = renderCalibLevelBrief;
 window.CALIB_LEVEL_BRIEF = CALIB_LEVEL_BRIEF;
 
+/* PUBLIC_BUILD_REMOVE_START: research calibration, protocol, export and rendering module */
 function resetResearchCalibration(){
   research.calibration = { detectedStart:0, openHoldMs:0, openTickAt:0, moreOpenMs:0, closedHoldMs:0, closedTickAt:0, lastSeenAt:0, detectedDone:false,
     openDone:false, closedDone:false, ready:false, openScores:[], closedScores:[] };
@@ -4236,7 +4386,7 @@ function pilotApplyPhaseMode(kind){
     panel.classList.toggle('show', research.cognitiveEnabled);
     panel.classList.toggle('compact', kind === 'dual');
   }
-  const rest = document.getElementById('pilotRestOverlay');
+  const rest = document.getElementById('sessionRestOverlay');
   if(rest) rest.classList.toggle('show', kind === 'rest');
   const hud = document.getElementById('pilotPhaseHud');
   if(hud) hud.classList.toggle('show', research.active);
@@ -4304,9 +4454,9 @@ function pilotRenderPhaseHud(){
   document.getElementById('pilotPhaseTime').textContent = pilotFormatClock(research.phaseRemaining);
   if(phase.kind === 'rest'){
     const t = PILOT_TEXT[pilotLang];
-    document.getElementById('pilotRestTitle').textContent = t.restTitle;
-    document.getElementById('pilotRestBody').textContent = t.restBody;
-    document.getElementById('pilotRestCount').textContent = pilotFormatClock(research.phaseRemaining);
+    document.getElementById('sessionRestTitle').textContent = t.restTitle;
+    document.getElementById('sessionRestBody').textContent = t.restBody;
+    document.getElementById('sessionRestCount').textContent = pilotFormatClock(research.phaseRemaining);
   }
 }
 /* ---- Standardised visual target monitoring task ----
@@ -4828,6 +4978,7 @@ function renderPilotLanguage(){
   renderPilotScenarioOptions();
   renderResearchManager();
 }
+/* PUBLIC_BUILD_REMOVE_END */
 
 /* ==================== 級別資料 ==================== */
 const LEVELS = {
@@ -5106,6 +5257,7 @@ document.querySelectorAll('[data-session-level][data-session-mode]').forEach(but
     beginSessionMode(button.dataset.sessionLevel, button.dataset.sessionMode);
   });
 });
+/* PUBLIC_BUILD_REMOVE_START: research setup and event handlers */
 /* Research Mode now routes to the separate role hub (research/index.html) so that
    the blinded assessor bundle never shares a page with allocation or training data.
    The in-page therapist setup below remains reachable via ?role=intervention, which
@@ -5176,10 +5328,6 @@ window.addEventListener('load', ()=>{
   }catch(e){ console.warn('intervention deep link unavailable', e); }
 });
 /* PUBLIC_BUILD_REMOVE_END */
-const btnPilotRestResume = document.getElementById('btnPilotRestResume');
-if(btnPilotRestResume){
-  btnPilotRestResume.addEventListener('click', ()=>{ pilotResumeFromRest(); });
-}
 document.getElementById('researchVisit').addEventListener('change', ()=>{
   pilotRenderPlanPreview();
   renderPilotScenarioOptions();
@@ -5313,6 +5461,14 @@ document.getElementById('btnResearchBegin').addEventListener('click', async ()=>
   if(await cameraStart === false) return;
   startCalibLoop();
 });
+/* PUBLIC_BUILD_REMOVE_END */
+const btnSessionRestResume = document.getElementById('btnSessionRestResume');
+if(btnSessionRestResume){
+  btnSessionRestResume.addEventListener('click', ()=>{
+    if(research.active) pilotResumeFromRest();
+    else endRest();
+  });
+}
 document.getElementById('btnBackToLevel').addEventListener('click', ()=> exitToLevelSelection());
 document.getElementById('btnBackToLibrary').addEventListener('click', ()=>{
   renderActivityLibrary();
@@ -5780,6 +5936,8 @@ function waitForLiveCameraFrame(videoEl, timeoutMs = 1800){
   // frozen Safari surface.
   level4VideoFreshness?.start(videoEl);
   resetGamePoseFrameAdmission();
+  resetHandFrameAdmission();
+  resetPublicGameWorkAdmission();
   const decodedReady = ()=>{
     const frame = level4FrameStatus(videoEl);
     return frame.fresh && frame.generation >= 3;
@@ -6127,6 +6285,8 @@ function triggerRecoveryPause(){
     dwellTarget = null;
     releaseDwellStart = 0;
     releaseDwellPlate = null;
+    releaseDwellPauseAt = 0;
+    releaseDwellLastOpenAt = 0;
     posHistory = [];
     dotEmaX = -1; dotEmaY = -1;
     cursorX = -1; cursorY = -1;
@@ -6192,6 +6352,10 @@ function leaveCurrentGame(){
   state.running = false;
   state.paused = false;
   document.querySelector('.game-stage')?.classList.remove('patient-simple-hud');
+  document.querySelector('.game-stage')?.classList.remove('patient-shoulder-hud');
+  document.querySelector('.game-stage')?.classList.remove('public-clean-hud');
+  document.querySelector('.game-stage')?.classList.remove('patient-card-instruction');
+  document.querySelector('.game-stage')?.classList.remove('patient-level5-instruction');
   resetSafetyRuntime();
   if(usesAdvancedThemeModule()) advTeardown();
   if(gameTimerId){ clearInterval(gameTimerId); gameTimerId = null; }
@@ -6205,6 +6369,10 @@ function leaveCurrentGame(){
   promptRulesEnabled = true;
   setPromptSlot('rules');
   document.querySelector('.game-stage')?.classList.remove('patient-simple-hud');
+  document.querySelector('.game-stage')?.classList.remove('patient-shoulder-hud');
+  document.querySelector('.game-stage')?.classList.remove('public-clean-hud');
+  document.querySelector('.game-stage')?.classList.remove('patient-card-instruction');
+  document.querySelector('.game-stage')?.classList.remove('patient-level5-instruction');
   document.getElementById('btnPause').classList.remove('pause-active');
   document.getElementById('btnPause').textContent = 'Ⅱ 暫停';
   if(wasResearch){
@@ -6239,6 +6407,8 @@ function exitToLevelSelection(){
   heldItem = null;
   releaseDwellStart = 0;
   releaseDwellPlate = null;
+  releaseDwellPauseAt = 0;
+  releaseDwellLastOpenAt = 0;
   isGrasping = false;
   handOpenPrep = false;
   resetToolPinchAdapt();
@@ -6246,6 +6416,10 @@ function exitToLevelSelection(){
   promptRulesEnabled = true;
   setPromptSlot('rules');
   document.querySelector('.game-stage')?.classList.remove('patient-simple-hud');
+  document.querySelector('.game-stage')?.classList.remove('patient-shoulder-hud');
+  document.querySelector('.game-stage')?.classList.remove('public-clean-hud');
+  document.querySelector('.game-stage')?.classList.remove('patient-card-instruction');
+  document.querySelector('.game-stage')?.classList.remove('patient-level5-instruction');
   document.getElementById('btnPause').classList.remove('pause-active');
   document.getElementById('btnPause').textContent = 'Ⅱ 暫停';
   document.getElementById('calibChecklist').classList.remove('active');
@@ -6257,6 +6431,10 @@ function exitToLevelSelection(){
   showScreen('level');
 }
 document.getElementById('btnGameBack').addEventListener('click', leaveCurrentGame);
+document.getElementById('btnSelfieBackground').addEventListener('click', ()=>{
+  state.selfieMode=!state.selfieMode;
+  syncGameBackgroundMode();
+});
 
 document.getElementById('btnPause').addEventListener('click', ()=>{
   state.paused = !state.paused;
@@ -6269,6 +6447,7 @@ document.getElementById('btnPause').addEventListener('click', ()=>{
   pauseBtn.classList.toggle('pause-active', state.paused);
   pauseBtn.setAttribute('aria-label', state.paused ? '繼續遊戲' : '暫停遊戲');
 });
+/* PUBLIC_BUILD_REMOVE_START: research result export and return handlers */
 document.getElementById('btnDownloadResearch').addEventListener('click', downloadResearchCSV);
 document.getElementById('btnReturnSessionRecord').addEventListener('click', ()=>{
   if(!research.returnUrl) return;
@@ -6356,6 +6535,7 @@ document.getElementById('researchSafetyPanel').addEventListener('input', event=>
     syncResearchFeedback();
   }
 });
+/* PUBLIC_BUILD_REMOVE_END */
 
 /* ==================== 相機控制 ==================== */
 const movementRecording = {
@@ -6432,16 +6612,33 @@ function createHeadExcludedRecordingStream(videoEl){
   canvas.height = outputHeight;
   const ctx = canvas.getContext('2d', { alpha:false });
   if(!ctx) return null;
-  const draw = ()=>{
-    ctx.fillStyle = '#eef3f1';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    if(videoEl.readyState >= 2){
+  const PRIVACY_DRAW_INTERVAL_MS = 1000 / 20;
+  let lastDrawAt = -Infinity;
+  let lastDecodedFrameKey = null;
+  const decodedFrameKey = ()=>{
+    try{
+      const quality = videoEl.getVideoPlaybackQuality?.();
+      if(Number.isFinite(quality?.totalVideoFrames)) return 'f:' + quality.totalVideoFrames;
+    }catch(e){}
+    const mediaTime = Number(videoEl.currentTime);
+    return Number.isFinite(mediaTime) ? 't:' + mediaTime.toFixed(5) : null;
+  };
+  const draw = rafNow=>{
+    const tick = Number.isFinite(rafNow) ? rafNow : performance.now();
+    const frameKey = decodedFrameKey();
+    const intervalReady = tick - lastDrawAt >= PRIVACY_DRAW_INTERVAL_MS;
+    const decodedAdvanced = frameKey == null || frameKey !== lastDecodedFrameKey;
+    if(intervalReady && decodedAdvanced && videoEl.readyState >= 2){
+      lastDrawAt = tick;
+      lastDecodedFrameKey = frameKey;
+      ctx.fillStyle = '#eef3f1';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(videoEl, 0, cropTop, sourceWidth, cropHeight,
         0, 0, canvas.width, canvas.height);
     }
     movementRecording.privacyFrameId = requestAnimationFrame(draw);
   };
-  draw();
+  movementRecording.privacyFrameId = requestAnimationFrame(draw);
   movementRecording.privacyCanvas = canvas;
   movementRecording.privacyStream = canvas.captureStream(20);
   return movementRecording.privacyStream;
@@ -6630,14 +6827,14 @@ async function startCamera(videoElId){
     const cameraVideoConstraints = portraitCamera
       ? {
           facingMode:'user',
-          width:{ideal:720},
-          height:{ideal:1280},
+          width:{ideal:540},
+          height:{ideal:960},
           aspectRatio:{ideal:9/16},
         }
       : {
           facingMode:'user',
-          width:{ideal:1280},
-          height:{ideal:720},
+          width:{ideal:960},
+          height:{ideal:540},
           aspectRatio:{ideal:16/9},
         };
     // One in-flight request and one active stream per page session. Screen,
@@ -6670,6 +6867,8 @@ async function startCamera(videoElId){
 function stopCamera(release=false){
   level4VideoFreshness?.stop();
   resetGamePoseFrameAdmission();
+  resetHandFrameAdmission();
+  resetPublicGameWorkAdmission();
   // Navigation within this single-page app suspends frame admission but keeps
   // the granted stream alive. Only page/session teardown releases hardware.
   if(release&&state.stream){
@@ -6690,6 +6889,12 @@ window.addEventListener('pagehide', event=>{
 /* ==================== MediaPipe Hand Landmarker ==================== */
 let handLandmarker = null;
 let handLandmarkerPromise = null;
+let handFrameCache = { video:null, generation:null, result:null };
+
+function resetHandFrameAdmission(){
+  handFrameCache = { video:null, generation:null, result:null };
+  lastAcceptedToolHandGeneration = -1;
+}
 
 function isAppleTouchDevice(){
   return /iPad|iPhone|iPod/.test(navigator.userAgent)
@@ -6892,7 +7097,21 @@ function interpretHandResults(results, inputMirrored=false){
 
 // 偵測食指尖位置，回傳 {detected, nx, ny}（nx/ny 已經鏡像處理，範圍 0-1）
 function detectWrist(videoEl, frame){
-  if(!videoEl || videoEl.readyState < 2 || !frame?.fresh){
+  const generation = Number(frame?.generation);
+  if(!videoEl || videoEl.readyState < 2 || !frame?.fresh || !Number.isFinite(generation)){
+    resetHandFrameAdmission();
+    return { detected:false, reason:'hand-frame-stale' };
+  }
+  // A decoded camera generation is immutable. Reuse the already interpreted
+  // selected-hand result when duplicate consumers ask for that same *fresh*
+  // frame, but never admit a cache entry after freshness is lost or a video
+  // element/session changes.
+  if(handFrameCache.video === videoEl && handFrameCache.generation === generation
+      && handFrameCache.result){
+    return handFrameCache.result;
+  }
+  if(handFrameCache.video === videoEl && Number.isFinite(handFrameCache.generation)
+      && generation < handFrameCache.generation){
     return { detected:false, reason:'hand-frame-stale' };
   }
   let results = null;
@@ -6903,7 +7122,9 @@ function detectWrist(videoEl, frame){
       results = null;
     }
   }
-  return interpretHandResults(results,false);
+  const interpreted = interpretHandResults(results,false);
+  handFrameCache = { video:videoEl, generation, result:interpreted };
+  return interpreted;
 }
 
 function computeGraspScore(lm, isGraspingPrev){
@@ -7085,6 +7306,14 @@ const TOOL_ADAPT_MIN_SPAN = 0.030;
 const TOOL_ADAPT_MAX_SAMPLES = 300;
 const TOOL_HAND_TOO_CLOSE_SCALE = 0.55;
 const toolPinchAdapt = { near:[], far:[], combo:[], counter:0, thresholds:null };
+/* Public chopsticks get a second, tool-relative cue: index and middle fingertip
+   extension from their own MCP joints to the wrist. Unlike thumb-to-tip
+   aperture, this remains measurable when the thumb and chopsticks overlap.
+   Entry/release always requires BOTH fingers, and adaptive thresholds remain
+   unavailable until a real flex/reopen span has been observed. */
+const CHOPSTICK_FLEX_ADAPT_MIN_SAMPLES = 90;
+const CHOPSTICK_FLEX_ADAPT_MIN_SPAN = 0.080;
+const chopstickFlexAdapt = { index:[], middle:[], counter:0, thresholds:null };
 let lastToolPinchLive = null; // {ratio, nearRatio, farRatio, scale, at}
 function resetToolPinchAdapt(){
   toolPinchAdapt.near.length = 0;
@@ -7092,7 +7321,46 @@ function resetToolPinchAdapt(){
   toolPinchAdapt.combo.length = 0;
   toolPinchAdapt.counter = 0;
   toolPinchAdapt.thresholds = null;
+  chopstickFlexAdapt.index.length = 0;
+  chopstickFlexAdapt.middle.length = 0;
+  chopstickFlexAdapt.counter = 0;
+  chopstickFlexAdapt.thresholds = null;
   lastToolPinchLive = null;
+}
+function chopstickFlexAdaptRange(vals){
+  if(vals.length < CHOPSTICK_FLEX_ADAPT_MIN_SAMPLES) return null;
+  const sorted = vals.slice().sort((a,b)=>a-b);
+  const lo = sorted[Math.floor(sorted.length * 0.08)];
+  const hi = sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.92))];
+  const span = hi - lo;
+  return Number.isFinite(span) ? {lo,hi,span} : null;
+}
+function updateChopstickFlexAdapt(indexRatio, middleRatio){
+  const push=(arr,value)=>{
+    arr.push(value);
+    if(arr.length > TOOL_ADAPT_MAX_SAMPLES) arr.shift();
+  };
+  push(chopstickFlexAdapt.index,indexRatio);
+  push(chopstickFlexAdapt.middle,middleRatio);
+  if((chopstickFlexAdapt.counter++ % 10)!==0 && chopstickFlexAdapt.thresholds) return;
+  const indexRange=chopstickFlexAdaptRange(chopstickFlexAdapt.index);
+  const middleRange=chopstickFlexAdaptRange(chopstickFlexAdapt.middle);
+  // A static pose, or motion from only one tracked digit, cannot create the
+  // secondary thresholds.
+  if(!indexRange || !middleRange || indexRange.span < CHOPSTICK_FLEX_ADAPT_MIN_SPAN ||
+      middleRange.span < CHOPSTICK_FLEX_ADAPT_MIN_SPAN){
+    chopstickFlexAdapt.thresholds=null;
+    return;
+  }
+  chopstickFlexAdapt.thresholds={
+    indexEnter:indexRange.lo+indexRange.span*.42,
+    middleEnter:middleRange.lo+middleRange.span*.42,
+    indexExit:indexRange.lo+indexRange.span*.60,
+    middleExit:middleRange.lo+middleRange.span*.60,
+    indexOpen:indexRange.lo+indexRange.span*.72,
+    middleOpen:middleRange.lo+middleRange.span*.72,
+    adaptive:true,
+  };
 }
 function toolAdaptRange(vals){
   if(vals.length < TOOL_ADAPT_MIN_SAMPLES) return null;
@@ -7155,6 +7423,14 @@ function computeToolPinchState(lm, isPinchingPrev){
     updateToolPinchAdapt(nearRatio, farRatio, ratio);
     lastToolPinchLive = { ratio, nearRatio, farRatio, scale, at: nowMs() };
   }
+  const useChopstickFlex = !research.active &&
+    typeof isLevel6Chopsticks === 'function' && isLevel6Chopsticks();
+  const chopstickFlex = useChopstickFlex
+    ? computeChopstickFlexState(lm, isPinchingPrev)
+    : null;
+  if(chopstickFlex?.valid){
+    updateChopstickFlexAdapt(chopstickFlex.indexRatio,chopstickFlex.middleRatio);
+  }
   // v75 threshold priority: live adaptive range (reflects the hand + tool +
   // camera distance actually in front of the lens right now) → tool-in-hand
   // calibration → conservative defaults. Fail-closed at every step.
@@ -7164,10 +7440,28 @@ function computeToolPinchState(lm, isPinchingPrev){
   // Release still requires BOTH digits to clear the reopen point of their own
   // measured tool range — one drifting landmark can never release an item.
   const bothReopened = nearRatio >= t.nearExit && farRatio >= t.farExit;
-  const isPinching = isPinchingPrev ? !bothReopened : (ratio <= t.enter);
+  const flexT=chopstickFlexAdapt.thresholds;
+  const flexBothClosed=!!(chopstickFlex?.valid && (
+    chopstickFlex.isClosed || (flexT &&
+      chopstickFlex.indexRatio<=flexT.indexEnter &&
+      chopstickFlex.middleRatio<=flexT.middleEnter)
+  ));
+  const flexBothReopened=!!(chopstickFlex?.valid && (
+    chopstickFlex.isOpen || (flexT &&
+      chopstickFlex.indexRatio>=flexT.indexExit &&
+      chopstickFlex.middleRatio>=flexT.middleExit)
+  ));
+  const flexBothOpen=!!(chopstickFlex?.valid && (
+    chopstickFlex.isOpen || (flexT &&
+      chopstickFlex.indexRatio>=flexT.indexOpen &&
+      chopstickFlex.middleRatio>=flexT.middleOpen)
+  ));
+  const releaseConfirmed=bothReopened || flexBothReopened;
+  const isPinching = isPinchingPrev ? !releaseConfirmed : (ratio <= t.enter || flexBothClosed);
   return {
     isPinching, ratio, indexRatio, middleRatio, nearRatio, farRatio, scale,
-    isSeparated: nearRatio >= t.nearOpen && farRatio >= t.farOpen,
+    isSeparated: (nearRatio >= t.nearOpen && farRatio >= t.farOpen) || flexBothOpen,
+    chopstickFlex,
     score: Math.max(0, Math.min(1, 1 - (ratio / Math.max(t.scoreOpen, 0.001)))),
     valid:true,
   };
@@ -7209,9 +7503,13 @@ const DOT_EMA = 0.15;  // lower = smoother (less jitter, slight lag) - 陰低給
 const CAMERA_SAFE_X = 0.12;
 const CAMERA_SAFE_TOP = 0.08;
 const CAMERA_SAFE_BOTTOM = 0.14;
-const TRACKING_MEDIAN_FRAMES = 5;
+const RESEARCH_TRACKING_MEDIAN_FRAMES = 5;
+const PUBLIC_TRACKING_MEDIAN_FRAMES = 3;
 const TRACKING_DEAD_ZONE_PX = 3;
 let trackingPointHistory = [];
+function trackingMedianFrames(){
+  return research.active ? RESEARCH_TRACKING_MEDIAN_FRAMES : PUBLIC_TRACKING_MEDIAN_FRAMES;
+}
 
 function clamp01(value){ return Math.max(0, Math.min(1, value)); }
 function cameraPointToCanvas(nx, ny, width, height){
@@ -7225,7 +7523,8 @@ function medianValue(values){
 }
 function stabiliseTrackingPoint(x, y){
   trackingPointHistory.push({x,y});
-  if(trackingPointHistory.length > TRACKING_MEDIAN_FRAMES) trackingPointHistory.shift();
+  const historyLimit = trackingMedianFrames();
+  if(trackingPointHistory.length > historyLimit) trackingPointHistory.shift();
   return {
     x:medianValue(trackingPointHistory.map(point=>point.x)),
     y:medianValue(trackingPointHistory.map(point=>point.y))
@@ -7682,6 +7981,10 @@ const imgLaundryJeans = new Image(); imgLaundryJeans.src = 'img/laundry_jeans.pn
 const imgLaundrySkirt = new Image(); imgLaundrySkirt.src = 'img/laundry_skirt.png';
 const imgLaundryVest = new Image(); imgLaundryVest.src = 'img/laundry_vest.png';
 const imgLaundrySocks = new Image(); imgLaundrySocks.src = 'img/laundry_socks.png';
+// Public Level 6 affected-hand pinch cursors (user-provided, locally processed
+// to transparent PNG). Research mode deliberately keeps its original cursor.
+const imgLevel6PinchRight = new Image(); imgLevel6PinchRight.src = 'img/level6_pinch_right.png';
+const imgLevel6PinchLeft = new Image(); imgLevel6PinchLeft.src = 'img/level6_pinch_left.png';
 const imgCharsiu = new Image(); imgCharsiu.src = 'img/charsiu.png';
 const imgLotusrice = new Image(); imgLotusrice.src = 'img/lotusrice.png';
 const imgSteamerSiumai = new Image(); imgSteamerSiumai.src = 'img/advanced/steamer_siumai.png';
@@ -8112,7 +8415,7 @@ const THEMES = {
       type:photo.type,itemLabel:photo.label,targetLabel:photo.label,img:photo.img,
       color:'#1A6B5A',drawScale:.92,labelGap:.88,
       drawItem:(ctx,x,y,r)=>drawTsuenWanPhotoCard(ctx,photo.img,x,y,r*1.25),
-      drawIcon:(ctx,x,y,s)=>drawTsuenWanPhotoCard(ctx,photo.img,x,y,s*1.35),
+      drawIcon:(ctx,x,y,s)=>drawTsuenWanPhotoCard(ctx,photo.img,x,y,s*1.80),
     }));},
   }),
   bowlinglane: mkTheme({
@@ -8207,6 +8510,7 @@ const THEMES = {
     actionLabelFor(){ return '三指張開 → 輕捏拿起 → 移動 → 張開放下；只偵測已選患手'; },
     categoriesFor(){ return LEVEL3_THEME_VARIANTS.peg_laundry; },
   }),
+  /* PUBLIC_BUILD_REMOVE_START: research-only theme variants */
   pilot_laundry: mkTheme({
     id:'pilot_laundry', title:'衣物分類', goal:'將衣物放到相同顏色的洗衣籃',
     itemWord:'衣物', difficulty:'研究情境', targetStyle:'panel',
@@ -8237,6 +8541,7 @@ const THEMES = {
       ];
     },
   }),
+  /* PUBLIC_BUILD_REMOVE_END */
   mahjong: mkTheme({
     id:'mahjong', title:'麻雀',
     goal:'選一組牌食糊',
@@ -8657,7 +8962,7 @@ function newFridgeRound(){
   ensureFoodCount();
   return fridgeQueue;
 }
-// 購物袋位置（食物生成點；喺畫面底部，離雪櫃有一段運送距離）
+// 食物生成點（畫面底部；保留一段向上運送距離，但不再繪畫購物袋）
 function fridgeBagSpot(cw, ch, r){
   const portrait = isPortrait();
   return { x: cw * (portrait ? 0.50 : 0.42), y: ch - r - (portrait ? 96 : 56) };
@@ -8870,6 +9175,8 @@ let targets = [];    // {type, x, y, w, h, label}
 let heldItem = null;
 let releaseDwellStart = 0;  // ms timestamp when user started releasing hand (0 = not releasing)
 let releaseDwellPlate = null; // which plate cursor was on when release started
+let releaseDwellPauseAt = 0;
+let releaseDwellLastOpenAt = 0;
 let score = 0, correctCount = 0, grabCount = 0;
 let shoulderFlexionLastRepetition = 0;
 let shoulderFlexionCycleAwarded = false;
@@ -8951,6 +9258,36 @@ function displayCursorPoint(){
   // Keep the visual controller attached to the item after pickup so a raw
   // wrist-X shift cannot look like the carried object has drifted sideways.
   return level4StandardCarryPoint() || {x:cursorX, y:cursorY};
+}
+function publicLevel6HeldDisplayPoint(x,y,r,held=true){
+  if(!held || !isLevel6()) return {x,y};
+  // Put the item's near edge at the fingertip contact point, on the side away
+  // from the hand illustration. Logical item/collision coordinates are not
+  // changed, so every safety, movement and destination gate stays identical.
+  const radius=Math.max(12,Number(r)||36);
+  const direction=activeAffectedSide()==='right' ? -1 : 1;
+  return {x:x+direction*Math.min(62,radius*.78),y:y};
+}
+function level6PinchHandGeometry(x,y){
+  const side=activeAffectedSide()==='left'?'left':'right';
+  const minSide=Math.max(1,Math.min(gameCanvas.width,gameCanvas.height));
+  const width=Math.max(230,Math.min(330,minSide*.35));
+  const height=width*(133/191);
+  // Pinch contact is at the outer thumb/index tips in each mirrored asset.
+  const anchorX=side==='right'?.035:.965;
+  const anchorY=.505;
+  return {side,width,height,x:x-width*anchorX,y:y-height*anchorY,anchorX,anchorY};
+}
+function drawPublicLevel6ClosedPinchCursor(ctx,x,y,alpha=.82){
+  if(!isLevel6()) return false;
+  const geometry=level6PinchHandGeometry(x,y);
+  const image=geometry.side==='left'?imgLevel6PinchLeft:imgLevel6PinchRight;
+  if(!image.complete || !image.naturalWidth) return false;
+  ctx.save();
+  ctx.globalAlpha=alpha;
+  ctx.drawImage(image,geometry.x,geometry.y,geometry.width,geometry.height);
+  ctx.restore();
+  return true;
 }
 
 // 雙重任務認知指令
@@ -9270,14 +9607,17 @@ function initGame(){
   resetLaundryOrderGame(); // v71 晾衫單狀態一併清齊
   resetFridgeGame();       // v72 雪櫃收納狀態一併清齊
   releaseDwellStart = 0; releaseDwellPlate = null;
+  releaseDwellPauseAt = 0; releaseDwellLastOpenAt = 0;
   basicOpenStart = 0; basicGraspStart = 0; basicGraspCandidate = ''; basicGraspArmed = false;
   basicContactCandidate = ''; basicContactUntil = 0;
   gripActive = false;
   isGrasping = false;
   handOpenPrep = false;
   resetToolPinchAdapt();
+  resetPublicPatientVoiceGuideCycle(true);
   detectedGestureState = {mode:'', stable:false, candidate:false, candidateAt:0};
-  lastAcceptedToolHandGeneration = -1;
+  resetHandFrameAdmission();
+  resetPublicGameWorkAdmission();
   cursorX = -1; cursorY = -1;
   dotEmaX = -1; dotEmaY = -1;
   handDetected = false;
@@ -9308,10 +9648,20 @@ function initGame(){
 
   resizeGameCanvas();
   const gameStage = document.querySelector('.game-stage');
+  state.selfieMode=false;
+  syncGameBackgroundMode();
   if(gameStage) gameStage.classList.toggle('level4-selfie-window', isLevel4WipeGame());
   if(gameStage) gameStage.classList.toggle('shoulder-flexion-game', isShoulderFlexionLevel());
   if(gameStage) gameStage.classList.toggle('patient-simple-hud',
     !research.active && (state.level === '5' || state.level === '67'));
+  if(gameStage) gameStage.classList.toggle('patient-shoulder-hud',
+    !research.active && isShoulderFlexionLevel());
+  if(gameStage) gameStage.classList.toggle('public-clean-hud', !research.active);
+  if(gameStage) gameStage.classList.toggle('patient-card-instruction',
+    isPublicSideCardGame());
+  if(gameStage) gameStage.classList.toggle('patient-level5-instruction',
+    isPublicLevel5VerticalFlow());
+  updatePatientGameInstruction();
   // 先顯示提示，讓第一局生成物件時已可量度右上角提示禁區
   setActionPrompt('等待偵測手部', '手放鏡頭前');
   if(isLevel4StandaloneGame()){
@@ -9443,21 +9793,26 @@ function setupTargets(){
     return;
   }
   if(isLaundryOrderGame()){
-    // v71 晾衫單模式：中央一個大型白色晾衫架（真實相片），所有衣物都晾呢度，
-    // 配對規則由晾衫單數量控制（laundryOrderAccepts）而唔係目標類型。
+    // v77 晾衫單模式：晾衫架固定在上半屏，來源衣物固定在下半屏。
+    // 右側保留大型直向手勢提示的淨空區。
     const rackRatio = (imgLaundryRack.naturalWidth > 0 && imgLaundryRack.naturalHeight > 0)
       ? imgLaundryRack.naturalWidth / imgLaundryRack.naturalHeight : 779 / 453;
-    let tw = portrait ? Math.min(cw * 0.88, 700) : Math.min(cw * 0.46, 620);
+    let tw = portrait ? Math.min(cw * 0.88, 980) : Math.min(cw * 0.92, 1220);
     let th = tw / rackRatio;
-    const rackMaxH = portrait ? ch * 0.34 : ch * 0.40;
+    // Keep a large rack, but leave a real visual gap above the fixed lower-row
+    // garments. The old 58% landscape height extended the drop rectangle over
+    // every source item even though their centres were in the lower half.
+    const rackMaxH = portrait ? ch * 0.48 : ch * 0.49;
     if(th > rackMaxH){ th = rackMaxH; tw = th * rackRatio; }
     targets = [{ type:'laundry_rack', label:'晾衫架', img:imgLaundryRack, drawIcon:null,
-      style:'rack', x:cw / 2, y:ch - th / 2 - 12, w:tw, h:th, color:'#2E6DA4' }];
+      style:'rack', x:cw * (portrait ? 0.50 : 0.46),
+      y:Math.max(82 + th / 2, ch * (portrait ? 0.26 : 0.27)),
+      w:tw, h:th, color:'#2E6DA4' }];
     return;
   }
   if(isFridgeGame()){
     // v75 雪櫃收納：改用橫向闊身四門雪櫃相片，橫向盡量佔滿成個屏幕闊度，
-    // 食物照舊由下方購物袋逐樣放入（保留向上運送距離）。
+    // 食物由下方逐樣出現（保留向上運送距離，不顯示購物袋）。
     const fridgeRatio = (imgFridgeWide.naturalWidth > 0 && imgFridgeWide.naturalHeight > 0)
       ? imgFridgeWide.naturalWidth / imgFridgeWide.naturalHeight : 1597 / 935;
     let tw = Math.min(cw * 0.97, portrait ? 900 : 1160);
@@ -9487,12 +9842,13 @@ function setupTargets(){
       targets=[];
       return;
     }
-    const tw=Math.min(cw*.38,320);
+    const photoLarge=state.theme==='tsuenwan'&&!research.active;
+    const tw=photoLarge?Math.min(cw*.62,720):Math.min(cw*.38,320);
     const th=tw*(style==='steamer'?.74:.62);
     const category=cats[0];
-    const laneX=cw*(portrait?.68:.58);
+    const laneX=photoLarge?cw*.50:cw*(portrait?.68:.58);
     targets=[{type:category.type,label:category.targetLabel,img:category.targetImg||category.img||null,
-      drawIcon:category.drawIcon||null,style,x:laneX,y:ch*.32,w:tw,h:th,
+      drawIcon:category.drawIcon||null,style,x:laneX,y:photoLarge?ch*.28:ch*.32,w:tw,h:th,
       color:category.color||'#1A6B5A'}];
     return;
   }
@@ -9516,16 +9872,21 @@ function setupTargets(){
   const pullToCentre = (x)=> shortReach ? (cw / 2 + (x - cw / 2) * 0.72) : x;
   // 患側名稱直接對應畫面方向：右患側向右下，左患側向左下。
   const level67DimSum = isLevel67DimSumTheme();
+  const level5VerticalFlow = isPublicLevel5VerticalFlow();
+  const publicLargeDimSum = !research.active && getTheme().targetStyle === 'steamer' &&
+    (state.level === '5' || state.level === '67');
   const patientTargetBoost = (!research.active && (state.level === '5' || state.level === '67'))
-    ? (state.theme === 'peg_laundry' ? 1.10 : 1.16)
+    ? (publicLargeDimSum ? 2.5 : (state.theme === 'peg_laundry' ? 1.10 : 1.16))
     : 1;
   const standardTw = (portrait ? Math.min(cw * 0.29, 230) : Math.min(cw * 0.24, 260)) *
     patientTargetBoost;
   // Level 6–7 dim sum is intentionally 1.5×. The viewport cap is only reached
   // on a narrow display, where it keeps both steamers fully visible and apart.
   const tw = level67DimSum
-    ? Math.min(standardTw * 1.5, portrait ? cw * 0.46 : cw * 0.40)
-    : standardTw;
+    ? Math.min(standardTw, portrait ? cw * 0.48 : cw * 0.44)
+    : (level5VerticalFlow && style === 'steamer'
+      ? Math.min(standardTw, cw * 0.36)
+      : standardTw);
   const th = tw * (style === 'steamer' ? 0.74 : 0.62);
   if(level67DimSum){
     const edge = 14;
@@ -9577,8 +9938,12 @@ function setupTargets(){
     img: c.targetImg || c.img || null,
     drawIcon: c.drawIcon || null,
     style,
-    x: portrait ? outsideX : landscapeXs[i],
-    y: portrait ? portraitYs[i] : landscapeY, w: tw, h: th,
+    x: level5VerticalFlow
+      ? cw*(i === 0 ? 0.30 : 0.70)
+      : (portrait ? outsideX : landscapeXs[i]),
+    y: level5VerticalFlow
+      ? ch*(portrait ? 0.25 : 0.27)
+      : (portrait ? portraitYs[i] : landscapeY), w: tw, h: th,
     color: c.color || (i === 0 ? '#1A6B5A' : '#E07B39'),
   }));
 }
@@ -9592,7 +9957,8 @@ function getInstructionExclusionRect(cw, ch, padding){
   const scaleY = ch / canvasRect.height;
   // Every element that can render a prompt inside the safe strip. Each is measured
   // separately so the exclusion islands stay small (see comment below).
-  const ids = ['statusBar', 'persistentRules', 'levelIntroBanner', 'pilotCogPanel', 'pilotPhaseHud'];
+  const ids = ['statusBar', 'persistentRules', 'levelIntroBanner'];
+  if(research.active) ids.push('pilotCogPanel', 'pilotPhaseHud');
   const rects = ids.map(id=>document.getElementById(id))
     .filter(el=>el && !el.classList.contains('hidden') && getComputedStyle(el).display !== 'none')
     .map(el=>el.getBoundingClientRect())
@@ -9625,6 +9991,15 @@ function circleOverlapsRect(x, y, radius, rect){
 
 function ensureFoodsClearOfInstructions(){
   if(!foods.length) return;
+  if(isPublicLevel5DimsumLayout()){
+    // Re-assert the approved fixed layout after banners/prompts are mounted.
+    // Re-spawning one item independently could select an occupied slot.
+    foods.filter(food=>!food.removed && !food.isDistractor).forEach((food,index)=>{
+      const slot=publicLevel5DimsumSlot(index,gameCanvas.width,gameCanvas.height,food.r);
+      food.x=slot.x; food.y=slot.y; food.baseX=slot.x; food.baseY=slot.y;
+    });
+    return;
+  }
   const exclusion = getInstructionExclusionRect(
     gameCanvas.width,
     gameCanvas.height,
@@ -9738,10 +10113,10 @@ function makeFoodAt(def, existingFoods){
   // Safety default for public Level 5: larger objects are easier to pick up with a
   // light, non-forceful grasp and easier to release.
   const level5Boost = (!research.active && state.level === '5') ? 1.36 : 1;
-  // Peg laundry has three wide garments sharing the upper workspace. A 10% boost
-  // keeps them clearly larger while preserving three non-overlapping pickup zones.
+  // v77: laundry garments are substantially enlarged for low vision and poor
+  // upper-limb tolerance; their dedicated lower-half slots prevent stacking.
   const level6Boost = (!research.active && state.level === '67')
-    ? (state.theme === 'peg_laundry' ? 1.10 : 1.16)
+    ? (state.theme === 'peg_laundry' ? 1.70 : 1.16)
     : 1;
   // v75：雪櫃遊戲食物再加大（用戶反映食物太細）
   const fridgeBoost = isFridgeGame() ? (portrait ? 1.25 : 1.35) : 1;
@@ -9750,20 +10125,43 @@ function makeFoodAt(def, existingFoods){
       : (portrait ? (advancedPilot ? 62 : 72) : 100))) * level5Boost;
   // Task-specific strata: FTHUE 6 and 7 use progressively smaller objects.
   const level67DimSum = state.level === '67' && dimSumTheme;
-  const requestedR = baseR * (isShoulderFlexionLevel() ? 1 : (def.scale || 1.0)) *
+  const shoulderVisualBoost = isShoulderFlexionLevel() && !research.active
+    ? (state.theme === 'tsuenwan' ? 2.7 : (isTeahouseDimsumMode() ? 3 : 1))
+    : 1;
+  const publicDimSumBoost = !research.active && dimSumTheme &&
+    (state.level === '5' || state.level === '67') ? 2.5 : 1;
+  const requestedR = baseR * (isShoulderFlexionLevel() ? shoulderVisualBoost : (def.scale || 1.0)) *
     (research.active ? pilotStratum().itemScale : 1) * level6Boost *
-    (level67DimSum ? 1.5 : 1) * fridgeBoost;
+    publicDimSumBoost * fridgeBoost;
   // On compact portrait canvases the 1.5× size is capped only when necessary
   // to preserve a clear three-item layout and an unobstructed instruction area.
   const maxLevel67DimSumR = portrait
-    ? Math.min(cw * 0.135, ch * 0.11)
-    : (isDimsumOrderGame() ? Math.min(cw * 0.135, ch * 0.13) : cw * 0.135);
+    ? Math.min(cw * 0.20, ch * 0.16)
+    : (isDimsumOrderGame() ? Math.min(cw * 0.18, ch * 0.20) : cw * 0.18);
   const shoulderFlexionMaxR=portrait
-    ? Math.min(cw*.24,ch*.13)
-    : Math.min(cw*.16,ch*.19);
-  const r = level67DimSum
+    ? Math.min(cw*.32,ch*.22)
+    : (state.theme==='tsuenwan'&&!research.active
+      ? Math.min(cw*.25,ch*.19)
+      : Math.min(cw*.25,ch*.29));
+  const laundryMaxR = portrait
+    ? Math.min(cw * 0.17, ch * 0.13)
+    : Math.min(cw * 0.12, ch * 0.18);
+  // Exactly three public Level 5 source pieces must fit in the lower half with
+  // visible gaps. Landscape uses one row; its radius therefore derives from a
+  // three-across layout rather than the former two-across 20%-height cap.
+  const publicLevel5Dimsum = isPublicLevel5DimsumLayout();
+  const publicDimSumMaxR = publicLevel5Dimsum
+    ? publicLevel5DimsumGeometry(cw,ch).maxRadius
+    : portrait
+    ? Math.min(cw*.20,ch*.16)
+    : (publicLevel5Dimsum ? Math.min(cw*.145,ch*.18) : Math.min(cw*.18,ch*.20));
+  const r = publicDimSumBoost > 1
+    ? Math.min(requestedR, publicDimSumMaxR)
+    : level67DimSum
     ? Math.min(requestedR, maxLevel67DimSumR)
-    : (isShoulderFlexionLevel() ? Math.min(requestedR,shoulderFlexionMaxR) : requestedR);
+    : (isShoulderFlexionLevel()
+      ? Math.min(requestedR,shoulderFlexionMaxR)
+      : (isLaundryOrderGame() ? Math.min(requestedR, laundryMaxR) : requestedR));
 
   // 直向以兩欄多列分佈；橫向保留足夠肩部移動距離，同時容納進階版最多 6 個物件。
   // 限制 spawn 區域：左右都留更大邊距（避免右下角衝碰磟子造成 jitter）
@@ -9775,10 +10173,18 @@ function makeFoodAt(def, existingFoods){
   const centerMin = Math.max(marginX, cw * (isLevel4Tabletop() ? 0.40 : 0.20));
   const centerMax = Math.min(cw - marginX, cw * (isLevel4Tabletop() ? 0.60 : 0.80));
   // Y 範圍顯著往上拉，避免 spawn 在磟子區區均（磟子在底部 65-90%）
-  const spawnYmin = isLevel4Tabletop()
-    ? ch * 0.70
-    : Math.max(ch * (portrait ? 0.25 : 0.21), portrait ? 190 : 150);
-  const spawnYmax = ch * (isLevel4Tabletop() ? 0.90 : 0.62);
+  const spawnYmin = isLaundryOrderGame()
+    ? ch * (portrait ? 0.58 : 0.61)
+    : (isPublicLevel5VerticalFlow()
+      ? ch * (portrait ? 0.62 : 0.64)
+    : (isLevel4Tabletop()
+      ? ch * 0.70
+      : Math.max(ch * (portrait ? 0.25 : 0.21), portrait ? 190 : 150)));
+  const spawnYmax = ch * (isLaundryOrderGame()
+    ? (portrait ? 0.88 : 0.80)
+    : (isPublicLevel5VerticalFlow()
+      ? (portrait ? 0.90 : 0.86)
+      : (isLevel4Tabletop() ? 0.90 : 0.62)));
   const instructionExclusion = getInstructionExclusionRect(cw, ch, Math.max(18, r * 0.16));
 
   const createFood = (x, y) => ({
@@ -9789,10 +10195,16 @@ function makeFoodAt(def, existingFoods){
     x, y, r, baseX: x, baseY: y, held: false, removed: false,
   });
   if(isLevel3Tabletop() || isShoulderFlexionLevel()){
-    return createFood(isShoulderFlexionLevel()?cw*(portrait?.68:.58):cw*.50, ch * 0.72);
+    if(isTeahouseDimsumMode()){
+      const g=teahouseGeometry(cw,ch);
+      return createFood(g.laneX,g.dishY);
+    }
+    return createFood(isShoulderFlexionLevel()
+      ? (state.theme==='tsuenwan'&&!research.active?cw*.50:cw*(portrait?.68:.58))
+      : cw*.50, ch * (state.theme==='tsuenwan'&&!research.active?.75:.72));
   }
   if(isFridgeGame() && def.targetType !== 'distractor'){
-    // v72：食物喺購物袋口出現（畫面底部），患者攞起再向上運送到雪櫃。
+    // 食物在畫面底部出現，患者攞起再向上運送到雪櫃。
     const spot = fridgeBagSpot(cw, ch, r);
     return createFood(spot.x, spot.y);
   }
@@ -9824,28 +10236,53 @@ function makeFoodAt(def, existingFoods){
   // separation for the large Level 4 / transparent dim-sum images.
   const slotRatios = isLevel4Tabletop()
     ? [[0.40,0.80],[0.60,0.80]]
-    : (level67DimSum
+    : (publicLevel5Dimsum
+      ? (portrait
+        ? [[0.24,0.66],[0.24,0.88],[0.76,0.88]]
+        : [[0.18,0.76],[0.50,0.76],[0.82,0.76]])
+      : (isPublicLevel5VerticalFlow()
+      ? (portrait
+        ? [[0.24,0.68],[0.76,0.68],[0.50,0.86]]
+        : [[0.20,0.72],[0.50,0.78],[0.80,0.72]])
+      : (level67DimSum
       ? (portrait
         ? [[0.24,0.34],[0.76,0.34],[0.50,0.55]]
         : (isDimsumOrderGame()
           ? [[0.20,0.30],[0.80,0.30],[0.50,0.44]]
           : [[0.22,0.39],[0.50,0.50],[0.78,0.39]]))
+      : (isLaundryOrderGame()
+      ? (portrait
+        ? [[0.20,0.66],[0.80,0.66],[0.50,0.88]]
+        : [[0.18,0.78],[0.46,0.78],[0.72,0.78]])
       : (portrait
       ? (dimSumTheme
         ? [[0.22,0.34],[0.50,0.45],[0.78,0.34]]
         : [[0.22,0.45],[0.50,0.45],[0.78,0.45]])
       : (dimSumTheme
         ? [[0.22,0.42],[0.50,0.54],[0.78,0.42]]
-        : (isLaundryOrderGame()
-          // The large drying rack occupies the bottom. Keep three enlarged garments
-          // in a wide upper row, clear of both the action cue and each other.
-          ? [[0.20,0.40],[0.50,0.40],[0.80,0.40]]
-          : [[0.22,0.54],[0.50,0.54],[0.78,0.54]]))));
+        : [[0.22,0.54],[0.50,0.54],[0.78,0.54]]))))));
   const activeCount = existingFoods.filter(food => !food.removed).length;
+  if(publicLevel5Dimsum){
+    // This approved patient layout is deterministic: upper-half steamers only,
+    // exactly three lower-half source pieces, and no random fallback that could
+    // stack large transparent images.
+    const slot = publicLevel5DimsumSlot(activeCount,cw,ch);
+    return createFood(slot.x,slot.y);
+  }
   for(let offset=0; offset<slotRatios.length; offset++){
     const slot = slotRatios[(activeCount + offset) % slotRatios.length];
     const x = Math.max(centerMin, Math.min(centerMax, cw * slot[0]));
     const y = Math.max(spawnYmin, Math.min(spawnYmax, ch * slot[1]));
+    // The enlarged public drying rack intentionally fills much of the upper
+    // canvas. Its generous drop hitbox may overlap the edge of the lower
+    // garment band, so ignore only that target boundary while still requiring
+    // a genuinely free garment slot when the order system swaps an item.
+    if(isLaundryOrderGame()){
+      const freeLaundrySlot=existingFoods.every(f=>f.removed ||
+        Math.hypot(x-f.x,y-f.y)>=r+(f.r||baseR)+16);
+      if(freeLaundrySlot) return createFood(x, y);
+      continue;
+    }
     if(positionIsClear(x, y)) return createFood(x, y);
   }
 
@@ -9997,7 +10434,32 @@ function updateHUD(){
 }
 
 /* ---------- 主遊戲迴圈 ---------- */
-function gameLoop(){
+const PUBLIC_GAME_WORK_INTERVAL_MS = 1000 / 30;
+let publicGameWork = { at:-Infinity, generation:null, fresh:null, staleKey:'' };
+function resetPublicGameWorkAdmission(){
+  publicGameWork = { at:-Infinity, generation:null, fresh:null, staleKey:'' };
+}
+function admitPublicGameWork(rafNow, frame){
+  const now = Number.isFinite(rafNow) ? rafNow : performance.now();
+  const generation = Number(frame?.generation);
+  if(frame?.fresh && Number.isFinite(generation)){
+    const generationAdvanced = !Number.isFinite(publicGameWork.generation)
+      || generation > publicGameWork.generation;
+    if(!generationAdvanced || now - publicGameWork.at < PUBLIC_GAME_WORK_INTERVAL_MS - 1) return false;
+    publicGameWork = { at:now, generation, fresh:true, staleKey:'' };
+    return true;
+  }
+  // Admit one fail-closed transition when freshness is lost, then suppress
+  // duplicate RAF work until the monitor state or generation changes.
+  const staleKey = String(frame?.generation) + '|' + String(frame?.reason || 'frame-stale');
+  if(publicGameWork.fresh !== false || publicGameWork.staleKey !== staleKey){
+    publicGameWork = { at:now, generation:Number.isFinite(generation)?generation:null,
+      fresh:false, staleKey };
+    return true;
+  }
+  return false;
+}
+function gameLoop(rafNow){
   if(!state.running){
     // 游戲真正結束（result screen）時才 return；若 recovery pause 只是短暫，仍需繼續 poll
     if(!recoveryPauseActive){ return; }
@@ -10006,10 +10468,17 @@ function gameLoop(){
     return;
   }
   if(!state.paused){
-    updateTracking();
-    if(usesAdvancedThemeModule()){ advUpdate(); advRender(); }
-    else { updateGameLogic(); renderGame(); }
-    drawLevel4SelectedArmOverlay(gameCtx, gameCanvas.width, gameCanvas.height);
+    // Research retains its original every-RAF cadence. Public play polls frame
+    // freshness every RAF but performs inference/update/render at about 30 fps,
+    // and only for a newly decoded generation (plus one stale fail-close pass).
+    const publicFrame = (!research.active && !state.qaMode)
+      ? level4FrameStatus(gameVideo) : null;
+    if(research.active || state.qaMode || admitPublicGameWork(rafNow, publicFrame)){
+      updateTracking(publicFrame);
+      if(usesAdvancedThemeModule()){ advUpdate(); advRender(); }
+      else { updateGameLogic(); renderGame(); }
+      drawLevel4SelectedArmOverlay(gameCtx, gameCanvas.width, gameCanvas.height);
+    }
   }
   gameRAF = requestAnimationFrame(gameLoop);
 }
@@ -10158,6 +10627,7 @@ function updateLevel3LateralController(lm, frame){
     generation:frame?.generation,
     affectedSide:activeAffectedSide(),
     aspectX:level4VideoAspect(gameVideo),
+    patientAssist:!research.active,
   });
   Object.assign(level3Lateral,next);
   return level3Lateral;
@@ -10480,7 +10950,7 @@ function level4UpdateCalibrationBar(){
       &&shoulder.frame?.fresh===true&&shoulder.reason==='ready'
       &&Number.isFinite(shoulder.estimatedAngle);
     document.getElementById('level4FlexedEndpoint').textContent=liveAngleReady
-      ? Math.round(shoulder.estimatedAngle)+'°' : '暫停';
+      ? Math.round(shoulder.estimatedAngle)+'°' : '—';
     document.getElementById('level4ExtendedEndpoint').textContent=Number.isFinite(shoulder.selectedTargetDeg)?shoulder.selectedTargetDeg+'°':'—';
     document.getElementById('level4ShoulderAbductionReading').hidden=true;
     document.getElementById('level4AutoAction').hidden=true;
@@ -10837,6 +11307,7 @@ function updateShoulderFlexionController(lm, worldLm, frame){
     mirrorX:state.mirrorX!==false,imageAspect:level4VideoAspect(gameVideo),
     frameFresh:!!frame?.fresh,frameGeneration:frame?.generation,
     newFrame:state.qaMode===true,frame,nowMs:nowMs(),
+    patientAssist:!research.active,
   };
   shoulderFlexionController.update(packet);
   shoulderFlexionState=shoulderFlexionController.snapshot();
@@ -10875,11 +11346,12 @@ function drawLevel4SelectedArmOverlay(ctx, cw, ch){
   ctx.restore();
 }
 
-function updateTracking(){
+function updateTracking(frameOverride){
   const cw = gameCanvas.width, ch = gameCanvas.height;
   const now = nowMs();
   let grossPose = null;
-  const frame = level4FrameStatus(gameVideo);
+  const frame = frameOverride || level4FrameStatus(gameVideo);
+  if(!state.qaMode && !frame.fresh) resetHandFrameAdmission();
   const productionFrameFresh = !state.qaMode && frame.fresh;
   let detectedPose = null;
   if(isGrossTabletop()){
@@ -10949,11 +11421,13 @@ function updateTracking(){
         // During a Level 6–7 bare-pinch carry, favour a responsive iPad
         // transport path while retaining a modest EMA and the dead zone.
         const carryingBarePinch = !!heldItem && isLevel67BareMode();
-        const alpha = movement > 70
-          ? (carryingBarePinch ? 0.46 : 0.28)
-          : movement > 24
-            ? (carryingBarePinch ? 0.34 : 0.20)
-            : (carryingBarePinch ? 0.18 : 0.11);
+        const alpha = research.active
+          ? (movement > 70
+            ? (carryingBarePinch ? 0.46 : 0.28)
+            : movement > 24
+              ? (carryingBarePinch ? 0.34 : 0.20)
+              : (carryingBarePinch ? 0.18 : 0.11))
+          : (movement > 70 ? 0.45 : (movement > 24 ? 0.32 : 0.20));
         dotEmaX += alpha * dx;
         dotEmaY += alpha * dy;
       }
@@ -11031,7 +11505,8 @@ function dist(x1,y1,x2,y2){
 // 額外保留 tremor margin，讓短暫手抖不會令接觸範圍忽然消失。
 function pickupContactRadius(itemRadius, tremorMargin=52){
   const handCircleRadius = isGraspStyleMode() ? 30 : 22;
-  return (itemRadius || 60) + handCircleRadius + tremorMargin;
+  const publicEaseMargin = !research.active ? 34 : 0;
+  return (itemRadius || 60) + handCircleRadius + tremorMargin + publicEaseMargin;
 }
 
 let lastDwellPct = 0;
@@ -11462,6 +11937,132 @@ function toolPinchLiveHint(){
 function isPatientVisualCueMode(){
   return !research.active && (state.level === '5' || state.level === '67');
 }
+/* Audio-only public patient guidance. These prompts observe the same admitted
+   cursor/contact phases as gameplay but never arm, move, release, or score an
+   item. Research sessions return before any cue state or speech is changed. */
+const PUBLIC_PATIENT_VOICE_COOLDOWN_MS = 2800;
+const PUBLIC_PATIENT_VOICE_HOLD_GRACE_MS = 1600;
+const publicPatientVoiceGuide = {
+  cycle:0, spoken:new Set(), lastSpokenAt:-Infinity, lastPhrase:'',
+  holdId:'', holdStartedAt:0, holdStartY:null, bestY:null, targetAbove:false,
+};
+function publicPatientVoiceEligible(){
+  return !research.active && isPatientVisualCueMode() && state.running && !state.paused;
+}
+function publicPatientVoicePhrase(phase){
+  if(phase === 'contact') return state.level === '5' ? '揸拳頭' : '夾住';
+  if(phase === 'raise') return '舉高手';
+  if(phase === 'target'){
+    if(state.level === '5') return '打開隻手';
+    if(isLevel6Chopsticks()) return '打開筷子';
+    if(isLevel6Peg()) return '放手';
+    return '打開隻手';
+  }
+  return '';
+}
+function resetPublicPatientVoiceGuideCycle(resetCooldown=false){
+  publicPatientVoiceGuide.cycle++;
+  publicPatientVoiceGuide.spoken.clear();
+  publicPatientVoiceGuide.holdId='';
+  publicPatientVoiceGuide.holdStartedAt=0;
+  publicPatientVoiceGuide.holdStartY=null;
+  publicPatientVoiceGuide.bestY=null;
+  publicPatientVoiceGuide.targetAbove=false;
+  publicPatientVoiceGuide.lastPhrase='';
+  if(resetCooldown) publicPatientVoiceGuide.lastSpokenAt=-Infinity;
+}
+function publicPatientVoiceTarget(item,zones){
+  const list=Array.isArray(zones)?zones.filter(Boolean):[];
+  if(!list.length) return null;
+  if(list.length===1) return list[0];
+  const itemType=item?.targetType||item?.type||'';
+  return list.find(z=>z.type===itemType)
+    || (isDimsumOrderGame()?list.find(z=>z.type==='dimsum_plate'):null)
+    || (isLaundryOrderGame()?list.find(z=>z.type==='laundry_rack'):null)
+    || null;
+}
+function publicPatientVoiceSay(phase,itemId,silent=false){
+  const phrase=publicPatientVoicePhrase(phase);
+  if(!phrase) return '';
+  const now=nowMs();
+  const key=publicPatientVoiceGuide.cycle+':'+phase+':'+String(itemId||'');
+  if(publicPatientVoiceGuide.spoken.has(key) ||
+      now-publicPatientVoiceGuide.lastSpokenAt<PUBLIC_PATIENT_VOICE_COOLDOWN_MS) return '';
+  publicPatientVoiceGuide.spoken.add(key);
+  publicPatientVoiceGuide.lastSpokenAt=now;
+  publicPatientVoiceGuide.lastPhrase=phrase;
+  if(!silent) speakCantonese(phrase,{rate:.80});
+  return phrase;
+}
+function updatePublicPatientVoiceGuide(spec){
+  if(!publicPatientVoiceEligible()) return '';
+  const s=spec||{};
+  const item=s.item||null;
+  const itemId=s.itemId||item?.id||item?.label||'item';
+  if(s.phase==='contact'){
+    return s.touching&&s.openForPickup
+      ? publicPatientVoiceSay('contact',itemId,!!s.silent) : '';
+  }
+  if(s.phase==='pickup'){
+    const target=publicPatientVoiceTarget(item,s.zones);
+    const sourceY=Number.isFinite(Number(item?.y))?Number(item.y):cursorY;
+    const targetY=Number(target?.y);
+    const verticalGap=Math.max(36,gameCanvas.height*.10);
+    publicPatientVoiceGuide.holdId=String(itemId);
+    publicPatientVoiceGuide.holdStartedAt=nowMs();
+    publicPatientVoiceGuide.holdStartY=sourceY;
+    publicPatientVoiceGuide.bestY=sourceY;
+    // Side-target cards/mahjong are intentionally never described as raising.
+    publicPatientVoiceGuide.targetAbove=!['cards','mahjong'].includes(state.theme)
+      && Number.isFinite(targetY) && targetY<=sourceY-verticalGap;
+    return '';
+  }
+  if(s.phase==='held'){
+    if(publicPatientVoiceGuide.holdId!==String(itemId)){
+      updatePublicPatientVoiceGuide({phase:'pickup',item,itemId,zones:s.zones,silent:s.silent});
+    }
+    const y=Number.isFinite(Number(s.cursorY))?Number(s.cursorY):cursorY;
+    if(Number.isFinite(y)){
+      publicPatientVoiceGuide.bestY=Number.isFinite(publicPatientVoiceGuide.bestY)
+        ? Math.min(publicPatientVoiceGuide.bestY,y) : y;
+    }
+    if(s.onTarget&&s.stillGrasped){
+      return publicPatientVoiceSay('target',itemId,!!s.silent);
+    }
+    const upward=Number(publicPatientVoiceGuide.holdStartY)
+      -Number(publicPatientVoiceGuide.bestY);
+    const meaningfulUp=Math.max(36,gameCanvas.height*.055);
+    if(s.stillGrasped&&publicPatientVoiceGuide.targetAbove&&
+        nowMs()-publicPatientVoiceGuide.holdStartedAt>=PUBLIC_PATIENT_VOICE_HOLD_GRACE_MS&&
+        upward<meaningfulUp){
+      return publicPatientVoiceSay('raise',itemId,!!s.silent);
+    }
+    return '';
+  }
+  if(s.phase==='drop') resetPublicPatientVoiceGuideCycle(false);
+  return '';
+}
+function usesCameraViewBackground(){
+  if(research.active) return false;
+  if(isTeahouseDimsumMode()) return false;
+  return ['tsuenwan','dimsum','laundry','flowers','chopstick_dimsum',
+    'peg_laundry','cooking'].includes(state.theme);
+}
+function syncGameBackgroundMode(){
+  const stage=document.querySelector('.game-stage');
+  const button=document.getElementById('btnSelfieBackground');
+  const eligible=usesCameraViewBackground();
+  if(stage){
+    stage.classList.toggle('white-game-background',eligible&&!state.selfieMode);
+    stage.classList.toggle('selfie-game-background',eligible&&state.selfieMode);
+  }
+  if(button){
+    button.hidden=!eligible;
+    button.textContent=state.selfieMode?'白色背景':'自拍';
+    button.setAttribute('aria-label',state.selfieMode?'切換至白色背景':'切換至自拍背景');
+    button.setAttribute('aria-pressed',state.selfieMode?'true':'false');
+  }
+}
 function setActionPrompt(main, detail){
   const statusBar = document.getElementById('statusBar');
   if(!statusBar) return;
@@ -11482,9 +12083,22 @@ function setActionPrompt(main, detail){
     main = window.YCHLanguage.text(main);
     detail = window.YCHLanguage.text(detail);
   }
-  if(isPatientVisualCueMode()){
-    const emoji = gestureCue === 'open' ? '✋' : '✊';
-    statusBar.innerHTML = `<span class="action-emoji" aria-hidden="true">${emoji}</span>` +
+  const patientMode = isPatientVisualCueMode();
+  const languageKey = document.documentElement.lang || (window.YCHLanguage?.isEnglish?.() ? 'en' : 'zh');
+  const renderKey = JSON.stringify(patientMode
+    ? [patientMode, languageKey, gestureCue, main,isLevel6()?activeAffectedSide():'']
+    : [patientMode, languageKey, gestureCue, main, detail || '']);
+  if(statusBar.dataset.actionRenderKey === renderKey) return;
+  statusBar.dataset.actionRenderKey = renderKey;
+  if(patientMode){
+    const emoji = gestureCue === 'open' ? '✋🏻' : '✊🏻';
+    const level6ClosedImage=isLevel6()&&gestureCue==='close'
+      ? `img/level6_pinch_${activeAffectedSide()==='left'?'left':'right'}.png`
+      : '';
+    const handCue=level6ClosedImage
+      ? `<img class="action-emoji action-hand-image" src="${level6ClosedImage}" alt="">`
+      : `<span class="action-emoji" aria-hidden="true">${emoji}</span>`;
+    statusBar.innerHTML = handCue +
       `<span class="action-copy"><span class="action-main">${main}</span></span>`;
     statusBar.dataset.gestureCue = gestureCue;
     return;
@@ -11530,8 +12144,11 @@ function graspPrompt(key){
   return '張開手放下';
 }
 function updateGraspLogic(){
-  const PREP_OPEN_MS = 220, GRASP_HOLD_MS = 360, DROP_DWELL_MS = 650;
-  const CONTACT_GRACE_MS = 450;
+  const PREP_OPEN_MS = research.active ? 220 : 100;
+  const GRASP_HOLD_MS = research.active ? 360 : 120;
+  const DROP_DWELL_MS = research.active ? 650 : 220;
+  const RELEASE_CONTINUITY_GRACE_MS = research.active ? 0 : 100;
+  const CONTACT_GRACE_MS = research.active ? 450 : 700;
   // Preparation requires a positively observed open state for all Level 6
   // gesture tasks. This prevents an ambiguous/static closed hand from arming.
   const openPrep = isLevel6ToolGestureTask() ? handOpenPrep
@@ -11556,6 +12173,7 @@ function updateGraspLogic(){
     basicOpenStart = 0; basicGraspStart = 0; basicGraspCandidate = '';
     basicGraspArmed = false; basicContactCandidate = ''; basicContactUntil = 0;
     releaseDwellStart = 0; releaseDwellPlate = null;
+    releaseDwellPauseAt = 0; releaseDwellLastOpenAt = 0;
     setActionPrompt('鏡頭對準', '患手掌心及指尖入鏡');
     return;
   }
@@ -11576,6 +12194,10 @@ function updateGraspLogic(){
       const locked = foods.find(f=>f.id === basicContactCandidate && !f.removed && !f.held);
       if(locked){ nearest = locked; overFood = true; }
     }
+    updatePublicPatientVoiceGuide({
+      phase:'contact', item:nearest, touching:!!overFood,
+      openForPickup:!!(overFood&&!isGrasping&&openPrep),
+    });
     if(!overFood){
       basicOpenStart = 0; basicGraspStart = 0; basicGraspCandidate = ''; basicGraspArmed = false;
       basicContactCandidate = ''; basicContactUntil = 0;
@@ -11605,6 +12227,7 @@ function updateGraspLogic(){
       const pct = Math.min(100, Math.round((now-basicGraspStart)/GRASP_HOLD_MS*100));
       if(now-basicGraspStart >= GRASP_HOLD_MS){
         nearest.held = true; heldItem = nearest; grabCount++;
+        updatePublicPatientVoiceGuide({phase:'pickup',item:nearest,zones:targets});
         beginLevel4StandardCarry(nearest);
         noteHoldStart();
         pilotBump(isLevel67GestureMode() ? 'pinch_success' : 'grasp_success');
@@ -11649,13 +12272,29 @@ function updateGraspLogic(){
     // a reopened three-finger aperture before the object is dropped.
     const releasing = isLevel6ToolGestureTask() ? handOpenPrep
       : (isPinchMode() ? handOpenPrep : !isGrasping);
+    updatePublicPatientVoiceGuide({
+      phase:'held',item:heldItem,zones:targets,onTarget:!!onPlate,
+      stillGrasped:!releasing,cursorY,
+    });
     if(releasing){
       // 鬆開手：需要持續 releaseDwellMs 先真正 drop（防止 hand tracking jitter 誤觸）
       const now = nowMs();
       if(releaseDwellStart === 0){
         releaseDwellStart = now;
         releaseDwellPlate = onPlate;
+      }else if(releaseDwellPauseAt){
+        // A brief fresh-frame interruption may preserve continuity, but its
+        // duration never counts toward release dwell. Reopening after the
+        // 100 ms window starts a new true-open release instead.
+        if(now - releaseDwellLastOpenAt <= RELEASE_CONTINUITY_GRACE_MS){
+          releaseDwellStart += now - releaseDwellPauseAt;
+        }else{
+          releaseDwellStart = now;
+          releaseDwellPlate = onPlate;
+        }
+        releaseDwellPauseAt = 0;
       }
+      releaseDwellLastOpenAt = now;
       noteReleaseAttemptStart();
       const elapsed = now - releaseDwellStart;
       if(elapsed >= DROP_DWELL_MS){
@@ -11705,6 +12344,7 @@ function updateGraspLogic(){
           heldItem.removed = true;
           heldItem.held = false;
           heldItem = null;
+          updatePublicPatientVoiceGuide({phase:'drop'});
           noteHoldEnd();
           noteReleaseAttemptEnd(true);
           ensureFoodCount();
@@ -11723,20 +12363,34 @@ function updateGraspLogic(){
           });
           setActionPrompt('已放開', parkedItem.targetType === 'distractor' ? '動物已移開' : '點心已移到空白位');
           heldItem = null;
+          updatePublicPatientVoiceGuide({phase:'drop'});
           noteHoldEnd();
           noteReleaseAttemptEnd(true);
         }
         releaseDwellStart = 0;
         releaseDwellPlate = null;
+        releaseDwellPauseAt = 0;
+        releaseDwellLastOpenAt = 0;
       } else {
         // 顯示 release progress
         const pct = Math.round((elapsed / DROP_DWELL_MS) * 100);
         setActionPrompt(graspPrompt('release'), pct + '%');
       }
     } else {
-      // 重新握緊：cancel release dwell
-      releaseDwellStart = 0;
-      releaseDwellPlate = null;
+      const now = nowMs();
+      const preserveReleaseContinuity = RELEASE_CONTINUITY_GRACE_MS > 0
+        && releaseDwellStart > 0 && releaseDwellLastOpenAt > 0
+        && now - releaseDwellLastOpenAt <= RELEASE_CONTINUITY_GRACE_MS;
+      if(preserveReleaseContinuity){
+        // Ambiguous/closed fresh input cannot start or advance release. Pause
+        // the dwell clock for at most 100 ms after a true-open release began.
+        if(!releaseDwellPauseAt) releaseDwellPauseAt = now;
+      }else{
+        releaseDwellStart = 0;
+        releaseDwellPlate = null;
+        releaseDwellPauseAt = 0;
+        releaseDwellLastOpenAt = 0;
+      }
       setActionPrompt(onPlate ? graspPrompt('release') : graspPrompt('carry'),
         onPlate ? (state.level === '67' ? graspPrompt('release') : '張到今日可達幅度') : affectedDirectionLabel());
     }
@@ -11870,7 +12524,7 @@ function drawBigPlateTarget(ctx, t){
 // v69 落單橫幅：顯示而家張單（例：我想食2個牛肉球，3個蝦餃）同每款進度
 function drawDimsumOrderBanner(ctx, cw, ch){
   if(!isDimsumOrderGame() || !dimsumOrder) return;
-  if(!research.active && (state.level === '5' || state.level === '67')){
+  if(!research.active){
     dimsumOrderBannerRect = null;
     return;
   }
@@ -11947,16 +12601,26 @@ function drawDimsumOrderBanner(ctx, cw, ch){
 // v71 晾衫單：大型白色晾衫架（真實相片）＋已晾好嘅衣物逐件累積掛喺架頂橫桿
 function drawLaundryRackTarget(ctx, t){
   ctx.save();
-  // 架底陰影
-  ctx.fillStyle = 'rgba(0,0,0,0.14)';
-  ctx.beginPath();
-  ctx.ellipse(t.x, t.y + t.h * 0.46, t.w * 0.46, t.h * 0.06, 0, 0, Math.PI * 2);
-  ctx.fill();
   let rw = t.w, rh = t.h;
   if(t.img && t.img.complete && t.img.naturalWidth > 0){
     const ratio = t.img.naturalWidth / t.img.naturalHeight;
     rw = t.w; rh = rw / ratio;
     if(rh > t.h){ rh = t.h; rw = rh * ratio; }
+  }
+  // The rack photo is mostly white. A quiet blue-grey backing keeps its rails
+  // visible against the new default white background without adding clutter.
+  ctx.fillStyle='rgba(218,232,238,0.88)';
+  ctx.strokeStyle='rgba(46,109,164,0.48)';
+  ctx.lineWidth=Math.max(3,Math.min(rw,rh)*0.012);
+  rrPath(ctx,t.x-rw/2-12,t.y-rh/2-12,rw+24,rh+24,22);
+  ctx.fill();
+  ctx.stroke();
+  // 架底陰影
+  ctx.fillStyle = 'rgba(0,0,0,0.14)';
+  ctx.beginPath();
+  ctx.ellipse(t.x, t.y + t.h * 0.46, t.w * 0.46, t.h * 0.06, 0, 0, Math.PI * 2);
+  ctx.fill();
+  if(t.img && t.img.complete && t.img.naturalWidth > 0){
     ctx.drawImage(t.img, t.x - rw / 2, t.y - rh / 2, rw, rh);
   } else {
     drawDryingPole(ctx, t.x, t.y, Math.min(t.w, t.h) * 0.45);
@@ -11986,7 +12650,7 @@ function drawLaundryRackTarget(ctx, t){
 // v71 晾衫單橫幅：顯示而家張單（例：晾衫訓練：請將3件恤衫放上晾衫架）同每款進度
 function drawLaundryOrderBanner(ctx, cw, ch){
   if(!isLaundryOrderGame() || !laundryOrder) return;
-  if(!research.active && (state.level === '5' || state.level === '67')){
+  if(!research.active){
     laundryOrderBannerRect = null;
     return;
   }
@@ -12054,7 +12718,7 @@ function drawLaundryOrderBanner(ctx, cw, ch){
   ctx.restore();
 }
 
-// v72 雪櫃收納：大雪櫃（真實相片）＋已放入嘅食物＋相撞提示圈＋下方購物袋
+// v77 雪櫃收納：大雪櫃（真實相片）＋已放入嘅食物＋相撞提示圈。
 function drawFridgeTarget(ctx, t){
   ctx.save();
   const rect = fridgeInteriorRect(t);
@@ -12100,41 +12764,13 @@ function drawFridgeTarget(ctx, t){
     rrPath(ctx, rect.x0 - 10, rect.y0 - 10, rw + 20, rh + 20, 22);
     ctx.stroke();
   }
-  // 下方購物袋（食物生成點；喺 targets pass 畫，等食物疊喺袋口上面）
-  const bagR = (foods.find(f=>!f.removed && !f.held) || foods[0] || {r:100}).r || 100;
-  const spot = fridgeBagSpot(gameCanvas.width, gameCanvas.height, bagR);
-  const bw = bagR * 2.5, bh = bagR * 1.9;
-  const bx = spot.x, byTop = spot.y - bh * 0.32;
-  ctx.fillStyle = 'rgba(0,0,0,0.10)';
-  ctx.beginPath();
-  ctx.ellipse(bx, byTop + bh, bw * 0.5, bh * 0.07, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = '#B98A55';
-  ctx.beginPath();
-  ctx.moveTo(bx - bw / 2, byTop);
-  ctx.lineTo(bx + bw / 2, byTop);
-  ctx.lineTo(bx + bw / 2 - bw * 0.06, byTop + bh);
-  ctx.lineTo(bx - bw / 2 + bw * 0.06, byTop + bh);
-  ctx.closePath();
-  ctx.fill();
-  ctx.fillStyle = '#A5763F';
-  ctx.fillRect(bx - bw / 2 + bw * 0.015, byTop, bw * 0.97, bh * 0.14);
-  const remaining = Math.max(0, fridgeQueue.length - fridgeQueueIndex);
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  const bagFont = Math.max(20, Math.round(bh * 0.16));
-  ctx.fillStyle = '#5C3D1E';
-  ctx.font = `bold ${bagFont}px "PingFang TC","Noto Sans TC",-apple-system,sans-serif`;
-  ctx.fillText('買餸袋', bx, byTop + bh * 0.62);
-  ctx.font = `bold ${Math.round(bagFont * 0.82)}px "PingFang TC","Noto Sans TC",-apple-system,sans-serif`;
-  ctx.fillText('仲有 ' + remaining + ' 樣', bx, byTop + bh * 0.82);
   ctx.restore();
 }
 
 // v72 雪櫃收納橫幅：顯示訓練指令、進度、相撞提示同慶祝訊息
 function drawFridgeOrderBanner(ctx, cw, ch){
   if(!isFridgeGame() || !fridgeQueue.length) return;
-  if(!research.active && (state.level === '5' || state.level === '67')){
+  if(!research.active){
     fridgeBannerRect = null;
     return;
   }
@@ -12389,10 +13025,12 @@ function renderGame(){
     // v74 模擬茶樓：點心飛入蒸籠／蒸緊嗰陣由場景層接手畫，避免出現兩件點心
     if(isTeahouseDimsumMode() && teahouseServe.phase!=='idle') continue;
     ctx.save();
+    const visualPoint=publicLevel6HeldDisplayPoint(f.x,f.y,f.r,f.held);
+    const drawX=visualPoint.x,drawY=visualPoint.y;
     if(f.drawItem){
       // 主題自繪物件（麻雀 / 啤牌 / 煮飯 / 插花 / 晾衫）＋大字標籤
-      f.drawItem(ctx, f.x, f.y, f.r * (f.drawScale || 0.92));
-      drawItemLabel(ctx, f.label, f.x, f.y + f.r * (f.labelGap || 1.04));
+      f.drawItem(ctx, drawX, drawY, f.r * (f.drawScale || 0.92));
+      drawItemLabel(ctx, f.label, drawX, drawY + f.r * (f.labelGap || 1.04));
     } else if(f.img && f.img.complete && f.img.naturalWidth > 0){
       // 保持縱橫比（特別重要對 distractor 動物）：長邊完全充滿 2r
       const iw = f.img.naturalWidth, ih = f.img.naturalHeight;
@@ -12400,10 +13038,10 @@ function renderGame(){
       let dw, dh;
       if(iw >= ih){ dw = targetMax; dh = targetMax * ih / iw; }
       else        { dh = targetMax; dw = targetMax * iw / ih; }
-      ctx.drawImage(f.img, f.x - dw/2, f.y - dh/2, dw, dh);
+      ctx.drawImage(f.img, drawX - dw/2, drawY - dh/2, dw, dh);
     } else {
       ctx.beginPath();
-      ctx.arc(f.x, f.y, f.r, 0, Math.PI*2);
+      ctx.arc(drawX, drawY, f.r, 0, Math.PI*2);
       ctx.fillStyle = f.color || '#D4A017';
       ctx.fill();
       ctx.strokeStyle = 'rgba(0,0,0,0.15)';
@@ -12413,11 +13051,11 @@ function renderGame(){
       ctx.font = 'bold 14px -apple-system,"PingFang TC","Noto Sans TC",sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(f.label, f.x, f.y);
+      ctx.fillText(f.label, drawX, drawY);
     }
     if(f.held){
       ctx.beginPath();
-      ctx.arc(f.x, f.y, f.r + 6, 0, Math.PI*2);
+      ctx.arc(drawX, drawY, f.r + 6, 0, Math.PI*2);
       ctx.strokeStyle = '#D4A017';
       ctx.lineWidth = 3;
       ctx.stroke();
@@ -12430,27 +13068,28 @@ function renderGame(){
   drawLaundryOrderBanner(ctx, cw, ch);
   drawFridgeOrderBanner(ctx, cw, ch);
 
-  // 游標：Level 5–6 以大型手勢 emoji 取代抽象圓點，並保留
-  // 高對比外圈。文字提示同步顯示，避免單靠 emoji 傳達動作。
+  // 游標：Level 5–6 以大型膚色手勢 emoji 取代抽象圓點。
+  // 不加外圈，避免患者把圓圈誤解為另一個要對準的目標。
   const cursorPoint = displayCursorPoint();
   if(cursorPoint.x >= 0 && cursorPoint.y >= 0 && handDetected && !isShoulderFlexionLevel()){
     ctx.save();
 
     if(isGraspStyleMode()){
       if(isPatientVisualCueMode()){
-        const handEmoji = isGrasping ? '✊' : '✋';
-        const handSize = Math.max(64, Math.min(94, Math.min(cw, ch) * 0.105));
-        ctx.beginPath();
-        ctx.arc(cursorPoint.x, cursorPoint.y, handSize * 0.52, 0, Math.PI*2);
-        ctx.fillStyle = isGrasping ? 'rgba(255,223,163,.88)' : 'rgba(255,255,255,.82)';
-        ctx.fill();
-        ctx.lineWidth = 5;
-        ctx.strokeStyle = isGrasping ? '#C05B22' : '#0A675D';
-        ctx.stroke();
-        ctx.font = `${Math.round(handSize)}px "Apple Color Emoji","Segoe UI Emoji",sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(handEmoji, cursorPoint.x, cursorPoint.y + handSize * 0.03);
+        const handEmoji = isGrasping ? '✊🏻' : '✋🏻';
+        const closedHandSize=Math.max(210,Math.min(280,Math.min(cw,ch)*.27));
+        const handSize=isGrasping ? closedHandSize : closedHandSize*1.5;
+        const overlapsObject=foods.some(f=>!f.removed&&
+          Math.hypot(cursorPoint.x-f.x,cursorPoint.y-f.y)<=f.r+handSize*.34);
+        if(isLevel6() && isGrasping){
+          drawPublicLevel6ClosedPinchCursor(ctx,cursorPoint.x,cursorPoint.y,overlapsObject?.74:.84);
+        }else{
+          ctx.globalAlpha=overlapsObject ? .58 : .88;
+          ctx.font = `${Math.round(handSize)}px "Apple Color Emoji","Segoe UI Emoji",sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(handEmoji, cursorPoint.x, cursorPoint.y + handSize * 0.03);
+        }
       } else if(isGrasping){
         // Preserve the pre-v76 research grasp/pinch cursor exactly.
         ctx.beginPath();
@@ -12568,6 +13207,10 @@ function endGame(endReason){
   state.running = false;
   state.paused = false;
   document.querySelector('.game-stage')?.classList.remove('patient-simple-hud');
+  document.querySelector('.game-stage')?.classList.remove('patient-shoulder-hud');
+  document.querySelector('.game-stage')?.classList.remove('public-clean-hud');
+  document.querySelector('.game-stage')?.classList.remove('patient-card-instruction');
+  document.querySelector('.game-stage')?.classList.remove('patient-level5-instruction');
   resetSafetyRuntime();
   adaptiveHideCard();
   adaptiveRenderStreak();
@@ -12633,6 +13276,7 @@ function endGame(endReason){
     }
   }
 
+  /* PUBLIC_BUILD_REMOVE_START: research result DOM and export controls */
   const rr = document.getElementById('researchResult');
   const downloadBtn = document.getElementById('btnDownloadResearch');
   const returnBtn = document.getElementById('btnReturnSessionRecord');
@@ -12718,6 +13362,7 @@ function endGame(endReason){
     downloadBtn.classList.add('hidden');
     returnBtn.classList.add('hidden');
   }
+  /* PUBLIC_BUILD_REMOVE_END */
 
   showScreen('result');
 }
@@ -12735,7 +13380,11 @@ function usesAdvancedThemeModule(id){
   // centre pickup, affected-side lateral slide, destination dwell. The original
   // advanced modules require object pickup. Levels 3–4 use standardised gross
   // motor engines, so the free 2-D modules are reserved for Levels 5–7.
-  return !isGrossTabletop() && isAdvTheme(id);
+  const theme=id||state.theme;
+  // Level 6 Flowers intentionally reuses the public Level 5 arrangement layout;
+  // its state.gameType remains the Level 6 selected-hand tripod pinch.
+  if(isLevel6() && theme==='flowers') return true;
+  return !isGrossTabletop() && isAdvTheme(theme);
 }
 /* 窄螢幕（手機直度）：引導面板較高，遊戲元素要向下讓位 */
 function advNarrow(){ return gameCanvas.width < 700; }
@@ -12749,7 +13398,8 @@ const ADV_ASSETS = [
   'rice_bowl','eggs','spring_onion','oil_bottle','egg_beaten','onion_chopped',
   'plate_empty','salt_dish','wok','friedrice','stove_knob','board_knife',
   'v75f_01','v75f_02','v75f_03','v75f_04','v75f_05','v75f_06','v75f_07','v75f_08',
-  'v75l_01','v75l_02','v75l_03','v75l_04','v75l_05','v75l_06','v75l_07','v75l_08','v75_vase',
+  'v75l_01','v75l_02','v75l_03','v75l_04','v75l_05','v75l_06','v75l_07','v75l_08',
+  'v75_vase','v77_wide_pot',
   'mahjong_atlas','cards_atlas'
 ];
 ['red','blue','yellow','green'].forEach(c=>{
@@ -12763,6 +13413,7 @@ for(let i=1;i<=8;i++){
   V75_IMG_SRC['v75l_0'+i] = 'img/leaf_0'+i+'.png';
 }
 V75_IMG_SRC['v75_vase'] = 'img/flower_vase.png';
+V75_IMG_SRC['v77_wide_pot'] = 'img/flower_pot_user.jpeg';
 function advImg(name){
   if(!ADV_IMG[name]){
     const im = new Image();
@@ -13179,15 +13830,35 @@ const SEL_TOL = { grasp: 52, reach: 42 };
 const GRASP_ARM_MS = 420;
 const GRASP_HOLD_MS = 480;
 const RELEASE_HOLD_MS = 1000;
+const PUBLIC_GRASP_ARM_MS = 100;
+const PUBLIC_GRASP_HOLD_MS = 120;
+const PUBLIC_RELEASE_HOLD_MS = 220;
+const PUBLIC_RELEASE_CONTINUITY_GRACE_MS = 100;
+const ADV_CONTACT_GRACE_MS = 450;
+const PUBLIC_ADV_CONTACT_GRACE_MS = 700;
+function advancedGraspArmMs(){ return isPatientVisualCueMode() ? PUBLIC_GRASP_ARM_MS : GRASP_ARM_MS; }
+function advancedGraspHoldMs(){ return isPatientVisualCueMode() ? PUBLIC_GRASP_HOLD_MS : GRASP_HOLD_MS; }
+function advancedReleaseHoldMs(){ return isPatientVisualCueMode() ? PUBLIC_RELEASE_HOLD_MS : RELEASE_HOLD_MS; }
+function advancedContactGraceMs(){ return isPatientVisualCueMode() ? PUBLIC_ADV_CONTACT_GRACE_MS : ADV_CONTACT_GRACE_MS; }
 /* Selection tolerance. Research strata tighten the tolerance for FTHUE 6/7 so that
    placement must be more precise; normal (non-study) play is unchanged. */
 function selTol(){
   const base = isGraspStyleMode() ? SEL_TOL.grasp : SEL_TOL.reach;
-  return research.active ? Math.round(base * pilotStratum().tolerance) : base;
+  return research.active ? Math.round(base * pilotStratum().tolerance)
+    : (isGraspStyleMode() ? 86 : 64);
 }
 /* Bare mode requires a reopened three-finger aperture. Level 5 and peg mode
    use the open-hand classifier. */
 function handReleasedOrOpen(){ return isPinchMode() ? handOpenPrep : !isGrasping; }
+function heldItemTouchesZone(item, zone, margin=0){
+  if(!item || !zone) return false;
+  const r = Math.max(0, (item.r || 0) + margin);
+  const left = zone.x - zone.w / 2, right = zone.x + zone.w / 2;
+  const top = zone.y - zone.h / 2, bottom = zone.y + zone.h / 2;
+  const nearestX = Math.max(left, Math.min(cursorX, right));
+  const nearestY = Math.max(top, Math.min(cursorY, bottom));
+  return Math.hypot(cursorX - nearestX, cursorY - nearestY) <= r;
+}
 
 let heldPromptKey = '';
 function updateHeldReleasePrompt(){
@@ -13252,11 +13923,13 @@ function nearestItem(items){
 const picker = {
   hoverId:null, start:0, pct:0, armed:false, lock:null, startId:null,
   openStart:0, graspStart:0, graspId:null, heldId:null, relStart:0,
+  relPauseAt:0, relLastOpenAt:0,
   contactId:null, contactUntil:0,
   reset(){
     this.hoverId=null; this.start=0; this.pct=0; this.armed=false; this.lock=null;
     this.startId=null; this.openStart=0; this.graspStart=0; this.graspId=null;
-    this.heldId=null; this.relStart=0; this.contactId=null; this.contactUntil=0;
+    this.heldId=null; this.relStart=0; this.relPauseAt=0; this.relLastOpenAt=0;
+    this.contactId=null; this.contactUntil=0;
   },
   poll(items, releaseZone){
     this.pct = 0;
@@ -13265,19 +13938,52 @@ const picker = {
       return null;
     }
     const now = nowMs();
+    if(detectionHeldGrace){
+      // A stale cursor may remain visible briefly, but it must never build arm,
+      // grasp, or release time. Keep a carried item attached until fresh input returns.
+      this.hoverId = this.heldId || null; this.start = 0; this.startId = null; this.pct = 0;
+      this.armed = false; this.openStart = 0; this.graspStart = 0; this.graspId = null;
+      this.relStart = 0; this.relPauseAt = 0; this.relLastOpenAt = 0;
+      this.contactId = null; this.contactUntil = 0;
+      return null;
+    }
     if(this.heldId && isGraspStyleMode()){
       this.hoverId = this.heldId;
+      const held=items.find(it=>it.id===this.heldId)||null;
+      const onReleaseZone=!!(releaseZone&&heldItemTouchesZone(held,releaseZone));
+      updatePublicPatientVoiceGuide({
+        phase:'held',item:held,zones:releaseZone?[releaseZone]:[],
+        onTarget:onReleaseZone,stillGrasped:!handReleasedOrOpen(),cursorY,
+      });
       if(handReleasedOrOpen()){
         if(!this.relStart) this.relStart = now;
-        this.pct = Math.min(1, (now - this.relStart) / RELEASE_HOLD_MS);
-        if(now - this.relStart >= RELEASE_HOLD_MS){
+        else if(this.relPauseAt){
+          if(now - this.relLastOpenAt <= PUBLIC_RELEASE_CONTINUITY_GRACE_MS){
+            this.relStart += now - this.relPauseAt;
+          }else{
+            this.relStart = now;
+          }
+          this.relPauseAt = 0;
+        }
+        this.relLastOpenAt = now;
+        const releaseMs = advancedReleaseHoldMs();
+        this.pct = Math.min(1, (now - this.relStart) / releaseMs);
+        if(now - this.relStart >= releaseMs){
           const id = this.heldId;
-          this.heldId = null; this.relStart = 0; this.armed = false;
+          this.heldId = null; this.relStart = 0; this.relPauseAt = 0;
+          this.relLastOpenAt = 0; this.armed = false;
           this.openStart = now; this.graspStart = 0; this.graspId = null; this.pct = 0;
-          return !releaseZone || pointInsideZone(cursorX, cursorY, releaseZone) ? id : '__invalid__';
+          updatePublicPatientVoiceGuide({phase:'drop'});
+          return !releaseZone || heldItemTouchesZone(held, releaseZone) ? id : '__invalid__';
         }
       } else {
-        this.relStart = 0;
+        const preserve = !research.active && this.relStart > 0 && this.relLastOpenAt > 0
+          && now - this.relLastOpenAt <= PUBLIC_RELEASE_CONTINUITY_GRACE_MS;
+        if(preserve){
+          if(!this.relPauseAt) this.relPauseAt = now;
+        }else{
+          this.relStart = 0; this.relPauseAt = 0; this.relLastOpenAt = 0;
+        }
       }
       return null;
     }
@@ -13300,7 +14006,7 @@ const picker = {
     let best = nearestItem(items);
     if(best){
       this.contactId = best.id;
-      this.contactUntil = now + 450;
+      this.contactUntil = now + advancedContactGraceMs();
     } else if(isGraspStyleMode() && this.contactId && now <= this.contactUntil){
       best = items.find(it=>it.id === this.contactId && !it.gone) || null;
     }
@@ -13310,25 +14016,35 @@ const picker = {
       this.contactId = null; this.contactUntil = 0;
       if(isGraspStyleMode() && handReleasedOrOpen()){
         if(!this.openStart) this.openStart = now;
-        if(now - this.openStart >= GRASP_ARM_MS) this.armed = true;
+        if(now - this.openStart >= advancedGraspArmMs()) this.armed = true;
       }
       return null;
     }
     this.hoverId = best.id;
+    updatePublicPatientVoiceGuide({
+      phase:'contact',item:best,touching:true,
+      openForPickup:!!(isGraspStyleMode()&&handReleasedOrOpen()),
+    });
     if(isGraspStyleMode()){
       if(handReleasedOrOpen()){
         this.graspStart = 0; this.graspId = null;
         if(!this.openStart) this.openStart = now;
-        this.pct = Math.min(1, (now - this.openStart) / GRASP_ARM_MS);
-        if(now - this.openStart >= GRASP_ARM_MS) this.armed = true;
+        const armMs = advancedGraspArmMs();
+        this.pct = Math.min(1, (now - this.openStart) / armMs);
+        if(now - this.openStart >= armMs) this.armed = true;
         return null;
       }
       this.openStart = 0;
       if(!this.armed) return null;
       if(this.graspId !== best.id){ this.graspId = best.id; this.graspStart = now; }
-      this.pct = Math.min(1, (now - this.graspStart) / GRASP_HOLD_MS);
-      if(now - this.graspStart >= GRASP_HOLD_MS){
-        this.heldId = best.id; this.armed = false; this.relStart = 0; this.pct = 0;
+      const holdMs = advancedGraspHoldMs();
+      this.pct = Math.min(1, (now - this.graspStart) / holdMs);
+      if(now - this.graspStart >= holdMs){
+        this.heldId = best.id; this.armed = false; this.relStart = 0;
+        this.relPauseAt = 0; this.relLastOpenAt = 0; this.pct = 0;
+        updatePublicPatientVoiceGuide({
+          phase:'pickup',item:best,zones:releaseZone?[releaseZone]:[],
+        });
       }
       return null;
     }
@@ -13351,10 +14067,12 @@ const picker = {
 /* 搬運式（收衫 / 插花）：grab → 跟隨游標 → drop（在區域內或任意位置） */
 const carrier = {
   heldId:null, hoverId:null, startId:null, start:0, pct:0, armed:false, relStart:0,
-  openStart:0, graspStart:0, graspId:null,
+  relPauseAt:0, relLastOpenAt:0,
+  openStart:0, graspStart:0, graspId:null, contactId:null, contactUntil:0,
   reset(){ this.heldId=null; this.hoverId=null; this.startId=null; this.start=0;
-           this.pct=0; this.armed=false; this.relStart=0; this.openStart=0;
-           this.graspStart=0; this.graspId=null; },
+           this.pct=0; this.armed=false; this.relStart=0; this.relPauseAt=0;
+           this.relLastOpenAt=0; this.openStart=0;
+           this.graspStart=0; this.graspId=null; this.contactId=null; this.contactUntil=0; },
   poll(items, zones){
     const ev = { grab:null, drop:null, zone:null };
     this.pct = 0;
@@ -13363,14 +14081,32 @@ const carrier = {
       return ev;
     }
     const now = nowMs();
+    if(detectionHeldGrace){
+      this.hoverId=this.heldId || null; this.startId=null; this.start=0; this.pct=0;
+      this.armed=false; this.openStart=0; this.graspStart=0; this.graspId=null;
+      this.relStart=0; this.relPauseAt=0; this.relLastOpenAt=0;
+      this.contactId=null; this.contactUntil=0;
+      return ev;
+    }
     if(!this.heldId){
-      const best = nearestItem(items);
+      let best = nearestItem(items);
+      if(best){
+        this.contactId = best.id;
+        this.contactUntil = now + advancedContactGraceMs();
+      } else if(isGraspStyleMode() && this.contactId && now <= this.contactUntil){
+        best = items.find(it=>it.id === this.contactId && !it.gone) || null;
+      }
       this.hoverId = best ? best.id : null;
+      updatePublicPatientVoiceGuide({
+        phase:'contact',item:best,touching:!!best,
+        openForPickup:!!(best&&isGraspStyleMode()&&handReleasedOrOpen()),
+      });
       if(!best){
         this.startId = null; this.graspStart = 0; this.graspId = null;
+        if(now > this.contactUntil){ this.contactId = null; this.contactUntil = 0; }
         if(isGraspStyleMode() && handReleasedOrOpen()){
           if(!this.openStart) this.openStart = now;
-          if(now - this.openStart >= GRASP_ARM_MS) this.armed = true;
+          if(now - this.openStart >= advancedGraspArmMs()) this.armed = true;
         }
         return ev;
       }
@@ -13378,17 +14114,22 @@ const carrier = {
         if(handReleasedOrOpen()){
           this.graspStart = 0; this.graspId = null;
           if(!this.openStart) this.openStart = now;
-          this.pct = Math.min(1, (now - this.openStart) / GRASP_ARM_MS);
-          if(now - this.openStart >= GRASP_ARM_MS) this.armed = true;
+          const armMs = advancedGraspArmMs();
+          this.pct = Math.min(1, (now - this.openStart) / armMs);
+          if(now - this.openStart >= armMs) this.armed = true;
           return ev;
         }
         this.openStart = 0;
         if(!this.armed) return ev;
         if(this.graspId !== best.id){ this.graspId = best.id; this.graspStart = now; }
-        this.pct = Math.min(1, (now - this.graspStart) / GRASP_HOLD_MS);
-        if(now - this.graspStart >= GRASP_HOLD_MS){
+        const holdMs = advancedGraspHoldMs();
+        this.pct = Math.min(1, (now - this.graspStart) / holdMs);
+        if(now - this.graspStart >= holdMs){
           this.armed = false; this.heldId = best.id; this.relStart = 0;
-          this.graspStart = 0; this.graspId = null; this.pct = 0; ev.grab = best.id;
+          this.relPauseAt = 0; this.relLastOpenAt = 0;
+          this.graspStart = 0; this.graspId = null; this.contactId = null;
+          this.contactUntil = 0; this.pct = 0; ev.grab = best.id;
+          updatePublicPatientVoiceGuide({phase:'pickup',item:best,zones});
         }
         return ev;
       }
@@ -13401,20 +14142,44 @@ const carrier = {
     }
     // 已握住：尋找游標所在的放置區
     let z = null;
+    const carriedItem = items.find(it=>it.id === this.heldId) || null;
     for(const zz of (zones || [])){
-      if(cursorX >= zz.x - zz.w/2 && cursorX <= zz.x + zz.w/2 &&
-         cursorY >= zz.y - zz.h/2 && cursorY <= zz.y + zz.h/2){ z = zz; break; }
+      if(heldItemTouchesZone(carriedItem, zz)){ z = zz; break; }
     }
+    updatePublicPatientVoiceGuide({
+      phase:'held',item:carriedItem,zones,onTarget:!!z,
+      stillGrasped:isGraspStyleMode()&&!handReleasedOrOpen(),cursorY,
+    });
     if(isGraspStyleMode()){
       if(handReleasedOrOpen()){
         if(!this.relStart) this.relStart = now;
-        this.pct = Math.min(1, (now - this.relStart) / RELEASE_HOLD_MS);
-        if(now - this.relStart >= RELEASE_HOLD_MS){
-          ev.drop = this.heldId; ev.zone = z;
-          this.heldId = null; this.relStart = 0; this.armed = false;
-          this.openStart = now; this.pct = 0;
+        else if(this.relPauseAt){
+          if(now - this.relLastOpenAt <= PUBLIC_RELEASE_CONTINUITY_GRACE_MS){
+            this.relStart += now - this.relPauseAt;
+          }else{
+            this.relStart = now;
+          }
+          this.relPauseAt = 0;
         }
-      } else { this.relStart = 0; }
+        this.relLastOpenAt = now;
+        const releaseMs = advancedReleaseHoldMs();
+        this.pct = Math.min(1, (now - this.relStart) / releaseMs);
+        if(now - this.relStart >= releaseMs){
+          ev.drop = this.heldId; ev.zone = z;
+          this.heldId = null; this.relStart = 0; this.relPauseAt = 0;
+          this.relLastOpenAt = 0; this.armed = false;
+          this.openStart = now; this.pct = 0;
+          updatePublicPatientVoiceGuide({phase:'drop'});
+        }
+      } else {
+        const preserve = !research.active && this.relStart > 0 && this.relLastOpenAt > 0
+          && now - this.relLastOpenAt <= PUBLIC_RELEASE_CONTINUITY_GRACE_MS;
+        if(preserve){
+          if(!this.relPauseAt) this.relPauseAt = now;
+        }else{
+          this.relStart = 0; this.relPauseAt = 0; this.relLastOpenAt = 0;
+        }
+      }
       return ev;
     }
     if(z){
@@ -13425,6 +14190,7 @@ const carrier = {
       if(el >= DWELL_MS){
         ev.drop = this.heldId; ev.zone = z;
         this.heldId = null; this.startId = null; this.pct = 0;
+        updatePublicPatientVoiceGuide({phase:'drop'});
       }
     } else { this.startId = null; }
     return ev;
@@ -14435,10 +15201,15 @@ function mjStartRound(idx){
   const gs = def.groups.map((g, i)=>({
     id:'g' + i, tiles:g.tiles.slice(), excl:g.excl || null, gone:false, wrong:false,
   }));
-  // 決定性洗牌，令每局排列有變化
-  for(let i = gs.length - 1; i > 0; i--){
-    const j = Math.floor(mjRand() * (i + 1));
-    const t = gs[i]; gs[i] = gs[j]; gs[j] = t;
+  // Public patient mode keeps exactly three choices. Their authored order always
+  // includes at least one valid route; research retains the original full shuffle.
+  if(isPatientVisualCueMode()){
+    gs.splice(3);
+  }else{
+    for(let i = gs.length - 1; i > 0; i--){
+      const j = Math.floor(mjRand() * (i + 1));
+      const t = gs[i]; gs[i] = gs[j]; gs[j] = t;
+    }
   }
   mj.groups = gs;
   mj.msg = '';
@@ -14452,10 +15223,13 @@ function mjStartRound(idx){
 function mjNeed(){ return 14 - mj.hand.length; }
 
 function mjPanel(){
+  updatePatientGameInstruction();
   const nextTierFan = mj.fanTotal < 3 ? 3 : mj.fanTotal < 5 ? 5 : mj.fanTotal < 10 ? 10 : null;
   advSetPanel({
     stepNo:'第 ' + mj.roundNo + ' 局 · 累積 ' + mj.fanTotal + ' 番',
-    text:'揀一組牌，仲需要 ' + mjNeed() + ' 隻',
+    text:isPatientVisualCueMode()
+      ? '揀一組牌，放到' + (affectedSideSign() > 0 ? '右邊' : '左邊') + '放牌區。'
+      : '揀一組牌，仲需要 ' + mjNeed() + ' 隻',
     goal: mj.msg || (isLevel4Tabletop()
       ? '在牌上停住，沿中線向前滑，再在放牌區停住。'
       : (state.level === '67'
@@ -14630,25 +15404,51 @@ function mjLayout(){
   const handRows = narrow ? 3 : 2;
   const perRow = narrow ? 5 : 7;
   const patientLarge = isPatientVisualCueMode();
-  const tileMin = patientLarge ? (narrow ? 62 : 70) : (narrow ? 56 : 64);
-  const tileMax = patientLarge ? (narrow ? 76 : 92) : (narrow ? 68 : 82);
-  const tileW = Math.max(tileMin,
+  const level5VerticalFlow = isPublicLevel5VerticalFlow();
+  const tileMin = patientLarge ? (narrow ? 72 : 82) : (narrow ? 56 : 64);
+  const tileMax = patientLarge ? (narrow ? 92 : 112) : (narrow ? 68 : 82);
+  let tileW = Math.max(tileMin,
     Math.min(tileMax, (cw - 32) / perRow - 4));
+  if(level5VerticalFlow){
+    // Reserve enough vertical room for every public choice group on short
+    // phones and landscape tablets; otherwise the third group clipped below
+    // the canvas despite its large nominal tile size.
+    tileW = Math.min(tileW, Math.max(40, ch*(narrow ? .075 : .12)));
+  }
   const th = tileW * MJ_ATLAS.ch / MJ_ATLAS.cw;
-  const handTop = ch * (isLevel4Tabletop() ? 0.48 : (narrow ? 0.42 : 0.40));
+  const handTop = ch * (isLevel4Tabletop() ? 0.48
+    : (level5VerticalFlow ? 0.40
+      : (patientLarge ? (narrow?.28:.25) : (narrow ? 0.42 : 0.40))));
   const groups = mj.groups.map((g, i)=>{
     const n = mj.groups.length;
-    const cols = narrow ? Math.min(2, n) : Math.min(3, n);
+    const cols = level5VerticalFlow
+      ? Math.min(narrow ? 2 : 4, n)
+      : (narrow ? Math.min(2, n) : Math.min(3, n));
     const rows = Math.ceil(n / cols);
     const row = Math.floor(i / cols), col = i % cols;
     const rowCount = Math.min(cols, n - row*cols);
-    const gw = narrow ? Math.min(184, (cw - 30) / cols - 8)
-                      : Math.min(220, cw * 0.19);
-    const groupCentreX = isLevel4Tabletop() ? cw/2 : cw/2 - affectedSideSign() * cw*0.08;
+    const availableW = level5VerticalFlow ? cw * 0.92 : (patientLarge ? cw * 0.68 : cw);
+    const gw = patientLarge
+      ? (narrow ? Math.min(210,(availableW-24)/cols-12) : Math.min(216,(availableW-40)/cols-14))
+      : (narrow ? Math.min(184, (cw - 30) / cols - 8) : Math.min(220, cw * 0.19));
+    const groupCentreX = isLevel4Tabletop() ? cw/2
+      : (level5VerticalFlow ? cw/2
+      : (patientLarge
+        ? cw*(affectedSideSign()>0?.37:.63)
+        : cw/2 - affectedSideSign() * cw*0.08));
     const gx = groupCentreX +
-      (col - (rowCount-1)/2) * Math.min(gw + 16, cw * 0.195);
-    const baseY = isLevel4Tabletop() ? ch*0.77 : (narrow ? ch*0.68 : ch*0.77);
-    const gh = narrow ? Math.min(ch*0.12, th*1.35) : Math.min(150, ch*0.18);
+      (col - (rowCount-1)/2) * (patientLarge ? gw + 22 : Math.min(gw + 16, cw * 0.195));
+    const gh = level5VerticalFlow
+      ? Math.min(104, ch*.125)
+      : patientLarge ? Math.min(190,ch*.22)
+      : (narrow ? Math.min(ch*0.12, th*1.35) : Math.min(150, ch*0.18));
+    const desiredBaseY = isLevel4Tabletop() ? ch*0.77
+      : (level5VerticalFlow ? ch*0.78
+        : (patientLarge ? (narrow?ch*.61:ch*.67) : (narrow ? ch*0.68 : ch*0.77)));
+    const maxBaseY = ch - 12 - gh/2 - (rows-1)*(gh+16);
+    const handBottom = handTop + (handRows-1)*(th+8) + th/2;
+    const minBaseY = level5VerticalFlow ? handBottom + 12 + gh/2 : -Infinity;
+    const baseY = Math.max(minBaseY, Math.min(desiredBaseY, maxBaseY));
     const gy = baseY + row * (gh + 16);
     return { id:g.id, x:gx, y:gy, w:gw, h:gh,
              r: Math.max(gw, gh) * 0.5, ref:g, row, rows };
@@ -14660,27 +15460,34 @@ function mjRender(ctx){
   const cw = gameCanvas.width, ch = gameCanvas.height;
   const L = mj.layout = mjLayout();
 
-  // 綠檯背景（半透明，仍見得到鏡頭畫面）
+  // Public patient display uses a full-screen green table; research preserves
+  // the original translucent lower panel.
   ctx.save();
-  ctx.fillStyle = 'rgba(47,122,79,0.86)';
-  rrPath(ctx, 8, ch*0.30, cw-16, ch*0.66, 20); ctx.fill();
+  ctx.fillStyle = isPatientVisualCueMode() ? '#2F7A4F' : 'rgba(47,122,79,0.86)';
+  if(isPatientVisualCueMode()) ctx.fillRect(0,0,cw,ch);
+  else { rrPath(ctx, 8, ch*0.30, cw-16, ch*0.66, 20); ctx.fill(); }
   ctx.restore();
   drawLevel4MidlineGuide(ctx);
 
-  // 手牌
-  ctx.save();
-  ctx.fillStyle = '#EAF7EF';
-  ctx.font = 'bold 19px "PingFang TC","Noto Sans TC",sans-serif';
-  ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
-  ctx.fillText('你的牌（' + mj.hand.length + ' / 14）', 20, L.handTop - L.th*0.66);
-  ctx.restore();
+  // Research keeps the explanatory hand label; the public patient display
+  // relies on the visible tiles alone.
+  if(!isPatientVisualCueMode()){
+    ctx.save();
+    ctx.fillStyle = '#EAF7EF';
+    ctx.font = 'bold 19px "PingFang TC","Noto Sans TC",sans-serif';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.fillText('你的牌（' + mj.hand.length + ' / 14）', 20, L.handTop - L.th*0.66);
+    ctx.restore();
+  }
 
   const per = L.narrow ? 5 : 7;
   mj.hand.forEach((t, i)=>{
     const row = Math.floor(i / per), col = i % per;
     const rowCount = Math.min(per, mj.hand.length - row * per);
     const totalW = rowCount * (L.tileW + 3);
-    const x0 = (cw - totalW) / 2;
+    const x0 = (isPatientVisualCueMode()
+      ? cw*(affectedSideSign()>0?.37:.63)
+      : cw*.50) - totalW/2;
     const isNew = i >= mj.def.base.length;
     drawTile(ctx, t, x0 + col * (L.tileW + 3) + L.tileW/2,
       L.handTop + row * (L.th + 8), L.tileW);
@@ -14694,7 +15501,7 @@ function mjRender(ctx){
   });
 
   // 候選組
-  if(!L.narrow){
+  if(!L.narrow && !isPatientVisualCueMode()){
     ctx.save();
     ctx.fillStyle = '#EAF7EF';
     ctx.font = 'bold 19px "PingFang TC","Noto Sans TC",sans-serif';
@@ -14729,10 +15536,12 @@ function mjRender(ctx){
     const tot = n * (tw + 3);
     let tx = gx - tot/2 + tw/2;
     g.ref.tiles.forEach(t=>{ drawTile(ctx, t, tx, gy - 6, tw); tx += tw + 3; });
-    ctx.fillStyle = '#1a1a1a';
-    ctx.font = 'bold 17px "PingFang TC","Noto Sans TC",sans-serif';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-    ctx.fillText(g.ref.tiles.map(mjLabel).join('·'), gx, gy + g.h/2 - 22);
+    if(!isPatientVisualCueMode()){
+      ctx.fillStyle = '#1a1a1a';
+      ctx.font = 'bold 17px "PingFang TC","Noto Sans TC",sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      ctx.fillText(g.ref.tiles.map(mjLabel).join('·'), gx, gy + g.h/2 - 22);
+    }
     if(gone){
       ctx.fillStyle = 'rgba(0,0,0,0.55)';
       ctx.font = 'bold 16px "PingFang TC",sans-serif';
@@ -14743,7 +15552,7 @@ function mjRender(ctx){
   });
 
   // 分數列（窄螢幕留白，資訊已在面板標題）
-  if(!L.narrow){
+  if(!L.narrow && !isPatientVisualCueMode()){
   ctx.save();
   ctx.fillStyle = 'rgba(255,255,255,0.92)';
   rrPath(ctx, cw - 274, ch*0.315, 262, 34, 12); ctx.fill();
@@ -14815,13 +15624,24 @@ function cardsNewBoard(newSuit){
   }
   const cw = gameCanvas.width, ch = gameCanvas.height;
   const narrow = cw < 700;
-  const cols = isLevel4Tabletop() ? 4 : (narrow ? 2 : 3);
+  const level5VerticalFlow = isPublicLevel5VerticalFlow();
+  const cols = isLevel4Tabletop() ? 4
+    : (level5VerticalFlow ? Math.min(narrow ? 3 : cfg.count, cfg.count) : (narrow ? 2 : 3));
   const rows = Math.ceil(cfg.count / cols);
-  const cardW = isLevel4Tabletop()
+  const patientCards = isPatientVisualCueMode();
+  const availableW = level5VerticalFlow ? cw * 0.88 : (patientCards ? cw * 0.66 : cw);
+  const top = ch * (isLevel4Tabletop() ? 0.68
+    : (level5VerticalFlow ? 0.59 : (isPatientVisualCueMode() ? 0.27 : (narrow ? 0.44 : 0.39))));
+  const bottom = ch * (isLevel4Tabletop() ? 0.91 : (level5VerticalFlow ? 0.94 : 0.92));
+  let cardW = isLevel4Tabletop()
     ? Math.max(84, Math.min(142, (cw - 72) / 4))
     : narrow
-    ? Math.max(108, Math.min(142, (cw - 54) / cols))
-    : Math.max(112, Math.min(158, (cw - 96) / cols));
+    ? Math.max(118, Math.min(patientCards?172:142, (availableW - 34) / cols - 14))
+    : Math.max(132, Math.min(patientCards?184:158, (availableW - 48) / cols - 16));
+  if(level5VerticalFlow){
+    const maxCardHeight = Math.max(72, (bottom-top)/rows - 14);
+    cardW = Math.min(cardW, maxCardHeight * CARD_ATLAS.cw / CARD_ATLAS.ch);
+  }
   const cardH = cardW * CARD_ATLAS.ch / CARD_ATLAS.cw;
   const field = [];
   const suits = [];
@@ -14831,15 +15651,18 @@ function cardsNewBoard(newSuit){
   for(let i=suits.length-1;i>0;i--){
     const j = (Math.random()*(i+1))|0; [suits[i], suits[j]] = [suits[j], suits[i]];
   }
-  const top = ch * (isLevel4Tabletop() ? 0.68 : (narrow ? 0.44 : 0.39));
-  const bottom = ch * (isLevel4Tabletop() ? 0.91 : 0.92);
   const rowH = (bottom - top) / rows;
   const place = (suit, index)=>{
     const rank = CARD_RANKS[(Math.random()*CARD_RANKS.length)|0];
     const row = Math.floor(index / cols), col = index % cols;
     const rowCount = Math.min(cols, cfg.count - row*cols);
-    const x = cw/2 + (col - (rowCount-1)/2) *
-      Math.min(cardW*1.12, cw*(isLevel4Tabletop() ? 0.22 : 0.18));
+    const fieldCentreX = level5VerticalFlow
+      ? cw*0.50
+      : patientCards
+      ? cw*(affectedSideSign()>0?.37:.63)
+      : cw/2;
+    const x = fieldCentreX + (col - (rowCount-1)/2) *
+      (patientCards ? cardW*1.18 : Math.min(cardW*1.12, cw*(isLevel4Tabletop() ? 0.22 : 0.18)));
     const y = top + rowH*(row+0.5);
     field.push({ id:'c' + (cards.idSeq++), suit, rank,
       x, y, r:cardW*0.54, rot:0, gone:false, w:cardW, h:cardH });
@@ -14852,13 +15675,18 @@ function cardsNewBoard(newSuit){
   speakCantonese('新一輪。請收集' + CARD_SUIT_NAME[cards.suit] + '，共' + cards.need + '張。');
 }
 function cardsPanel(){
+  updatePatientGameInstruction();
   const cfg = cards.cfg();
   const bonusLeft = cfg.bonus ? Math.max(0, Math.ceil((cards.bonusEndsAt - nowMs())/1000)) : 0;
   advSetPanel({
     stepNo:'Tier ' + cfg.tier + (cfg.bonus ? ' · 剩 ' + bonusLeft + ' 秒' : '') +
       ' · 連續正確 ' + cards.combo + ' 次',
-    text:'收集 ' + CARD_SUIT_NAME[cards.suit] + ' ' + CARD_SUIT_SYM[cards.suit] +
-      '：' + cards.got + ' / ' + cards.need,
+    text:isPatientVisualCueMode()
+      ? '拿起' + CARD_SUIT_NAME[cards.suit] + '牌，放到' +
+        (isPublicLevel5VerticalFlow() ? '上方收牌區。'
+          : (affectedSideSign() > 0 ? '右邊' : '左邊') + '收牌區。')
+      : '收集 ' + CARD_SUIT_NAME[cards.suit] + ' ' + CARD_SUIT_SYM[cards.suit] +
+        '：' + cards.got + ' / ' + cards.need,
     goal: cards.msg || (isLevel4Tabletop()
       ? '在牌上停住，沿中線向前滑，再在放牌區停住。'
       : (state.level === '67'
@@ -14963,14 +15791,15 @@ function cardsUpdate(){
 function cardsRender(ctx){
   const cw = gameCanvas.width, ch = gameCanvas.height;
   ctx.save();
-  ctx.fillStyle = 'rgba(24,66,48,0.80)';
-  rrPath(ctx, 8, ch*0.30, cw-16, ch*0.66, 20); ctx.fill();
+  ctx.fillStyle = isPatientVisualCueMode() ? '#184230' : 'rgba(24,66,48,0.80)';
+  if(isPatientVisualCueMode()) ctx.fillRect(0,0,cw,ch);
+  else { rrPath(ctx, 8, ch*0.30, cw-16, ch*0.66, 20); ctx.fill(); }
   ctx.restore();
   drawLevel4MidlineGuide(ctx);
 
   // 目標花色大標示
   ctx.save();
-  const chipY = ch * (advNarrow() ? 0.395 : 0.315);
+  const chipY = ch * (isPatientVisualCueMode() ? 0.17 : (advNarrow() ? 0.395 : 0.315));
   ctx.fillStyle = 'rgba(255,255,255,0.95)';
   rrPath(ctx, cw/2 - 118, chipY, 236, 44, 14); ctx.fill();
   ctx.fillStyle = CARD_SUIT_COLOR[cards.suit];
@@ -15055,17 +15884,29 @@ function laundrySetup(){
   const n = laundry.colors.length;
   const narrow = cw < 700;
   const sideRight = affectedSideSign() > 0;
+  const patientLarge = isPatientVisualCueMode();
+  const level5VerticalFlow = isPublicLevel5VerticalFlow();
   const cols = Math.min(2, n);
   const rows = Math.ceil(n / cols);
   const sideHalf = isLevel4Tabletop() ? cw * 0.66 : cw * 0.48;
-  const bw = Math.min(narrow ? 176 : 230, sideHalf / cols - 10);
-  const bh = Math.min(narrow ? ch*0.12 : ch*0.18, bw*0.72);
+  const bw = patientLarge
+    ? Math.min(narrow ? 270 : 350, cw/cols*.52)
+    : Math.min(narrow ? 176 : 230, sideHalf / cols - 10);
+  let bh = patientLarge ? Math.min(ch*.27,bw*.72)
+    : Math.min(narrow ? ch*0.12 : ch*0.18, bw*0.72);
+  if(level5VerticalFlow && rows > 1) bh = Math.min(bh, ch*.14);
+  const basketTop = ch*.25;
+  const basketRowGap = bh + Math.max(12,ch*.02);
   laundry.baskets = laundry.colors.map((c, i)=>({
     id:'b' + c, color:c,
-    x: (isLevel4Tabletop() ? cw*0.50 : (sideRight ? cw*0.76 : cw*0.24)) +
-      ((i%cols) - (Math.min(cols,n-Math.floor(i/cols)*cols)-1)/2) * Math.min(bw*1.06, cw*0.22),
+    x: patientLarge
+      ? cw*(0.30+(i%cols)*0.40)
+      : (isLevel4Tabletop() ? cw*0.50 : (sideRight ? cw*0.76 : cw*0.24)) +
+        ((i%cols) - (Math.min(cols,n-Math.floor(i/cols)*cols)-1)/2) * Math.min(bw*1.06, cw*0.22),
     y: isLevel4Tabletop()
       ? ch*(0.42 + Math.floor(i/cols)*0.15)
+      : level5VerticalFlow ? basketTop+Math.floor(i/cols)*basketRowGap
+      : patientLarge ? ch*(0.76+Math.floor(i/cols)*0.16)
       : rows > 1
       ? ch*(0.74 + Math.floor(i/cols)*0.15)
       : ch*0.84,
@@ -15081,8 +15922,12 @@ function laundryRefill(){
   const cfg = laundryConfig(laundry.tier);
   const cw = gameCanvas.width, ch = gameCanvas.height;
   const narrow = cw < 700;
-  const size = Math.max(narrow ? 96 : 110,
-    Math.min(narrow ? 132 : 170, Math.min(cw, ch) * 0.22));
+  const patientLarge = isPatientVisualCueMode();
+  const level5VerticalFlow = isPublicLevel5VerticalFlow();
+  const size = patientLarge
+    ? Math.max(narrow?176:210,Math.min(narrow?230:280,Math.min(cw,ch)*.34))
+    : Math.max(narrow ? 96 : 110,
+      Math.min(narrow ? 132 : 170, Math.min(cw, ch) * 0.22));
   const types = GARMENT_TYPES.slice(0, cfg.types);
   const cols = narrow ? 2 : Math.min(4, cfg.items);
   const rows = Math.ceil(cfg.items / cols);
@@ -15090,9 +15935,12 @@ function laundryRefill(){
     const row = Math.floor(index / cols), col = index % cols;
     const rowCount = Math.min(cols, cfg.items-row*cols);
     // 衣物由中線附近開始；運送方向只向患側外下方。
-    const x = cw/2 + (col-(rowCount-1)/2) * Math.min(size*1.05, cw*0.16);
-    const top = ch*(isLevel4Tabletop() ? 0.69 : (narrow ? 0.42 : 0.40));
-    const bottom = ch*(isLevel4Tabletop() ? 0.92 : (narrow ? 0.65 : 0.68));
+    const x = cw/2 + (col-(rowCount-1)/2) *
+      Math.min(size*(patientLarge?1.35:1.05),cw*(patientLarge?.25:.16));
+    const top = ch*(isLevel4Tabletop() ? 0.69
+      : (level5VerticalFlow ? 0.62 : (patientLarge?0.30:(narrow ? 0.42 : 0.40))));
+    const bottom = ch*(isLevel4Tabletop() ? 0.92
+      : (level5VerticalFlow ? 0.91 : (patientLarge?0.53:(narrow ? 0.65 : 0.68))));
     const y = top + (bottom-top)*(row+0.5)/rows;
     return { x, y };
   };
@@ -15115,6 +15963,7 @@ function laundryRefill(){
   }
 }
 function laundryPanel(){
+  updatePatientGameInstruction();
   const nextAt = [4,8,12,null][laundry.tier - 1];
   advSetPanel({
     stepNo:'Tier ' + laundry.tier + ' · ' + laundry.colors.length + ' 種顏色',
@@ -15210,11 +16059,12 @@ function laundryUpdate(){
 function laundryRender(ctx){
   const cw = gameCanvas.width, ch = gameCanvas.height;
   ctx.save();
-  const g0 = ctx.createLinearGradient(0, ch*0.3, 0, ch);
+  const g0 = ctx.createLinearGradient(0, 0, 0, ch);
   g0.addColorStop(0, 'rgba(255,255,255,0.62)');
   g0.addColorStop(1, 'rgba(228,224,214,0.92)');
   ctx.fillStyle = g0;
-  rrPath(ctx, 8, ch*0.30, cw-16, ch*0.68, 20); ctx.fill();
+  if(isPatientVisualCueMode()) ctx.fillRect(0,0,cw,ch);
+  else { rrPath(ctx, 8, ch*0.30, cw-16, ch*0.68, 20); ctx.fill(); }
   ctx.restore();
   drawLevel4MidlineGuide(ctx);
 
@@ -15322,21 +16172,29 @@ function flowersSetup(){
     ? Math.min(gap*1.04, portrait ? 102 : 132)
     : Math.min(gap*0.94, portrait ? 92 : 120);
   const rowY = ch - size*0.62 - 8;
+  const trayTop = rowY - size*0.62;
   flowers.palette = batch.map((k, i)=>({
     id:'pal' + (flowers.palettePage*FLOWERS_PER_PAGE+i), kind:k.key, name:k.name,
     x: cw/2 + (i - (FLOWERS_PER_PAGE-1)/2) * gap,
     y: rowY,
     r: size*0.50, size,
   }));
-  const vaseH = Math.min(ch*(portrait ? 0.34 : 0.42), 400);
+  const vaseH = patientLarge
+    ? ch*0.25
+    : Math.min(ch*(portrait ? 0.34 : 0.42), 400);
   flowers.layout = {
-    vase:{ x: cw*0.5, y: ch - size*1.30 - vaseH*0.5, w: vaseH*0.68, h: vaseH },
-    size, trayTop: rowY - size*0.62,
+    vase:{
+      x:cw*0.5, y:(isPublicLevel5VerticalFlow() || (isLevel6()&&state.theme==='flowers')) ? ch*0.53
+        : (patientLarge ? trayTop-vaseH*0.5 : ch-size*1.30-vaseH*0.5),
+      w:patientLarge?cw:vaseH*0.68, h:vaseH,
+    },
+    size, trayTop,
   };
   carrier.reset();
   flowersPanel();
 }
 function flowersPanel(){
+  updatePatientGameInstruction();
   advSetPanel({
     stepNo:'自由創作 · 已插入 ' + flowers.placed.length + ' 枝',
     text:'把花材放到花瓶口',
@@ -15395,13 +16253,18 @@ function flowerSnapToVase(p, vase){
 
 function flowersUpdate(){
   const L = flowers.layout || (flowersSetup(), flowers.layout);
-  const items = flowers.palette.concat(flowers.placed.map(p=>({
-    id:p.id, x:p.x, y:p.y-p.size*p.scale*0.38,
-    r:Math.max(46, p.size*p.scale*0.30), placed:true,
-  })));
+  const items = flowers.palette.map(p=>carrier.heldId===p.id
+    ? {...p,x:cursorX,y:cursorY}
+    : p).concat(flowers.placed.map(p=>({
+      id:p.id,
+      x:carrier.heldId===p.id?cursorX:p.x,
+      y:carrier.heldId===p.id?cursorY:p.y-p.size*p.scale*0.38,
+      r:Math.max(46, p.size*p.scale*0.30), placed:true,
+    })));
   const zones = [flowerVaseZone(L.vase)];
   const ev = carrier.poll(items, zones);
   if(ev.grab){
+    if(isLevel6()) grabCount++;
     const placedIdx = flowers.placed.findIndex(x=>x.id === ev.grab);
     const p = placedIdx >= 0 ? flowers.placed[placedIdx] : flowers.palette.find(x=>x.id === ev.grab);
     if(placedIdx >= 0){
@@ -15426,7 +16289,8 @@ function flowersUpdate(){
         flowerSnapToVase(existing, vase);
         flowers.sel = placedIdx;
         flowers.msg = '已調整' + existing.name + '的位置。';
-        correctCount++; grabCount++;
+        correctCount++;
+        if(!isLevel6()) grabCount++;
         updateHUD();
       } else {
         const item = {
@@ -15436,7 +16300,8 @@ function flowersUpdate(){
         flowerSnapToVase(item, vase);
         flowers.placed.push(item);
         flowers.sel = flowers.placed.length - 1;
-        correctCount++; grabCount++;
+        correctCount++;
+        if(!isLevel6()) grabCount++;
         updateHUD();
         rewardSmall({
           achievement:'已插入 ' + p.name,
@@ -15453,11 +16318,13 @@ function flowersUpdate(){
       existing.y = flowers.moveOrigin.y;
       existing.rot = flowers.moveOrigin.rot;
       flowers.msg = '請把花材放回花瓶口。';
-      totalWrong++; grabCount++;
+      totalWrong++;
+      if(!isLevel6()) grabCount++;
       updateHUD();
     } else if(p){
       flowers.msg = '未放到花瓶口，請再試一次。';
-      totalWrong++; grabCount++;
+      totalWrong++;
+      if(!isLevel6()) grabCount++;
       updateHUD();
       speakCantonese('請將花材放到花瓶口。');
     }
@@ -15484,7 +16351,18 @@ function drawVaseScene(ctx, L, opts){
       ctx.stroke(); ctx.restore();
     }
   });
-  drawSprite(ctx, advImg('v75_vase'), vase.x, vase.y, vase.h, { shadow:true });
+  if(isPatientVisualCueMode()){
+    const pot = advImg('v77_wide_pot');
+    if(pot && pot.complete && pot.naturalWidth){
+      ctx.save();
+      ctx.shadowColor = 'rgba(0,0,0,0.28)';
+      ctx.shadowBlur = 14; ctx.shadowOffsetY = 6;
+      ctx.drawImage(pot, vase.x-vase.w*0.5, vase.y-vase.h*0.5, vase.w, vase.h);
+      ctx.restore();
+    }
+  } else {
+    drawSprite(ctx, advImg('v75_vase'), vase.x, vase.y, vase.h, { shadow:true });
+  }
   if(o.name){
     ctx.save();
     ctx.font = 'bold ' + Math.round(vase.h*0.14) + 'px "PingFang TC","Noto Sans TC",serif';
@@ -15541,16 +16419,20 @@ function flowersRender(ctx){
       flowers.placed.find(x=>x.id === carrier.heldId);
     if(p){
       const s = p.size*(p.scale || 1);
-      drawSpriteBottom(ctx, advImg(p.kind), cursorX, cursorY+s*0.38, s, p.rot || 0, 0.94);
+      const visualPoint=publicLevel6HeldDisplayPoint(cursorX,cursorY,Math.max(46,s*.30));
+      drawSpriteBottom(ctx, advImg(p.kind), visualPoint.x, visualPoint.y+s*0.38,
+        s, p.rot || 0, 0.96);
     }
   }
 
-  ctx.save();
-  ctx.fillStyle = '#12564a';
-  ctx.font = 'bold 15px "PingFang TC","Noto Sans TC",sans-serif';
-  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-  ctx.fillText('花瓶', L.vase.x, L.vase.y + L.vase.h*0.62);
-  ctx.restore();
+  if(!isPatientVisualCueMode()){
+    ctx.save();
+    ctx.fillStyle = '#12564a';
+    ctx.font = 'bold 15px "PingFang TC","Noto Sans TC",sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText('花瓶', L.vase.x, L.vase.y + L.vase.h*0.62);
+    ctx.restore();
+  }
 
   advDrawCursor(ctx, carrier.pct);
   advDrawHeldReleasePrompt(ctx, carrier.heldId);
@@ -15723,15 +16605,18 @@ function advDrawCursor(ctx, pct){
   ctx.save();
   if(isGraspStyleMode()){
     if(isPatientVisualCueMode()){
-      const handEmoji = isGrasping ? '✊' : '✋';
-      const handSize = Math.max(64, Math.min(94, Math.min(gameCanvas.width, gameCanvas.height) * 0.105));
-      ctx.beginPath(); ctx.arc(cursorX, cursorY, handSize * 0.52, 0, Math.PI*2);
-      ctx.fillStyle = isGrasping ? 'rgba(255,223,163,.88)' : 'rgba(255,255,255,.82)';
-      ctx.fill();
-      ctx.lineWidth = 5; ctx.strokeStyle = isGrasping ? '#C05B22' : '#0A675D'; ctx.stroke();
-      ctx.font = `${Math.round(handSize)}px "Apple Color Emoji","Segoe UI Emoji",sans-serif`;
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(handEmoji, cursorX, cursorY + handSize * 0.03);
+      const handEmoji = isGrasping ? '✊🏻' : '✋🏻';
+      const closedHandSize=Math.max(210,Math.min(280,
+        Math.min(gameCanvas.width,gameCanvas.height)*.27));
+      const handSize=isGrasping ? closedHandSize : closedHandSize*1.5;
+      if(isLevel6() && isGrasping){
+        drawPublicLevel6ClosedPinchCursor(ctx,cursorX,cursorY,.82);
+      }else{
+        ctx.globalAlpha=.68;
+        ctx.font = `${Math.round(handSize)}px "Apple Color Emoji","Segoe UI Emoji",sans-serif`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(handEmoji, cursorX, cursorY + handSize * 0.03);
+      }
     } else {
       // Preserve the pre-v76 research grasp/pinch cursor exactly.
       ctx.beginPath(); ctx.arc(cursorX, cursorY, isGrasping ? 28 : 30, 0, Math.PI*2);
@@ -15789,7 +16674,9 @@ function advInit(){
   cook.active = cards.active = laundry.active = flowers.active = mj.active = false;
   promptRulesEnabled = false;
   setPromptSlot('none');
-  document.getElementById('statusBar').textContent = '';
+  const statusBar = document.getElementById('statusBar');
+  statusBar.textContent = '';
+  delete statusBar.dataset.actionRenderKey;
 
   if(advCurrent === 'cooking'){
     if(!themeAvailableForLevel('cooking')){
@@ -16244,6 +17131,32 @@ let qaVirtualSecAccum = 0;
 
 // QA-only：不需相機直接開局，並可注入虛擬手部位置
 window.__qa = {
+  level5LayoutProbe(width,height){
+    state.level='5'; state.gameType='grasp'; state.qaMode=true;
+    research.active=false;
+    gameCanvas.width=Math.max(1,Number(width)||390);
+    gameCanvas.height=Math.max(1,Number(height)||844);
+    const box=item=>({left:item.x-item.w/2,right:item.x+item.w/2,
+      top:item.y-item.h/2,bottom:item.y+item.h/2});
+
+    state.theme='cards'; cards.tierIdx=2; cardsNewBoard(false);
+    const cardBoxes=cards.field.map(box);
+
+    state.theme='mahjong';
+    mj.hand=Array.from({length:14},(_,i)=>String(i));
+    mj.groups=Array.from({length:3},(_,i)=>({
+      id:'layout-'+i,tiles:['1p','2p','3p'],gone:false,
+    }));
+    const mahjongBoxes=mjLayout().groups.map(box);
+
+    state.theme='dimsum'; setupTargets();
+    const steamerBoxes=targets.map(box);
+
+    state.theme='laundry'; laundry.tier=4; laundrySetup();
+    const laundryBoxes=laundry.baskets.map(box);
+    return {width:gameCanvas.width,height:gameCanvas.height,
+      cardBoxes,mahjongBoxes,steamerBoxes,laundryBoxes};
+  },
   startResearch(opts){
     opts = opts || {};
     research.active = true; research.participantId = opts.participantId || 'PTEST';
@@ -16344,6 +17257,75 @@ window.__qa = {
     if(!task||state.level!=='67') throw new Error('Unknown Level 6 task: ' + taskId);
     lockLevel6Activity(task.theme);
     return { level6Task:state.level6Task, theme:state.theme, gameType:state.gameType };
+  },
+  level6ChopstickFlexProbe(indexExtension,middleExtension,thumbAtTips,previous=false){
+    if(!isLevel6Chopsticks()) throw new Error('Chopstick flex probe requires public Level 6 chopsticks');
+    const lm=Array.from({length:21},()=>({x:.5,y:.5,z:0}));
+    lm[0]={x:.42,y:.72,z:0};lm[5]={x:.43,y:.55,z:0};
+    lm[9]={x:.52,y:.53,z:0};lm[17]={x:.62,y:.58,z:0};
+    const place=(mcp,tip,extension)=>{
+      const base=lm[mcp],wrist=lm[0];
+      lm[tip]={x:wrist.x+(base.x-wrist.x)*Number(extension),
+        y:wrist.y+(base.y-wrist.y)*Number(extension),z:0};
+    };
+    place(5,8,indexExtension);place(9,12,middleExtension);
+    lm[4]=thumbAtTips
+      ? {x:(lm[8].x+lm[12].x)/2,y:(lm[8].y+lm[12].y)/2,z:0}
+      : {x:.88,y:.20,z:0};
+    return computeToolPinchState(lm,!!previous);
+  },
+  resetLevel6ToolAdapt(){
+    resetToolPinchAdapt();
+    return {aperture:toolPinchAdapt.thresholds,flex:chopstickFlexAdapt.thresholds};
+  },
+  level6ToolAdaptState(){
+    return {
+      aperture:toolPinchAdapt.thresholds?{...toolPinchAdapt.thresholds}:null,
+      flex:chopstickFlexAdapt.thresholds?{...chopstickFlexAdapt.thresholds}:null,
+    };
+  },
+  publicPatientVoiceProbe(spec={}){
+    const priorResearch=research.active;
+    if(spec.researchActive!==undefined) research.active=!!spec.researchActive;
+    try{
+      if(spec.reset) resetPublicPatientVoiceGuideCycle(!!spec.resetCooldown);
+      if(Number.isFinite(Number(spec.stepMs))) timeOffsetMs+=Number(spec.stepMs);
+      const item={
+        id:spec.itemId||'qa-item',
+        y:Number.isFinite(Number(spec.itemY))?Number(spec.itemY):gameCanvas.height*.76,
+        type:spec.itemType||'qa',
+        targetType:spec.targetType||spec.itemType||'qa',
+      };
+      const zones=Number.isFinite(Number(spec.targetY))
+        ? [{id:'qa-zone',type:spec.targetType||spec.itemType||'qa',
+            x:gameCanvas.width*.5,y:Number(spec.targetY),
+            w:gameCanvas.width*.24,h:gameCanvas.height*.18}]
+        : [];
+      const phrase=updatePublicPatientVoiceGuide({
+        phase:spec.phase||'contact',item,itemId:item.id,zones,
+        touching:spec.touching!==false,
+        openForPickup:spec.openForPickup!==false,
+        onTarget:!!spec.onTarget,stillGrasped:spec.stillGrasped!==false,
+        cursorY:Number.isFinite(Number(spec.cursorY))?Number(spec.cursorY):item.y,
+        silent:true,
+      });
+      return {
+        phrase,lastPhrase:publicPatientVoiceGuide.lastPhrase,
+        spokenCount:publicPatientVoiceGuide.spoken.size,
+        holdId:publicPatientVoiceGuide.holdId,
+        targetAbove:publicPatientVoiceGuide.targetAbove,
+        cooldownMs:PUBLIC_PATIENT_VOICE_COOLDOWN_MS,
+        holdGraceMs:PUBLIC_PATIENT_VOICE_HOLD_GRACE_MS,
+      };
+    }finally{
+      research.active=priorResearch;
+    }
+  },
+  forceActionPrompt(main,detail=''){
+    setActionPrompt(String(main),String(detail));
+    const image=document.querySelector('#statusBar .action-hand-image');
+    return {cue:document.getElementById('statusBar')?.dataset.gestureCue||'',
+      image:image?.getAttribute('src')||null};
   },
   availableActivityThemes(level){ return availableThemeOrder(level || state.level); },
   selectShoulderExerciseMode(mode){
@@ -16634,13 +17616,17 @@ window.__qa = {
     return this.setLevel4Pose(pose);
   },
   level6ToolState(){
+    const advancedHeldId=usesAdvancedThemeModule()?carrier.heldId:null;
     return {
       level6Task:state.level6Task,gameType:state.gameType,
       affectedSide:activeAffectedSide(),handDetected,isGrasping,handOpenPrep,
       frameGeneration:qaFrameGeneration,
-      held:heldItem?heldItem.label:null,
-      heldPosition:heldItem?{x:heldItem.x,y:heldItem.y}:null,
+      held:heldItem?heldItem.label:(advancedHeldId||null),
+      heldPosition:heldItem?{x:heldItem.x,y:heldItem.y}:
+        (advancedHeldId?{x:cursorX,y:cursorY}:null),
       score,correctCount,grabCount,
+      carrier:{heldId:carrier.heldId,hoverId:carrier.hoverId,armed:carrier.armed,
+        openStart:carrier.openStart,graspStart:carrier.graspStart,graspId:carrier.graspId},
       gestureStabilizer:{...detectedGestureState},
       cursor:{x:cursorX,y:cursorY},
       shoulder:shoulderFlexionController?.snapshot()||null,
@@ -16855,6 +17841,19 @@ window.__qa = {
     },
   },
   level67Layout(){
+    if(advCurrent==='flowers' && flowers.active && flowers.layout){
+      const vaseZone=flowerVaseZone(flowers.layout.vase);
+      return {
+        level:state.level,theme:state.theme,advancedModule:'flowers',
+        canvas:{width:gameCanvas.width,height:gameCanvas.height},
+        targets:[{type:'flower',x:vaseZone.x,y:vaseZone.y,w:vaseZone.w,h:vaseZone.h}],
+        items:flowers.palette.map(p=>({type:'flower',x:p.x,y:p.y,r:p.r})),
+        dimsumOrder:null,laundryOrder:null,fridgeGame:null,
+        insideCanvas:flowers.palette.every(p=>p.x-p.r>=0&&p.x+p.r<=gameCanvas.width&&
+          p.y-p.r>=0&&p.y+p.r<=gameCanvas.height),
+        targetsDoNotOverlap:true,
+      };
+    }
     const activeFoods = foods.filter(f=>!f.removed);
     const targetsDoNotOverlap = targets.every((target, index)=>targets.slice(index + 1).every(other=>(
       target.x-target.w/2 >= other.x+other.w/2 ||
@@ -16949,7 +17948,7 @@ window.__qa = {
     },
     rest(){ startRest(); return { blocking:isSafetyBlocking(), paused:!!state.paused,
       restCount:sessionSafety.restCount,
-      body:(document.getElementById('pilotRestBody')||{}).textContent||'' }; },
+      body:(document.getElementById('sessionRestBody')||{}).textContent||'' }; },
     resumeRest(){ endRest(); return { blocking:isSafetyBlocking(), paused:!!state.paused,
       restTotalSec:sessionSafety.restTotalSec }; },
     stop(reason){ confirmStop(reason); return { screen:currentScreen,
@@ -17843,7 +18842,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v76-20260901-patient-visual-cues";
+  const LEVEL_APP_BUILD = "v78-20260901-patient-pinch-voice";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

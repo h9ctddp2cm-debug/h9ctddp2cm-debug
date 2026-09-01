@@ -286,6 +286,33 @@ test('outward endpoint scores once and return to midline rearms',()=>{
   assert.equal(result.state.targetHits,2);
 });
 
+test('patient display smoothing does not block a genuine fresh-frame midline rearm',()=>{
+  const controller=createController();
+  let generation=calibrate(controller);
+  let state;
+  for(let count=0;count<8;count++){
+    state=controller.update({
+      landmarks:pose('right','outward'),
+      affectedSide:'right',
+      patientAssist:true,
+      generation:generation++,
+    });
+  }
+  assert.equal(state.targetHits,1);
+  assert.equal(state.phase,'return');
+  for(let count=0;count<8;count++){
+    state=controller.update({
+      landmarks:pose('right','midline'),
+      affectedSide:'right',
+      patientAssist:true,
+      generation:generation++,
+    });
+  }
+  assert.equal(state.instantProgress,0);
+  assert.ok(state.progress>.20,'display position intentionally remains smoothed');
+  assert.equal(state.phase,'outward','measured midline return rearms after fresh endpoint frames');
+});
+
 test('Level 2 runtime has no second-hand, grasp, pickup, forward, circle, or elbow-calibration dependency',()=>{
   const branch=html.slice(html.indexOf('function updateLevel2LateralGame'),html.indexOf('/* Levels 3–4 are shoulder-flexion'));
   assert.doesNotMatch(branch,/grabCount\+\+|isGrasping\s*===\s*true|dwellStartTime\s*>|level4Reach|elbowAngle|circle|forward|pickup/i);

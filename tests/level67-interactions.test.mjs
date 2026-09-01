@@ -107,7 +107,7 @@ test('English Level 6 waiting prompt keeps the correct open-hand cue', async t =
       };
     });
     assert.equal(cue.cue, 'open', 'English waiting prompt must remain an open-hand cue');
-    assert.equal(cue.emoji, '✋');
+    assert.equal(cue.emoji, '✋🏻');
     assert.match(cue.text, /Align with camera/i);
   });
 });
@@ -458,7 +458,7 @@ test('Home clears safety overlays and result runtime, while Stop remains availab
       running: window.__qa.state().running,
       safetyPause: document.getElementById('safetyPauseOverlay').classList.contains('show'),
       stopConfirm: document.getElementById('stopConfirmOverlay').classList.contains('show'),
-      rest: document.getElementById('pilotRestOverlay').classList.contains('show'),
+      rest: document.getElementById('sessionRestOverlay').classList.contains('show'),
     }));
     assert.deepEqual(afterResultHome, {
       screen: 'level', running: false, safetyPause: false, stopConfirm: false, rest: false,

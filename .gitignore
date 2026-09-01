@@ -16,3 +16,11 @@ qa_*/
 *_handoff_*.md
 *_audit_*.md
 progress_repaired_*.md
+
+# One-off local browser probes and preview captures. Keep the files for review,
+# but prevent temporary root-level evidence from being staged accidentally.
+/.tmp-*
+/.v77-*
+/preview_*.png
+/v77-*.png
+/*_local_report_*.md

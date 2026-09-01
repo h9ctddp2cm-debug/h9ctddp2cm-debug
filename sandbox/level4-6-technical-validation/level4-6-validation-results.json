@@ -1,32 +1,32 @@
 {
-  "generated_at": "2026-09-01T07:58:28.843Z",
+  "generated_at": "2026-09-01T14:32:40.757Z",
   "base_url": "http://127.0.0.1:4173",
   "scope": "Independent technical verification for FTHUE Levels 2–6",
   "limitation": "Not clinical validation; all six normal-flow Level 6 activities use fresh selected affected-hand tripod-pinch frames for open, light close, hand-position transport, and reopen. Shoulder and elbow motion are not interaction dependencies. The software does not identify physical tools or measure pinch/grip force.",
   "summary": {
     "total": 168,
-    "passed": 168,
-    "failed": 0,
+    "passed": 163,
+    "failed": 5,
     "by_level": {
       "2": {
-        "passed": 37,
-        "failed": 0
+        "passed": 36,
+        "failed": 1
       },
       "3": {
-        "passed": 22,
-        "failed": 0
+        "passed": 21,
+        "failed": 1
       },
       "4": {
-        "passed": 22,
-        "failed": 0
+        "passed": 21,
+        "failed": 1
       },
       "5": {
-        "passed": 41,
-        "failed": 0
+        "passed": 40,
+        "failed": 1
       },
       "6": {
-        "passed": 46,
-        "failed": 0
+        "passed": 45,
+        "failed": 1
       }
     }
   },
@@ -71,12 +71,12 @@
       "level": "3",
       "category": "launch matrix",
       "name": "tsuenwan launches with the correct engine",
-      "passed": true,
+      "passed": false,
       "details": {
         "screen": "game",
         "engine": "dwell",
         "non_overlapping_items": true,
-        "targets_visible": true
+        "targets_visible": false
       }
     },
     {
@@ -155,12 +155,12 @@
       "level": "4",
       "category": "launch matrix",
       "name": "tsuenwan launches with the correct engine",
-      "passed": true,
+      "passed": false,
       "details": {
         "screen": "game",
         "engine": "dwell",
         "non_overlapping_items": true,
-        "targets_visible": true
+        "targets_visible": false
       }
     },
     {
@@ -227,12 +227,35 @@
       "level": "5",
       "category": "launch matrix",
       "name": "dimsum launches with the correct engine",
-      "passed": true,
+      "passed": false,
       "details": {
         "screen": "game",
         "engine": "grasp",
-        "non_overlapping_items": true,
-        "targets_visible": true
+        "non_overlapping_items": false,
+        "targets_visible": true,
+        "items": [
+          {
+            "label": "叉燒包",
+            "type": "charsiu",
+            "x": 246,
+            "y": 590.4,
+            "r": 164
+          },
+          {
+            "label": "叉燒包",
+            "type": "charsiu",
+            "x": 661.1182288314837,
+            "y": 647.350255092104,
+            "r": 164
+          },
+          {
+            "label": "叉燒包",
+            "type": "charsiu",
+            "x": 246,
+            "y": 584.9333333333333,
+            "r": 164
+          }
+        ]
       }
     },
     {
@@ -311,12 +334,12 @@
       "level": "6",
       "category": "launch matrix",
       "name": "peg_laundry launches with the correct engine",
-      "passed": true,
+      "passed": false,
       "details": {
         "screen": "game",
         "engine": "pinch",
         "non_overlapping_items": true,
-        "targets_visible": true
+        "targets_visible": false
       }
     },
     {
@@ -413,15 +436,15 @@
           },
           "items": [
             {
-              "label": "麵",
-              "type": "noodle",
+              "label": "青菜",
+              "type": "veg",
               "x": 259.6,
               "y": 442.8,
               "r": 115.99999999999999
             },
             {
-              "label": "青菜",
-              "type": "veg",
+              "label": "麵",
+              "type": "noodle",
               "x": 590,
               "y": 442.8,
               "r": 115.99999999999999
@@ -429,8 +452,8 @@
             {
               "label": "麵",
               "type": "noodle",
-              "x": 920.4,
-              "y": 442.8,
+              "x": 824.9977781045765,
+              "y": 306.88901970196133,
               "r": 115.99999999999999
             }
           ],
@@ -489,15 +512,15 @@
           },
           "items": [
             {
-              "label": "麵",
-              "type": "noodle",
+              "label": "青菜",
+              "type": "veg",
               "x": 259.6,
               "y": 442.8,
               "r": 115.99999999999999
             },
             {
-              "label": "青菜",
-              "type": "veg",
+              "label": "麵",
+              "type": "noodle",
               "x": 590,
               "y": 442.8,
               "r": 115.99999999999999
@@ -505,8 +528,8 @@
             {
               "label": "麵",
               "type": "noodle",
-              "x": 920.4,
-              "y": 442.8,
+              "x": 824.9977781045765,
+              "y": 306.88901970196133,
               "r": 115.99999999999999
             }
           ],
@@ -563,47 +586,8 @@
             "safetyAckLevel": "",
             "safetyAckAtIso": ""
           },
-          "items": [
-            {
-              "label": "紅花",
-              "type": "redflower",
-              "x": 259.6,
-              "y": 442.8,
-              "r": 115.99999999999999
-            },
-            {
-              "label": "黃花",
-              "type": "yellowflower",
-              "x": 590,
-              "y": 442.8,
-              "r": 115.99999999999999
-            },
-            {
-              "label": "黃花",
-              "type": "yellowflower",
-              "x": 920.4,
-              "y": 442.8,
-              "r": 115.99999999999999
-            }
-          ],
-          "targets": [
-            {
-              "label": "紅色花瓶",
-              "type": "redflower",
-              "x": 695.6000000000001,
-              "y": 708.504,
-              "w": 301.59999999999997,
-              "h": 186.992
-            },
-            {
-              "label": "黃色花瓶",
-              "type": "yellowflower",
-              "x": 1015.2,
-              "y": 708.504,
-              "w": 301.59999999999997,
-              "h": 186.992
-            }
-          ]
+          "items": [],
+          "targets": []
         },
         "title": "插花",
         "instructions": "FTHUE Level 6 · 插花 · 患手三點捏握功能任務",
@@ -652,47 +636,8 @@
             "safetyAckLevel": "",
             "safetyAckAtIso": ""
           },
-          "items": [
-            {
-              "label": "紅花",
-              "type": "redflower",
-              "x": 259.6,
-              "y": 442.8,
-              "r": 115.99999999999999
-            },
-            {
-              "label": "黃花",
-              "type": "yellowflower",
-              "x": 590,
-              "y": 442.8,
-              "r": 115.99999999999999
-            },
-            {
-              "label": "黃花",
-              "type": "yellowflower",
-              "x": 920.4,
-              "y": 442.8,
-              "r": 115.99999999999999
-            }
-          ],
-          "targets": [
-            {
-              "label": "紅色花瓶",
-              "type": "redflower",
-              "x": 695.6000000000001,
-              "y": 708.504,
-              "w": 301.59999999999997,
-              "h": 186.992
-            },
-            {
-              "label": "黃色花瓶",
-              "type": "yellowflower",
-              "x": 1015.2,
-              "y": 708.504,
-              "w": 301.59999999999997,
-              "h": 186.992
-            }
-          ]
+          "items": [],
+          "targets": []
         },
         "afterSide": {
           "screen": "start",
@@ -728,47 +673,8 @@
             "safetyAckLevel": "",
             "safetyAckAtIso": ""
           },
-          "items": [
-            {
-              "label": "紅花",
-              "type": "redflower",
-              "x": 259.6,
-              "y": 442.8,
-              "r": 115.99999999999999
-            },
-            {
-              "label": "黃花",
-              "type": "yellowflower",
-              "x": 590,
-              "y": 442.8,
-              "r": 115.99999999999999
-            },
-            {
-              "label": "黃花",
-              "type": "yellowflower",
-              "x": 920.4,
-              "y": 442.8,
-              "r": 115.99999999999999
-            }
-          ],
-          "targets": [
-            {
-              "label": "紅色花瓶",
-              "type": "redflower",
-              "x": 695.6000000000001,
-              "y": 708.504,
-              "w": 301.59999999999997,
-              "h": 186.992
-            },
-            {
-              "label": "黃色花瓶",
-              "type": "yellowflower",
-              "x": 1015.2,
-              "y": 708.504,
-              "w": 301.59999999999997,
-              "h": 186.992
-            }
-          ]
+          "items": [],
+          "targets": []
         },
         "launched": {
           "screen": "game",
@@ -806,8 +712,8 @@
           },
           "items": [
             {
-              "label": "燒賣",
-              "type": "chop_siumai",
+              "label": "蝦餃",
+              "type": "chop_hargau",
               "x": 259.6,
               "y": 442.8,
               "r": 115.99999999999999
@@ -815,15 +721,15 @@
             {
               "label": "牛肉球",
               "type": "chop_beefball",
-              "x": 920.4,
-              "y": 442.8,
+              "x": 709.6024893071183,
+              "y": 303.36903029213715,
               "r": 115.99999999999999
             },
             {
-              "label": "燒賣",
-              "type": "chop_siumai",
-              "x": 600.1238167938493,
-              "y": 378.7145055059027,
+              "label": "蝦餃",
+              "type": "chop_hargau",
+              "x": 445.8196464018505,
+              "y": 179.57691614739272,
               "r": 115.99999999999999
             }
           ],
@@ -887,8 +793,8 @@
           },
           "items": [
             {
-              "label": "燒賣",
-              "type": "chop_siumai",
+              "label": "蝦餃",
+              "type": "chop_hargau",
               "x": 259.6,
               "y": 442.8,
               "r": 115.99999999999999
@@ -896,15 +802,15 @@
             {
               "label": "牛肉球",
               "type": "chop_beefball",
-              "x": 920.4,
-              "y": 442.8,
+              "x": 709.6024893071183,
+              "y": 303.36903029213715,
               "r": 115.99999999999999
             },
             {
-              "label": "燒賣",
-              "type": "chop_siumai",
-              "x": 600.1238167938493,
-              "y": 378.7145055059027,
+              "label": "蝦餃",
+              "type": "chop_hargau",
+              "x": 445.8196464018505,
+              "y": 179.57691614739272,
               "r": 115.99999999999999
             }
           ],
@@ -955,8 +861,8 @@
           },
           "items": [
             {
-              "label": "燒賣",
-              "type": "chop_siumai",
+              "label": "蝦餃",
+              "type": "chop_hargau",
               "x": 259.6,
               "y": 442.8,
               "r": 115.99999999999999
@@ -964,15 +870,15 @@
             {
               "label": "牛肉球",
               "type": "chop_beefball",
-              "x": 920.4,
-              "y": 442.8,
+              "x": 709.6024893071183,
+              "y": 303.36903029213715,
               "r": 115.99999999999999
             },
             {
-              "label": "燒賣",
-              "type": "chop_siumai",
-              "x": 600.1238167938493,
-              "y": 378.7145055059027,
+              "label": "蝦餃",
+              "type": "chop_hargau",
+              "x": 445.8196464018505,
+              "y": 179.57691614739272,
               "r": 115.99999999999999
             }
           ],
@@ -1023,35 +929,35 @@
           },
           "items": [
             {
-              "label": "半截裙",
-              "type": "laundry_skirt",
-              "x": 590,
-              "y": 328,
-              "r": 115.50000000000001
+              "label": "牛仔褲",
+              "type": "laundry_jeans",
+              "x": 236,
+              "y": 639.6,
+              "r": 141.6
             },
             {
               "label": "牛仔褲",
               "type": "laundry_jeans",
-              "x": 944,
-              "y": 328,
-              "r": 115.50000000000001
+              "x": 542.8000000000001,
+              "y": 639.6,
+              "r": 141.6
             },
             {
-              "label": "襪",
-              "type": "laundry_socks",
-              "x": 236,
-              "y": 328,
-              "r": 115.50000000000001
+              "label": "底衫",
+              "type": "laundry_vest",
+              "x": 849.6,
+              "y": 639.6,
+              "r": 141.6
             }
           ],
           "targets": [
             {
               "label": "晾衫架",
               "type": "laundry_rack",
-              "x": 590,
-              "y": 650.176893453145,
-              "w": 542.8000000000001,
-              "h": 315.64621309370995
+              "x": 542.8000000000001,
+              "y": 319.79999999999995,
+              "w": 817.864017660044,
+              "h": 475.59999999999997
             }
           ]
         },
@@ -1104,35 +1010,35 @@
           },
           "items": [
             {
-              "label": "半截裙",
-              "type": "laundry_skirt",
-              "x": 590,
-              "y": 328,
-              "r": 115.50000000000001
+              "label": "牛仔褲",
+              "type": "laundry_jeans",
+              "x": 236,
+              "y": 639.6,
+              "r": 141.6
             },
             {
               "label": "牛仔褲",
               "type": "laundry_jeans",
-              "x": 944,
-              "y": 328,
-              "r": 115.50000000000001
+              "x": 542.8000000000001,
+              "y": 639.6,
+              "r": 141.6
             },
             {
-              "label": "襪",
-              "type": "laundry_socks",
-              "x": 236,
-              "y": 328,
-              "r": 115.50000000000001
+              "label": "底衫",
+              "type": "laundry_vest",
+              "x": 849.6,
+              "y": 639.6,
+              "r": 141.6
             }
           ],
           "targets": [
             {
               "label": "晾衫架",
               "type": "laundry_rack",
-              "x": 590,
-              "y": 650.176893453145,
-              "w": 542.8000000000001,
-              "h": 315.64621309370995
+              "x": 542.8000000000001,
+              "y": 319.79999999999995,
+              "w": 817.864017660044,
+              "h": 475.59999999999997
             }
           ]
         },
@@ -1172,35 +1078,35 @@
           },
           "items": [
             {
-              "label": "半截裙",
-              "type": "laundry_skirt",
-              "x": 590,
-              "y": 328,
-              "r": 115.50000000000001
+              "label": "牛仔褲",
+              "type": "laundry_jeans",
+              "x": 236,
+              "y": 639.6,
+              "r": 141.6
             },
             {
               "label": "牛仔褲",
               "type": "laundry_jeans",
-              "x": 944,
-              "y": 328,
-              "r": 115.50000000000001
+              "x": 542.8000000000001,
+              "y": 639.6,
+              "r": 141.6
             },
             {
-              "label": "襪",
-              "type": "laundry_socks",
-              "x": 236,
-              "y": 328,
-              "r": 115.50000000000001
+              "label": "底衫",
+              "type": "laundry_vest",
+              "x": 849.6,
+              "y": 639.6,
+              "r": 141.6
             }
           ],
           "targets": [
             {
               "label": "晾衫架",
               "type": "laundry_rack",
-              "x": 590,
-              "y": 650.176893453145,
-              "w": 542.8000000000001,
-              "h": 315.64621309370995
+              "x": 542.8000000000001,
+              "y": 319.79999999999995,
+              "w": 817.864017660044,
+              "h": 475.59999999999997
             }
           ]
         },
@@ -1240,24 +1146,24 @@
           },
           "items": [
             {
+              "label": "紅心",
+              "type": "heart",
+              "x": 259.6,
+              "y": 442.8,
+              "r": 115.99999999999999
+            },
+            {
               "label": "黑桃",
               "type": "spade",
-              "x": 259.6,
+              "x": 590,
               "y": 442.8,
               "r": 115.99999999999999
             },
             {
               "label": "紅心",
               "type": "heart",
-              "x": 590,
-              "y": 442.8,
-              "r": 115.99999999999999
-            },
-            {
-              "label": "黑桃",
-              "type": "spade",
-              "x": 920.4,
-              "y": 442.8,
+              "x": 756.9694153117908,
+              "y": 254.36721709981356,
               "r": 115.99999999999999
             }
           ],
@@ -1329,24 +1235,24 @@
           },
           "items": [
             {
+              "label": "紅心",
+              "type": "heart",
+              "x": 259.6,
+              "y": 442.8,
+              "r": 115.99999999999999
+            },
+            {
               "label": "黑桃",
               "type": "spade",
-              "x": 259.6,
+              "x": 590,
               "y": 442.8,
               "r": 115.99999999999999
             },
             {
               "label": "紅心",
               "type": "heart",
-              "x": 590,
-              "y": 442.8,
-              "r": 115.99999999999999
-            },
-            {
-              "label": "黑桃",
-              "type": "spade",
-              "x": 920.4,
-              "y": 442.8,
+              "x": 756.9694153117908,
+              "y": 254.36721709981356,
               "r": 115.99999999999999
             }
           ],
@@ -1405,24 +1311,24 @@
           },
           "items": [
             {
+              "label": "紅心",
+              "type": "heart",
+              "x": 259.6,
+              "y": 442.8,
+              "r": 115.99999999999999
+            },
+            {
               "label": "黑桃",
               "type": "spade",
-              "x": 259.6,
+              "x": 590,
               "y": 442.8,
               "r": 115.99999999999999
             },
             {
               "label": "紅心",
               "type": "heart",
-              "x": 590,
-              "y": 442.8,
-              "r": 115.99999999999999
-            },
-            {
-              "label": "黑桃",
-              "type": "spade",
-              "x": 920.4,
-              "y": 442.8,
+              "x": 756.9694153117908,
+              "y": 254.36721709981356,
               "r": 115.99999999999999
             }
           ],
@@ -1495,10 +1401,10 @@
               "r": 115.99999999999999
             },
             {
-              "label": "二筒",
-              "type": "yitung",
-              "x": 920.4,
-              "y": 442.8,
+              "label": "一筒",
+              "type": "yatung",
+              "x": 812.6746994829059,
+              "y": 302.4140559340559,
               "r": 115.99999999999999
             }
           ],
@@ -1584,10 +1490,10 @@
               "r": 115.99999999999999
             },
             {
-              "label": "二筒",
-              "type": "yitung",
-              "x": 920.4,
-              "y": 442.8,
+              "label": "一筒",
+              "type": "yatung",
+              "x": 812.6746994829059,
+              "y": 302.4140559340559,
               "r": 115.99999999999999
             }
           ],
@@ -1660,10 +1566,10 @@
               "r": 115.99999999999999
             },
             {
-              "label": "二筒",
-              "type": "yitung",
-              "x": 920.4,
-              "y": 442.8,
+              "label": "一筒",
+              "type": "yatung",
+              "x": 812.6746994829059,
+              "y": 302.4140559340559,
               "r": 115.99999999999999
             }
           ],
@@ -1729,17 +1635,17 @@
               "r": 115.99999999999999
             },
             {
-              "label": "青菜",
-              "type": "veg",
+              "label": "麵",
+              "type": "noodle",
               "x": 590,
               "y": 442.8,
               "r": 115.99999999999999
             },
             {
-              "label": "青菜",
-              "type": "veg",
-              "x": 920.4,
-              "y": 442.8,
+              "label": "麵",
+              "type": "noodle",
+              "x": 418.8452895145816,
+              "y": 239.24807302138123,
               "r": 115.99999999999999
             }
           ],
@@ -1788,15 +1694,23 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": "pal0",
+            "armed": true,
+            "openStart": 2499.5,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "pinch",
             "stable": false,
             "candidate": false,
-            "candidateAt": 7522
+            "candidateAt": 2984.8999996185303
           },
           "cursor": {
-            "x": 259.6,
-            "y": 442.8
+            "x": 102.66000000000008,
+            "y": 730.16
           },
           "shoulder": {
             "level": "67",
@@ -1829,6 +1743,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -1861,23 +1776,31 @@
           "isGrasping": true,
           "handOpenPrep": false,
           "frameGeneration": 10,
-          "held": "紅花",
+          "held": "pal0",
           "heldPosition": {
-            "x": 259.6,
-            "y": 442.8
+            "x": 102.66000000000008,
+            "y": 730.16
           },
           "score": 0,
           "correctCount": 0,
           "grabCount": 1,
+          "carrier": {
+            "heldId": "pal0",
+            "hoverId": "pal0",
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "pinch",
             "stable": true,
             "candidate": true,
-            "candidateAt": 8128.39999961853
+            "candidateAt": 3588.300000190735
           },
           "cursor": {
-            "x": 259.6,
-            "y": 442.8
+            "x": 102.66000000000008,
+            "y": 730.16
           },
           "shoulder": {
             "level": "67",
@@ -1910,6 +1833,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -1942,23 +1866,31 @@
           "isGrasping": true,
           "handOpenPrep": false,
           "frameGeneration": 40,
-          "held": "紅花",
+          "held": "pal0",
           "heldPosition": {
-            "x": 693.1293909654536,
-            "y": 706.9983791217543
+            "x": 587.647500981018,
+            "y": 354.42256644151286
           },
           "score": 0,
           "correctCount": 0,
           "grabCount": 1,
+          "carrier": {
+            "heldId": "pal0",
+            "hoverId": "pal0",
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "pinch",
             "stable": true,
             "candidate": true,
-            "candidateAt": 11742.89999961853
+            "candidateAt": 7194.89999961853
           },
           "cursor": {
-            "x": 693.1293909654536,
-            "y": 706.9983791217543
+            "x": 587.647500981018,
+            "y": 354.42256644151286
           },
           "shoulder": {
             "level": "67",
@@ -1991,6 +1923,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -2025,18 +1958,26 @@
           "frameGeneration": 48,
           "held": null,
           "heldPosition": null,
-          "score": 10,
+          "score": 0,
           "correctCount": 1,
           "grabCount": 1,
+          "carrier": {
+            "heldId": null,
+            "hoverId": "f1",
+            "armed": true,
+            "openStart": 7675.60000038147,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "pinch",
             "stable": false,
             "candidate": false,
-            "candidateAt": 12704.199999809265
+            "candidateAt": 8158.800000190735
           },
           "cursor": {
-            "x": 693.1293909654536,
-            "y": 706.9983791217543
+            "x": 587.647500981018,
+            "y": 354.42256644151286
           },
           "shoulder": {
             "level": "67",
@@ -2069,6 +2010,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -2094,11 +2036,11 @@
           }
         },
         "target": {
-          "type": "redflower",
-          "x": 695.6000000000001,
-          "y": 708.504,
-          "w": 301.59999999999997,
-          "h": 186.992
+          "type": "flower",
+          "x": 590,
+          "y": 352.6,
+          "w": 1239,
+          "h": 98.39999999999999
         }
       }
     },
@@ -2121,6 +2063,14 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": "pal3",
+            "armed": true,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "",
             "stable": false,
@@ -2162,6 +2112,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -2199,6 +2150,14 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": "pal3",
+            "armed": true,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "",
             "stable": false,
@@ -2240,6 +2199,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -2277,6 +2237,14 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": "pal3",
+            "armed": true,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "",
             "stable": false,
@@ -2318,6 +2286,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -2355,11 +2324,19 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": "pal3",
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "pinch",
             "stable": true,
             "candidate": true,
-            "candidateAt": 19635.199999809265
+            "candidateAt": 15045.39999961853
           },
           "cursor": {
             "x": 590,
@@ -2396,6 +2373,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -2433,6 +2411,14 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": "pal3",
+            "armed": true,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "",
             "stable": false,
@@ -2474,6 +2460,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -2511,6 +2498,14 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": "pal3",
+            "armed": true,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "",
             "stable": false,
@@ -2552,6 +2547,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -2597,15 +2593,23 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "pinch",
             "stable": false,
             "candidate": false,
-            "candidateAt": 22946.39999961853
+            "candidateAt": 18320.10000038147
           },
           "cursor": {
-            "x": 259.6,
-            "y": 442.8
+            "x": 575.1917789864501,
+            "y": 283.8013363688452
           },
           "shoulder": {
             "level": "67",
@@ -2638,6 +2642,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -2670,23 +2675,31 @@
           "isGrasping": true,
           "handOpenPrep": false,
           "frameGeneration": 10,
-          "held": "牛肉球",
+          "held": "蝦餃",
           "heldPosition": {
-            "x": 259.6,
-            "y": 442.8
+            "x": 575.1917789864501,
+            "y": 283.8013363688452
           },
           "score": 0,
           "correctCount": 0,
           "grabCount": 1,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "pinch",
             "stable": true,
             "candidate": true,
-            "candidateAt": 23547.099999427795
+            "candidateAt": 18921.60000038147
           },
           "cursor": {
-            "x": 259.6,
-            "y": 442.8
+            "x": 575.1917789864501,
+            "y": 283.8013363688452
           },
           "shoulder": {
             "level": "67",
@@ -2719,6 +2732,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -2751,23 +2765,31 @@
           "isGrasping": true,
           "handOpenPrep": false,
           "frameGeneration": 40,
-          "held": "牛肉球",
+          "held": "蝦餃",
           "heldPosition": {
-            "x": 587.6857243556873,
-            "y": 662.8478102821438
+            "x": 589.8960253236464,
+            "y": 661.7276585461913
           },
           "score": 0,
           "correctCount": 0,
           "grabCount": 1,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "pinch",
             "stable": true,
             "candidate": true,
-            "candidateAt": 27163.099999427795
+            "candidateAt": 22525.39999961853
           },
           "cursor": {
-            "x": 587.6857243556873,
-            "y": 662.8478102821438
+            "x": 589.8960253236464,
+            "y": 661.7276585461913
           },
           "shoulder": {
             "level": "67",
@@ -2800,6 +2822,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -2837,15 +2860,23 @@
           "score": 10,
           "correctCount": 1,
           "grabCount": 1,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "pinch",
             "stable": false,
             "candidate": false,
-            "candidateAt": 28124.099999427795
+            "candidateAt": 23494.39999961853
           },
           "cursor": {
-            "x": 587.6857243556873,
-            "y": 662.8478102821438
+            "x": 589.8960253236464,
+            "y": 661.7276585461913
           },
           "shoulder": {
             "level": "67",
@@ -2878,6 +2909,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -2930,6 +2962,14 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "",
             "stable": false,
@@ -2971,6 +3011,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -3008,6 +3049,14 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "",
             "stable": false,
@@ -3049,6 +3098,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -3086,6 +3136,14 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "",
             "stable": false,
@@ -3127,6 +3185,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -3164,11 +3223,19 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "pinch",
             "stable": true,
             "candidate": true,
-            "candidateAt": 35247.5
+            "candidateAt": 30367.5
           },
           "cursor": {
             "x": 590,
@@ -3205,6 +3272,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -3242,6 +3310,14 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "",
             "stable": false,
@@ -3283,6 +3359,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -3320,6 +3397,14 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "",
             "stable": false,
@@ -3361,6 +3446,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -3406,15 +3492,23 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "pinch",
             "stable": false,
             "candidate": false,
-            "candidateAt": 38864.29999923706
+            "candidateAt": 33633.60000038147
           },
           "cursor": {
             "x": 236,
-            "y": 328
+            "y": 639.6
           },
           "shoulder": {
             "level": "67",
@@ -3447,6 +3541,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -3479,23 +3574,31 @@
           "isGrasping": true,
           "handOpenPrep": false,
           "frameGeneration": 10,
-          "held": "半截裙",
+          "held": "恤衫",
           "heldPosition": {
             "x": 236,
-            "y": 328
+            "y": 639.6
           },
           "score": 0,
           "correctCount": 0,
           "grabCount": 1,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "pinch",
             "stable": true,
             "candidate": true,
-            "candidateAt": 39465
+            "candidateAt": 34234.39999961853
           },
           "cursor": {
             "x": 236,
-            "y": 328
+            "y": 639.6
           },
           "shoulder": {
             "level": "67",
@@ -3528,6 +3631,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -3560,23 +3664,31 @@
           "isGrasping": true,
           "handOpenPrep": false,
           "frameGeneration": 40,
-          "held": "半截裙",
+          "held": "恤衫",
           "heldPosition": {
-            "x": 587.7711631033906,
-            "y": 648.1484195905367
+            "x": 541.0576563311912,
+            "y": 321.61617179036847
           },
           "score": 0,
           "correctCount": 0,
           "grabCount": 1,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "pinch",
             "stable": true,
             "candidate": true,
-            "candidateAt": 43096.5
+            "candidateAt": 37838.199999809265
           },
           "cursor": {
-            "x": 587.7711631033906,
-            "y": 648.1484195905367
+            "x": 541.0576563311912,
+            "y": 321.61617179036847
           },
           "shoulder": {
             "level": "67",
@@ -3609,6 +3721,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -3646,15 +3759,23 @@
           "score": 10,
           "correctCount": 1,
           "grabCount": 1,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "pinch",
             "stable": false,
             "candidate": false,
-            "candidateAt": 44057.29999923706
+            "candidateAt": 38802
           },
           "cursor": {
-            "x": 588.0163351620176,
-            "y": 648.3715517154236
+            "x": 541.0576563311912,
+            "y": 321.61617179036847
           },
           "shoulder": {
             "level": "67",
@@ -3687,6 +3808,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -3713,10 +3835,10 @@
         },
         "target": {
           "type": "laundry_rack",
-          "x": 590,
-          "y": 650.176893453145,
-          "w": 542.8000000000001,
-          "h": 315.64621309370995
+          "x": 542.8000000000001,
+          "y": 319.79999999999995,
+          "w": 817.864017660044,
+          "h": 475.59999999999997
         }
       }
     },
@@ -3739,6 +3861,14 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "",
             "stable": false,
@@ -3780,6 +3910,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -3817,6 +3948,14 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "",
             "stable": false,
@@ -3858,6 +3997,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -3895,6 +4035,14 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "",
             "stable": false,
@@ -3936,6 +4084,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -3973,11 +4122,19 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "pinch",
             "stable": true,
             "candidate": true,
-            "candidateAt": 51052.599999427795
+            "candidateAt": 45823
           },
           "cursor": {
             "x": 590,
@@ -4014,6 +4171,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -4051,6 +4209,14 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "",
             "stable": false,
@@ -4092,6 +4258,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -4129,6 +4296,14 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "",
             "stable": false,
@@ -4170,6 +4345,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -4215,11 +4391,19 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "pinch",
             "stable": false,
             "candidate": false,
-            "candidateAt": 54372.79999923706
+            "candidateAt": 49248.60000038147
           },
           "cursor": {
             "x": 259.6,
@@ -4256,6 +4440,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -4296,11 +4481,19 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 1,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "pinch",
             "stable": true,
             "candidate": true,
-            "candidateAt": 54974.099999427795
+            "candidateAt": 49860.39999961853
           },
           "cursor": {
             "x": 259.6,
@@ -4337,6 +4530,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -4371,21 +4565,29 @@
           "frameGeneration": 40,
           "held": "黑桃",
           "heldPosition": {
-            "x": 1011.7362066429173,
-            "y": 707.2859696265879
+            "x": 1012.839885326325,
+            "y": 707.6740742333852
           },
           "score": 0,
           "correctCount": 0,
           "grabCount": 1,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "pinch",
             "stable": true,
             "candidate": true,
-            "candidateAt": 58607.199999809265
+            "candidateAt": 53488.800000190735
           },
           "cursor": {
-            "x": 1011.7362066429173,
-            "y": 707.2859696265879
+            "x": 1012.839885326325,
+            "y": 707.6740742333852
           },
           "shoulder": {
             "level": "67",
@@ -4418,6 +4620,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -4455,15 +4658,23 @@
           "score": 10,
           "correctCount": 1,
           "grabCount": 1,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "pinch",
             "stable": false,
             "candidate": false,
-            "candidateAt": 59568.39999961853
+            "candidateAt": 54459.89999961853
           },
           "cursor": {
-            "x": 1012.4563292818549,
-            "y": 707.5391981412203
+            "x": 1012.839885326325,
+            "y": 707.6740742333852
           },
           "shoulder": {
             "level": "67",
@@ -4496,6 +4707,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -4548,6 +4760,14 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "",
             "stable": false,
@@ -4589,6 +4809,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -4626,6 +4847,14 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "",
             "stable": false,
@@ -4667,6 +4896,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -4704,6 +4934,14 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "",
             "stable": false,
@@ -4745,6 +4983,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -4782,11 +5021,19 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "pinch",
             "stable": true,
             "candidate": true,
-            "candidateAt": 66499.29999923706
+            "candidateAt": 61480.10000038147
           },
           "cursor": {
             "x": 590,
@@ -4823,6 +5070,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -4860,6 +5108,14 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "",
             "stable": false,
@@ -4901,6 +5157,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -4938,6 +5195,14 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "",
             "stable": false,
@@ -4979,6 +5244,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -5024,11 +5290,19 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "pinch",
             "stable": false,
             "candidate": false,
-            "candidateAt": 69778.29999923706
+            "candidateAt": 64822.60000038147
           },
           "cursor": {
             "x": 259.6,
@@ -5065,6 +5339,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -5105,11 +5380,19 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 1,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "pinch",
             "stable": true,
             "candidate": true,
-            "candidateAt": 70379
+            "candidateAt": 65423.699999809265
           },
           "cursor": {
             "x": 259.6,
@@ -5146,6 +5429,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -5180,21 +5464,29 @@
           "frameGeneration": 40,
           "held": "二筒",
           "heldPosition": {
-            "x": 1011.7362066429173,
-            "y": 707.2859696265879
+            "x": 1012.839885326325,
+            "y": 707.6740742333852
           },
           "score": 0,
           "correctCount": 0,
           "grabCount": 1,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "pinch",
             "stable": true,
             "candidate": true,
-            "candidateAt": 73982.39999961853
+            "candidateAt": 69034.89999961853
           },
           "cursor": {
-            "x": 1011.7362066429173,
-            "y": 707.2859696265879
+            "x": 1012.839885326325,
+            "y": 707.6740742333852
           },
           "shoulder": {
             "level": "67",
@@ -5227,6 +5519,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -5264,15 +5557,23 @@
           "score": 10,
           "correctCount": 1,
           "grabCount": 1,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "pinch",
             "stable": false,
             "candidate": false,
-            "candidateAt": 74943.29999923706
+            "candidateAt": 70004.69999980927
           },
           "cursor": {
-            "x": 1012.4563292818549,
-            "y": 707.5391981412203
+            "x": 1012.839885326325,
+            "y": 707.6740742333852
           },
           "shoulder": {
             "level": "67",
@@ -5305,6 +5606,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -5357,6 +5659,14 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "",
             "stable": false,
@@ -5398,6 +5708,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -5435,6 +5746,14 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "",
             "stable": false,
@@ -5476,6 +5795,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -5513,6 +5833,14 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "",
             "stable": false,
@@ -5554,6 +5882,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -5591,11 +5920,19 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "pinch",
             "stable": true,
             "candidate": true,
-            "candidateAt": 82004.69999980927
+            "candidateAt": 76914.69999980927
           },
           "cursor": {
             "x": 590,
@@ -5632,6 +5969,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -5669,6 +6007,14 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "",
             "stable": false,
@@ -5710,6 +6056,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -5747,6 +6094,14 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "",
             "stable": false,
@@ -5788,6 +6143,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -5833,11 +6189,19 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "pinch",
             "stable": false,
             "candidate": false,
-            "candidateAt": 85375.69999980927
+            "candidateAt": 80184
           },
           "cursor": {
             "x": 259.6,
@@ -5874,6 +6238,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -5906,7 +6271,7 @@
           "isGrasping": true,
           "handOpenPrep": false,
           "frameGeneration": 10,
-          "held": "青菜",
+          "held": "麵",
           "heldPosition": {
             "x": 259.6,
             "y": 442.8
@@ -5914,11 +6279,19 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 1,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "pinch",
             "stable": true,
             "candidate": true,
-            "candidateAt": 85982
+            "candidateAt": 80784.89999961853
           },
           "cursor": {
             "x": 259.6,
@@ -5955,6 +6328,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -5987,23 +6361,31 @@
           "isGrasping": true,
           "handOpenPrep": false,
           "frameGeneration": 40,
-          "held": "青菜",
+          "held": "麵",
           "heldPosition": {
-            "x": 693.1293909654536,
-            "y": 706.9983791217543
+            "x": 1012.839885326325,
+            "y": 707.6740742333852
           },
           "score": 0,
           "correctCount": 0,
           "grabCount": 1,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "pinch",
             "stable": true,
             "candidate": true,
-            "candidateAt": 89607
+            "candidateAt": 84389
           },
           "cursor": {
-            "x": 693.1293909654536,
-            "y": 706.9983791217543
+            "x": 1012.839885326325,
+            "y": 707.6740742333852
           },
           "shoulder": {
             "level": "67",
@@ -6036,6 +6418,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -6073,15 +6456,23 @@
           "score": 10,
           "correctCount": 1,
           "grabCount": 1,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "pinch",
             "stable": false,
             "candidate": false,
-            "candidateAt": 90567.79999923706
+            "candidateAt": 85351.60000038147
           },
           "cursor": {
-            "x": 693.1293909654536,
-            "y": 706.9983791217543
+            "x": 1012.839885326325,
+            "y": 707.6740742333852
           },
           "shoulder": {
             "level": "67",
@@ -6114,6 +6505,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -6139,8 +6531,8 @@
           }
         },
         "target": {
-          "type": "veg",
-          "x": 695.6000000000001,
+          "type": "noodle",
+          "x": 1015.2,
           "y": 708.504,
           "w": 301.59999999999997,
           "h": 186.992
@@ -6166,6 +6558,14 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "",
             "stable": false,
@@ -6207,6 +6607,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -6244,6 +6645,14 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "",
             "stable": false,
@@ -6285,6 +6694,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -6322,6 +6732,14 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "",
             "stable": false,
@@ -6363,6 +6781,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -6400,11 +6819,19 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "pinch",
             "stable": true,
             "candidate": true,
-            "candidateAt": 97573.89999961853
+            "candidateAt": 92221.39999961853
           },
           "cursor": {
             "x": 590,
@@ -6441,6 +6868,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -6478,6 +6906,14 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "",
             "stable": false,
@@ -6519,6 +6955,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -6556,6 +6993,14 @@
           "score": 0,
           "correctCount": 0,
           "grabCount": 0,
+          "carrier": {
+            "heldId": null,
+            "hoverId": null,
+            "armed": false,
+            "openStart": 0,
+            "graspStart": 0,
+            "graspId": null
+          },
           "gestureStabilizer": {
             "mode": "",
             "stable": false,
@@ -6597,6 +7042,7 @@
             "holdRestartCount": 0,
             "holdAtTarget": false,
             "holdInterrupted": false,
+            "holdBelowTargetFrames": 0,
             "holdFeedbackActive": false,
             "holdCountdownActive": false,
             "startStableFrames": 0,
@@ -6901,7 +7347,7 @@
             "generation": 13
           },
           "affectedSide": "right",
-          "cursorX": 895.4600393702909,
+          "cursorX": 940.3243438885064,
           "cursorY": 590.4,
           "targetX": 932.2,
           "itemX": 927.8176813436096
@@ -6920,7 +7366,7 @@
             "generation": 13
           },
           "affectedSide": "left",
-          "cursorX": 309.3520876792218,
+          "cursorX": 250.23565335658597,
           "cursorY": 590.4,
           "targetX": 247.8,
           "itemX": 252.18231865639052
@@ -6931,7 +7377,7 @@
       "level": "2",
       "category": "repetition",
       "name": "outward scores once and return to midline rearms",
-      "passed": true,
+      "passed": false,
       "details": {
         "reached": {
           "motion": {
@@ -6948,7 +7394,7 @@
               "generation": 13
             },
             "affectedSide": "right",
-            "cursorX": 895.4600393702909,
+            "cursorX": 940.3243438885064,
             "cursorY": 590.4,
             "targetX": 932.2,
             "itemX": 927.8176813436096
@@ -6989,8 +7435,8 @@
             },
             "items": [
               {
-                "label": "糯米雞",
-                "type": "lotusrice",
+                "label": "叉燒包",
+                "type": "charsiu",
                 "x": 927.8176813436096,
                 "y": 590.4,
                 "r": 68.64
@@ -6998,8 +7444,8 @@
             ],
             "targets": [
               {
-                "label": "糯米雞",
-                "type": "lotusrice",
+                "label": "叉燒包",
+                "type": "charsiu",
                 "x": 932.2,
                 "y": 590.4,
                 "w": 250,
@@ -7010,9 +7456,9 @@
         },
         "returned": {
           "calibrated": true,
-          "progress": 0.012642306642810448,
+          "progress": 0.24470151605835744,
           "instantProgress": 0,
-          "phase": "outward",
+          "phase": "return",
           "targetHits": 1,
           "valid": true,
           "reason": "tracking",
@@ -7022,10 +7468,10 @@
             "generation": 21
           },
           "affectedSide": "right",
-          "cursorX": 680.9097542665983,
+          "cursorX": 744.9370824565615,
           "cursorY": 590.4,
           "targetX": 932.2,
-          "itemX": 594.3261973331697
+          "itemX": 673.73685879517
         }
       }
     },
@@ -7073,7 +7519,7 @@
           "generation": 7
         },
         "affectedSide": "right",
-        "cursorX": 590,
+        "cursorX": 661.3664,
         "cursorY": 590.4,
         "targetX": 932.2,
         "itemX": 733.724
@@ -7098,7 +7544,7 @@
           "generation": 8
         },
         "affectedSide": "right",
-        "cursorX": 634.40576,
+        "cursorX": 700.61792,
         "cursorY": 590.4,
         "targetX": 932.2,
         "itemX": 733.724
@@ -7181,41 +7627,41 @@
           {
             "label": "糯米雞",
             "type": "lotusrice",
-            "x": 259.6,
-            "y": 344.4,
-            "r": 89.76
+            "x": 246,
+            "y": 590.4,
+            "r": 164
           },
           {
             "label": "糯米雞",
             "type": "lotusrice",
-            "x": 920.4,
-            "y": 344.4,
-            "r": 89.76
+            "x": 732.6794632277206,
+            "y": 614.9657151420777,
+            "r": 164
           },
           {
             "label": "叉燒包",
             "type": "charsiu",
-            "x": 455.97584946434404,
-            "y": 331.06572365170575,
-            "r": 89.76
+            "x": 246,
+            "y": 584.9333333333333,
+            "r": 164
           }
         ],
         "targets": [
           {
             "label": "叉燒包",
             "type": "charsiu",
-            "x": 655.344,
-            "y": 648.408,
-            "w": 301.59999999999997,
-            "h": 223.18399999999997
+            "x": 354,
+            "y": 221.4,
+            "w": 424.8,
+            "h": 314.35200000000003
           },
           {
             "label": "糯米雞",
             "type": "lotusrice",
-            "x": 974.944,
-            "y": 648.408,
-            "w": 301.59999999999997,
-            "h": 223.18399999999997
+            "x": 826,
+            "y": 221.4,
+            "w": 424.8,
+            "h": 314.35200000000003
           }
         ]
       }
@@ -7263,41 +7709,41 @@
           {
             "label": "糯米雞",
             "type": "lotusrice",
-            "x": 259.6,
-            "y": 344.4,
-            "r": 89.76
+            "x": 246,
+            "y": 590.4,
+            "r": 164
           },
           {
             "label": "糯米雞",
             "type": "lotusrice",
-            "x": 920.4,
-            "y": 344.4,
-            "r": 89.76
+            "x": 732.6794632277206,
+            "y": 614.9657151420777,
+            "r": 164
           },
           {
             "label": "叉燒包",
             "type": "charsiu",
-            "x": 455.97584946434404,
-            "y": 331.06572365170575,
-            "r": 89.76
+            "x": 246,
+            "y": 584.9333333333333,
+            "r": 164
           }
         ],
         "targets": [
           {
             "label": "叉燒包",
             "type": "charsiu",
-            "x": 655.344,
-            "y": 648.408,
-            "w": 301.59999999999997,
-            "h": 223.18399999999997
+            "x": 354,
+            "y": 221.4,
+            "w": 424.8,
+            "h": 314.35200000000003
           },
           {
             "label": "糯米雞",
             "type": "lotusrice",
-            "x": 974.944,
-            "y": 648.408,
-            "w": 301.59999999999997,
-            "h": 223.18399999999997
+            "x": 826,
+            "y": 221.4,
+            "w": 424.8,
+            "h": 314.35200000000003
           }
         ]
       }

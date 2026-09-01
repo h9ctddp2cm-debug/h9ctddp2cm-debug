@@ -18,6 +18,9 @@
     smoothing:.42,
     baselineAdaptAlpha:.06,
     torsoRebaselineFrames:75,
+    patientTargetThreshold:.76,
+    patientDownSmoothing:.16,
+    patientReturnThreshold:.20,
   });
 
   const finite=n=>Number.isFinite(Number(n));
@@ -125,6 +128,9 @@
       return snapshot();
     }
     function update(packet={}){
+      const patientAssist=packet.patientAssist===true;
+      const targetThreshold=patientAssist?config.patientTargetThreshold:config.targetThreshold;
+      const returnThreshold=patientAssist?config.patientReturnThreshold:config.returnThreshold;
       const generation=Number(packet.generation);
       state.newFrame=false;
       state.frame={fresh:false,generation:finite(generation)?generation:null};
@@ -198,12 +204,14 @@
       state.torsoRejectFrames=0;
       const wristDelta=pose.wrist-state.baseline.wrist;
       state.instantProgress=clamp01(wristDelta/config.outwardSpan);
-      state.progress+=config.smoothing*(state.instantProgress-state.progress);
+      const smoothing=patientAssist&&state.instantProgress<state.progress
+        ? config.patientDownSmoothing : config.smoothing;
+      state.progress+=smoothing*(state.instantProgress-state.progress);
       /* Slow baseline drift adaptation, only while the wrist is near midline,
          so small chair or camera shifts never lock the session while genuine
          trunk movement during the outward reach is still rejected above. */
-      if(state.instantProgress<=config.returnThreshold
-          &&state.progress<=config.returnThreshold){
+      if(state.instantProgress<=returnThreshold
+          &&state.progress<=returnThreshold){
         const alpha=config.baselineAdaptAlpha;
         state.baseline.centre.x+=alpha*(pose.shoulderCentre.x-state.baseline.centre.x);
         state.baseline.centre.y+=alpha*(pose.shoulderCentre.y-state.baseline.centre.y);
@@ -216,7 +224,7 @@
       state.frame={fresh:true,generation};
       if(state.phase==='outward'){
         state.returnFrames=0;
-        state.targetFrames=state.progress>=config.targetThreshold?state.targetFrames+1:0;
+        state.targetFrames=state.progress>=targetThreshold?state.targetFrames+1:0;
         if(state.targetFrames>=config.endpointFrames){
           state.targetFrames=0;
           state.phase='return';
@@ -224,7 +232,12 @@
         }
       }else{
         state.targetFrames=0;
-        state.returnFrames=state.progress<=config.returnThreshold?state.returnFrames+1:0;
+        /* Re-arm from the measured wrist position, not the deliberately lagged
+           display progress. Patient mode smooths downward motion more slowly so
+           the object does not jump on the return; requiring that visual value to
+           catch up made a genuine held midline return miss the repetition gate.
+           Two distinct fresh endpoint frames are still required. */
+        state.returnFrames=state.instantProgress<=returnThreshold?state.returnFrames+1:0;
         if(state.returnFrames>=config.endpointFrames){
           state.returnFrames=0;
           state.phase='outward';

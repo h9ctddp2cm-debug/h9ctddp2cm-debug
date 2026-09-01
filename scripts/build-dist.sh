@@ -42,21 +42,21 @@ cp "$ROOT/offline.html" "$DIST/offline.html"
 cp -R "$ROOT/icons" "$DIST/icons"
 cp -R "$ROOT/vendor" "$DIST/vendor"
 
-# The inline-edit bridge is only for Perplexity's authoring preview. It is not
-# required by the standalone clinical build, so remove it from production.
-perl -0pi -e 's#<script data-pplx-inline-edit>.*?</script>\s*##s' "$DIST/index.html"
-if grep -q 'data-pplx-inline-edit' "$DIST/index.html"; then
-  echo "BUILD FAILED: authoring preview bridge remains in dist/public" >&2
+# Research/setup and authoring code are not merely hidden in the public build:
+# the deterministic sanitizer removes marked DOM/modules, specializes the
+# shared runtime with research mode fixed off, eliminates unreachable study
+# branches, and fails closed on any residual study state/handler/function.
+node "$ROOT/scripts/sanitize-public.cjs" "$DIST/index.html" "$DIST/localization.js"
+if grep -Eq 'data-pplx-inline-edit|__PORT_5000__|localhost:5000|btnResearchMode|applyInterventionDeepLink|role=.intervention|window\.__qa|window\.advanceTime|qaSyntheticHand|render_game_to_text' "$DIST/index.html"; then
+  echo "BUILD FAILED: authoring, research-entry, or QA-only code remains in dist/public" >&2
   exit 1
 fi
-
-# Research Mode depends on the authenticated local backend. The static
-# GitHub Pages/offline release must not expose a dead localhost link or allow
-# an unauthenticated intervention deep link.
-perl -0pi -e 's#\s*<!-- PUBLIC_BUILD_REMOVE_START:.*?PUBLIC_BUILD_REMOVE_END -->\s*#\n#gs' "$DIST/index.html"
-perl -0pi -e 's#\s*/\* PUBLIC_BUILD_REMOVE_START:.*?PUBLIC_BUILD_REMOVE_END \*/\s*#\n#gs' "$DIST/index.html"
-if grep -Eq '__PORT_5000__|localhost:5000|btnResearchMode|applyInterventionDeepLink|role=.intervention|window\.__qa|window\.advanceTime|qaSyntheticHand|render_game_to_text' "$DIST/index.html"; then
-  echo "BUILD FAILED: research or QA-only entry remains in dist/public" >&2
+if grep -Eqi '\bresearch([A-Z_$]|\b|\.)|\bpilot([A-Z_$]|\b|\.)|screen-research|data-feedback|btnDownloadResearch|btnReturnSessionRecord' "$DIST/index.html"; then
+  echo "BUILD FAILED: research DOM, state, function, or event handler remains in dist/public" >&2
+  exit 1
+fi
+if grep -rIEqi '\bresearch\b|\bpilot\b|study protocol|研究模式|研究情境|研究方案' "$DIST"; then
+  echo "BUILD FAILED: research-only code or localization remains anywhere in dist/public" >&2
   exit 1
 fi
 

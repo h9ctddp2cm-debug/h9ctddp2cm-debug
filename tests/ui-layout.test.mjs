@@ -196,7 +196,7 @@ test('critical test IDs and safety hooks preserved', async (t) => {
         'button-mode-trial-5', 'button-mode-training-5',
         'button-mode-trial-67', 'button-mode-training-67',
         'panel-safety-pause', 'panel-stop-confirm', 'panel-compensation',
-        'button-game-rest', 'button-game-stop', 'button-pilot-rest-resume',
+        'button-game-rest', 'button-game-stop', 'button-session-rest-resume',
         'button-compensation-observe',
         'indicator-trial-mode',
         'indicator-silent-recording', 'panel-movement-review',
@@ -489,6 +489,29 @@ for (const vp of [VIEWPORTS[0], VIEWPORTS[2]]) {
       assert.ok(view.progress.height >= 36 && /請等候/.test(view.progressText), 'plain withdrawal countdown is visible');
       assert.equal(view.readings.length, 2, 'generic/unselected Level 4 hides path-only horizontal reading'); assert.ok(view.readings.every(x=>x.height >= 38));
       assert.equal(view.detailsOpen, false); assert.equal(view.cancelHidden, false); assert.equal(view.xOverflow, false);
+    });
+  });
+}
+
+for (const vp of [VIEWPORTS[0], VIEWPORTS[2]]) {
+  test(`public Level 5 choices are separated and inside the canvas — ${vp.name}`, async (t) => {
+    if (!browser) return t.skip('playwright unavailable');
+    await withPage(vp, async (page) => {
+      const layouts=await page.evaluate(
+        ({width,height})=>window.__qa.level5LayoutProbe(width,height),vp
+      );
+
+      const inside=box=>box.left>=-.5 && box.top>=-.5
+        && box.right<=layouts.width+.5 && box.bottom<=layouts.height+.5;
+      const assertSeparated=(boxes,label)=>{
+        assert.ok(boxes.every(inside),`${label} choices stay inside canvas`);
+        for(let i=0;i<boxes.length;i++) for(let j=i+1;j<boxes.length;j++)
+          assert.equal(overlaps(boxes[i],boxes[j]),false,`${label} ${i}/${j} must not overlap`);
+      };
+      assertSeparated(layouts.cardBoxes,'cards');
+      assertSeparated(layouts.mahjongBoxes,'Mahjong');
+      assertSeparated(layouts.steamerBoxes,'steamers');
+      assertSeparated(layouts.laundryBoxes,'laundry baskets');
     });
   });
 }

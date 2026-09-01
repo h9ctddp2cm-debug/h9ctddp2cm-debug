@@ -40,7 +40,7 @@ test('laundry order defs cover all six categories with two shirt designs', () =>
 /* ---------------- Source contract: one large rack target ---------------- */
 
 test('order mode uses a single central large rack instead of two boxes', () => {
-  assert.match(publicSource, /if\(isLaundryOrderGame\(\)\)\{[\s\S]{0,900}type:'laundry_rack'[\s\S]{0,200}style:'rack'[\s\S]{0,120}x:cw \/ 2/);
+  assert.match(publicSource, /if\(isLaundryOrderGame\(\)\)\{[\s\S]{0,1200}type:'laundry_rack'[\s\S]{0,200}style:'rack'[\s\S]{0,180}x:cw \* \(portrait \? 0\.50 : 0\.46\)/);
   assert.match(publicSource, /if\(t\.style === 'rack'\)\{ drawLaundryRackTarget\(ctx, t\); continue; \}/);
   // Hung clothes are drawn ON the rack so the patient can see progress.
   assert.match(publicSource, /for\(const c of laundryRackContents\)\{/);

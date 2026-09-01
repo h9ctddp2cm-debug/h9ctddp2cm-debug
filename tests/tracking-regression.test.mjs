@@ -26,7 +26,8 @@ test("iPad tracking uses CPU-compatible MediaPipe creation with a CPU retry", ()
 
 test("camera capture follows portrait or landscape orientation instead of forcing a cropped landscape frame", () => {
   assert.match(publicSource, /const portraitCamera = window\.innerHeight > window\.innerWidth/);
-  assert.match(publicSource, /width:\{ideal:720\},\s*height:\{ideal:1280\}/);
+  assert.match(publicSource, /width:\{ideal:540\},\s*height:\{ideal:960\}/);
+  assert.match(publicSource, /width:\{ideal:960\},\s*height:\{ideal:540\}/);
   assert.match(publicSource, /aspectRatio:\{ideal:9\/16\}/);
   assert.match(publicSource, /video: cameraVideoConstraints/);
 });
@@ -39,7 +40,7 @@ test("portrait phones keep the camera inline in a compact preview instead of ful
   assert.match(publicSource, /height:min\(25dvh,210px\)/);
   assert.ok(publicSource.includes("videoEl.setAttribute('webkit-playsinline', '')"));
   assert.ok(publicSource.includes("videoEl.controls = false"));
-  assert.match(serviceWorkerSource, /fthue-rehab-v76-20260901-patient-visual-cues/);
+  assert.match(serviceWorkerSource, /fthue-rehab-v78-20260901-patient-pinch-voice/);
 });
 
 test("Levels 3 and 4 can use Pose when tabletop hands occlude the finger model", () => {
@@ -130,7 +131,8 @@ test("Level 4 accepts a table-occluded arm without requiring the opposite should
 
 test("Levels 3 and 4 use shoulder-flexion-only play without virtual pickup or release", () => {
   assert.match(publicSource, /function usesAdvancedThemeModule\(id\)/);
-  assert.match(publicSource, /return !isGrossTabletop\(\) && isAdvTheme\(id\)/);
+  assert.match(publicSource, /if\(isLevel6\(\) && theme==='flowers'\) return true/);
+  assert.match(publicSource, /return !isGrossTabletop\(\) && isAdvTheme\(theme\)/);
   assert.match(publicSource, /if\(usesAdvancedThemeModule\(\)\)\{ advUpdate\(\); advRender\(\); \}/);
   assert.match(publicSource, /function updateShoulderFlexionGame\(\)/);
   assert.match(publicSource, /if\(isLevel6ToolGestureTask\(\)\)\{\s*updateGraspLogic\(\);\s*\}else\{\s*updateShoulderFlexionGame\(\);\s*\}\s*return;/);
@@ -181,9 +183,9 @@ test("all items stay clear of targets and can be parked in blank space", () => {
 test("offline worker forces the current build instead of serving the stale game", () => {
   const manifest = JSON.parse(readFileSync(path.join(root, "manifest.webmanifest"), "utf8"));
   assert.ok(publicSource.includes('updateViaCache:"none"'));
-  assert.match(serviceWorkerSource, /fthue-rehab-v76-20260901-patient-visual-cues/);
-  assert.ok(publicSource.includes('const LEVEL_APP_BUILD = "v76-20260901-patient-visual-cues"'));
-  assert.equal(manifest.start_url, "./index.html?build=v76-20260901-patient-visual-cues");
+  assert.match(serviceWorkerSource, /fthue-rehab-v78-20260901-patient-pinch-voice/);
+  assert.ok(publicSource.includes('const LEVEL_APP_BUILD = "v78-20260901-patient-pinch-voice"'));
+  assert.equal(manifest.start_url, "./index.html?build=v78-20260901-patient-pinch-voice");
   assert.ok(publicSource.includes('const levelAppHadController = Boolean(navigator.serviceWorker.controller)'));
   assert.ok(publicSource.includes('if (!levelAppHadController || levelAppReloading) return'));
   assert.ok(publicSource.includes('navigator.serviceWorker.addEventListener("controllerchange"'));
@@ -213,7 +215,7 @@ test("legacy standalone modules remain registered but are unavailable to Level 2
     ),
     /getImageData/
   );
-  assert.ok(publicSource.includes("return !isGrossTabletop() && isAdvTheme(id)"));
+  assert.ok(publicSource.includes("return !isGrossTabletop() && isAdvTheme(theme)"));
   assert.match(publicSource, /function isLevel4WipeGame\(\)\{\s*return isLevel4Tabletop\(\) && state\.theme === 'wipewindow'/);
   assert.match(publicSource, /if\(isLevel4WipeGame\(\)\)\{\s*renderLevel4WipeGame/);
   assert.match(publicSource, /if\(level === '2'\) return themeId === 'bilateral'/);
@@ -245,7 +247,7 @@ test("Level 5 calibration accepts the participant's available opening range with
   assert.match(publicSource, /openMean\s*\+\s*gap\s*\*\s*\(isPegMode\(\)\s*\?\s*0\.24\s*:\s*0\.48\)/);
   assert.match(
     publicSource,
-    /const PREP_OPEN_MS\s*=\s*220,\s*GRASP_HOLD_MS\s*=\s*360,\s*DROP_DWELL_MS\s*=\s*650/
+    /const PREP_OPEN_MS\s*=\s*research\.active \? 220 : 100[\s\S]*?const GRASP_HOLD_MS\s*=\s*research\.active \? 360 : 120[\s\S]*?const DROP_DWELL_MS\s*=\s*research\.active \? 650 : 220/
   );
 });
 

@@ -30,6 +30,7 @@ function feed(controller,angle,start,frames=1,options={}){
     snap=controller.update({lm:pose(angle,options),side:options.side||'right',imageAspect:1,
       worldLm:Number.isFinite(options.worldAngle)?pose(options.worldAngle,options):undefined,
       frameFresh:options.fresh!==false,frameGeneration:generation,
+      patientAssist:options.patientAssist===true,
       nowMs:Number.isFinite(options.nowMs)
         ? options.nowMs+i*(Number.isFinite(options.stepMs)?options.stepMs:33)
         : undefined,
@@ -257,6 +258,48 @@ test('dropping below target and stale or duplicate frames reset hold without adv
   assert.equal(snap.repetitions,1);
 });
 
+test('public patient hold tolerates two fresh below-target frames but resets on the third',()=>{
+  const {c,start}=calibrate('4',70,{smoothAlpha:1,patientTargetFeedbackMs:150});
+  assert.equal(c.setHoldDuration(3),true);
+  feed(c,rawForEstimated(start),20,2,{patientAssist:true});
+  let snap=feed(c,rawForEstimated(70),30,2,
+    {patientAssist:true,nowMs:1000,stepMs:20});
+  assert.equal(snap.phase,'target-hold');
+  const holdStartedAt=c.state.holdStartedAtMs;
+
+  snap=feed(c,rawForEstimated(0),32,1,{patientAssist:true,nowMs:1100});
+  assert.equal(snap.holdAtTarget,true);
+  assert.equal(snap.holdInterrupted,false);
+  assert.equal(snap.holdBelowTargetFrames,1);
+  assert.equal(c.state.holdStartedAtMs,holdStartedAt);
+
+  snap=feed(c,rawForEstimated(0),33,1,{patientAssist:true,nowMs:1130});
+  assert.equal(snap.holdAtTarget,true);
+  assert.equal(snap.holdBelowTargetFrames,2);
+
+  snap=feed(c,rawForEstimated(0),34,1,{patientAssist:true,nowMs:1160});
+  assert.equal(snap.holdAtTarget,false);
+  assert.equal(snap.holdInterrupted,true);
+  assert.equal(snap.holdRemainingSec,null);
+});
+
+test('stale input bypasses public hold grace and returnReady uses the active gate',()=>{
+  const {c,start}=calibrate('4',70,{smoothAlpha:1});
+  c.setHoldDuration(2);
+  feed(c,rawForEstimated(start),20,2,{patientAssist:true});
+  let snap=feed(c,rawForEstimated(70),30,2,{patientAssist:true,nowMs:1000,stepMs:20});
+  assert.equal(snap.phase,'target-hold');
+  snap=feed(c,rawForEstimated(70),32,1,{patientAssist:true,fresh:false,nowMs:1050});
+  assert.equal(snap.holdInterrupted,true);
+  assert.equal(snap.holdRemainingSec,null);
+
+  c.state.returnStableFrames=2;
+  c.state.activeGateStableFrames=2;
+  assert.equal(c.snapshot().returnReady,true);
+  c.state.activeGateStableFrames=3;
+  assert.equal(c.snapshot().returnReady,false);
+});
+
 test('whole-patient screen translation does not freeze relative shoulder progress',()=>{
   const c=api.createController({level:'3',smoothAlpha:1});
   c.setTarget(40,'3');
@@ -375,9 +418,9 @@ test('setup exposes distinct exact target-hold choices and aligns v51 source ide
   assert.match(html,/id="targetHoldOverlay"[\s\S]*id="targetHoldNumber"/);
   assert.match(html,/holdCountdownActive/);
   assert.match(html,/SHOULDER_HOLD_COUNT_CANTONESE/);
-  assert.match(html,/v76-20260901-patient-visual-cues/);
-  assert.match(manifest,/v76-20260901-patient-visual-cues/);
-  assert.match(worker,/v76-20260901-patient-visual-cues/);
+  assert.match(html,/v78-20260901-patient-pinch-voice/);
+  assert.match(manifest,/v78-20260901-patient-pinch-voice/);
+  assert.match(worker,/v78-20260901-patient-pinch-voice/);
   assert.doesNotMatch(html,/v46-20260825-shoulder-detection-repair/);
   assert.doesNotMatch(manifest,/v46-20260825-shoulder-detection-repair/);
   assert.doesNotMatch(worker,/v46-20260825-shoulder-detection-repair/);

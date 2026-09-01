@@ -2,6 +2,15 @@
 
 Original prompt: Fix Level 6–7 interactions: make light clothes-peg press detection easier without claiming tool/force sensing; keep bare three-finger pinch held through transport until a stabilized reopen; enlarge Level 6–7 dim sum and steamers 1.5× without collisions; and make Home/Back/Stop safely return to level selection.
 
+## 2026-09-01 v78 release-blocker repair
+- Replaced the Level 5 dim-sum public spawn positions with deterministic responsive slot/radius geometry. Portrait uses one centred upper-lower-half source plus two lower sources; landscape uses three lower-row sources. Radius is maximised subject to canvas edges, the complete lower-half boundary and a 12–24 px responsive visible gap, preserving large patient-facing images.
+- Five browser geometry regressions now cover **390×844, 820×1180, 768×1024, 320×568 and 1180×820**. Every size has exactly **3** source objects and **2** steamers; all complete source circles are below the midpoint, all complete steamers are above it, every source is in bounds, and the measured minimum pairwise gaps are respectively **15.6, 20.5, 19.2, 12.0 and 20.5 px** with deterministic restart geometry.
+- Added a deterministic public-build sanitizer. Complete research setup/results/protocol/export modules are removed with `PUBLIC_BUILD_REMOVE` regions; the shared script is specialized with research mode fixed off and whole-program dead-code elimination. A checksum-pinned Terser 5.44.0 bundle is vendored for reproducible offline builds.
+- `scripts/build-dist.sh` now sanitizes both `index.html` and research-only localization, then fails closed on residual research/pilot DOM, state, constants, functions, handlers, exports, protocol copy or hidden/direct routes anywhere in `dist/public`. The final build contains **189 files (88M)**; whole-dist static audits found **0** research/pilot/protocol-copy and **0** forbidden DOM/state/handler/export/route matches.
+- A browser isolation probe loaded `dist/public/index.html` with intervention/autostart/participant query parameters plus `#research`, dispatched load/history/hash activation events and attempted to reveal/click matching hidden nodes. No research DOM/global or calibration route existed, while Level 5 navigation and the retained rest, stop and safety-pause controls remained functional (**4/4 isolation tests passed**).
+- Final validation: complete Node suite **441 total / 438 passed / 0 failed / 3 intentional skips**; Level 2–6 technical validator **168/168**; all source inline blocks, sanitizer, test modules and rebuilt-public JavaScript parsed; `git diff --check` passed.
+- Fresh, visually inspected initial-state previews for **820×1180**, **768×1024** and **1180×820**, five-size geometry JSON, browser/static/build/syntax/test logs and technical-validator results are stored outside the repository at `/home/user/workspace/v78_blocker_fix_evidence_20260901/`. No deployment, commit or push was performed.
+
 ## 2026-09-01 v76 Level 5–6 patient visual cues
 - Bedside feedback identified three barriers in Levels 5–6: the play objects were still too small, the top of the screen contained too many competing words, and the abstract circle did not clearly show when to grasp or release.
 - Public Level 5–6 gameplay now uses one large high-contrast action cue. The top rule strip, verbose canvas order banners and non-essential score counters are hidden during play; only the timer remains at the lower left. Advanced activity buttons remain available without their multi-line instruction panel.
@@ -1471,3 +1480,24 @@ Original prompt: Fix Level 6–7 interactions: make light clothes-peg press dete
 - 測試：tests/v75-adaptive-tool.test.mjs 9 項新測試（源碼合約＋行為：靜止唔學習、真開合有序學習、單指漂移安全、reset 清空）；v70/v72/v73/v74/tracking-regression 測試全部更新對應 v75 幾何／主題清單；全套 386 total / 383 pass / 0 fail / 3 intentional skips；validator 168/168；checkjs + git diff --check 乾淨。
 - dist 重建：185 檔案，v75-20260831-design 標記 ×3 對齊，QA hooks 0 命中；iPad Playwright QA 820×1180＋1180×820 七個場景截圖全部目視檢查（ych_rehab_qa_artifacts/v75/）。
 - 限制：模擬 landmark QA 不能取代病房實機（真衣夾／筷子、偏癱手形、病房光線、iPad 鏡頭）驗證；茶樓碟/托盤相內有畫上點心屬設計圖原有內容。
+
+## v77 local responsiveness pass（2026-09-01；未部署）
+- 同一個新鮮 decoded-frame generation 只做一次 affected-hand inference／interpretation；stale、nonfinite、倒退 generation、換 video/session 一律 fail-closed，init／camera reset 會清 cache。Affected-hand-only、finite landmarks、無 opposite-hand fallback 保持不變。
+- Public loop 約 30 fps、privacy recording canvas 20 fps，duplicate RAF／decoded frame 不重做昂貴工作；research loop 保持原有逐 RAF 行為。Public tracking 改 3-frame median + EMA 0.20／0.32／0.45；research 保持 5-frame 及舊 alpha。
+- Action prompt 用 mode／language／content render key 避免相同 DOM writes，patient／research 顯示內容保持原樣。
+- Public shoulder hold 可容許連續 2 個新鮮 below-target frame，第 3 個才 reset；grace 期間 hold clock 暫停，stale／invalid 即時 reset。Public target feedback 150 ms；research/default 不變。
+- Public grasp 及 advanced timing 對齊 100／120／220 ms；research 分別保持 220／360／650 及 420／480／1000 ms。60 ms gesture confirmation、先真 open 才可 prep、最多 100 ms fresh-only release continuity、Level 6 雙指同時重開及 tool gate 全部保留。
+- Level 5 cards／Mahjong viewport layout 防止選項重疊／出界；steamer／laundry overlap 加 safeguard；cards 指示更新為上方收牌區。雪櫃 layout 完全未改。
+- 驗證：focused responsiveness + shoulder 35/35；tracking + accessible preview 46/46；Playwright UI/layout 20/20（含 390×844、1180×820 Level 5 bounds／non-overlap）；全 Node suite 423 total／420 pass／0 fail／3 intentional skips；syntax checks passed。詳情見 `v77_responsiveness_local_report_20260901.md`。
+
+## v78 Level 6 pinch games + patient voice（2026-09-01；只限本機，未部署）
+- Public Level 6 關手／夾住游標及動作提示已按患側使用用戶上載的右手、左手圖片；白底以透明 PNG 處理，原 JPEG 未改。Level 5 及 research 顯示分支維持原樣。
+- Standard 與 advanced 搬運顯示把物件移到拇指／食指接觸點，並以 0.74–0.96 透明度保留物件可見；碰撞、計分及真實控制座標仍使用原 cursor／held-item 座標。
+- Level 6 插花改用 Level 5 public advanced 插花版面與相同 vase/palette 幾何，但 `gameType` 仍是 Level 6 affected-hand tripod pinch。
+- Public Level 6 筷子加入 wrist-relative index/middle extension cue，讓拇指／筷子重疊時仍可觀察兩指屈伸；固定及自適應進入／重開均要求兩指同意，靜止或只一指漂移不會產生自適應門檻或釋放。Research 分支不使用此 cue。
+- Level 5 點心 source 初始 Y 限制於畫面下半（portrait ≥0.62、landscape ≥0.64），蒸籠保持上半；真初始 preview 無 held item。
+- 新增 audio-only public voice observer：接觸未拿起物件時 Level 5「揸拳頭」、Level 6「夾住」；在真正下到上版面持續持物但 1.6 秒後仍無有效上移時「舉高手」一次；到達目標但仍夾住時 Level 5／一般 L6「打開隻手」、筷子「打開筷子」、衣夾曬衫「放手」。每 cycle 去重、2.8 秒 cooldown、drop/round reset；cards/mahjong 或目標不在上方不會講「舉高手」；paused/research 不會記錄或播放。沒有新增畫面文字。
+- 安全：affected-hand-only、fresh/stale generation、finite landmarks、handedness confidence、無 opposite-hand fallback、open-before-close、movement/adaptive gate、60 ms stabilizer、release dwell 及 Level 6 true dual-digit reopen 均保留；voice 只觀察已判定 contact/phase，不改 scoring/tracking。
+- 驗證：`tools/checkjs.sh` 11 blocks 全過；v78 新要求 11/11；focused Level 5/6 tracking/tool/layout/voice 161/161；全 Node suite 435 total／432 pass／0 fail／3 intentional skips；`git diff --check` 通過。實際 Level 6 筷子流程攔截到「夾住」及「打開筷子」，物件仍 held、score 0，確認語音沒有代替放手或計分。
+- 預覽：`preview_level5_dimsum_initial_390x844.png`、`preview_level6_flowers_right_pinch_820x1180.png`、`preview_level6_chopsticks_left_pinch_1180x820.png`，均以 source `index.html` 的 fresh browser context、本機 HTTP、service worker blocked 產生並目視檢查；沒有改 `dist/public`、沒有部署／commit／push。
+- 限制：synthetic landmark／browser QA 不能取代真 iPad、長者偏癱手、真筷子／衣夾遮擋、病房光線及裝置廣東話 voice 的 bedside 測試。 supplied hand image anchor 及物件接觸點在極端 canvas 邊緣仍可能被裁切。
