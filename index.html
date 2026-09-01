@@ -3259,16 +3259,17 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                     }
                 }()), DWELL_MS = state.dwellMs, score = 0, correctCount = 0, grabCount = 0, totalWrong = 0, 
                 wrongStreak = 0, level5TargetSideFlip = Math.random() < .5, shoulderFlexionLastRepetition = 0, 
-                shoulderFlexionCycleAwarded = !1, shoulderHoldSpokenSecond = null, shoulderHoldInterruptedSpoken = !1, 
-                hideTargetHoldCountdown(), lastLevelShown = -1, heldItem = null, foods = [], targets = [], 
-                resetBowlingStrike(), resetBasketballShot(), resetTeahouseServe(), dimsumOrderBannerRect = null, 
-                dimsumOrder = null, dimsumPlateContents = [], dimsumOrdersCompleted = 0, dimsumOrderCelebrateUntil = 0, 
-                dimsumOrderTimerId && (clearTimeout(dimsumOrderTimerId), dimsumOrderTimerId = null), 
-                laundryOrderBannerRect = null, laundryOrder = null, laundryRackContents = [], laundryOrdersCompleted = 0, 
-                laundryOrderCelebrateUntil = 0, laundryOrderTimerId && (clearTimeout(laundryOrderTimerId), 
-                laundryOrderTimerId = null), fridgeBannerRect = null, fridgeQueue = [], fridgeQueueIndex = 0, 
-                fridgePlacedFoods = [], fridgeRoundsCompleted = 0, fridgeCelebrateUntil = 0, fridgeCrashUntil = 0, 
-                fridgeCrashMsg = "", fridgeCrashPoint = null, fridgeRoundTimerId && (clearTimeout(fridgeRoundTimerId), 
+                shoulderFlexionCycleAwarded = !1, shoulderRewardCycle.reset(), shoulderHoldSpokenSecond = null, 
+                shoulderHoldInterruptedSpoken = !1, hideTargetHoldCountdown(), lastLevelShown = -1, 
+                heldItem = null, foods = [], targets = [], resetBowlingStrike(), resetBasketballShot(), 
+                resetTeahouseServe(), dimsumOrderBannerRect = null, dimsumOrder = null, dimsumPlateContents = [], 
+                dimsumOrdersCompleted = 0, dimsumOrderCelebrateUntil = 0, dimsumOrderTimerId && (clearTimeout(dimsumOrderTimerId), 
+                dimsumOrderTimerId = null), laundryOrderBannerRect = null, laundryOrder = null, 
+                laundryRackContents = [], laundryOrdersCompleted = 0, laundryOrderCelebrateUntil = 0, 
+                laundryOrderTimerId && (clearTimeout(laundryOrderTimerId), laundryOrderTimerId = null), 
+                fridgeBannerRect = null, fridgeQueue = [], fridgeQueueIndex = 0, fridgePlacedFoods = [], 
+                fridgeRoundsCompleted = 0, fridgeCelebrateUntil = 0, fridgeCrashUntil = 0, fridgeCrashMsg = "", 
+                fridgeCrashPoint = null, fridgeRoundTimerId && (clearTimeout(fridgeRoundTimerId), 
                 fridgeRoundTimerId = null), releaseDwellStart = 0, releaseDwellPlate = null, releaseDwellPauseAt = 0, 
                 releaseDwellLastOpenAt = 0, basicOpenStart = 0, basicGraspStart = 0, basicGraspCandidate = "", 
                 basicGraspArmed = !1, basicContactCandidate = "", basicContactUntil = 0, gripActive = !1, 
@@ -5279,7 +5280,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
     }
     function fridgePlacedRadius(rect) {
         const landscape = gameCanvas.width > gameCanvas.height;
-        return Math.min(rect.rh * (landscape ? .07 : .078), rect.rw * (landscape ? .038 : .044));
+        return Math.min(rect.rh * (landscape ? .1 : .115), rect.rw * (landscape ? .055 : .065));
     }
     function fridgeTryPlace(item, x, y, target) {
         if (!isFridgeGame() || !item || "distractor" === item.targetType) return !1;
@@ -5374,7 +5375,26 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
         const span = now - posHistory[0].t, still = maxDisp <= (stillHoldFlag ? STILL_MAX_DISP_HOLD : STILL_MAX_DISP_ENTER) && span >= .6 * STILL_WINDOW_MS;
         return stillHoldFlag = still, still;
     }
-    let foods = [], targets = [], heldItem = null, level5TargetSideFlip = !1, releaseDwellStart = 0, releaseDwellPlate = null, releaseDwellPauseAt = 0, releaseDwellLastOpenAt = 0, score = 0, correctCount = 0, grabCount = 0, shoulderFlexionLastRepetition = 0, shoulderFlexionCycleAwarded = !1, shoulderHoldSpokenSecond = null, shoulderHoldInterruptedSpoken = !1, totalWrong = 0, basicOpenStart = 0, basicGraspStart = 0, basicGraspCandidate = "", basicGraspArmed = !1, basicContactCandidate = "", basicContactUntil = 0, wrongStreak = 0, timeLeft = 60, gameTimerId = null, foodIdSeq = 1;
+    let foods = [], targets = [], heldItem = null, level5TargetSideFlip = !1, releaseDwellStart = 0, releaseDwellPlate = null, releaseDwellPauseAt = 0, releaseDwellLastOpenAt = 0, score = 0, correctCount = 0, grabCount = 0, shoulderFlexionLastRepetition = 0, shoulderFlexionCycleAwarded = !1;
+    const SHOULDER_REWARD_MIN_MS = 2600, SHOULDER_PHOTO_REWARD_MS = 3200, shoulderRewardCycle = {
+        active: !1,
+        startedMs: 0,
+        finishAtMs: 0,
+        repetitionReady: !1,
+        reset() {
+            this.active = !1, this.startedMs = 0, this.finishAtMs = 0, this.repetitionReady = !1;
+        }
+    };
+    function startShoulderRewardCycle() {
+        if (shoulderRewardCycle.active) return;
+        const started = nowMs();
+        shoulderRewardCycle.active = !0, shoulderRewardCycle.startedMs = started, shoulderRewardCycle.finishAtMs = started + ("bowlinglane" === state.theme ? Math.max(SHOULDER_REWARD_MIN_MS, 2700) : "basketball" === state.theme ? Math.max(SHOULDER_REWARD_MIN_MS, 2220) : isTeahouseDimsumMode() ? Math.max(SHOULDER_REWARD_MIN_MS, 2520) : "tsuenwan" === state.theme ? SHOULDER_PHOTO_REWARD_MS : SHOULDER_REWARD_MIN_MS), 
+        shoulderRewardCycle.repetitionReady = !1;
+    }
+    function shoulderRewardVisualFinished() {
+        return shoulderRewardCycle.active && nowMs() >= shoulderRewardCycle.finishAtMs;
+    }
+    let shoulderHoldSpokenSecond = null, shoulderHoldInterruptedSpoken = !1, totalWrong = 0, basicOpenStart = 0, basicGraspStart = 0, basicGraspCandidate = "", basicGraspArmed = !1, basicContactCandidate = "", basicContactUntil = 0, wrongStreak = 0, timeLeft = 60, gameTimerId = null, foodIdSeq = 1;
     function beginLevel4StandardCarry(item) {
         if (!item || !isLevel4StandardTransportGame()) return;
         const matchingTarget = targets.find(target => target.type === item.targetType), pickupX = item.x, pickupFitsTarget = matchingTarget && Math.abs(pickupX - matchingTarget.x) <= matchingTarget.w / 2 + item.r;
@@ -5816,7 +5836,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
             x: x,
             y: y,
             r: r,
-            visualR: isFridgeGame() ? .42 * r : r,
+            visualR: isFridgeGame() ? .5 * r : r,
             baseX: x,
             baseY: y,
             held: !1,
@@ -5831,7 +5851,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
         }
         if (isFridgeGame() && "distractor" !== def.targetType) {
             const spot = function(cw, ch, r) {
-                const visualR = .42 * r;
+                const visualR = .5 * r;
                 return {
                     x: .5 * cw,
                     y: Math.min(ch - visualR - 18, .9 * ch)
@@ -6905,7 +6925,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                     }(); else {
                         if (isShoulderFlexionLevel()) {
                             if (!shoulderFlexionState.framingReady || !shoulderFlexionState.calibrated || !shoulderFlexionState.gameReady) {
-                                dwellTarget = null, dwellStartTime = 0, dwellActive = !1, lastDwellPct = 0, shoulderFlexionState.targetReady || (shoulderFlexionCycleAwarded = !1), 
+                                dwellTarget = null, dwellStartTime = 0, dwellActive = !1, lastDwellPct = 0, shoulderFlexionState.targetReady || shoulderRewardCycle.active || (shoulderFlexionCycleAwarded = !1), 
                                 syncTargetHoldFeedback();
                                 const guide = shoulderFlexionController?.guidance() || {
                                     main: "肩屈曲追蹤未就緒",
@@ -6920,13 +6940,16 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                                     shoulderFlexionLastRepetition = shoulderFlexionState.repetitions, completed && (score += 10, 
                                     correctCount++, wrongStreak = 0, adaptiveNoteTrial("shoulder_flexion_cycle", "success"), 
                                     Math.round(Number(shoulderFlexionState.estimatedAngle) || 0), Number(shoulderFlexionState.selectedTargetDeg), 
-                                    state.shoulderExerciseMode, showLevelUpBanner(), updateHUD()), shoulderFlexionCycleAwarded = !1, 
-                                    advanceLevel3RoundVariant(), resetBowlingStrike(), resetBasketballShot(), resetTeahouseServe(), 
-                                    foods = [], spawnInitialFoods();
+                                    state.shoulderExerciseMode, showLevelUpBanner(), updateHUD(), shoulderRewardCycle.active || startShoulderRewardCycle(), 
+                                    shoulderRewardCycle.repetitionReady = !0);
                                 }
+                                shoulderRewardCycle.active && shoulderRewardCycle.repetitionReady && shoulderRewardVisualFinished() && (advanceLevel3RoundVariant(), 
+                                resetBowlingStrike(), resetBasketballShot(), resetTeahouseServe(), foods = [], spawnInitialFoods(), 
+                                shoulderFlexionCycleAwarded = !1, shoulderRewardCycle.reset(), shoulderFlexionController && (shoulderFlexionController.setTarget(state.shoulderTargetDeg, state.level), 
+                                shoulderFlexionState = shoulderFlexionController.snapshot()));
                                 let item = foods.find(food => !food.removed);
                                 item || (spawnInitialFoods(), item = foods.find(food => !food.removed));
-                                const target = Math.max(1, Number(shoulderFlexionState.selectedTargetDeg) || 1), estimated = Math.max(0, Number(shoulderFlexionState.estimatedAngle) || 0), visualProgress = clamp01(Number(shoulderFlexionState.progress) || 0), cw = gameCanvas.width, ch = gameCanvas.height;
+                                const target = Math.max(1, Number(shoulderFlexionState.selectedTargetDeg) || 1), estimated = Math.max(0, Number(shoulderFlexionState.estimatedAngle) || 0), visualProgress = shoulderRewardCycle.active ? 1 : clamp01(Number(shoulderFlexionState.progress) || 0), cw = gameCanvas.width, ch = gameCanvas.height;
                                 let laneX = cw * (ch > cw ? .68 : .58), bottom = .78 * ch, top = .34 * ch;
                                 if ("tsuenwan" === state.theme) {
                                     laneX = .5 * cw;
@@ -6942,7 +6965,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                                 }
                                 item && (item.x = laneX, item.y = bottom - (bottom - top) * visualProgress, item.baseX = item.x, 
                                 item.baseY = item.y, item.held = !1), shoulderFlexionState.targetReady && !shoulderFlexionCycleAwarded && (shoulderFlexionCycleAwarded = !0, 
-                                triggerFeedback(!0), "bowlinglane" === state.theme && "idle" === bowlingStrike.phase && (bowlingStrike.phase = "roll", 
+                                startShoulderRewardCycle(), triggerFeedback(!0), "bowlinglane" === state.theme && "idle" === bowlingStrike.phase && (bowlingStrike.phase = "roll", 
                                 bowlingStrike.startedMs = nowMs(), bowlingStrike.impactPlayed = !1, bowlingStrike.pinSeeds = Array.from({
                                     length: 10
                                 }, () => ({
@@ -6958,7 +6981,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                                     teahouseServe.fromY = item ? item.y : .34 * gameCanvas.height, teahouseServe.img = item ? item.img : null, 
                                     teahouseServe.label = item ? item.label : "";
                                 }(), Math.round(estimated), state.shoulderExerciseMode), syncTargetHoldFeedback(), 
-                                "target-hold" === shoulderFlexionState.phase && shoulderFlexionState.holdInterrupted ? setActionPrompt("再抬高 · 保持", "") : shoulderFlexionState.holdFeedbackActive ? setActionPrompt("好！", "") : shoulderFlexionState.holdCountdownActive ? setActionPrompt("保持舉高", shoulderFlexionState.holdRemainingSec + "") : shoulderFlexionState.targetReady ? setActionPrompt("慢慢返回", shoulderFlexionState.selectedStartDeg + "°") : "await-start" === shoulderFlexionState.phase ? setActionPrompt("到起點", shoulderFlexionState.selectedStartDeg + "°") : setActionPrompt("抬高至", target + "°");
+                                shoulderRewardCycle.active && !shoulderRewardVisualFinished() ? setActionPrompt("好！可以放低休息 · 睇埋動畫", "") : "target-hold" === shoulderFlexionState.phase && shoulderFlexionState.holdInterrupted ? setActionPrompt("再抬高 · 保持", "") : shoulderFlexionState.holdFeedbackActive ? setActionPrompt("好！", "") : shoulderFlexionState.holdCountdownActive ? setActionPrompt("保持舉高", shoulderFlexionState.holdRemainingSec + "") : shoulderFlexionState.targetReady ? setActionPrompt("慢慢返回", shoulderFlexionState.selectedStartDeg + "°") : "await-start" === shoulderFlexionState.phase ? setActionPrompt("到起點", shoulderFlexionState.selectedStartDeg + "°") : setActionPrompt("抬高至", target + "°");
                             }()) : (syncTargetHoldFeedback(), void setActionPrompt("等待鏡頭", ""));
                         }
                         if (isLevel4Tabletop()) {
@@ -7119,8 +7142,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                                             src.start(when), src.stop(when + dur + .02);
                                         }
                                     } catch (e) {}
-                                }(), playApplauseSound(), playHaoboCheer())), "impact" === bowlingStrike.phase && t >= 1300 && (bowlingStrike.phase = "down"), 
-                                "down" === bowlingStrike.phase && t >= 2200 && resetBowlingStrike();
+                                }(), playApplauseSound(), playHaoboCheer())), "impact" === bowlingStrike.phase && t >= 1300 && (bowlingStrike.phase = "down");
                             })(), preloadHaoboCheer(), g.laneX, g.pw, ctx.save(), ctx.rect(0, 0, cw, ch), ctx.clip(), 
                             imgBowlingAlleyBg.complete && imgBowlingAlleyBg.naturalWidth > 0 ? ctx.drawImage(imgBowlingAlleyBg, g.bgDx, g.bgDy, g.bgDw, g.bgDh) : (ctx.fillStyle = "#d9b573", 
                             ctx.fillRect(0, 0, cw, ch)), function(ctx, g) {
@@ -10059,7 +10081,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
 <script src="level4-three-games-module.js"></script>
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v82-20260902-layout-difficulty-fix";
+  const LEVEL_APP_BUILD = "v83-20260902-positive-reward-latch";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 
