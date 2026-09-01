@@ -249,6 +249,7 @@ try {
           engine: launch.gameType,
           non_overlapping_items: itemsDoNotOverlap(launch.items),
           targets_visible: itemsDoNotCoverTargets(launch.items, launch.targets),
+          ...(itemsDoNotOverlap(launch.items) ? {} : { items: launch.items }),
         });
     }
   }

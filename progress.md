@@ -2,6 +2,18 @@
 
 Original prompt: Fix Level 6–7 interactions: make light clothes-peg press detection easier without claiming tool/force sensing; keep bare three-finger pinch held through transport until a stabilized reopen; enlarge Level 6–7 dim sum and steamers 1.5× without collisions; and make Home/Back/Stop safely return to level selection.
 
+## 2026-09-01 v76 Level 5–6 patient visual cues
+- Bedside feedback identified three barriers in Levels 5–6: the play objects were still too small, the top of the screen contained too many competing words, and the abstract circle did not clearly show when to grasp or release.
+- Public Level 5–6 gameplay now uses one large high-contrast action cue. The top rule strip, verbose canvas order banners and non-essential score counters are hidden during play; only the timer remains at the lower left. Advanced activity buttons remain available without their multi-line instruction panel.
+- The tracked cursor now shows a large `✋` when the patient should keep the hand open and a large `✊` when the hand should close or keep holding. A short Traditional Chinese action phrase is always shown with the emoji, so meaning never depends on the platform-specific emoji alone.
+- Standard Level 5 objects are enlarged from a 1.18× to 1.36× public-mode boost. Standard Level 6 objects and Level 5–6 targets gain a further 1.16× boost; the wide three-item cloth-peg layout uses a collision-safe 1.10× boost and wider fixed slots. Cooking props, mahjong tiles and flower-palette items are also enlarged.
+- Gesture meaning is classified from the fixed internal action key before language translation, so English open/waiting prompts keep the correct `✋` cue. The large canvas hands and all advanced-layout enlargements are explicitly public-only; research sessions retain their pre-v76 cursor and geometry.
+- Interaction thresholds, affected-hand-only admission, fresh-frame checks, open-before-close arming, stabilized release dwell and Level 6 dual-digit reopen requirements are unchanged.
+- Final automated validation: full suite **394 total / 391 passed / 0 failed / 3 intentional skips**; focused Level 6 plus v76 suite **52/52**, including direct English-browser cue verification; technical validator **168/168**; JavaScript syntax and `git diff --check` passed.
+- iPad visual QA passed at **820×1180 portrait** and **1180×820 landscape** for Level 5 fridge and Level 6 cloth-peg laundry. All four views had one visible HUD item, no prompt/control overlap, no item overlap and no horizontal overflow.
+- `dist/public` was rebuilt with **185 files (87M)** and aligned v76 app, manifest and service-worker markers. The callable `window.__qa` block is absent from production; no external URL is present.
+- Independent release security review returned **SHIP** with no Critical, High, Medium, or release-blocking Low findings.
+
 ## 2026-08-28 v66 Level 6 calibration fresh-frame repair
 - Reproduced the bedside symptom from the supplied iPhone recording: the selected hand is clearly visible in the calibration camera, but all three checks remain incomplete and the status stays `尚未偵測`.
 - Confirmed two linked v65 regressions. First, `detectWrist(videoEl, frame)` became fail-closed for stale or missing frame authority while `startCalibLoop()` still called it without the current decoded-frame status. Second, the legacy `isGrossTabletop()` route initialized Pose instead of Hand Landmarker for normal Level 6. Either defect kept a clearly visible hand permanently at `尚未偵測`.

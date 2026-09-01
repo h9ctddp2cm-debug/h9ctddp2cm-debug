@@ -93,6 +93,25 @@ test('Level 6 has no shoulder-flexion target dependency', async t => {
   });
 });
 
+test('English Level 6 waiting prompt keeps the correct open-hand cue', async t => {
+  if (!browser) return t.skip('playwright unavailable');
+  await withPage({ width: 1180, height: 820 }, async page => {
+    const cue = await page.evaluate(() => {
+      window.YCHLanguage.setLanguage('en');
+      window.__qa.startGame({ level: '67', level6Task: 'peg', duration: 60 });
+      const bar = document.getElementById('statusBar');
+      return {
+        cue: bar.dataset.gestureCue,
+        emoji: bar.querySelector('.action-emoji')?.textContent,
+        text: bar.textContent,
+      };
+    });
+    assert.equal(cue.cue, 'open', 'English waiting prompt must remain an open-hand cue');
+    assert.equal(cue.emoji, '✋');
+    assert.match(cue.text, /Align with camera/i);
+  });
+});
+
 test('Level 6 setup hides the complete angle panel while Levels 3 and 4 retain it', async t => {
   if (!browser) return t.skip('playwright unavailable');
   await withPage({ width: 820, height: 1180 }, async page => {

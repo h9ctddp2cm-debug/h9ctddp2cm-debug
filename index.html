@@ -380,6 +380,56 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
   display:block; margin-top:2px; font-size:12px; line-height:1.2;
   font-weight:700; color:#f2d99b;
 }
+.action-emoji{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:58px; height:58px; flex:0 0 58px;
+  font:400 48px/1 "Apple Color Emoji","Segoe UI Emoji",sans-serif;
+  filter:drop-shadow(0 2px 2px rgba(0,0,0,.24));
+}
+.action-copy{ display:flex; flex-direction:column; min-width:0; }
+
+/* v76 patient view for Levels 5–6. Keep one large action cue and move the
+   only essential session metric (time) away from the instruction area. */
+.game-stage.patient-simple-hud .hud{
+  top:auto !important; right:auto; bottom:12px; left:12px;
+  display:block !important; grid-template-columns:none !important;
+  width:auto; padding:0 !important; background:none;
+}
+.game-stage.patient-simple-hud .hud-item{ display:none; }
+.game-stage.patient-simple-hud .hud-item:last-child{
+  display:block; min-width:86px; padding:7px 10px; border:2px solid rgba(10,103,93,.45);
+}
+.game-stage.patient-simple-hud .hud-item:last-child .hud-label{ font-size:12px; margin:0; }
+.game-stage.patient-simple-hud .hud-item:last-child .hud-value{ font-size:24px; }
+.game-stage.patient-simple-hud .prompt-zone{
+  top:78px !important; align-items:center; padding:0 10px;
+}
+.game-stage.patient-simple-hud .prompt-row{
+  width:100%; justify-content:center; align-items:center;
+}
+.game-stage.patient-simple-hud .prompt-slot{ display:none !important; }
+.game-stage.patient-simple-hud .status-bar{
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  width:auto; max-width:min(520px,82vw); min-height:72px;
+  padding:7px 18px 7px 10px; border-radius:22px;
+  border:4px solid rgba(255,255,255,.92); text-align:left;
+  background:rgba(16,73,64,.94); box-shadow:0 7px 22px rgba(0,0,0,.32);
+}
+.game-stage.patient-simple-hud .action-main{
+  font-size:clamp(25px,3.4vw,38px); line-height:1.05; white-space:nowrap;
+}
+.game-stage.patient-simple-hud .action-detail{
+  display:none;
+}
+.game-stage.patient-simple-hud .adv-panel{
+  width:auto; min-width:0; padding:0; border:0; background:transparent;
+  box-shadow:none; backdrop-filter:none;
+}
+.game-stage.patient-simple-hud .adv-panel > :not(.adv-btnrow){ display:none; }
+.game-stage.patient-simple-hud .adv-btnrow{ top:0; }
+@media (min-width:601px) and (max-width:900px) and (orientation:portrait){
+  .game-stage.patient-simple-hud .prompt-zone{ top:156px !important; }
+}
 
 .cog-overlay{
   position:absolute; top:56px; left:0; right:0; z-index:6;
@@ -826,6 +876,12 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
   .status-bar{ width:min(210px,46%); padding:7px 8px; }
   .action-main{ font-size:19px; }
   .action-detail{ font-size:11px; }
+  .game-stage.patient-simple-hud .prompt-zone{ top:72px !important; }
+  .game-stage.patient-simple-hud .status-bar{
+    min-height:64px; max-width:92vw; padding:5px 14px 5px 7px;
+  }
+  .game-stage.patient-simple-hud .action-emoji{ width:52px; height:52px; flex-basis:52px; font-size:43px; }
+  .game-stage.patient-simple-hud .action-main{ font-size:25px; }
 }
 /* Narrow phones in portrait: keep every game control (incl. 休息 / 停止) on one
    reachable row instead of letting the row overflow off-screen. */
@@ -836,6 +892,7 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
   .game-control-btn.stop-btn{ min-width:60px !important; font-size:16px !important; }
   .game-control-btn.therapist-btn{ font-size:13px !important; }
   .prompt-zone{ top:142px; }
+  .game-stage.patient-simple-hud .prompt-zone{ top:68px !important; }
 }
 
 /* landscape adjustments */
@@ -6134,6 +6191,7 @@ function leaveCurrentGame(){
   }
   state.running = false;
   state.paused = false;
+  document.querySelector('.game-stage')?.classList.remove('patient-simple-hud');
   resetSafetyRuntime();
   if(usesAdvancedThemeModule()) advTeardown();
   if(gameTimerId){ clearInterval(gameTimerId); gameTimerId = null; }
@@ -6146,6 +6204,7 @@ function leaveCurrentGame(){
   stopCamera();
   promptRulesEnabled = true;
   setPromptSlot('rules');
+  document.querySelector('.game-stage')?.classList.remove('patient-simple-hud');
   document.getElementById('btnPause').classList.remove('pause-active');
   document.getElementById('btnPause').textContent = 'Ⅱ 暫停';
   if(wasResearch){
@@ -6186,6 +6245,7 @@ function exitToLevelSelection(){
   qaHand = null;
   promptRulesEnabled = true;
   setPromptSlot('rules');
+  document.querySelector('.game-stage')?.classList.remove('patient-simple-hud');
   document.getElementById('btnPause').classList.remove('pause-active');
   document.getElementById('btnPause').textContent = 'Ⅱ 暫停';
   document.getElementById('calibChecklist').classList.remove('active');
@@ -9250,6 +9310,8 @@ function initGame(){
   const gameStage = document.querySelector('.game-stage');
   if(gameStage) gameStage.classList.toggle('level4-selfie-window', isLevel4WipeGame());
   if(gameStage) gameStage.classList.toggle('shoulder-flexion-game', isShoulderFlexionLevel());
+  if(gameStage) gameStage.classList.toggle('patient-simple-hud',
+    !research.active && (state.level === '5' || state.level === '67'));
   // 先顯示提示，讓第一局生成物件時已可量度右上角提示禁區
   setActionPrompt('等待偵測手部', '手放鏡頭前');
   if(isLevel4StandaloneGame()){
@@ -9454,7 +9516,11 @@ function setupTargets(){
   const pullToCentre = (x)=> shortReach ? (cw / 2 + (x - cw / 2) * 0.72) : x;
   // 患側名稱直接對應畫面方向：右患側向右下，左患側向左下。
   const level67DimSum = isLevel67DimSumTheme();
-  const standardTw = portrait ? Math.min(cw * 0.29, 230) : Math.min(cw * 0.24, 260);
+  const patientTargetBoost = (!research.active && (state.level === '5' || state.level === '67'))
+    ? (state.theme === 'peg_laundry' ? 1.10 : 1.16)
+    : 1;
+  const standardTw = (portrait ? Math.min(cw * 0.29, 230) : Math.min(cw * 0.24, 260)) *
+    patientTargetBoost;
   // Level 6–7 dim sum is intentionally 1.5×. The viewport cap is only reached
   // on a narrow display, where it keeps both steamers fully visible and apart.
   const tw = level67DimSum
@@ -9671,7 +9737,12 @@ function makeFoodAt(def, existingFoods){
   const advancedPilot = research.active && research.dualTaskLevel === 'advanced_sort_motor';
   // Safety default for public Level 5: larger objects are easier to pick up with a
   // light, non-forceful grasp and easier to release.
-  const level5Boost = (!research.active && state.level === '5') ? 1.18 : 1;
+  const level5Boost = (!research.active && state.level === '5') ? 1.36 : 1;
+  // Peg laundry has three wide garments sharing the upper workspace. A 10% boost
+  // keeps them clearly larger while preserving three non-overlapping pickup zones.
+  const level6Boost = (!research.active && state.level === '67')
+    ? (state.theme === 'peg_laundry' ? 1.10 : 1.16)
+    : 1;
   // v75：雪櫃遊戲食物再加大（用戶反映食物太細）
   const fridgeBoost = isFridgeGame() ? (portrait ? 1.25 : 1.35) : 1;
   const baseR = (isShoulderFlexionLevel() ? (portrait ? 104 : 138)
@@ -9680,7 +9751,8 @@ function makeFoodAt(def, existingFoods){
   // Task-specific strata: FTHUE 6 and 7 use progressively smaller objects.
   const level67DimSum = state.level === '67' && dimSumTheme;
   const requestedR = baseR * (isShoulderFlexionLevel() ? 1 : (def.scale || 1.0)) *
-    (research.active ? pilotStratum().itemScale : 1) * (level67DimSum ? 1.5 : 1) * fridgeBoost;
+    (research.active ? pilotStratum().itemScale : 1) * level6Boost *
+    (level67DimSum ? 1.5 : 1) * fridgeBoost;
   // On compact portrait canvases the 1.5× size is capped only when necessary
   // to preserve a clear three-item layout and an unobstructed instruction area.
   const maxLevel67DimSumR = portrait
@@ -9765,9 +9837,9 @@ function makeFoodAt(def, existingFoods){
       : (dimSumTheme
         ? [[0.22,0.42],[0.50,0.54],[0.78,0.42]]
         : (isLaundryOrderGame()
-          // v71 修正：橫向大晾衫架佔據畫面底部，較低嘅預設 slots 會同架
-          // 保護區相撞而全部被拒，令 spawn 跌入 fallback 造成間歇性重疊。
-          ? [[0.24,0.36],[0.50,0.36],[0.76,0.36]]
+          // The large drying rack occupies the bottom. Keep three enlarged garments
+          // in a wide upper row, clear of both the action cue and each other.
+          ? [[0.20,0.40],[0.50,0.40],[0.80,0.40]]
           : [[0.22,0.54],[0.50,0.54],[0.78,0.54]]))));
   const activeCount = existingFoods.filter(food => !food.removed).length;
   for(let offset=0; offset<slotRatios.length; offset++){
@@ -11387,6 +11459,9 @@ function toolPinchLiveHint(){
     (live.ratio - closedRef) / (openRef - closedRef))));
   return { pct };
 }
+function isPatientVisualCueMode(){
+  return !research.active && (state.level === '5' || state.level === '67');
+}
 function setActionPrompt(main, detail){
   const statusBar = document.getElementById('statusBar');
   if(!statusBar) return;
@@ -11394,6 +11469,10 @@ function setActionPrompt(main, detail){
     main = '鏡頭對準';
     detail = '';
   }
+  // Classify the internal Cantonese action key before translating it. This
+  // keeps the visual gesture correct in every display language.
+  const openWords = /張開|放鬆|鬆開|放下|放低|已放開|對準|等待|入鏡/;
+  const gestureCue = openWords.test(main) ? 'open' : 'close';
   const toolHint = toolPinchLiveHint();
   if(toolHint){
     if(toolHint.warn) detail = toolHint.warn;
@@ -11403,8 +11482,16 @@ function setActionPrompt(main, detail){
     main = window.YCHLanguage.text(main);
     detail = window.YCHLanguage.text(detail);
   }
+  if(isPatientVisualCueMode()){
+    const emoji = gestureCue === 'open' ? '✋' : '✊';
+    statusBar.innerHTML = `<span class="action-emoji" aria-hidden="true">${emoji}</span>` +
+      `<span class="action-copy"><span class="action-main">${main}</span></span>`;
+    statusBar.dataset.gestureCue = gestureCue;
+    return;
+  }
   statusBar.innerHTML = `<span class="action-main">${main}</span>` +
     (detail ? `<span class="action-detail">${detail}</span>` : '');
+  delete statusBar.dataset.gestureCue;
 }
 
 /* Short, mode-specific prompts. Tool modes use observable hand motion only:
@@ -11783,6 +11870,10 @@ function drawBigPlateTarget(ctx, t){
 // v69 落單橫幅：顯示而家張單（例：我想食2個牛肉球，3個蝦餃）同每款進度
 function drawDimsumOrderBanner(ctx, cw, ch){
   if(!isDimsumOrderGame() || !dimsumOrder) return;
+  if(!research.active && (state.level === '5' || state.level === '67')){
+    dimsumOrderBannerRect = null;
+    return;
+  }
   const celebrating = nowMs() < dimsumOrderCelebrateUntil;
   const title = celebrating ? '👏 好嘢！上齊點心喇！' : '落單：' + dimsumOrderText();
   const prog = dimsumOrder.lines
@@ -11895,6 +11986,10 @@ function drawLaundryRackTarget(ctx, t){
 // v71 晾衫單橫幅：顯示而家張單（例：晾衫訓練：請將3件恤衫放上晾衫架）同每款進度
 function drawLaundryOrderBanner(ctx, cw, ch){
   if(!isLaundryOrderGame() || !laundryOrder) return;
+  if(!research.active && (state.level === '5' || state.level === '67')){
+    laundryOrderBannerRect = null;
+    return;
+  }
   const celebrating = nowMs() < laundryOrderCelebrateUntil;
   const title = celebrating ? '👏 好叻呀！晾好晒喇！' : '晾衫訓練：' + laundryOrderText();
   const prog = laundryOrder.lines
@@ -12039,6 +12134,10 @@ function drawFridgeTarget(ctx, t){
 // v72 雪櫃收納橫幅：顯示訓練指令、進度、相撞提示同慶祝訊息
 function drawFridgeOrderBanner(ctx, cw, ch){
   if(!isFridgeGame() || !fridgeQueue.length) return;
+  if(!research.active && (state.level === '5' || state.level === '67')){
+    fridgeBannerRect = null;
+    return;
+  }
   const celebrating = nowMs() < fridgeCelebrateUntil;
   const crashing = !celebrating && nowMs() < fridgeCrashUntil && fridgeCrashMsg;
   const nextDef = fridgeCurrentDef();
@@ -12331,15 +12430,29 @@ function renderGame(){
   drawLaundryOrderBanner(ctx, cw, ch);
   drawFridgeOrderBanner(ctx, cw, ch);
 
-  // 游標：大圓點 + 停留進度環 / 握放手勢圖示
+  // 游標：Level 5–6 以大型手勢 emoji 取代抽象圓點，並保留
+  // 高對比外圈。文字提示同步顯示，避免單靠 emoji 傳達動作。
   const cursorPoint = displayCursorPoint();
   if(cursorPoint.x >= 0 && cursorPoint.y >= 0 && handDetected && !isShoulderFlexionLevel()){
     ctx.save();
 
     if(isGraspStyleMode()){
-      // 握放／捏取模式：張開 = 大空心圓；拿住 = 實心橙色圓
-      if(isGrasping){
-        // 握拳：實心橙色圓
+      if(isPatientVisualCueMode()){
+        const handEmoji = isGrasping ? '✊' : '✋';
+        const handSize = Math.max(64, Math.min(94, Math.min(cw, ch) * 0.105));
+        ctx.beginPath();
+        ctx.arc(cursorPoint.x, cursorPoint.y, handSize * 0.52, 0, Math.PI*2);
+        ctx.fillStyle = isGrasping ? 'rgba(255,223,163,.88)' : 'rgba(255,255,255,.82)';
+        ctx.fill();
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = isGrasping ? '#C05B22' : '#0A675D';
+        ctx.stroke();
+        ctx.font = `${Math.round(handSize)}px "Apple Color Emoji","Segoe UI Emoji",sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(handEmoji, cursorPoint.x, cursorPoint.y + handSize * 0.03);
+      } else if(isGrasping){
+        // Preserve the pre-v76 research grasp/pinch cursor exactly.
         ctx.beginPath();
         ctx.arc(cursorPoint.x, cursorPoint.y, 28, 0, Math.PI*2);
         ctx.fillStyle = 'rgba(224,123,57,0.85)';
@@ -12353,7 +12466,6 @@ function renderGame(){
         ctx.textBaseline = 'middle';
         ctx.fillText(isPinchMode() ? '捏' : '✊', cursorPoint.x, cursorPoint.y);
       } else {
-        // 張開手：白色空心圓
         ctx.beginPath();
         ctx.arc(cursorPoint.x, cursorPoint.y, 30, 0, Math.PI*2);
         ctx.fillStyle = 'rgba(255,255,255,0.25)';
@@ -12361,11 +12473,6 @@ function renderGame(){
         ctx.lineWidth = 3;
         ctx.strokeStyle = '#fff';
         ctx.stroke();
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 22px -apple-system,"PingFang TC","Noto Sans TC",sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        // no emoji cursor
       }
     } else {
       const still = dwellActive || dwellTarget;
@@ -12460,6 +12567,7 @@ function endGame(endReason){
   }
   state.running = false;
   state.paused = false;
+  document.querySelector('.game-stage')?.classList.remove('patient-simple-hud');
   resetSafetyRuntime();
   adaptiveHideCard();
   adaptiveRenderStreak();
@@ -13970,11 +14078,12 @@ function cookLayout(){
       prop:  { x:cw*0.50, y:ch*0.57, s:base*0.25 },
     };
   }
+  const patientLarge = isPatientVisualCueMode();
   return {
-    wok:   { x: cw * 0.34, y, r: base * 0.16 },
-    plate: { x: cw * 0.70, y, r: base * 0.13 },
-    knob:  { x: cw * 0.10, y: ch * 0.86, r: base * 0.075 },
-    prop:  { x: cw * 0.52, y: ch * 0.50, s: base * 0.27 },
+    wok:   { x: cw * (patientLarge ? 0.33 : 0.34), y, r: base * (patientLarge ? 0.19 : 0.16) },
+    plate: { x: cw * (patientLarge ? 0.72 : 0.70), y, r: base * (patientLarge ? 0.16 : 0.13) },
+    knob:  { x: cw * 0.10, y: ch * 0.86, r: base * (patientLarge ? 0.09 : 0.075) },
+    prop:  { x: cw * 0.52, y: ch * 0.50, s: base * (patientLarge ? 0.31 : 0.27) },
   };
 }
 
@@ -14520,8 +14629,11 @@ function mjLayout(){
   const narrow = cw < 700;
   const handRows = narrow ? 3 : 2;
   const perRow = narrow ? 5 : 7;
-  const tileW = Math.max(narrow ? 56 : 64,
-    Math.min(narrow ? 68 : 82, (cw - 32) / perRow - 4));
+  const patientLarge = isPatientVisualCueMode();
+  const tileMin = patientLarge ? (narrow ? 62 : 70) : (narrow ? 56 : 64);
+  const tileMax = patientLarge ? (narrow ? 76 : 92) : (narrow ? 68 : 82);
+  const tileW = Math.max(tileMin,
+    Math.min(tileMax, (cw - 32) / perRow - 4));
   const th = tileW * MJ_ATLAS.ch / MJ_ATLAS.cw;
   const handTop = ch * (isLevel4Tabletop() ? 0.48 : (narrow ? 0.42 : 0.40));
   const groups = mj.groups.map((g, i)=>{
@@ -15205,7 +15317,10 @@ function flowersSetup(){
   const batch = FLOWER_KINDS.slice(flowers.palettePage*FLOWERS_PER_PAGE,
     flowers.palettePage*FLOWERS_PER_PAGE + FLOWERS_PER_PAGE);
   const gap = Math.min(cw*0.118, portrait ? 96 : 140);
-  const size = Math.min(gap*0.94, portrait ? 92 : 120);
+  const patientLarge = isPatientVisualCueMode();
+  const size = patientLarge
+    ? Math.min(gap*1.04, portrait ? 102 : 132)
+    : Math.min(gap*0.94, portrait ? 92 : 120);
   const rowY = ch - size*0.62 - 8;
   flowers.palette = batch.map((k, i)=>({
     id:'pal' + (flowers.palettePage*FLOWERS_PER_PAGE+i), kind:k.key, name:k.name,
@@ -15607,19 +15722,35 @@ function advDrawCursor(ctx, pct){
   if(cursorX < 0 || cursorY < 0 || !handDetected) return;
   ctx.save();
   if(isGraspStyleMode()){
-    ctx.beginPath(); ctx.arc(cursorX, cursorY, isGrasping ? 28 : 30, 0, Math.PI*2);
-    ctx.fillStyle = isGrasping ? 'rgba(224,123,57,0.85)' : 'rgba(255,255,255,0.30)';
-    ctx.fill();
-    ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.stroke();
-    if(isGrasping){
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 22px -apple-system,"PingFang TC",sans-serif';
+    if(isPatientVisualCueMode()){
+      const handEmoji = isGrasping ? '✊' : '✋';
+      const handSize = Math.max(64, Math.min(94, Math.min(gameCanvas.width, gameCanvas.height) * 0.105));
+      ctx.beginPath(); ctx.arc(cursorX, cursorY, handSize * 0.52, 0, Math.PI*2);
+      ctx.fillStyle = isGrasping ? 'rgba(255,223,163,.88)' : 'rgba(255,255,255,.82)';
+      ctx.fill();
+      ctx.lineWidth = 5; ctx.strokeStyle = isGrasping ? '#C05B22' : '#0A675D'; ctx.stroke();
+      ctx.font = `${Math.round(handSize)}px "Apple Color Emoji","Segoe UI Emoji",sans-serif`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(isPinchMode() ? '捏' : '✊', cursorX, cursorY);
+      ctx.fillText(handEmoji, cursorX, cursorY + handSize * 0.03);
+    } else {
+      // Preserve the pre-v76 research grasp/pinch cursor exactly.
+      ctx.beginPath(); ctx.arc(cursorX, cursorY, isGrasping ? 28 : 30, 0, Math.PI*2);
+      ctx.fillStyle = isGrasping ? 'rgba(224,123,57,0.85)' : 'rgba(255,255,255,0.30)';
+      ctx.fill();
+      ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.stroke();
+      if(isGrasping){
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 22px -apple-system,"PingFang TC",sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(isPinchMode() ? '捏' : '✊', cursorX, cursorY);
+      }
     }
     if(pct > 0){
       ctx.beginPath();
-      ctx.arc(cursorX, cursorY, 36, -Math.PI/2, -Math.PI/2 + pct*Math.PI*2);
+      const progressRadius = isPatientVisualCueMode()
+        ? Math.max(64, Math.min(94, Math.min(gameCanvas.width, gameCanvas.height) * 0.105)) * 0.62
+        : 36;
+      ctx.arc(cursorX, cursorY, progressRadius, -Math.PI/2, -Math.PI/2 + pct*Math.PI*2);
       ctx.strokeStyle = '#C0392B'; ctx.lineWidth = 5; ctx.stroke();
     }
   } else {
@@ -15724,8 +15855,19 @@ function advResizeCheck(){
 
 function advUpdate(){
   advResizeCheck();
-  const sb = document.getElementById('statusBar');
-  if(sb) sb.textContent = handDetected ? '✅ 已偵測到手部' : '✋ 等待偵測手部…';
+  if(!handDetected){
+    setActionPrompt('患手入鏡', '');
+  }else{
+    const advancedHeld = !!(carrier.heldId || picker.heldId);
+    const advancedHover = !!(carrier.hoverId || picker.hoverId);
+    if(advancedHeld){
+      setActionPrompt(isGrasping ? '保持揸住' : '張開手放低', '');
+    }else if(advancedHover){
+      setActionPrompt(isGrasping ? '揸實' : '揸實拿起', '');
+    }else{
+      setActionPrompt('張開手', '');
+    }
+  }
   if(rewardIsOpen()) return;                      // 慶祝畫面期間暫停操作
   if(advDom && advDom.keep.classList.contains('show')) return;
   if(advCurrent === 'cooking'){
@@ -17701,7 +17843,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v75-20260831-design";
+  const LEVEL_APP_BUILD = "v76-20260901-patient-visual-cues";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 
