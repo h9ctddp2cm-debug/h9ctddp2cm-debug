@@ -144,6 +144,11 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
 
 /* ---------- CALIBRATION SCREEN ---------- */
 #screen-calib{ align-items:center; justify-content:center; padding:16px; position:relative; }
+.attention-flash{ animation: attentionFlash 1.2s ease-in-out 2; }
+@keyframes attentionFlash{
+  0%,100%{ box-shadow:none; }
+  50%{ box-shadow:0 0 0 4px #a1261b; }
+}
 .calib-wrap{
   position:relative; width:min(66.667vw,calc(66.667vh * 4 / 3)); max-width:none; aspect-ratio:4/3;
   background:#111; border-radius:16px; overflow:hidden;
@@ -1365,6 +1370,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
       </div>
     </div>
 
+    <p id="goCalibError" data-testid="text-go-calib-error" style="min-height:22px;margin:0 0 6px;color:#a1261b;font-weight:800;font-size:17px;text-align:center;"></p>
     <button class="btn-primary" id="btnGoCalib">相機校準</button>
     <button class="btn-secondary" id="btnBackToLibrary">← 返回</button>
 
@@ -2861,9 +2867,12 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
         btn.classList.add("selected"), state.labelFont = parseInt(btn.dataset.font));
     }), document.getElementById("affectedSideOptions").addEventListener("click", e => {
         const btn = e.target.closest(".option-btn");
-        btn && (document.querySelectorAll("#affectedSideOptions .option-btn").forEach(b => b.classList.remove("selected")), 
+        if (!btn) return;
+        document.querySelectorAll("#affectedSideOptions .option-btn").forEach(b => b.classList.remove("selected")), 
         btn.classList.add("selected"), state.affectedSide = btn.dataset.side, document.getElementById("preview-affected-side").textContent = "right" === state.affectedSide ? "右患側" : "左患側", 
-        document.getElementById("affectedSideError").textContent = "");
+        document.getElementById("affectedSideError").textContent = "";
+        const goCalibError = document.getElementById("goCalibError");
+        goCalibError && (goCalibError.textContent = "");
     }), document.getElementById("shoulderTargetOptions").addEventListener("click", e => {
         const button = e.target.closest("[data-shoulder-target]");
         if (!button) return;
@@ -2902,10 +2911,21 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
     }), window.enterCalibrationFlow = enterCalibrationFlow, document.getElementById("btnGoCalib").addEventListener("click", async () => {
         if (!state.affectedSide) {
             document.getElementById("affectedSideError").textContent = "請先選擇患側";
+            const goCalibError = document.getElementById("goCalibError");
+            goCalibError && (goCalibError.textContent = "請先在上方揀「患側方向」");
             const card = document.querySelector('[data-accordion="affected-side"]');
-            return void (card && card.classList.remove("collapsed"));
+            card && (card.classList.remove("collapsed"), card.classList.remove("attention-flash"), 
+            card.offsetWidth, card.classList.add("attention-flash"), card.scrollIntoView({
+                behavior: "smooth",
+                block: "center"
+            }));
+            try {
+                speakCantonese("請先選擇患側");
+            } catch (_e) {}
+            return;
         }
-        await enterCalibrationFlow();
+        const goCalibError = document.getElementById("goCalibError");
+        goCalibError && (goCalibError.textContent = ""), await enterCalibrationFlow();
     }), document.getElementById("btnBackFromCalib").addEventListener("click", () => {
         stopCalibLoop(), stopCamera(), showScreen("start");
     }), document.getElementById("btnCalibToLibrary").addEventListener("click", () => {
@@ -9820,7 +9840,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
 <script src="level4-three-games-module.js"></script>
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v78-20260901-patient-pinch-voice";
+  const LEVEL_APP_BUILD = "v79-20260901-calib-feedback";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

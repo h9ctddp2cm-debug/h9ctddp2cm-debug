@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v78-20260901-patient-pinch-voice";
+const CACHE_VERSION = "fthue-rehab-v79-20260901-calib-feedback";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");
