@@ -385,11 +385,11 @@ test('visible mapping and setup copy distinguish Level 2, Level 3 and Level 4 wi
   assert.doesNotMatch(html,/Level 4：[^<\n]*(桌面承托|滑板|向前滑)/);
 });
 
-test('Level 3 and 4 gameplay directly follows live shoulder angle with larger objects',()=>{
+test('Level 3 and 4 gameplay follows live shoulder angle, then latches successful visuals',()=>{
   const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
   assert.match(html,/function updateShoulderFlexionGame\(\)/);
   assert.match(html,/if\(isGrossTabletop\(\)\)\{[\s\S]*ensurePoseLandmarker\(\)/);
-  assert.match(html,/const visualProgress=clamp01\(Number\(shoulderFlexionState\.progress\)\|\|0\)/);
+  assert.match(html,/const visualProgress=shoulderRewardCycle\.active\s*\?\s*1\s*:\s*clamp01\(Number\(shoulderFlexionState\.progress\)\|\|0\)/);
   assert.match(html,/item\.y=bottom-\(bottom-top\)\*visualProgress/);
   assert.match(html,/shoulder_cycle_completed/);
   assert.match(html,/shoulder\.frame\?\.fresh===true/);
@@ -418,9 +418,9 @@ test('setup exposes distinct exact target-hold choices and aligns v51 source ide
   assert.match(html,/id="targetHoldOverlay"[\s\S]*id="targetHoldNumber"/);
   assert.match(html,/holdCountdownActive/);
   assert.match(html,/SHOULDER_HOLD_COUNT_CANTONESE/);
-  assert.match(html,/v82-20260902-layout-difficulty-fix/);
-  assert.match(manifest,/v82-20260902-layout-difficulty-fix/);
-  assert.match(worker,/v82-20260902-layout-difficulty-fix/);
+  assert.match(html,/v83-20260902-positive-reward-latch/);
+  assert.match(manifest,/v83-20260902-positive-reward-latch/);
+  assert.match(worker,/v83-20260902-positive-reward-latch/);
   assert.doesNotMatch(html,/v46-20260825-shoulder-detection-repair/);
   assert.doesNotMatch(manifest,/v46-20260825-shoulder-detection-repair/);
   assert.doesNotMatch(worker,/v46-20260825-shoulder-detection-repair/);

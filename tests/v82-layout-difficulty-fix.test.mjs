@@ -7,8 +7,8 @@ import {fileURLToPath} from 'node:url';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const html=readFileSync(path.join(root,'index.html'),'utf8');
 
-test('v82 markers are aligned across the source release files',()=>{
-  const version='v82-20260902-layout-difficulty-fix';
+test('release markers are aligned across the source release files',()=>{
+  const version='v83-20260902-positive-reward-latch';
   assert.match(html,new RegExp(version));
   assert.match(readFileSync(path.join(root,'service-worker.js'),'utf8'),new RegExp(version));
   assert.match(readFileSync(path.join(root,'manifest.webmanifest'),'utf8'),new RegExp(version));
@@ -31,7 +31,7 @@ test('photo puzzle uses one shared rectangular geometry for hole, crop and piece
 test('fridge has an upper 80 percent target and lower 20 percent pickup lane',()=>{
   assert.match(html,/const th = ch\*0\.80;/);
   assert.match(html,/y:Math\.min\(ch-visualR-18,ch\*0\.90\)/);
-  assert.match(html,/visualR:isFridgeGame\(\) \? r \* 0\.42 : r/);
+  assert.match(html,/visualR:isFridgeGame\(\) \? r \* 0\.50 : r/);
   assert.match(html,/isFridgeGame\(\)\?210:100/);
   assert.match(html,/isFridgeGame\(\)\?250:150/);
 });

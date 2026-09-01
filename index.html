@@ -3251,9 +3251,9 @@ function updateBowlingStrike(){
     }
   }
   if(bowlingStrike.phase==='impact'&&t>=BOWLING_ROLL_MS+BOWLING_FALL_MS)bowlingStrike.phase='down';
-  if(bowlingStrike.phase==='down'&&t>=BOWLING_ROLL_MS+BOWLING_FALL_MS+BOWLING_RESET_MS){
-    resetBowlingStrike();
-  }
+  // Keep every pin on the ground until the shared shoulder reward cycle has
+  // finished and the patient's arm has returned. The patient's early return
+  // must never rewind or erase a successful strike.
 }
 function bowlingLaneGeometry(cw,ch){
   const laneX=cw*0.5;
@@ -9200,7 +9200,7 @@ function newFridgeRound(){
 }
 // 食物生成點（畫面底部；保留一段向上運送距離，但不再繪畫購物袋）
 function fridgeBagSpot(cw, ch, r){
-  const visualR=r*0.42;
+  const visualR=r*0.50;
   return {
     x:cw*0.50,
     y:Math.min(ch-visualR-18,ch*0.90),
@@ -9221,9 +9221,10 @@ function fridgeInteriorRect(t){
 // 放入雪櫃後嘅食物顯示半徑（12 樣要放得晒，但唔可以細到睇唔清）
 function fridgePlacedRadius(rect){
   // The display radius is intentionally independent from the generous pickup
-  // hitbox. Twelve foods remain recognisable while fitting a non-overlap grid.
+  // hitbox. Twelve foods remain recognisable while the shelf arranger keeps
+  // their centres separated; a little visual overlap is acceptable.
   const landscape = gameCanvas.width > gameCanvas.height;
-  return Math.min(rect.rh * (landscape ? 0.070 : 0.078), rect.rw * (landscape ? 0.038 : 0.044));
+  return Math.min(rect.rh * (landscape ? 0.100 : 0.115), rect.rw * (landscape ? 0.055 : 0.065));
 }
 function fridgeArrangePlacedFoods(rect){
   const columns = gameCanvas.width > gameCanvas.height ? 6 : 4;
@@ -9430,6 +9431,70 @@ let releaseDwellLastOpenAt = 0;
 let score = 0, correctCount = 0, grabCount = 0;
 let shoulderFlexionLastRepetition = 0;
 let shoulderFlexionCycleAwarded = false;
+/* Level 3–4 positive-reinforcement latch.
+   Once the selected shoulder reaches its target, the screen animation owns the
+   object until it has fully finished and remained visible long enough to be
+   understood. The patient may lower the arm immediately to rest; live shoulder
+   progress cannot pull the object back down or start the next repetition early. */
+const SHOULDER_REWARD_MIN_MS = 2600;
+const SHOULDER_PHOTO_REWARD_MS = 3200;
+const shoulderRewardCycle = {
+  active:false,
+  startedMs:0,
+  finishAtMs:0,
+  repetitionReady:false,
+  reset(){
+    this.active=false;
+    this.startedMs=0;
+    this.finishAtMs=0;
+    this.repetitionReady=false;
+  },
+};
+function shoulderRewardDurationMs(){
+  if(state.theme==='bowlinglane'){
+    return Math.max(SHOULDER_REWARD_MIN_MS,
+      BOWLING_ROLL_MS+BOWLING_FALL_MS+BOWLING_RESET_MS+500);
+  }
+  if(state.theme==='basketball'){
+    return Math.max(SHOULDER_REWARD_MIN_MS,BBALL_FLY_MS+BBALL_DROP_MS+900);
+  }
+  if(isTeahouseDimsumMode()){
+    return Math.max(SHOULDER_REWARD_MIN_MS,TEAHOUSE_FLY_MS+TEAHOUSE_STEAM_MS+900);
+  }
+  if(state.theme==='tsuenwan') return SHOULDER_PHOTO_REWARD_MS;
+  return SHOULDER_REWARD_MIN_MS;
+}
+function startShoulderRewardCycle(){
+  if(shoulderRewardCycle.active) return;
+  const started=nowMs();
+  shoulderRewardCycle.active=true;
+  shoulderRewardCycle.startedMs=started;
+  shoulderRewardCycle.finishAtMs=started+shoulderRewardDurationMs();
+  shoulderRewardCycle.repetitionReady=false;
+}
+function shoulderRewardVisualFinished(){
+  return shoulderRewardCycle.active&&nowMs()>=shoulderRewardCycle.finishAtMs;
+}
+function finishShoulderRewardCycle(){
+  if(!shoulderRewardCycle.active||!shoulderRewardCycle.repetitionReady
+    ||!shoulderRewardVisualFinished()) return false;
+  advanceLevel3RoundVariant();
+  resetBowlingStrike();
+  resetBasketballShot();
+  resetTeahouseServe();
+  foods=[];
+  spawnInitialFoods();
+  shoulderFlexionCycleAwarded=false;
+  shoulderRewardCycle.reset();
+  // Re-arm from the participant-specific zero only after the reward has ended.
+  // This prevents an eager second lift during the animation from being counted
+  // as the next repetition.
+  if(shoulderFlexionController){
+    shoulderFlexionController.setTarget(state.shoulderTargetDeg,state.level);
+    shoulderFlexionState=shoulderFlexionController.snapshot();
+  }
+  return true;
+}
 let shoulderHoldSpokenSecond = null;
 let shoulderHoldInterruptedSpoken = false;
 let totalWrong = 0;
@@ -9851,6 +9916,7 @@ function initGame(){
   level5TargetSideFlip = Math.random() < 0.5;
   shoulderFlexionLastRepetition = 0;
   shoulderFlexionCycleAwarded = false;
+  shoulderRewardCycle.reset();
   shoulderHoldSpokenSecond = null;
   shoulderHoldInterruptedSpoken = false;
   hideTargetHoldCountdown();
@@ -10447,7 +10513,9 @@ function makeFoodAt(def, existingFoods){
     targetType: def.targetType, img: def.img || null, color: def.color || null,
     drawItem: def.drawItem || null,
     drawScale: def.drawScale || 0.92, labelGap: def.labelGap || 1.04,
-    x, y, r, visualR:isFridgeGame() ? r * 0.42 : r,
+    // Keep the large clinical pickup radius `r`; only the photo radius is
+    // independently sized so edge catches remain forgiving for tremor.
+    x, y, r, visualR:isFridgeGame() ? r * 0.50 : r,
     baseX: x, baseY: y, held: false, removed: false,
   });
   if(isLevel3Tabletop() || isShoulderFlexionLevel()){
@@ -11787,7 +11855,9 @@ function updateGameLogic(){
   if(isShoulderFlexionLevel()){
     if(!shoulderFlexionState.framingReady || !shoulderFlexionState.calibrated || !shoulderFlexionState.gameReady){
       dwellTarget=null;dwellStartTime=0;dwellActive=false;lastDwellPct=0;
-      if(!shoulderFlexionState.targetReady) shoulderFlexionCycleAwarded=false;
+      if(!shoulderFlexionState.targetReady&&!shoulderRewardCycle.active){
+        shoulderFlexionCycleAwarded=false;
+      }
       syncTargetHoldFeedback();
       const guide=shoulderFlexionController?.guidance()||{main:'肩屈曲追蹤未就緒',en:'Shoulder tracking not ready'};
       setActionPrompt(window.YCHLanguage?.isEnglish() ? (guide.en || guide.main) : guide.main,'');
@@ -12110,15 +12180,11 @@ function updateShoulderFlexionGame(){
       });
       showLevelUpBanner();
       updateHUD();
+      if(!shoulderRewardCycle.active) startShoulderRewardCycle();
+      shoulderRewardCycle.repetitionReady=true;
     }
-    shoulderFlexionCycleAwarded=false;
-    advanceLevel3RoundVariant();
-    resetBowlingStrike();
-    resetBasketballShot();
-    resetTeahouseServe();
-    foods=[];
-    spawnInitialFoods();
   }
+  finishShoulderRewardCycle();
 
   let item=foods.find(food=>!food.removed);
   if(!item){
@@ -12127,7 +12193,10 @@ function updateShoulderFlexionGame(){
   }
   const target=Math.max(1,Number(shoulderFlexionState.selectedTargetDeg)||1);
   const estimated=Math.max(0,Number(shoulderFlexionState.estimatedAngle)||0);
-  const visualProgress=clamp01(Number(shoulderFlexionState.progress)||0);
+  // Latch the successful endpoint while the patient lowers the tired arm.
+  const visualProgress=shoulderRewardCycle.active
+    ? 1
+    : clamp01(Number(shoulderFlexionState.progress)||0);
   const cw=gameCanvas.width,ch=gameCanvas.height;
   let laneX=cw*(ch>cw?.68:.58),bottom=ch*.78,top=ch*.34;
   if(state.theme==='tsuenwan'&&!research.active){
@@ -12153,6 +12222,7 @@ function updateShoulderFlexionGame(){
 
   if(shoulderFlexionState.targetReady&&!shoulderFlexionCycleAwarded){
     shoulderFlexionCycleAwarded=true;
+    startShoulderRewardCycle();
     triggerFeedback(true);
     if(state.theme==='bowlinglane')startBowlingStrike();
     if(state.theme==='basketball')startBasketballShot();
@@ -12165,7 +12235,9 @@ function updateShoulderFlexionGame(){
   }
 
   syncTargetHoldFeedback();
-  if(shoulderFlexionState.phase==='target-hold'&&shoulderFlexionState.holdInterrupted){
+  if(shoulderRewardCycle.active&&!shoulderRewardVisualFinished()){
+    setActionPrompt('好！可以放低休息 · 睇埋動畫','');
+  }else if(shoulderFlexionState.phase==='target-hold'&&shoulderFlexionState.holdInterrupted){
     setActionPrompt('再抬高 · 保持','');
   }else if(shoulderFlexionState.holdFeedbackActive){
     setActionPrompt('好！','');
@@ -17933,6 +18005,15 @@ window.__qa = {
       cameraEstimateOnly:true,
       holdOverlayVisible:document.getElementById('targetHoldOverlay')?.classList.contains('show')||false,
       holdOverlayNumber:document.getElementById('targetHoldNumber')?.textContent||'',
+      rewardCycle:{
+        active:shoulderRewardCycle.active,
+        repetitionReady:shoulderRewardCycle.repetitionReady,
+        elapsedMs:shoulderRewardCycle.active ? Math.max(0,nowMs()-shoulderRewardCycle.startedMs) : 0,
+        visualFinished:shoulderRewardVisualFinished(),
+        bowlingPhase:bowlingStrike.phase,
+        basketballPhase:basketballShot.phase,
+        teahousePhase:teahouseServe.phase,
+      },
     } : {reason:'module-missing',gameReady:false};
   },
   level4ManualCapture(which){
@@ -18155,7 +18236,9 @@ window.__qa = {
       theme:state.theme,
       canvas:{width:gameCanvas.width,height:gameCanvas.height},
       targets:targets.map(t=>({type:t.type,x:t.x, y:t.y, w:t.w, h:t.h})),
-      items:activeFoods.map(f=>({type:f.targetType,x:f.x, y:f.y, r:f.r})),
+      items:activeFoods.map(f=>({
+        type:f.targetType,x:f.x,y:f.y,r:f.r,visualR:f.visualR||f.r,
+      })),
       dimsumOrder: (isDimsumOrderGame() && dimsumOrder) ? {
         done: dimsumOrder.done,
         lines: dimsumOrder.lines.map(l=>({type:l.type, need:l.need, placed:l.placed})),
@@ -19131,7 +19214,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v82-20260902-layout-difficulty-fix";
+  const LEVEL_APP_BUILD = "v83-20260902-positive-reward-latch";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

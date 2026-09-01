@@ -19,10 +19,10 @@ test('voice coaching says 揸拳頭 near an ungrasped object and 打開隻手 ne
   assert.match(source, /phase !== 'target' &&[\s\S]{0,100}PUBLIC_PATIENT_VOICE_COOLDOWN_MS/);
 });
 
-test('fridge is full width with smaller visuals and automatic clear arrangement', () => {
+test('fridge is full width with enlarged visuals and automatic clear arrangement', () => {
   assert.match(source, /const tw = cw;/);
   assert.match(source, /const th = ch\*0\.80;/);
-  assert.match(source, /visualR:isFridgeGame\(\) \? r \* 0\.42 : r/);
+  assert.match(source, /visualR:isFridgeGame\(\) \? r \* 0\.50 : r/);
   assert.match(source, /function fridgeArrangePlacedFoods\(rect\)/);
   assert.match(source, /fridgePlacedFoods\.push\([\s\S]{0,180}fridgeArrangePlacedFoods\(rect\)/);
 });

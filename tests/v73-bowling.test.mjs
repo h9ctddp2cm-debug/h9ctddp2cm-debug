@@ -78,9 +78,9 @@ test('scene block admits no hand-contact/grip/release signal', () => {
 });
 
 test('strike starts only from the existing targetReady award point', () => {
-  assert.match(publicSource, /shoulderFlexionCycleAwarded=true;\s*triggerFeedback\(true\);\s*if\(state\.theme==='bowlinglane'\)startBowlingStrike\(\);/);
-  // pins reset for the next repetition when the cycle completes
-  assert.match(publicSource, /advanceLevel3RoundVariant\(\);\s*resetBowlingStrike\(\);/);
+  assert.match(publicSource, /shoulderFlexionCycleAwarded=true;\s*startShoulderRewardCycle\(\);\s*triggerFeedback\(true\);\s*if\(state\.theme==='bowlinglane'\)startBowlingStrike\(\);/);
+  // Pins reset only through the shared reward-cycle completion path.
+  assert.match(publicSource, /function finishShoulderRewardCycle\(\)[\s\S]*advanceLevel3RoundVariant\(\);\s*resetBowlingStrike\(\);/);
 });
 
 /* ---------------- Functional: strike state machine & geometry ---------------- */
@@ -103,7 +103,7 @@ function loadStrikeModule(){
   return {mod, setNow: v => { now = v; }, getApplause: () => applause};
 }
 
-test('strike machine: roll -> impact (sounds once) -> down -> reset', () => {
+test('strike machine: roll -> impact (sounds once) -> down and waits for shared reset', () => {
   const {mod, setNow, getApplause} = loadStrikeModule();
   assert.equal(mod.bowlingStrike.phase, 'idle');
   setNow(1000);

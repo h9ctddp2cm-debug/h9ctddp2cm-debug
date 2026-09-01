@@ -55,6 +55,8 @@ test('fridge target sits at the top, grocery bag spawn at the bottom', () => {
   assert.match(publicSource, /type:'fridge', label:'雪櫃', img:imgFridgeWide[\s\S]{0,160}style:'fridge', x:cw \/ 2, y:th \/ 2, w:tw/);
   assert.match(publicSource, /if\(t\.style === 'fridge'\)\{ drawFridgeTarget\(ctx, t\); continue; \}/);
   assert.match(publicSource, /function fridgeBagSpot\(cw, ch, r\)\{[\s\S]{0,220}ch\*0\.90/);
+  assert.match(publicSource, /const visualR=r\*0\.50/);
+  assert.match(publicSource, /visualR:isFridgeGame\(\) \? r \* 0\.50 : r/);
   // Placed foods are drawn inside the fridge so the patient sees progress.
   assert.match(publicSource, /for\(const p of fridgePlacedFoods\)\{/);
 });
@@ -144,7 +146,7 @@ return {isFridgeGame, resetFridgeGame, newFridgeRound, fridgeCurrentDef,
 }
 
 // A fake fridge target with no image: interior rect = plain w×h box.
-// rect: x0=200 y0=130 rw=600 rh=340; pr = min(340*.150, 600*.085) = 51 (v75 大雪櫃大食物).
+// rect: x0=200 y0=130 rw=600 rh=340; portrait pr = min(340*.115, 600*.065) = 39.
 const T = {x: 500, y: 300, w: 600, h: 340, img: null};
 const item = (def) => ({targetType: def.type, label: def.label, img: null});
 
@@ -253,7 +255,7 @@ test('placed-food radius supports the automatic 6 by 2 arrangement', () => {
   const {mod} = makeFridgeModule();
   const rect = mod.fridgeInteriorRect(T);
   const pr = mod.fridgePlacedRadius(rect);
-  assert.ok(Math.abs(pr - Math.min(rect.rh * 0.078, rect.rw * 0.044)) < 1e-9);
+  assert.ok(Math.abs(pr - Math.min(rect.rh * 0.115, rect.rw * 0.065)) < 1e-9);
   // 6×2 grid with 90/130px spacing stays inside the interior margins.
   assert.ok(270 - pr * 0.6 >= rect.left && 720 + pr * 0.6 <= rect.right);
   assert.ok(200 - pr * 0.6 >= rect.top && 330 + pr * 0.6 <= rect.bottom);
