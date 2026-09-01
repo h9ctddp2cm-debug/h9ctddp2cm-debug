@@ -1354,6 +1354,22 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
         </div>
       </div>
     </div>
+    <div class="card collapsible" id="dimsumDifficultyCard" data-accordion="dimsum-difficulty" hidden>
+      <h2><span>筷子點心難度</span>
+        <span class="selected-preview" id="preview-dimsum-difficulty">基本</span></h2>
+      <div class="card-body">
+        <div class="option-row" id="dimsumDifficultyOptions">
+          <button class="option-btn selected" type="button" data-dimsum-difficulty="basic">
+            基本
+            <small>可夾任何點心，放入碗內便完成</small>
+          </button>
+          <button class="option-btn" type="button" data-dimsum-difficulty="complex">
+            較複雜
+            <small>保留原有玩法，依照落單種類及數量</small>
+          </button>
+        </div>
+      </div>
+    </div>
 
     <div class="card collapsible collapsed" data-accordion="mode">
       <h2><span>訓練模式</span><span class="selected-preview" id="preview-mode">單一任務</span></h2>
@@ -1709,6 +1725,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
         shoulderTargetDeg: 60,
         shoulderExerciseMode: "active",
         laundryDifficulty: "basic",
+        dimsumDifficulty: "basic",
         theme: "dimsum",
         dimsumSceneMode: "teahouse",
         mode: "single",
@@ -2514,7 +2531,12 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
         }
     };
     function level6TaskProfile() {
-        return LEVEL6_TASKS[state.level6Task] || LEVEL6_TASKS.chopsticks;
+        const task = LEVEL6_TASKS[state.level6Task] || LEVEL6_TASKS.chopsticks;
+        if ("chopsticks" !== task.id) return task;
+        const basic = "complex" !== state.dimsumDifficulty;
+        return Object.assign({}, task, {
+            hint: basic ? "患手揸住真筷子。可夾任何點心，移到中央大碗，再揸開筷子放下" : "患手揸住真筷子。睇落單指示，合埋筷子夾起點心，放入中央大碟，再揸開筷子放下"
+        });
     }
     function level6TaskForTheme(themeId) {
         return Object.values(LEVEL6_TASKS).find(task => task.theme === themeId) || null;
@@ -2595,6 +2617,18 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
         document.getElementById("preview-laundry-difficulty").textContent = basic ? "基本" : "較複雜", 
         document.querySelectorAll("#laundryDifficultyOptions [data-laundry-difficulty]").forEach(button => {
             const selected = button.dataset.laundryDifficulty === state.laundryDifficulty;
+            button.classList.toggle("selected", selected), button.setAttribute("aria-pressed", selected ? "true" : "false");
+        });
+    }
+    function renderDimsumDifficultySettings() {
+        const card = document.getElementById("dimsumDifficultyCard");
+        if (!card) return;
+        const enabled = isDimsumBowlGame();
+        if (card.hidden = !enabled, !enabled) return;
+        const basic = "complex" !== state.dimsumDifficulty;
+        document.getElementById("preview-dimsum-difficulty").textContent = basic ? "基本" : "較複雜", 
+        document.querySelectorAll("#dimsumDifficultyOptions [data-dimsum-difficulty]").forEach(button => {
+            const selected = button.dataset.dimsumDifficulty === state.dimsumDifficulty;
             button.classList.toggle("selected", selected), button.setAttribute("aria-pressed", selected ? "true" : "false");
         });
     }
@@ -2718,7 +2752,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                 const setupGuide = document.getElementById("cameraSetupGuide");
                 setupGuide && (setupGuide.textContent = "2" === state.level ? "相機：患側前斜約 45°；肩、肘、腕及桌面入鏡。" : "3" === state.level || "4" === state.level ? "相機：橫放，患側前斜約 30–45°；軀幹及全臂入鏡。" : "相機：患手及手指入鏡。"), 
                 renderShoulderExerciseModeSettings(), renderShoulderTargetSettings(), renderLaundryDifficultySettings(), 
-                renderTimingSettings();
+                renderDimsumDifficultySettings(), renderTimingSettings();
                 const go = document.getElementById("btnGoCalib");
                 go && (go.textContent = isShoulderFlexionLevel() ? "開始追蹤" : "相機校準"), renderLevel4ScenarioDemo(), 
                 showScreen("start");
@@ -2975,6 +3009,10 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
         const button = e.target.closest("[data-laundry-difficulty]");
         button && isLaundryRackGame() && (state.laundryDifficulty = "complex" === button.dataset.laundryDifficulty ? "complex" : "basic", 
         renderLaundryDifficultySettings());
+    }), document.getElementById("dimsumDifficultyOptions").addEventListener("click", e => {
+        const button = e.target.closest("[data-dimsum-difficulty]");
+        button && isDimsumBowlGame() && (state.dimsumDifficulty = "complex" === button.dataset.dimsumDifficulty ? "complex" : "basic", 
+        renderDimsumDifficultySettings());
     }), document.querySelectorAll(".card.collapsible h2").forEach(h2 => {
         h2.addEventListener("click", () => {
             const card = h2.closest(".card.collapsible"), wasCollapsed = card.classList.contains("collapsed");
@@ -4129,18 +4167,38 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
             img: img
         };
     });
+    function tsuenWanPuzzleGeometry(t) {
+        const x = t.x - t.w / 2, y = t.y - t.h / 2, w = t.w, h = t.h, imageW = t.img.naturalWidth || 1e3, imageH = t.img.naturalHeight || 620, targetRatio = w / h;
+        let sx = 0, sy = 0, sw = imageW, sh = imageH;
+        imageW / imageH > targetRatio ? (sw = sh * targetRatio, sx = (imageW - sw) / 2) : (sh = sw / targetRatio, 
+        sy = (imageH - sh) / 2);
+        const holeW = .32 * w, holeH = .38 * h, holeX = t.x - holeW / 2, holeY = y + h - holeH;
+        return {
+            x: x,
+            y: y,
+            w: w,
+            h: h,
+            sx: sx,
+            sy: sy,
+            sw: sw,
+            sh: sh,
+            holeX: holeX,
+            holeY: holeY,
+            holeW: holeW,
+            holeH: holeH,
+            pieceSx: sx + (holeX - x) / w * sw,
+            pieceSy: sy + (holeY - y) / h * sh,
+            pieceSw: holeW / w * sw,
+            pieceSh: holeH / h * sh
+        };
+    }
     function drawTsuenWanPuzzleTarget(ctx, t) {
         if (!t.img || !t.img.complete || !t.img.naturalWidth) return;
-        const x = t.x - t.w / 2, y = t.y - t.h / 2, w = t.w, h = t.h;
-        ctx.save(), rrPath(ctx, x, y, w, h, 18), ctx.clip();
-        const sourceRatio = t.img.naturalWidth / t.img.naturalHeight, targetRatio = w / h;
-        let sx = 0, sy = 0, sw = t.img.naturalWidth, sh = t.img.naturalHeight;
-        sourceRatio > targetRatio ? (sw = sh * targetRatio, sx = (t.img.naturalWidth - sw) / 2) : (sh = sw / targetRatio, 
-        sy = (t.img.naturalHeight - sh) / 2), ctx.drawImage(t.img, sx, sy, sw, sh, x, y, w, h);
-        const holeW = .34 * w, holeH = .42 * h, holeX = t.x - holeW / 2, holeY = y + h - holeH;
-        ctx.fillStyle = "#fff", ctx.fillRect(holeX, holeY, holeW, holeH), ctx.strokeStyle = "#1A6B5A", 
-        ctx.lineWidth = 5, ctx.setLineDash([ 12, 8 ]), ctx.strokeRect(holeX + 2, holeY + 2, holeW - 4, holeH - 4), 
-        ctx.restore(), ctx.save(), ctx.strokeStyle = "#1A6B5A", ctx.lineWidth = 6, rrPath(ctx, x, y, w, h, 18), 
+        const g = tsuenWanPuzzleGeometry(t);
+        ctx.save(), rrPath(ctx, g.x, g.y, g.w, g.h, 18), ctx.clip(), ctx.drawImage(t.img, g.sx, g.sy, g.sw, g.sh, g.x, g.y, g.w, g.h), 
+        ctx.fillStyle = "#fff", ctx.fillRect(g.holeX, g.holeY, g.holeW, g.holeH), ctx.strokeStyle = "#1A6B5A", 
+        ctx.lineWidth = 5, ctx.setLineDash([ 12, 8 ]), ctx.strokeRect(g.holeX + 2, g.holeY + 2, g.holeW - 4, g.holeH - 4), 
+        ctx.restore(), ctx.save(), ctx.strokeStyle = "#1A6B5A", ctx.lineWidth = 6, rrPath(ctx, g.x, g.y, g.w, g.h, 18), 
         ctx.stroke(), ctx.restore();
     }
     function shapeShadow(ctx, fn) {
@@ -4349,12 +4407,10 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                 labelGap: .88,
                 drawItem: (ctx, x, y, r) => function(ctx, img, x, y, size) {
                     if (!img || !img.complete || !img.naturalWidth) return;
-                    const w = 1.46 * size, h = .92 * size;
-                    ctx.save(), rrPath(ctx, x - w / 2, y - h / 2, w, h, 12), ctx.clip();
-                    const sw = .34 * img.naturalWidth, sh = .42 * img.naturalHeight, sx = (img.naturalWidth - sw) / 2, sy = img.naturalHeight - sh;
-                    ctx.drawImage(img, sx, sy, sw, sh, x - w / 2, y - h / 2, w, h), ctx.restore(), ctx.save(), 
-                    ctx.strokeStyle = "#1A6B5A", ctx.lineWidth = 5, rrPath(ctx, x - w / 2, y - h / 2, w, h, 12), 
-                    ctx.stroke(), ctx.restore();
+                    const target = targets.find(t => "photo-puzzle" === t.style && t.img === img), g = target ? tsuenWanPuzzleGeometry(target) : null, w = g ? g.holeW : 1.46 * size, h = g ? g.holeH : .92 * size, sx = g ? g.pieceSx : .34 * img.naturalWidth, sy = g ? g.pieceSy : .62 * img.naturalHeight, sw = g ? g.pieceSw : .32 * img.naturalWidth, sh = g ? g.pieceSh : .38 * img.naturalHeight;
+                    ctx.save(), ctx.beginPath(), ctx.rect(x - w / 2, y - h / 2, w, h), ctx.clip(), ctx.drawImage(img, sx, sy, sw, sh, x - w / 2, y - h / 2, w, h), 
+                    ctx.restore(), ctx.save(), ctx.strokeStyle = "#1A6B5A", ctx.lineWidth = 5, ctx.strokeRect(x - w / 2, y - h / 2, w, h), 
+                    ctx.restore();
                 }(ctx, photo.img, x, y, 1.25 * r),
                 drawIcon: (ctx, x, y, s) => function(ctx, img, x, y, size) {
                     if (!img || !img.complete || !img.naturalWidth) return;
@@ -4510,13 +4566,13 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
         chopstick_dimsum: mkTheme({
             id: "chopstick_dimsum",
             title: "筷子點心",
-            goal: "睇落單指示，患手三指輕捏拿起指定點心，放入中央大碟",
+            goal: "患手揸住真筷子，夾起點心並放到目標",
             itemWord: "點心",
             difficulty: "三點捏握運送",
             targetStyle: "panel",
             thumbnail: "img/hargau.png",
             thumbnailAlt: "蝦餃點心，代表筷子點心任務",
-            verbFor: () => "睇落單指示，患手三指輕捏拿起點心，移到中央大碟，再張開放下",
+            verbFor: () => isDimsumBasicGame() ? "可夾任何點心，移到中央大碗，再張開放下" : "睇落單指示，患手三指輕捏拿起點心，移到中央大碟，再張開放下",
             actionLabelFor: () => "三指張開 → 輕捏拿起 → 移動 → 張開放下；只偵測已選患手",
             categoriesFor: () => LEVEL3_THEME_VARIANTS.chopstick_dimsum
         }),
@@ -4923,8 +4979,14 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
         fy: -.14
     } ];
     let dimsumOrder = null, dimsumPlateContents = [], dimsumOrdersCompleted = 0, dimsumOrderCelebrateUntil = 0, dimsumOrderTimerId = null, dimsumOrderBannerRect = null;
-    function isDimsumOrderGame() {
+    function isDimsumBowlGame() {
         return "67" === state.level && "chopstick_dimsum" === state.theme && !0;
+    }
+    function isDimsumOrderGame() {
+        return isDimsumBowlGame() && "complex" === state.dimsumDifficulty;
+    }
+    function isDimsumBasicGame() {
+        return isDimsumBowlGame() && "complex" !== state.dimsumDifficulty;
     }
     function newDimsumOrder() {
         const pool = DIMSUM_ORDER_MENU.slice();
@@ -4951,33 +5013,43 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
     function dimsumOrderLineFor(type) {
         return !dimsumOrder || dimsumOrder.done ? null : dimsumOrder.lines.find(l => l.type === type) || null;
     }
-    function dimsumOrderAccepts(item) {
-        const line = dimsumOrderLineFor(item && item.targetType);
-        return !!line && line.placed < line.need;
+    function dimsumBowlAccepts(item) {
+        return isDimsumBasicGame() ? !(!item || !DIMSUM_ORDER_MENU.some(m => m.type === item.targetType)) : function(item) {
+            const line = dimsumOrderLineFor(item && item.targetType);
+            return !!line && line.placed < line.need;
+        }(item);
     }
-    function dimsumOrderPlace(item) {
-        const line = dimsumOrderLineFor(item && item.targetType);
-        if (!line) return;
-        line.placed++;
+    function dimsumBowlPlace(item) {
         const menu = DIMSUM_ORDER_MENU.find(m => m.type === item.targetType), slot = DIMSUM_PLATE_SLOTS[dimsumPlateContents.length % DIMSUM_PLATE_SLOTS.length];
-        if (dimsumPlateContents.push({
+        if (isDimsumBasicGame()) return dimsumPlateContents.push({
             img: menu ? menu.img() : null,
             fx: slot.fx,
             fy: slot.fy
-        }), dimsumOrder.lines.every(l => l.placed >= l.need)) {
-            dimsumOrder.done = !0, dimsumOrdersCompleted++, dimsumOrderCelebrateUntil = nowMs() + 2600;
-            try {
-                playApplauseSound();
-            } catch (e) {}
-            try {
-                speakCantonese("好嘢！上齊點心喇！多謝晒！", {
-                    rate: .85
-                });
-            } catch (e) {}
-            dimsumOrderTimerId && clearTimeout(dimsumOrderTimerId), dimsumOrderTimerId = setTimeout(() => {
-                dimsumOrderTimerId = null, isDimsumOrderGame() && state.running && newDimsumOrder();
-            }, 2600);
-        }
+        }), void (dimsumPlateContents.length > 6 && dimsumPlateContents.shift());
+        !function(item) {
+            const line = dimsumOrderLineFor(item && item.targetType);
+            if (!line) return;
+            line.placed++;
+            const menu = DIMSUM_ORDER_MENU.find(m => m.type === item.targetType), slot = DIMSUM_PLATE_SLOTS[dimsumPlateContents.length % DIMSUM_PLATE_SLOTS.length];
+            if (dimsumPlateContents.push({
+                img: menu ? menu.img() : null,
+                fx: slot.fx,
+                fy: slot.fy
+            }), dimsumOrder.lines.every(l => l.placed >= l.need)) {
+                dimsumOrder.done = !0, dimsumOrdersCompleted++, dimsumOrderCelebrateUntil = nowMs() + 2600;
+                try {
+                    playApplauseSound();
+                } catch (e) {}
+                try {
+                    speakCantonese("好嘢！上齊點心喇！多謝晒！", {
+                        rate: .85
+                    });
+                } catch (e) {}
+                dimsumOrderTimerId && clearTimeout(dimsumOrderTimerId), dimsumOrderTimerId = setTimeout(() => {
+                    dimsumOrderTimerId = null, isDimsumOrderGame() && state.running && newDimsumOrder();
+                }, 2600);
+            }
+        }(item);
     }
     const LAUNDRY_ORDER_MENU = [ {
         type: "laundry_shirt",
@@ -5193,12 +5265,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
         return ensureFoodCount(), fridgeQueue;
     }
     function fridgeInteriorRect(t) {
-        let rw = t.w, rh = t.h;
-        if (t.img && t.img.complete && t.img.naturalWidth > 0) {
-            const ratio = t.img.naturalWidth / t.img.naturalHeight;
-            rw = t.w, rh = rw / ratio, rh > t.h && (rh = t.h, rw = rh * ratio);
-        }
-        const x0 = t.x - rw / 2, y0 = t.y - rh / 2;
+        const rw = t.w, rh = t.h, x0 = t.x - rw / 2, y0 = t.y - rh / 2;
         return {
             x0: x0,
             y0: y0,
@@ -5497,13 +5564,13 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
     }
     function setupTargets() {
         const cw = gameCanvas.width, ch = gameCanvas.height, portrait = isPortrait(), style = getTheme().targetStyle || "panel", cats = getCategories();
-        if (isDimsumOrderGame()) {
-            const tw = Math.min(portrait ? .58 * cw : .3 * cw, 560), th = .8 * tw;
+        if (isDimsumBowlGame()) {
+            const basic = isDimsumBasicGame(), tw = Math.min(portrait ? cw * (basic ? .66 : .58) : cw * (basic ? .36 : .3), basic ? 620 : 560), th = .8 * tw;
             return void (targets = [ {
                 type: "dimsum_plate",
-                label: "大碟",
-                img: imgRoosterPlate,
-                drawIcon: null,
+                label: basic ? "大碗" : "大碟",
+                img: basic ? null : imgRoosterPlate,
+                drawIcon: basic ? drawRiceBowl : null,
                 style: "bigplate",
                 x: cw / 2,
                 y: ch - th / 2 - 14,
@@ -5530,7 +5597,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
             } ]);
         }
         if (isFridgeGame()) {
-            const fridgeRatio = imgFridgeWide.naturalWidth > 0 && imgFridgeWide.naturalHeight > 0 ? imgFridgeWide.naturalWidth / imgFridgeWide.naturalHeight : 1597 / 935, th = cw / fridgeRatio;
+            const th = .8 * ch;
             return void (targets = [ {
                 type: "fridge",
                 label: "雪櫃",
@@ -5749,7 +5816,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
             x: x,
             y: y,
             r: r,
-            visualR: isFridgeGame() ? .54 * r : r,
+            visualR: isFridgeGame() ? .42 * r : r,
             baseX: x,
             baseY: y,
             held: !1,
@@ -5764,10 +5831,10 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
         }
         if (isFridgeGame() && "distractor" !== def.targetType) {
             const spot = function(cw, ch, r) {
-                const portrait = isPortrait();
+                const visualR = .42 * r;
                 return {
-                    x: cw * (portrait ? .5 : .42),
-                    y: ch - r - (portrait ? 96 : 56)
+                    x: .5 * cw,
+                    y: Math.min(ch - visualR - 18, .9 * ch)
                 };
             }(cw, ch, r);
             return createFood(spot.x, spot.y);
@@ -6864,7 +6931,10 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                                 if ("tsuenwan" === state.theme) {
                                     laneX = .5 * cw;
                                     const target = targets[0], pieceHalf = item ? .58 * (item.visualR || item.r) : .09 * ch;
-                                    bottom = Math.min(ch - pieceHalf - 24, .84 * ch), top = target ? target.y + .29 * target.h : .48 * ch;
+                                    if (bottom = Math.min(ch - pieceHalf - 24, .84 * ch), target) {
+                                        const g = tsuenWanPuzzleGeometry(target);
+                                        top = g.holeY + g.holeH / 2;
+                                    } else top = .48 * ch;
                                 }
                                 if (isTeahouseDimsumMode()) {
                                     const tg = teahouseGeometry(cw, ch);
@@ -6954,8 +7024,8 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                                     "plate" !== dwellTarget && (dwellTarget = "plate", dwellStartTime = now);
                                     const elapsed = now - dwellStartTime;
                                     if (elapsed >= DWELL_MS) {
-                                        const dwellDimsumOrderDrop = isDimsumOrderGame() && "dimsum_plate" === onPlate.type, dwellLaundryOrderDrop = isLaundryRackGame() && "laundry_rack" === onPlate.type, dwellFridgeDrop = isFridgeGame() && "fridge" === onPlate.type;
-                                        (dwellDimsumOrderDrop ? dimsumOrderAccepts(heldItem) : dwellLaundryOrderDrop ? laundryRackAccepts(heldItem) : dwellFridgeDrop ? fridgeTryPlace(heldItem, heldPoint.x, heldPoint.y, onPlate) : onPlate.type === heldItem.targetType) ? (dwellDimsumOrderDrop ? dimsumOrderPlace(heldItem) : dwellLaundryOrderDrop && laundryRackPlace(heldItem), 
+                                        const dwellDimsumOrderDrop = isDimsumBowlGame() && "dimsum_plate" === onPlate.type, dwellLaundryOrderDrop = isLaundryRackGame() && "laundry_rack" === onPlate.type, dwellFridgeDrop = isFridgeGame() && "fridge" === onPlate.type;
+                                        (dwellDimsumOrderDrop ? dimsumBowlAccepts(heldItem) : dwellLaundryOrderDrop ? laundryRackAccepts(heldItem) : dwellFridgeDrop ? fridgeTryPlace(heldItem, heldPoint.x, heldPoint.y, onPlate) : onPlate.type === heldItem.targetType) ? (dwellDimsumOrderDrop ? dimsumBowlPlace(heldItem) : dwellLaundryOrderDrop && laundryRackPlace(heldItem), 
                                         score += 10, correctCount++, wrongStreak = 0, triggerFeedback(!0), heldItem.label, 
                                         onPlate.label, adaptiveNoteTrial("transport_place", "success"), showLevelUpBanner(), 
                                         dimsumReward()) : dwellFridgeDrop ? (triggerFeedback(!1), heldItem.label) : (score = Math.max(0, score - 3), 
@@ -7013,7 +7083,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                         if (!isShoulderFlexionLevel()) return;
                         if ("bowlinglane" === state.theme) return void function(ctx, cw, ch) {
                             const g = function(cw, ch) {
-                                const laneX = .5 * cw, bgW = imgBowlingAlleyBg.naturalWidth || 768, bgH = imgBowlingAlleyBg.naturalHeight || 1028, topSrcH = .545 * bgH, pinBaseY = .315 * ch, pw = cw, py1 = ch, topH = .5 * ch, s = Math.max(cw / bgW, ch / bgH), dw = bgW * s, dh = bgH * s;
+                                const laneX = .5 * cw, bgW = imgBowlingAlleyBg.naturalWidth || 768, bgH = imgBowlingAlleyBg.naturalHeight || 1028, topSrcH = .545 * bgH, pinBaseY = .39 * ch, pw = cw, py1 = ch, topH = .5 * ch, s = Math.max(cw / bgW, ch / bgH), dw = bgW * s, dh = bgH * s;
                                 return {
                                     laneX: laneX,
                                     pw: pw,
@@ -7851,8 +7921,8 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                 const elapsed = now - releaseDwellStart;
                 if (elapsed >= 220) {
                     if (onPlate) {
-                        const dimsumOrderDrop = isDimsumOrderGame() && "dimsum_plate" === onPlate.type, laundryOrderDrop = isLaundryRackGame() && "laundry_rack" === onPlate.type, fridgeDrop = isFridgeGame() && "fridge" === onPlate.type;
-                        (dimsumOrderDrop ? dimsumOrderAccepts(heldItem) : laundryOrderDrop ? laundryRackAccepts(heldItem) : fridgeDrop ? fridgeTryPlace(heldItem, cursorX, cursorY, onPlate) : heldItem.targetType === onPlate.type) ? (dimsumOrderDrop ? dimsumOrderPlace(heldItem) : laundryOrderDrop && laundryRackPlace(heldItem), 
+                        const dimsumOrderDrop = isDimsumBowlGame() && "dimsum_plate" === onPlate.type, laundryOrderDrop = isLaundryRackGame() && "laundry_rack" === onPlate.type, fridgeDrop = isFridgeGame() && "fridge" === onPlate.type;
+                        (dimsumOrderDrop ? dimsumBowlAccepts(heldItem) : laundryOrderDrop ? laundryRackAccepts(heldItem) : fridgeDrop ? fridgeTryPlace(heldItem, cursorX, cursorY, onPlate) : heldItem.targetType === onPlate.type) ? (dimsumOrderDrop ? dimsumBowlPlace(heldItem) : laundryOrderDrop && laundryRackPlace(heldItem), 
                         score += 10, correctCount++, wrongStreak = 0, triggerFeedback(!0), heldItem.label, 
                         onPlate.label, adaptiveNoteTrial("grasp_release", "success"), showLevelUpBanner(), 
                         dimsumReward()) : fridgeDrop ? (triggerFeedback(!1), heldItem.label) : (score = Math.max(0, score - 3), 
@@ -7915,7 +7985,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                 const d = dist(cursorX, cursorY, f.x, f.y);
                 d < nearestDist && (nearest = f, nearestDist = d);
             }
-            const pickupMargin = isLaundryRackGame() ? 220 : 100, voiceMargin = isLaundryRackGame() ? 260 : 150, voiceNearFood = nearest && nearestDist <= pickupContactRadius(nearest.r, voiceMargin);
+            const pickupMargin = isLaundryRackGame() ? 220 : isFridgeGame() ? 210 : 100, voiceMargin = isLaundryRackGame() ? 260 : isFridgeGame() ? 250 : 150, voiceNearFood = nearest && nearestDist <= pickupContactRadius(nearest.r, voiceMargin);
             let overFood = nearest && nearestDist <= pickupContactRadius(nearest.r, pickupMargin);
             if (overFood) basicContactCandidate = nearest.id, basicContactUntil = now + 700; else if (basicContactCandidate && now <= basicContactUntil) {
                 const locked = foods.find(f => f.id === basicContactCandidate && !f.removed && !f.held);
@@ -9989,7 +10059,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
 <script src="level4-three-games-module.js"></script>
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v81-20260902-patient-usability";
+  const LEVEL_APP_BUILD = "v82-20260902-layout-difficulty-fix";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 
