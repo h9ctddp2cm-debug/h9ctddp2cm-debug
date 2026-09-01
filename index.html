@@ -2677,7 +2677,25 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
     async function enterCalibrationFlow() {
         if ("67" === state.level && !assertLevel6ActivityLock()) return renderActivityLibrary(), 
         void showScreen("library");
-        resetNormalCalibration(), resetSessionSafety(), resetSafetyRuntime(), hideCameraError();
+        state.calibration = {
+            detectedStart: 0,
+            openHoldMs: 0,
+            openTickAt: 0,
+            moreOpenMs: 0,
+            closedHoldMs: 0,
+            closedTickAt: 0,
+            lastSeenAt: 0,
+            detectedDone: !1,
+            openDone: !1,
+            closedDone: !1,
+            ready: !1,
+            openScores: [],
+            closedScores: []
+        }, state.personalGraspEnter = null, state.personalGraspExit = null, state.personalPinchEnter = null, 
+        state.personalPinchExit = null, state.personalPinchOpen = null, state.personalToolPinch = null, 
+        [ "calibDetectCheck", "calibOpenCheck", "calibCloseCheck" ].forEach(id => {
+            renderCalibCheck(id, !1);
+        }), resetSessionSafety(), resetSafetyRuntime(), hideCameraError();
         const showHandChecks = isGraspStyleMode();
         document.getElementById("calibChecklist").classList.toggle("active", showHandChecks), 
         document.getElementById("calibOpenCheck").style.display = showHandChecks ? "block" : "none", 
@@ -9840,7 +9858,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
 <script src="level4-three-games-module.js"></script>
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v79-20260901-calib-feedback";
+  const LEVEL_APP_BUILD = "v80-20260901-calibration-runtime-fix";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 
