@@ -38,20 +38,21 @@ test('processed left/right Level 6 cursor assets are transparent 191x133 PNG fil
   }
 });
 
-test('public Level 6 uses affected-side image cues in standard, advanced and status renderers',()=>{
+test('public Level 6 uses affected-side image cues on both tracked cursor renderers',()=>{
   assert.match(html,/imgLevel6PinchRight\.src = 'img\/level6_pinch_right\.png'/);
   assert.match(html,/imgLevel6PinchLeft\.src = 'img\/level6_pinch_left\.png'/);
-  assert.match(html,/function drawPublicLevel6ClosedPinchCursor[\s\S]*?activeAffectedSide\(\)==='left'/);
+  assert.match(html,/function level6PinchHandGeometry[\s\S]*?activeAffectedSide\(\)==='left'/);
+  assert.match(html,/function drawPublicLevel6ClosedPinchCursor[\s\S]*?geometry\.side==='left'/);
   assert.match(html,/if\(isLevel6\(\) && isGrasping\)\{\s*drawPublicLevel6ClosedPinchCursor\(ctx,cursorPoint\.x/);
   assert.match(html,/function advDrawCursor[\s\S]*?if\(isLevel6\(\) && isGrasping\)\{\s*drawPublicLevel6ClosedPinchCursor\(ctx,cursorX/);
-  assert.match(html,/const level6ClosedImage=isLevel6\(\)&&gestureCue==='close'/);
+  assert.match(html,/if\(patientMode\)\{[\s\S]{0,300}statusBar\.innerHTML = '';/);
 });
 
 test('held-object display offset is side-aware and does not alter logical control coordinates',()=>{
   const helper=html.match(/function publicLevel6HeldDisplayPoint[\s\S]*?\n\}/)?.[0]||'';
   assert.match(helper,/activeAffectedSide\(\)==='right' \? -1 : 1/);
   assert.match(helper,/radius\*\.78/);
-  assert.match(html,/const visualPoint=publicLevel6HeldDisplayPoint\(f\.x,f\.y,f\.r,f\.held\)/);
+  assert.match(html,/const visualPoint=publicLevel6HeldDisplayPoint\(f\.x,f\.y,visualR,f\.held\)/);
   assert.match(html,/const visualPoint=publicLevel6HeldDisplayPoint\(cursorX,cursorY,Math\.max\(46,s\*\.30\)\)/);
   assert.match(html,/heldItem\.x = cursorX;\s*heldItem\.y = cursorY;/,
     'logical held item remains on the selected-hand cursor');
@@ -166,7 +167,7 @@ test('chopstick tool-relative flex can enter and release while aperture is occlu
   });
 });
 
-test('Level 6 close status cue selects the affected-side uploaded image',async t=>{
+test('Level 6 status card stays empty after duplicate side icon removal',async t=>{
   if(!browser) return t.skip('playwright unavailable');
   await withPage({width:820,height:1180},async page=>{
     const sources=await page.evaluate(()=>{
@@ -176,8 +177,8 @@ test('Level 6 close status cue selects the affected-side uploaded image',async t
       };
       return {right:cue('right'),left:cue('left')};
     });
-    assert.equal(sources.right,'img/level6_pinch_right.png');
-    assert.equal(sources.left,'img/level6_pinch_left.png');
+    assert.equal(sources.right,null);
+    assert.equal(sources.left,null);
   });
 });
 

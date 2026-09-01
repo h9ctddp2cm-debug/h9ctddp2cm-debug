@@ -9,9 +9,9 @@ import {fileURLToPath} from 'node:url';
 //      (叉燒飯、排骨、豆腐、蝦、肉丸、菠菜、菜心、黃芽白、南瓜、牛奶、魚、荷蘭豆)
 //      one by one from a grocery bag (bottom of screen) into a large open
 //      fridge photo (top of screen).
-//   2. The player may place each food ANYWHERE inside the fridge interior,
-//      but placing on top of an already-placed food "crashes" and is rejected
-//      (no score penalty — spatial planning is part of the training).
+//   2. The player may place each food ANYWHERE inside the fridge interior.
+//      Accepted foods are automatically rearranged into a clear non-overlapping
+//      layout, while their generous interaction hitboxes remain unchanged.
 //   3. Completing all 12 foods triggers applause + Cantonese praise, then a
 //      new shuffled round starts automatically while the session timer runs.
 //   4. Research pilot mode is never routed into this game.
@@ -50,7 +50,8 @@ test('fridge order defs cover all 12 requested foods', () => {
 /* ---------------- Source contract: layout & rendering ---------------- */
 
 test('fridge target sits at the top, grocery bag spawn at the bottom', () => {
-  assert.match(publicSource, /type:'fridge', label:'雪櫃', img:imgFridgeWide[\s\S]{0,120}style:'fridge', x:cw \/ 2, y:th \/ 2 \+ ch \* \(portrait \? 0\.105 : 0\.03\)/);
+  assert.match(publicSource, /const tw = cw;/);
+  assert.match(publicSource, /type:'fridge', label:'雪櫃', img:imgFridgeWide[\s\S]{0,160}style:'fridge', x:cw \/ 2, y:th \/ 2, w:tw/);
   assert.match(publicSource, /if\(t\.style === 'fridge'\)\{ drawFridgeTarget\(ctx, t\); continue; \}/);
   assert.match(publicSource, /function fridgeBagSpot\(cw, ch, r\)\{[\s\S]{0,200}ch - r - \(portrait \? 96 : 56\)/);
   // Placed foods are drawn inside the fridge so the patient sees progress.
@@ -170,8 +171,8 @@ test('placing the current food inside the fridge succeeds and advances the queue
   assert.equal(mod.fridgeTryPlace(item(def), 500, 300, T), true);
   assert.equal(mod.queueIndex, 1);
   assert.equal(mod.placed.length, 1);
-  assert.ok(Math.abs(mod.placed[0].fx - 0.5) < 1e-9);
-  assert.ok(Math.abs(mod.placed[0].fy - 0.5) < 1e-9);
+  assert.ok(mod.placed[0].fx > 0 && mod.placed[0].fx < 1);
+  assert.ok(mod.placed[0].fy > 0 && mod.placed[0].fy < 1);
 });
 
 test('wrong food, distractors and finished queues are rejected', () => {
@@ -195,18 +196,19 @@ test('placing outside the interior crashes with a bounds reminder, no placement'
   assert.ok(calls.speak.some(s => /要放入雪櫃入面/.test(s)));
 });
 
-test('placing on an occupied spot crashes and names the blocking food', () => {
+test('overlapping requested drops are accepted and automatically rearranged', () => {
   const {mod} = makeFridgeModule();
   mod.newFridgeRound();
   const first = mod.fridgeCurrentDef();
   assert.equal(mod.fridgeTryPlace(item(first), 500, 300, T), true);
   const second = mod.fridgeCurrentDef();
-  // Same spot → crash; nearby-but-clear spot → success (pr=51, min gap 86.7px).
-  assert.equal(mod.fridgeTryPlace(item(second), 510, 300, T), false);
-  assert.match(mod.crashMsg, new RegExp(first.label));
-  assert.equal(mod.queueIndex, 1);
-  assert.equal(mod.fridgeTryPlace(item(second), 590, 300, T), true);
+  assert.equal(mod.fridgeTryPlace(item(second), 500, 300, T), true);
   assert.equal(mod.queueIndex, 2);
+  assert.equal(mod.placed.length, 2);
+  assert.notDeepEqual(
+    [mod.placed[0].fx, mod.placed[0].fy],
+    [mod.placed[1].fx, mod.placed[1].fy],
+  );
 });
 
 test('finishing all 12 foods triggers applause, praise and an auto next round', () => {
@@ -246,11 +248,11 @@ test('reset clears every piece of fridge round state', () => {
   assert.equal(mod.isFridgeGame(), true);
 });
 
-test('placed-food radius allows all 12 foods to fit with planning', () => {
+test('placed-food radius supports the automatic 6 by 2 arrangement', () => {
   const {mod} = makeFridgeModule();
   const rect = mod.fridgeInteriorRect(T);
   const pr = mod.fridgePlacedRadius(rect);
-  assert.ok(Math.abs(pr - 51) < 1e-9);
+  assert.ok(Math.abs(pr - Math.min(rect.rh * 0.078, rect.rw * 0.044)) < 1e-9);
   // 6×2 grid with 90/130px spacing stays inside the interior margins.
   assert.ok(270 - pr * 0.6 >= rect.left && 720 + pr * 0.6 <= rect.right);
   assert.ok(200 - pr * 0.6 >= rect.top && 330 + pr * 0.6 <= rect.bottom);

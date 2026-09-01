@@ -7,16 +7,12 @@ import {fileURLToPath} from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const html = readFileSync(path.join(root, 'index.html'), 'utf8');
 
-test('public action cue is vertical, right-aligned, large, and skin toned', () => {
-  assert.match(html, /\.game-stage\.patient-simple-hud \.prompt-zone\{[\s\S]*?right:12px;[\s\S]*?transform:translateY\(-50%\)/);
-  assert.match(html, /width:1\.15em; writing-mode:horizontal-tb; text-orientation:mixed/);
-  assert.match(html, /word-break:break-all; overflow-wrap:anywhere/);
-  assert.match(html, /const emoji = gestureCue === 'open' \? '✋🏻' : '✊🏻';/);
+test('public canvas hand remains large while the duplicate right-side cue is removed', () => {
   assert.match(html, /const handEmoji = isGrasping \? '✊🏻' : '✋🏻';/);
   assert.match(html, /const closedHandSize=Math\.max\(210,Math\.min\(280,/);
   assert.match(html, /const handSize=isGrasping \? closedHandSize : closedHandSize\*1\.5;/);
-  assert.match(html, /data-gesture-cue="open"\] \.action-emoji\{ font-size:132px; \}/);
-  assert.match(html, /data-gesture-cue="close"\] \.action-emoji\{ font-size:88px; \}/);
+  assert.match(html, /\.game-stage\.public-clean-hud\.patient-simple-hud \.status-bar\{\s*display:none !important;/);
+  assert.match(html, /if\(patientMode\)\{[\s\S]{0,300}statusBar\.innerHTML = '';/);
 });
 
 test('public large emoji cursor has no surrounding circle', () => {
@@ -47,11 +43,12 @@ test('fridge bag drawing is removed but the lower pickup point remains', () => {
 });
 
 test('laundry rack is in the upper half and enlarged clothes use lower-half slots', () => {
+  assert.match(html, /Math\.min\(cw \* 0\.96, 1320\)/);
   assert.match(html, /Math\.min\(cw \* 0\.88, 980\)[\s\S]*?Math\.min\(cw \* 0\.92, 1220\)/);
   assert.match(html, /state\.theme === 'peg_laundry' \? 1\.70 : 1\.16/);
   assert.match(html, /\[\[0\.20,0\.66\],\[0\.80,0\.66\],\[0\.50,0\.88\]\]/);
   assert.match(html, /\[\[0\.18,0\.78\],\[0\.46,0\.78\],\[0\.72,0\.78\]\]/);
-  assert.match(html, /if\(isLaundryOrderGame\(\)\)\{[\s\S]*?const freeLaundrySlot=existingFoods\.every[\s\S]*?if\(freeLaundrySlot\) return createFood\(x, y\);/);
+  assert.match(html, /if\(isLaundryRackGame\(\)\)\{[\s\S]*?const freeLaundrySlot=existingFoods\.every[\s\S]*?if\(freeLaundrySlot\) return createFood\(x, y\);/);
   assert.match(html, /ctx\.fillStyle='rgba\(218,232,238,0\.88\)'/);
 });
 
@@ -66,8 +63,8 @@ test('camera-view games start white and expose an explicit selfie toggle', () =>
 });
 
 test('calibration selfie occupies two thirds of the screen', () => {
-  assert.match(html,
-    /\.calib-wrap\{[\s\S]*?width:min\(66\.667vw,calc\(66\.667vh \* 4 \/ 3\)\); max-width:none; aspect-ratio:4\/3;/);
+  assert.match(html, /\.calib-wrap\{[\s\S]*?width:min\(94vw,calc\(56dvh \* 4 \/ 3\)\); max-width:none; aspect-ratio:4\/3;/);
+  assert.match(html, /#screen-calib\.active\{[\s\S]*?grid-template-columns:minmax\(0,2fr\) minmax\(270px,1fr\)/);
 });
 
 test('public gameplay hides technical prose and sentence panels', () => {
@@ -110,10 +107,12 @@ test('public Level 5 and Level 6 cards and mahjong use affected-side drop zones'
   assert.doesNotMatch(html, /const level5TopZone/);
 });
 
-test('public photo game uses equal-size separated upper and lower photos', () => {
-  assert.match(html, /drawIcon:\(ctx,x,y,s\)=>drawTsuenWanPhotoCard\(ctx,photo\.img,x,y,s\*1\.80\)/);
-  assert.match(html, /style,x:laneX,y:photoLarge\?ch\*\.28:ch\*\.32/);
-  assert.match(html, /state\.theme==='tsuenwan'&&!research\.active\?\.75:\.72/);
+test('public photo game uses a large upper photo and a separate moving puzzle piece', () => {
+  assert.match(html, /drawItem:\(ctx,x,y,r\)=>drawTsuenWanPuzzlePiece\(ctx,photo\.img,x,y,r\*1\.25\)/);
+  assert.match(html, /style:photoLarge\?'photo-puzzle':style/);
+  assert.match(html, /const tw=photoLarge\?Math\.min\(cw\*\.90,1080\)/);
+  assert.match(html, /bottom=Math\.min\(ch-pieceHalf-24,ch\*\.84\)/);
+  assert.match(html, /top=target \? target\.y\+target\.h\*\.29/);
 });
 
 test('public flower game uses the wide patterned planter while research keeps its vase', () => {

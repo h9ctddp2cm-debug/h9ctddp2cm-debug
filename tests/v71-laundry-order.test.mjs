@@ -34,13 +34,13 @@ test('laundry order defs cover all six categories with two shirt designs', () =>
     assert.match(defs, new RegExp(type));
   }
   // Items render as real photos through drawDimsumPhoto (aspect-ratio preserving).
-  assert.match(publicSource, /if\(isLaundryOrderGame\(\)\)\{[\s\S]{0,400}drawDimsumPhoto\(ctx,x,y,r,im\)/);
+  assert.match(publicSource, /if\(isLaundryRackGame\(\)\)\{[\s\S]{0,400}drawDimsumPhoto\(ctx,x,y,r,im\)/);
 });
 
 /* ---------------- Source contract: one large rack target ---------------- */
 
-test('order mode uses a single central large rack instead of two boxes', () => {
-  assert.match(publicSource, /if\(isLaundryOrderGame\(\)\)\{[\s\S]{0,1200}type:'laundry_rack'[\s\S]{0,200}style:'rack'[\s\S]{0,180}x:cw \* \(portrait \? 0\.50 : 0\.46\)/);
+test('both laundry modes use a single central large rack instead of two boxes', () => {
+  assert.match(publicSource, /if\(isLaundryRackGame\(\)\)\{[\s\S]{0,1500}type:'laundry_rack'[\s\S]{0,220}style:'rack', x:cw \* 0\.50/);
   assert.match(publicSource, /if\(t\.style === 'rack'\)\{ drawLaundryRackTarget\(ctx, t\); continue; \}/);
   // Hung clothes are drawn ON the rack so the patient can see progress.
   assert.match(publicSource, /for\(const c of laundryRackContents\)\{/);
@@ -48,13 +48,13 @@ test('order mode uses a single central large rack instead of two boxes', () => {
 
 /* ---------------- Source contract: order-driven matching ---------------- */
 
-test('both drop paths use order-quantity matching for the rack', () => {
-  const graspPath = /const laundryOrderDrop = isLaundryOrderGame\(\) && onPlate\.type === 'laundry_rack';[\s\S]{0,300}laundryOrderAccepts\(heldItem\)/;
-  const dwellPath = /const dwellLaundryOrderDrop = isLaundryOrderGame\(\) && onPlate\.type === 'laundry_rack';[\s\S]{0,300}laundryOrderAccepts\(heldItem\)/;
+test('both drop paths route through basic-or-complex rack matching', () => {
+  const graspPath = /const laundryOrderDrop = isLaundryRackGame\(\) && onPlate\.type === 'laundry_rack';[\s\S]{0,300}laundryRackAccepts\(heldItem\)/;
+  const dwellPath = /const dwellLaundryOrderDrop = isLaundryRackGame\(\) && onPlate\.type === 'laundry_rack';[\s\S]{0,300}laundryRackAccepts\(heldItem\)/;
   assert.match(publicSource, graspPath);
   assert.match(publicSource, dwellPath);
-  assert.match(publicSource, /else if\(laundryOrderDrop\) laundryOrderPlace\(heldItem\);/);
-  assert.match(publicSource, /else if\(dwellLaundryOrderDrop\) laundryOrderPlace\(heldItem\);/);
+  assert.match(publicSource, /else if\(laundryOrderDrop\) laundryRackPlace\(heldItem\);/);
+  assert.match(publicSource, /else if\(dwellLaundryOrderDrop\) laundryRackPlace\(heldItem\);/);
 });
 
 test('order mode is fail-safe against spawn deadlocks', () => {
@@ -72,8 +72,8 @@ test('order lifecycle is wired into init, reset, banner and completion', () => {
   assert.match(publicSource, /if\(isLaundryOrderGame\(\) && state\.running\) newLaundryOrder\(\);/);
 });
 
-test('research pilot track is not affected by laundry order mode', () => {
-  assert.match(publicSource, /return state\.level === '67' && state\.theme === 'peg_laundry' && !research\.active;/);
+test('research pilot track is not affected by either public laundry mode', () => {
+  assert.match(publicSource, /function isLaundryRackGame\(\)\{[\s\S]{0,160}return state\.level === '67' && state\.theme === 'peg_laundry' && !research\.active;/);
 });
 
 /* ---------------- Behavioural: laundry order module ---------------- */
@@ -84,7 +84,12 @@ function makeOrderModule(opts = {}){
   assert.ok(start > 0 && end > start, 'laundry order module not found in index.html');
   const code = publicSource.slice(start, end);
   const calls = {speak: [], applause: 0, timeouts: [], ensure: 0};
-  const state = Object.assign({level: '67', theme: 'peg_laundry', running: true}, opts.state);
+  const state = Object.assign({
+    level: '67',
+    theme: 'peg_laundry',
+    laundryDifficulty: 'complex',
+    running: true,
+  }, opts.state);
   const research = Object.assign({active: false}, opts.research);
   const rng = opts.random || (() => 0.5);
   const fakeMath = {random: rng, floor: Math.floor};

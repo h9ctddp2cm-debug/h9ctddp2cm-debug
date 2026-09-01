@@ -10,7 +10,7 @@ const html = readFileSync(path.join(root, 'index.html'), 'utf8');
 test('current build markers stay aligned', () => {
   const manifest = readFileSync(path.join(root, 'manifest.webmanifest'), 'utf8');
   const worker = readFileSync(path.join(root, 'service-worker.js'), 'utf8');
-  const version = 'v79-20260901-calib-feedback';
+  const version = 'v81-20260902-patient-usability';
   assert.match(html, new RegExp(version));
   assert.match(manifest, new RegExp(version));
   assert.match(worker, new RegExp(version));
@@ -29,14 +29,13 @@ test('patient-simple HUD is restricted to public Levels 5 and 6', () => {
   assert.match(html, /function drawFridgeOrderBanner[\s\S]*?fridgeBannerRect = null;\s*return;/);
 });
 
-test('open and closed hand cues use large emoji plus text', () => {
+test('open and closed hand cues stay large on canvas without a duplicate side card', () => {
   assert.match(html, /const handEmoji = isGrasping \? '✊🏻' : '✋🏻';/);
   assert.match(html, /const closedHandSize=Math\.max\(210,Math\.min\(280,/);
   assert.match(html, /const handSize=isGrasping \? closedHandSize : closedHandSize\*1\.5;/);
-  assert.match(html, /class="action-emoji"/);
-  assert.match(html, /class="action-main"/);
   assert.match(html, /const gestureCue = openWords\.test\(main\) \? 'open' : 'close';/);
-  assert.match(html, /const emoji = gestureCue === 'open' \? '✋🏻' : '✊🏻';/);
+  assert.match(html, /\.game-stage\.public-clean-hud\.patient-simple-hud \.status-bar\{\s*display:none !important;/);
+  assert.match(html, /if\(patientMode\)\{[\s\S]{0,300}statusBar\.innerHTML = '';/);
   assert.match(html, /statusBar\.dataset\.gestureCue = gestureCue/);
 });
 

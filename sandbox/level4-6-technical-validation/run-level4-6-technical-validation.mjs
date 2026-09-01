@@ -41,12 +41,19 @@ function itemsDoNotCoverTargets(items, targets) {
     const top = target.y - target.h / 2;
     const bottom = target.y + target.h / 2;
     if (target.type === "fridge") {
-      // v75: the fridge photo intentionally spans almost the full canvas, so
-      // the shopping-bag food circle may visually stand "in front of" the
-      // fridge's lower edge on landscape. The meaningful invariant is that the
-      // food SPAWNS fully below the fridge rectangle (outside the drop zone),
-      // preserving the upward transport distance.
-      return item.y > bottom;
+      // v81: the fridge is deliberately full-width and its visual food radius
+      // is smaller than its tremor-tolerant logical hitbox. On landscape, the
+      // source food may stand in front of the lower part of the photograph.
+      // Preserve a clear upward transport direction instead of applying the
+      // generic logical-circle-vs-background overlap rule.
+      return item.y > target.y + target.h * 0.18;
+    }
+    if (target.type === "laundry_rack") {
+      // Basic laundry deliberately magnifies the rack photograph behind the
+      // lower-row garments. Keep the source centres clearly below the rack's
+      // working centre while allowing the generous pickup circles to overlap
+      // that background photograph.
+      return item.y > target.y + target.h * 0.38;
     }
     const nearestX = Math.max(left, Math.min(item.x, right));
     const nearestY = Math.max(top, Math.min(item.y, bottom));
@@ -317,11 +324,14 @@ try {
         ? order.lines.filter(l=>l.placed<l.need).map(l=>l.type)
         : null;
       const orderTargetType = layout.dimsumOrder ? "dimsum_plate" : "laundry_rack";
+      const basicLaundryTarget = taskId === "peg"
+        ? layout.targets.find(target=>target.type==="laundry_rack")
+        : null;
       const pair=layout.items.map(item=>({item,target:neededTypes
         ? (neededTypes.includes(item.type)
           ? layout.targets.find(target=>target.type===orderTargetType)
           : null)
-        : layout.targets.find(target=>target.type===item.type)}))
+        : (basicLaundryTarget || layout.targets.find(target=>target.type===item.type))}))
         .find(value=>value.target);
       if(!pair) throw new Error("No matching Level 6 item/target");
       const at=point=>({nx:point.x/layout.canvas.width,ny:point.y/layout.canvas.height});

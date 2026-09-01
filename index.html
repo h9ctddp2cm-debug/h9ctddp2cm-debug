@@ -144,28 +144,60 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
 }
 
 /* ---------- CALIBRATION SCREEN ---------- */
-#screen-calib{ align-items:center; justify-content:center; padding:16px; position:relative; }
+#screen-calib{
+  align-items:center; justify-content:flex-start; gap:12px;
+  padding:16px; position:relative; overflow:auto;
+}
 .attention-flash{ animation: attentionFlash 1.2s ease-in-out 2; }
 @keyframes attentionFlash{
   0%,100%{ box-shadow:none; }
   50%{ box-shadow:0 0 0 4px #a1261b; }
 }
 .calib-wrap{
-  position:relative; width:min(66.667vw,calc(66.667vh * 4 / 3)); max-width:none; aspect-ratio:4/3;
+  position:relative; flex:0 0 auto;
+  width:min(94vw,calc(56dvh * 4 / 3)); max-width:none; aspect-ratio:4/3;
   background:#111; border-radius:16px; overflow:hidden;
   border:2px solid var(--border); box-shadow:0 4px 16px rgba(0,0,0,0.2);
 }
 .calib-wrap video, .calib-wrap canvas{
-  position:absolute; inset:0; width:100%; height:100%; object-fit:fill;
+  position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
 }
 .calib-wrap video{ transform:scaleX(-1); }
 .calib-wrap canvas{ pointer-events:none; transform:none; }
+.calib-controls{
+  display:flex; flex-direction:column; align-items:stretch;
+  width:min(520px,100%); min-width:0;
+}
+.calib-controls .title-block{ margin:0 0 2px; }
+.calib-controls .btn-primary,
+.calib-controls .btn-secondary{ max-width:none !important; }
 .calib-info{
   text-align:center; margin-top:14px; font-size:15px; color:var(--muted);
 }
 .calib-info .pixel-count{ font-weight:800; color:var(--teal-dark); font-size:20px; }
 .calib-hint{
   text-align:center; font-size:13px; color:var(--muted); margin-top:4px; max-width:480px;
+}
+@media (orientation:landscape) and (min-width:700px){
+  #screen-calib.active{
+    display:grid;
+    grid-template-columns:minmax(0,2fr) minmax(270px,1fr);
+    gap:18px; align-items:center; justify-content:stretch;
+    padding:16px;
+  }
+  #screen-calib .calib-wrap{
+    grid-column:1; grid-row:1;
+    width:100%; max-width:calc((100dvh - 32px) * 4 / 3);
+    justify-self:center;
+  }
+  #screen-calib .calib-controls{
+    grid-column:2; grid-row:1;
+    width:100%; max-height:calc(100dvh - 32px);
+    overflow:auto; padding:2px 4px 12px;
+  }
+  #screen-calib .calib-info{ margin-top:6px; }
+  #screen-calib .btn-primary{ margin-top:10px; padding:13px; }
+  #screen-calib .btn-secondary{ margin-top:7px; padding:11px; }
 }
 
 /* ---------- GAME SCREEN ---------- */
@@ -468,8 +500,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
 .game-stage.public-clean-hud:not(.patient-simple-hud) .status-bar{ display:none !important; }
 .game-stage.public-clean-hud.patient-simple-hud .action-copy{ display:none !important; }
 .game-stage.public-clean-hud.patient-simple-hud .status-bar{
-  width:158px; min-height:158px; padding:8px;
-  border:0; background:transparent; box-shadow:none;
+  display:none !important;
 }
 .game-stage.public-clean-hud.patient-card-instruction .adv-panel{
   display:block !important;
@@ -1698,6 +1729,22 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
         </details>
       </div>
     </div>
+    <div class="card collapsible" id="laundryDifficultyCard" data-accordion="laundry-difficulty" hidden>
+      <h2><span>晾衫難度</span>
+        <span class="selected-preview" id="preview-laundry-difficulty">基本</span></h2>
+      <div class="card-body">
+        <div class="option-row" id="laundryDifficultyOptions">
+          <button class="option-btn selected" type="button" data-laundry-difficulty="basic">
+            基本
+            <small>任何衣物可放到晾衫架任何位置</small>
+          </button>
+          <button class="option-btn" type="button" data-laundry-difficulty="complex">
+            較複雜
+            <small>依照晾衫單的衣物及數量</small>
+          </button>
+        </div>
+      </div>
+    </div>
 
     <div class="card collapsible collapsed" data-accordion="mode">
       <h2><span>訓練模式</span><span class="selected-preview" id="preview-mode">單一任務</span></h2>
@@ -1802,42 +1849,44 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
 
   <!-- ============ CALIBRATION SCREEN ============ -->
   <div id="screen-calib" class="screen">
-    <div class="title-block" style="margin-bottom:8px;">
-      <h1 style="font-size:20px;">相機校準</h1>
-    </div>
     <div class="calib-wrap">
       <video id="calibVideo" playsinline autoplay muted></video>
       <canvas id="calibOverlay"></canvas>
     </div>
-    <div class="calib-info">
-      <span class="pixel-count" id="pixelCount" aria-live="polite">尚未偵測</span>
-    </div>
-    <div class="calib-hint" id="calibHint">
-      鏡頭對準
-    </div>
-    <button class="btn-secondary" id="btnMirrorX" type="button"
-      style="max-width:220px;padding:9px;margin-top:8px;">左右反轉</button>
-    <div class="calib-checklist" id="calibChecklist" hidden>
-      <span id="calibDetectCheck">○ 偵測</span>
-      <span id="calibOpenCheck">○ 張手</span>
-      <span id="calibCloseCheck">○ 輕合手</span>
-    </div>
-    <details class="calib-advanced" hidden>
-      <summary>校準重點</summary>
-      <div class="safety-level-note" id="calibLevelBrief" data-testid="text-calib-level-brief"></div>
-    </details>
-    <div class="camera-error" id="cameraErrorBox" role="alert" aria-live="assertive" data-testid="panel-camera-error">
-      <h2 data-testid="text-camera-error-title">未能啟動相機</h2>
-      <p id="cameraErrorMessage" data-testid="text-camera-error-message"></p>
-      <p class="camera-error-detail" id="cameraErrorDetail" data-testid="text-camera-error-detail"></p>
-      <div class="camera-error-actions">
-        <button type="button" id="btnCameraRetry" data-testid="button-camera-retry">重新嘗試</button>
-        <button type="button" class="secondary" id="btnCameraReturn" data-testid="button-camera-return">返回上一頁</button>
+    <div class="calib-controls">
+      <div class="title-block">
+        <h1 style="font-size:20px;">相機校準</h1>
       </div>
+      <div class="calib-info">
+        <span class="pixel-count" id="pixelCount" aria-live="polite">尚未偵測</span>
+      </div>
+      <div class="calib-hint" id="calibHint">
+        鏡頭對準
+      </div>
+      <button class="btn-secondary" id="btnMirrorX" type="button"
+        style="padding:9px;margin-top:8px;">左右反轉</button>
+      <div class="calib-checklist" id="calibChecklist" hidden>
+        <span id="calibDetectCheck">○ 偵測</span>
+        <span id="calibOpenCheck">○ 張手</span>
+        <span id="calibCloseCheck">○ 輕合手</span>
+      </div>
+      <details class="calib-advanced" hidden>
+        <summary>校準重點</summary>
+        <div class="safety-level-note" id="calibLevelBrief" data-testid="text-calib-level-brief"></div>
+      </details>
+      <div class="camera-error" id="cameraErrorBox" role="alert" aria-live="assertive" data-testid="panel-camera-error">
+        <h2 data-testid="text-camera-error-title">未能啟動相機</h2>
+        <p id="cameraErrorMessage" data-testid="text-camera-error-message"></p>
+        <p class="camera-error-detail" id="cameraErrorDetail" data-testid="text-camera-error-detail"></p>
+        <div class="camera-error-actions">
+          <button type="button" id="btnCameraRetry" data-testid="button-camera-retry">重新嘗試</button>
+          <button type="button" class="secondary" id="btnCameraReturn" data-testid="button-camera-return">返回上一頁</button>
+        </div>
+      </div>
+      <button class="btn-primary" id="btnStartGame" disabled>開始遊戲 ▶</button>
+      <button class="btn-secondary" id="btnBackFromCalib">← 設定</button>
+      <button class="btn-secondary" id="btnCalibToLibrary">← 遊戲</button>
     </div>
-    <button class="btn-primary" id="btnStartGame" style="max-width:520px;" disabled>開始遊戲 ▶</button>
-    <button class="btn-secondary" id="btnBackFromCalib" style="max-width:520px;">← 設定</button>
-    <button class="btn-secondary" id="btnCalibToLibrary" style="max-width:520px;">← 遊戲</button>
   </div>
 
   <!-- ============ RULES SCREEN ============ -->
@@ -2459,6 +2508,7 @@ const state = {
   level: '4',
   shoulderTargetDeg: 60,
   shoulderExerciseMode: 'active', // Levels 3–4: active | assisted-stick
+  laundryDifficulty: 'basic', // Level 6 peg laundry: basic | complex
   theme: 'dimsum',      // 活動 id
   dimsumSceneMode: 'teahouse', // Level 3/4 點心顯示模式：teahouse（模擬茶樓）| camera（看到自己＝原有鏡頭畫面）
   mode: 'single',       // single | dual
@@ -2753,7 +2803,7 @@ function publicLevel5DimsumGeometry(cw,ch){
     ? [[0.50,0.64],[0.24,0.86],[0.76,0.86]]
     : [[0.18,0.76],[0.50,0.76],[0.82,0.76]];
   const slots = ratios.map(([x,y])=>({x:cw*x,y:ch*y}));
-  const visibleGap = Math.max(12,Math.min(24,Math.min(cw,ch)*0.025));
+  const visibleGap = Math.max(34,Math.min(64,Math.min(cw,ch)*0.065));
   let maxRadius = Infinity;
   slots.forEach(slot=>{
     maxRadius = Math.min(maxRadius,slot.x,cw-slot.x,slot.y-ch/2,ch-slot.y);
@@ -2764,6 +2814,9 @@ function publicLevel5DimsumGeometry(cw,ch){
         (Math.hypot(slots[i].x-slots[j].x,slots[i].y-slots[j].y)-visibleGap)/2);
     }
   }
+  // Keep each basket large enough for low vision, but leave a clearly visible
+  // corridor between baskets rather than merely preventing mathematical overlap.
+  maxRadius = Math.min(maxRadius, Math.min(cw,ch) * 0.16);
   return {slots,visibleGap,maxRadius:Math.max(1,maxRadius)};
 }
 function publicLevel5DimsumSlot(index,cw,ch){
@@ -3210,14 +3263,14 @@ function drawBowlingBallItem(ctx,x,y,r){
   drawBowlingBallSprite(ctx,x,y,r*(1-0.45*prog));
 }
 function drawBowlingPins(ctx,g){
-  const ph=g.topH*0.26,pwid=ph*0.3125;
+  const ph=g.topH*0.45,pwid=ph*0.3125;
   const rows=[[0],[-0.5,0.5],[-1,0,1],[-1.5,-0.5,0.5,1.5]];
   const t=nowMs()-bowlingStrike.startedMs;
   let idx=0;
   for(let r=0;r<rows.length;r++){
     const rowY=g.pinBaseY-r*ph*0.14;
     const rowScale=1-r*0.06;
-    const spread=g.pw*0.115;
+    const spread=g.pw*0.145;
     for(const off of rows[r]){
       const px=g.laneX+off*spread;
       let rot=0,dx=0,dy=0;
@@ -5145,6 +5198,20 @@ function renderShoulderExerciseModeSettings(){
     button.setAttribute('aria-pressed',button.dataset.shoulderExerciseMode===state.shoulderExerciseMode?'true':'false');
   });
 }
+function renderLaundryDifficultySettings(){
+  const card=document.getElementById('laundryDifficultyCard');
+  if(!card)return;
+  const enabled=isLaundryRackGame();
+  card.hidden=!enabled;
+  if(!enabled)return;
+  const basic=state.laundryDifficulty!=='complex';
+  document.getElementById('preview-laundry-difficulty').textContent=basic?'基本':'較複雜';
+  document.querySelectorAll('#laundryDifficultyOptions [data-laundry-difficulty]').forEach(button=>{
+    const selected=button.dataset.laundryDifficulty===state.laundryDifficulty;
+    button.classList.toggle('selected',selected);
+    button.setAttribute('aria-pressed',selected?'true':'false');
+  });
+}
 function applyInteractionModeForLevel(){
   // Pilot-study research track keeps its own bare/peg/chopsticks gameType
   // (pinch/grasp/dwell) via LEVEL67_TOOL_MODES — unchanged from before.
@@ -5514,6 +5581,7 @@ function selectActivity(themeId){
   }
   renderShoulderExerciseModeSettings();
   renderShoulderTargetSettings();
+  renderLaundryDifficultySettings();
   renderTimingSettings();
   const go=document.getElementById('btnGoCalib');
   if(go) go.textContent=isShoulderFlexionLevel()
@@ -5640,6 +5708,12 @@ document.getElementById('shoulderExerciseModeOptions').addEventListener('click',
   const button=e.target.closest('[data-shoulder-exercise-mode]');
   if(!button)return;
   selectShoulderExerciseMode(button.dataset.shoulderExerciseMode);
+});
+document.getElementById('laundryDifficultyOptions').addEventListener('click',e=>{
+  const button=e.target.closest('[data-laundry-difficulty]');
+  if(!button||!isLaundryRackGame())return;
+  state.laundryDifficulty=button.dataset.laundryDifficulty==='complex'?'complex':'basic';
+  renderLaundryDifficultySettings();
 });
 
 // Accordion: click h2 to expand/collapse (only one open at a time)
@@ -8041,6 +8115,33 @@ function drawTsuenWanPhotoCard(ctx,img,x,y,size){
   ctx.drawImage(img,sx,sy,sw,sh,x-w/2,y-h/2,w,h);
   ctx.restore();ctx.save();ctx.strokeStyle='#fff';ctx.lineWidth=4;rrPath(ctx,x-w/2,y-h/2,w,h,12);ctx.stroke();ctx.restore();
 }
+function drawTsuenWanPuzzleTarget(ctx,t){
+  if(!t.img||!t.img.complete||!t.img.naturalWidth)return;
+  const x=t.x-t.w/2,y=t.y-t.h/2,w=t.w,h=t.h;
+  ctx.save();
+  rrPath(ctx,x,y,w,h,18);ctx.clip();
+  const sourceRatio=t.img.naturalWidth/t.img.naturalHeight,targetRatio=w/h;
+  let sx=0,sy=0,sw=t.img.naturalWidth,sh=t.img.naturalHeight;
+  if(sourceRatio>targetRatio){sw=sh*targetRatio;sx=(t.img.naturalWidth-sw)/2;}
+  else{sh=sw/targetRatio;sy=(t.img.naturalHeight-sh)/2;}
+  ctx.drawImage(t.img,sx,sy,sw,sh,x,y,w,h);
+  const holeW=w*.34,holeH=h*.42,holeX=t.x-holeW/2,holeY=y+h-holeH;
+  ctx.fillStyle='#fff';ctx.fillRect(holeX,holeY,holeW,holeH);
+  ctx.strokeStyle='#1A6B5A';ctx.lineWidth=5;ctx.setLineDash([12,8]);
+  ctx.strokeRect(holeX+2,holeY+2,holeW-4,holeH-4);
+  ctx.restore();
+  ctx.save();ctx.strokeStyle='#1A6B5A';ctx.lineWidth=6;rrPath(ctx,x,y,w,h,18);ctx.stroke();ctx.restore();
+}
+function drawTsuenWanPuzzlePiece(ctx,img,x,y,size){
+  if(!img||!img.complete||!img.naturalWidth)return;
+  const w=size*1.46,h=size*.92;
+  ctx.save();rrPath(ctx,x-w/2,y-h/2,w,h,12);ctx.clip();
+  const sw=img.naturalWidth*.34,sh=img.naturalHeight*.42;
+  const sx=(img.naturalWidth-sw)/2,sy=img.naturalHeight-sh;
+  ctx.drawImage(img,sx,sy,sw,sh,x-w/2,y-h/2,w,h);
+  ctx.restore();ctx.save();ctx.strokeStyle='#1A6B5A';ctx.lineWidth=5;
+  rrPath(ctx,x-w/2,y-h/2,w,h,12);ctx.stroke();ctx.restore();
+}
 
 /* ==================== 通用 canvas 繪圖工具（活動主題用） ==================== */
 function shapeShadow(ctx, fn){
@@ -8437,7 +8538,7 @@ const THEMES = {
     categoriesFor(){return TSUEN_WAN_PHOTOS.map(photo=>({
       type:photo.type,itemLabel:photo.label,targetLabel:photo.label,img:photo.img,
       color:'#1A6B5A',drawScale:.92,labelGap:.88,
-      drawItem:(ctx,x,y,r)=>drawTsuenWanPhotoCard(ctx,photo.img,x,y,r*1.25),
+      drawItem:(ctx,x,y,r)=>drawTsuenWanPuzzlePiece(ctx,photo.img,x,y,r*1.25),
       drawIcon:(ctx,x,y,s)=>drawTsuenWanPhotoCard(ctx,photo.img,x,y,s*1.80),
     }));},
   }),
@@ -8850,7 +8951,13 @@ let laundryOrderCelebrateUntil = 0;
 let laundryOrderTimerId = null;
 let laundryOrderBannerRect = null;
 function isLaundryOrderGame(){
+  return isLaundryRackGame() && state.laundryDifficulty === 'complex';
+}
+function isLaundryRackGame(){
   return state.level === '67' && state.theme === 'peg_laundry' && !research.active;
+}
+function isLaundryBasicGame(){
+  return isLaundryRackGame() && state.laundryDifficulty !== 'complex';
 }
 function resetLaundryOrderGame(){
   laundryOrderBannerRect = null;
@@ -8914,11 +9021,27 @@ function laundryOrderPlace(item){
     }, 2600);
   }
 }
+function laundryBasicPlace(item){
+  const fx = LAUNDRY_RACK_SLOTS[laundryRackContents.length % LAUNDRY_RACK_SLOTS.length];
+  laundryRackContents.push({ img:(item && item.img) || null, fx });
+  if(laundryRackContents.length >= LAUNDRY_RACK_SLOTS.length){
+    laundryRackContents = [];
+    try{ playApplauseSound(); }catch(e){}
+    try{ speakCantonese('好叻呀！繼續晾衫！', {rate:.85}); }catch(e){}
+  }
+}
+function laundryRackAccepts(item){
+  return isLaundryBasicGame() ? !!item : laundryOrderAccepts(item);
+}
+function laundryRackPlace(item){
+  if(isLaundryBasicGame()) laundryBasicPlace(item);
+  else laundryOrderPlace(item);
+}
 /* ---- Level 5 雪櫃收納遊戲（v72）----
    情境：買完餸返屋企，將購物袋入面嘅食物逐樣放入雪櫃。
    Level 5 握放訓練：喺購物袋口攞起食物 → 運送上雪櫃 → 喺雪櫃入面搵空位放低。
-   放置位置自由，但唔可以同已放低嘅食物重疊（會「相撞」被拒絕，唔扣分），
-   病人要自己規劃擺位先至放得晒全部食物。研究模式（pilot）唔行呢個玩法。
+   放置位置自由；成功後由系統自動重排成不重疊網格，避免要求震顫患者精準規劃位置。
+   研究模式（pilot）唔行呢個玩法。
    照舊只偵測已選患手嘅開合；唔識別真實物件、唔作任何臨床評估。 */
 const FRIDGE_ORDER_DEFS = [
   { type:'fridge_charsiu_rice', label:'叉燒飯', img:()=>imgFridgeCharsiuRice },
@@ -9009,10 +9132,38 @@ function fridgeInteriorRect(t){
 }
 // 放入雪櫃後嘅食物顯示半徑（12 樣要放得晒，但唔可以細到睇唔清）
 function fridgePlacedRadius(rect){
-  // v72：橫向時指令牌遮咗雪櫃上半部，剩低嘅窄帶要細啲嘅半徑先夠位放晒 12 樣。
+  // The display radius is intentionally independent from the generous pickup
+  // hitbox. Twelve foods remain recognisable while fitting a non-overlap grid.
   const landscape = gameCanvas.width > gameCanvas.height;
-  // v75：雪櫃放大咗，放入去嘅食物都跟住加大
-  return Math.min(rect.rh * (landscape ? 0.130 : 0.150), rect.rw * (landscape ? 0.072 : 0.085));
+  return Math.min(rect.rh * (landscape ? 0.070 : 0.078), rect.rw * (landscape ? 0.038 : 0.044));
+}
+function fridgeArrangePlacedFoods(rect){
+  const columns = gameCanvas.width > gameCanvas.height ? 6 : 4;
+  const rows = Math.ceil(FRIDGE_ORDER_DEFS.length / columns);
+  const left = FRIDGE_INTERIOR.left + 0.055;
+  const right = FRIDGE_INTERIOR.right - 0.055;
+  const top = FRIDGE_INTERIOR.top + 0.075;
+  const bottom = FRIDGE_INTERIOR.bottom - 0.075;
+  const candidates = [];
+  for(let row=0; row<rows; row++){
+    for(let column=0; column<columns; column++){
+      const fx = columns === 1 ? 0.5 : left + (right-left) * column / (columns-1);
+      const fy = rows === 1 ? 0.5 : top + (bottom-top) * row / (rows-1);
+      const px = rect.x0 + fx * rect.rw;
+      const py = rect.y0 + fy * rect.rh;
+      const covered = fridgeBannerRect
+        && px > fridgeBannerRect.left && px < fridgeBannerRect.right
+        && py > fridgeBannerRect.top && py < fridgeBannerRect.bottom;
+      if(!covered) candidates.push({fx,fy});
+    }
+  }
+  fridgePlacedFoods.forEach((food,index)=>{
+    const slot = candidates[index] || {
+      fx:left + (right-left) * ((index % columns) / Math.max(1,columns-1)),
+      fy:top + (bottom-top) * (Math.floor(index / columns) / Math.max(1,rows-1)),
+    };
+    food.fx=slot.fx; food.fy=slot.fy;
+  });
 }
 function fridgeNoteCrash(x, y, rect, msg){
   const speakable = nowMs() >= fridgeCrashUntil;
@@ -9022,7 +9173,9 @@ function fridgeNoteCrash(x, y, rect, msg){
   if(speakable){ try{ speakCantonese(msg, {rate:.9}); }catch(e){} }
 }
 // 嘗試將手上食物放入雪櫃 (x,y)。成功 → 記低位置並前進下一樣；
-// 出界或同已放食物「相撞」→ 拒絕（唔扣分，食物返購物袋再試）。
+// Only an out-of-fridge release is rejected. A patient may release over an
+// existing food; successful items are automatically rearranged into clear,
+// non-overlapping shelf positions.
 function fridgeTryPlace(item, x, y, target){
   if(!isFridgeGame() || !item || item.targetType === 'distractor') return false;
   const def = fridgeCurrentDef();
@@ -9034,26 +9187,11 @@ function fridgeTryPlace(item, x, y, target){
     fridgeNoteCrash(x, y, rect, '要放入雪櫃入面呀。');
     return false;
   }
-  // v72：橫向時指令牌會遮住雪櫃上半部——唔收呢啲位置，
-  // 否則食物放完匿咗喺牌後面，患者會以為唔見咗。同 crash 一樣唔扣分。
-  if(fridgeBannerRect
-    && x > fridgeBannerRect.left - pr * 0.25 && x < fridgeBannerRect.right + pr * 0.25
-    && y > fridgeBannerRect.top - pr * 0.25 && y < fridgeBannerRect.bottom + pr * 0.25){
-    fridgeNoteCrash(x, y, rect, '呢個位俾指示牌遮住，放低啲第二度啦。');
-    return false;
-  }
-  for(const p of fridgePlacedFoods){
-    const px = rect.x0 + p.fx * rect.rw;
-    const py = rect.y0 + p.fy * rect.rh;
-    if(Math.hypot(x - px, y - py) < pr * 2 * 0.85){
-      fridgeNoteCrash(x, y, rect, '嗰個位放咗' + p.label + '喇，試下第二度啦。');
-      return false;
-    }
-  }
   fridgePlacedFoods.push({
     img: (item && item.img) || null, label: item.label,
     fx: (x - rect.x0) / rect.rw, fy: (y - rect.y0) / rect.rh,
   });
+  fridgeArrangePlacedFoods(rect);
   fridgeQueueIndex++;
   fridgeCrashUntil = 0;
   fridgeCrashPoint = null;
@@ -9196,6 +9334,7 @@ function isStill(now){
 let foods = [];      // {id, type, x, y, r, held, done}
 let targets = [];    // {type, x, y, w, h, label}
 let heldItem = null;
+let level5TargetSideFlip = false;
 let releaseDwellStart = 0;  // ms timestamp when user started releasing hand (0 = not releasing)
 let releaseDwellPlate = null; // which plate cursor was on when release started
 let releaseDwellPauseAt = 0;
@@ -9321,7 +9460,7 @@ let cogTimerId = null;
 // 活動物件 defs 現由主題（theme）及級別決定，見 getActivityDefs()
 function getActivityDefs(){
   // v71 晾衫單模式：改用真實衣物相片（唔畫虛擬衣夾——病人手持真實衣夾操作）
-  if(isLaundryOrderGame()){
+  if(isLaundryRackGame()){
     return LAUNDRY_ORDER_DEFS.map(d=>{
       const im = d.img();
       return { type:d.type, label:d.label, img:im,
@@ -9619,6 +9758,9 @@ function initGame(){
   // 舊版【關卡說明 banner】已被 showLevelUpBanner() 取代（將在 state.running=true 之後觸發）
 
   score = 0; correctCount = 0; grabCount = 0; totalWrong = 0; wrongStreak = 0;
+  // Preserve target positions through resize, but vary their left/right order
+  // between sessions so one dim sum type is not permanently tied to one side.
+  level5TargetSideFlip = Math.random() < 0.5;
   shoulderFlexionLastRepetition = 0;
   shoulderFlexionCycleAwarded = false;
   shoulderHoldSpokenSecond = null;
@@ -9815,35 +9957,38 @@ function setupTargets(){
       style:'bigplate', x:cw / 2, y:ch - th / 2 - 14, w:tw, h:th, color:'#2E6DA4' }];
     return;
   }
-  if(isLaundryOrderGame()){
+  if(isLaundryRackGame()){
     // v77 晾衫單模式：晾衫架固定在上半屏，來源衣物固定在下半屏。
     // 右側保留大型直向手勢提示的淨空區。
     const rackRatio = (imgLaundryRack.naturalWidth > 0 && imgLaundryRack.naturalHeight > 0)
       ? imgLaundryRack.naturalWidth / imgLaundryRack.naturalHeight : 779 / 453;
-    let tw = portrait ? Math.min(cw * 0.88, 980) : Math.min(cw * 0.92, 1220);
+    let tw = isLaundryBasicGame()
+      ? Math.min(cw * 0.96, 1320)
+      : (portrait ? Math.min(cw * 0.88, 980) : Math.min(cw * 0.92, 1220));
     let th = tw / rackRatio;
     // Keep a large rack, but leave a real visual gap above the fixed lower-row
     // garments. The old 58% landscape height extended the drop rectangle over
     // every source item even though their centres were in the lower half.
-    const rackMaxH = portrait ? ch * 0.48 : ch * 0.49;
+    const rackMaxH = isLaundryBasicGame()
+      ? (portrait ? ch * 0.62 : ch * 0.60)
+      : (portrait ? ch * 0.48 : ch * 0.49);
     if(th > rackMaxH){ th = rackMaxH; tw = th * rackRatio; }
     targets = [{ type:'laundry_rack', label:'晾衫架', img:imgLaundryRack, drawIcon:null,
-      style:'rack', x:cw * (portrait ? 0.50 : 0.46),
-      y:Math.max(82 + th / 2, ch * (portrait ? 0.26 : 0.27)),
+      style:'rack', x:cw * 0.50,
+      y:Math.max(70 + th / 2, ch * 0.25),
       w:tw, h:th, color:'#2E6DA4' }];
     return;
   }
   if(isFridgeGame()){
-    // v75 雪櫃收納：改用橫向闊身四門雪櫃相片，橫向盡量佔滿成個屏幕闊度，
-    // 食物由下方逐樣出現（保留向上運送距離，不顯示購物袋）。
+    // The four-door fridge always spans the full canvas width. Do not cap its
+    // height and then aspect-fit it smaller, which previously left large blank
+    // strips at both sides on iPad landscape.
     const fridgeRatio = (imgFridgeWide.naturalWidth > 0 && imgFridgeWide.naturalHeight > 0)
       ? imgFridgeWide.naturalWidth / imgFridgeWide.naturalHeight : 1597 / 935;
-    let tw = Math.min(cw * 0.97, portrait ? 900 : 1160);
-    let th = tw / fridgeRatio;
-    const fridgeMaxH = portrait ? ch * 0.44 : ch * 0.64;
-    if(th > fridgeMaxH){ th = fridgeMaxH; tw = th * fridgeRatio; }
+    const tw = cw;
+    const th = tw / fridgeRatio;
     targets = [{ type:'fridge', label:'雪櫃', img:imgFridgeWide, drawIcon:null,
-      style:'fridge', x:cw / 2, y:th / 2 + ch * (portrait ? 0.105 : 0.03), w:tw, h:th, color:'#2E6DA4' }];
+      style:'fridge', x:cw / 2, y:th / 2, w:tw, h:th, color:'#2E6DA4' }];
     return;
   }
   if(isLevel3Tabletop()){
@@ -9866,12 +10011,13 @@ function setupTargets(){
       return;
     }
     const photoLarge=state.theme==='tsuenwan'&&!research.active;
-    const tw=photoLarge?Math.min(cw*.62,720):Math.min(cw*.38,320);
-    const th=tw*(style==='steamer'?.74:.62);
+    const tw=photoLarge?Math.min(cw*.90,1080):Math.min(cw*.38,320);
+    const th=photoLarge?Math.min(ch*.43,tw*.62):tw*(style==='steamer'?.74:.62);
     const category=cats[0];
     const laneX=photoLarge?cw*.50:cw*(portrait?.68:.58);
     targets=[{type:category.type,label:category.targetLabel,img:category.targetImg||category.img||null,
-      drawIcon:category.drawIcon||null,style,x:laneX,y:photoLarge?ch*.28:ch*.32,w:tw,h:th,
+      drawIcon:category.drawIcon||null,style:photoLarge?'photo-puzzle':style,
+      x:laneX,y:photoLarge?Math.max(88+th/2,ch*.27):ch*.32,w:tw,h:th,
       color:category.color||'#1A6B5A'}];
     return;
   }
@@ -9962,7 +10108,7 @@ function setupTargets(){
     drawIcon: c.drawIcon || null,
     style,
     x: level5VerticalFlow
-      ? cw*(i === 0 ? 0.30 : 0.70)
+      ? cw*(((level5TargetSideFlip ? 1-i : i) === 0) ? 0.30 : 0.70)
       : (portrait ? outsideX : landscapeXs[i]),
     y: level5VerticalFlow
       ? ch*(portrait ? 0.25 : 0.27)
@@ -10149,7 +10295,7 @@ function makeFoodAt(def, existingFoods){
   // Task-specific strata: FTHUE 6 and 7 use progressively smaller objects.
   const level67DimSum = state.level === '67' && dimSumTheme;
   const shoulderVisualBoost = isShoulderFlexionLevel() && !research.active
-    ? (state.theme === 'tsuenwan' ? 2.7 : (isTeahouseDimsumMode() ? 3 : 1))
+    ? (state.theme === 'tsuenwan' ? 4.6 : (isTeahouseDimsumMode() ? 3 : 1))
     : 1;
   const publicDimSumBoost = !research.active && dimSumTheme &&
     (state.level === '5' || state.level === '67') ? 2.5 : 1;
@@ -10184,7 +10330,7 @@ function makeFoodAt(def, existingFoods){
     ? Math.min(requestedR, maxLevel67DimSumR)
     : (isShoulderFlexionLevel()
       ? Math.min(requestedR,shoulderFlexionMaxR)
-      : (isLaundryOrderGame() ? Math.min(requestedR, laundryMaxR) : requestedR));
+      : (isLaundryRackGame() ? Math.min(requestedR, laundryMaxR) : requestedR));
 
   // 直向以兩欄多列分佈；橫向保留足夠肩部移動距離，同時容納進階版最多 6 個物件。
   // 限制 spawn 區域：左右都留更大邊距（避免右下角衝碰磟子造成 jitter）
@@ -10196,14 +10342,14 @@ function makeFoodAt(def, existingFoods){
   const centerMin = Math.max(marginX, cw * (isLevel4Tabletop() ? 0.40 : 0.20));
   const centerMax = Math.min(cw - marginX, cw * (isLevel4Tabletop() ? 0.60 : 0.80));
   // Y 範圍顯著往上拉，避免 spawn 在磟子區區均（磟子在底部 65-90%）
-  const spawnYmin = isLaundryOrderGame()
+  const spawnYmin = isLaundryRackGame()
     ? ch * (portrait ? 0.58 : 0.61)
     : (isPublicLevel5VerticalFlow()
       ? ch * (portrait ? 0.62 : 0.64)
     : (isLevel4Tabletop()
       ? ch * 0.70
       : Math.max(ch * (portrait ? 0.25 : 0.21), portrait ? 190 : 150)));
-  const spawnYmax = ch * (isLaundryOrderGame()
+  const spawnYmax = ch * (isLaundryRackGame()
     ? (portrait ? 0.88 : 0.80)
     : (isPublicLevel5VerticalFlow()
       ? (portrait ? 0.90 : 0.86)
@@ -10215,7 +10361,8 @@ function makeFoodAt(def, existingFoods){
     targetType: def.targetType, img: def.img || null, color: def.color || null,
     drawItem: def.drawItem || null,
     drawScale: def.drawScale || 0.92, labelGap: def.labelGap || 1.04,
-    x, y, r, baseX: x, baseY: y, held: false, removed: false,
+    x, y, r, visualR:isFridgeGame() ? r * 0.54 : r,
+    baseX: x, baseY: y, held: false, removed: false,
   });
   if(isLevel3Tabletop() || isShoulderFlexionLevel()){
     if(isTeahouseDimsumMode()){
@@ -10273,7 +10420,7 @@ function makeFoodAt(def, existingFoods){
         : (isDimsumOrderGame()
           ? [[0.20,0.30],[0.80,0.30],[0.50,0.44]]
           : [[0.22,0.39],[0.50,0.50],[0.78,0.39]]))
-      : (isLaundryOrderGame()
+      : (isLaundryRackGame()
       ? (portrait
         ? [[0.20,0.66],[0.80,0.66],[0.50,0.88]]
         : [[0.18,0.78],[0.46,0.78],[0.72,0.78]])
@@ -10300,7 +10447,7 @@ function makeFoodAt(def, existingFoods){
     // canvas. Its generous drop hitbox may overlap the edge of the lower
     // garment band, so ignore only that target boundary while still requiring
     // a genuinely free garment slot when the order system swaps an item.
-    if(isLaundryOrderGame()){
+    if(isLaundryRackGame()){
       const freeLaundrySlot=existingFoods.every(f=>f.removed ||
         Math.hypot(x-f.x,y-f.y)>=r+(f.r||baseR)+16);
       if(freeLaundrySlot) return createFood(x, y);
@@ -11733,18 +11880,18 @@ function updateGameLogic(){
         if(elapsed >= DWELL_MS){
           // 放下（落單模式同樣改由單上數量判斷，保持兩條放下路徑一致）
           const dwellDimsumOrderDrop = isDimsumOrderGame() && onPlate.type === 'dimsum_plate';
-          const dwellLaundryOrderDrop = isLaundryOrderGame() && onPlate.type === 'laundry_rack';
+          const dwellLaundryOrderDrop = isLaundryRackGame() && onPlate.type === 'laundry_rack';
           const dwellFridgeDrop = isFridgeGame() && onPlate.type === 'fridge';
           const dwellDropMatched = dwellDimsumOrderDrop
             ? dimsumOrderAccepts(heldItem)
             : (dwellLaundryOrderDrop
-              ? laundryOrderAccepts(heldItem)
+              ? laundryRackAccepts(heldItem)
               : (dwellFridgeDrop
                 ? fridgeTryPlace(heldItem, heldPoint.x, heldPoint.y, onPlate)
                 : onPlate.type === heldItem.targetType));
           if(dwellDropMatched){
             if(dwellDimsumOrderDrop) dimsumOrderPlace(heldItem);
-            else if(dwellLaundryOrderDrop) laundryOrderPlace(heldItem);
+            else if(dwellLaundryOrderDrop) laundryRackPlace(heldItem);
             score += 10; correctCount++;
             wrongStreak = 0;
             triggerFeedback(true);
@@ -11897,6 +12044,13 @@ function updateShoulderFlexionGame(){
   const visualProgress=clamp01(Number(shoulderFlexionState.progress)||0);
   const cw=gameCanvas.width,ch=gameCanvas.height;
   let laneX=cw*(ch>cw?.68:.58),bottom=ch*.78,top=ch*.34;
+  if(state.theme==='tsuenwan'&&!research.active){
+    laneX=cw*.50;
+    const target=targets[0];
+    const pieceHalf=item ? (item.visualR||item.r)*.58 : ch*.09;
+    bottom=Math.min(ch-pieceHalf-24,ch*.84);
+    top=target ? target.y+target.h*.29 : ch*.48;
+  }
   if(isTeahouseDimsumMode()){
     // v75 設計版面：點心喺托盤細碟起步，沿中線升上大碟蒸籠下方
     const tg=teahouseGeometry(cw,ch);
@@ -12001,7 +12155,7 @@ function publicPatientVoiceTarget(item,zones){
   const itemType=item?.targetType||item?.type||'';
   return list.find(z=>z.type===itemType)
     || (isDimsumOrderGame()?list.find(z=>z.type==='dimsum_plate'):null)
-    || (isLaundryOrderGame()?list.find(z=>z.type==='laundry_rack'):null)
+    || (isLaundryRackGame()?list.find(z=>z.type==='laundry_rack'):null)
     || null;
 }
 function publicPatientVoiceSay(phase,itemId,silent=false){
@@ -12009,8 +12163,11 @@ function publicPatientVoiceSay(phase,itemId,silent=false){
   if(!phrase) return '';
   const now=nowMs();
   const key=publicPatientVoiceGuide.cycle+':'+phase+':'+String(itemId||'');
+  // Reaching a destination is time-critical: it must immediately replace an
+  // earlier pickup cue instead of waiting for the shared 2.8-second cooldown.
   if(publicPatientVoiceGuide.spoken.has(key) ||
-      now-publicPatientVoiceGuide.lastSpokenAt<PUBLIC_PATIENT_VOICE_COOLDOWN_MS) return '';
+      (phase !== 'target' &&
+       now-publicPatientVoiceGuide.lastSpokenAt<PUBLIC_PATIENT_VOICE_COOLDOWN_MS)) return '';
   publicPatientVoiceGuide.spoken.add(key);
   publicPatientVoiceGuide.lastSpokenAt=now;
   publicPatientVoiceGuide.lastPhrase=phrase;
@@ -12114,15 +12271,9 @@ function setActionPrompt(main, detail){
   if(statusBar.dataset.actionRenderKey === renderKey) return;
   statusBar.dataset.actionRenderKey = renderKey;
   if(patientMode){
-    const emoji = gestureCue === 'open' ? '✋🏻' : '✊🏻';
-    const level6ClosedImage=isLevel6()&&gestureCue==='close'
-      ? `img/level6_pinch_${activeAffectedSide()==='left'?'left':'right'}.png`
-      : '';
-    const handCue=level6ClosedImage
-      ? `<img class="action-emoji action-hand-image" src="${level6ClosedImage}" alt="">`
-      : `<span class="action-emoji" aria-hidden="true">${emoji}</span>`;
-    statusBar.innerHTML = handCue +
-      `<span class="action-copy"><span class="action-main">${main}</span></span>`;
+    // Spoken guidance and the large camera-tracked hand remain. The separate
+    // right-middle gesture emoji/card duplicated the hand and obscured play.
+    statusBar.innerHTML = '';
     statusBar.dataset.gestureCue = gestureCue;
     return;
   }
@@ -12209,7 +12360,11 @@ function updateGraspLogic(){
       const d = dist(cursorX, cursorY, f.x, f.y);
       if(d < nearestDist){ nearest = f; nearestDist = d; }
     }
-    let overFood = nearest && nearestDist <= pickupContactRadius(nearest.r, 100);
+    const pickupMargin = isLaundryRackGame() ? 220 : 100;
+    const voiceMargin = isLaundryRackGame() ? 260 : 150;
+    const voiceNearFood = nearest &&
+      nearestDist <= pickupContactRadius(nearest.r, voiceMargin);
+    let overFood = nearest && nearestDist <= pickupContactRadius(nearest.r, pickupMargin);
     if(overFood){
       basicContactCandidate = nearest.id;
       basicContactUntil = now + CONTACT_GRACE_MS;
@@ -12218,8 +12373,8 @@ function updateGraspLogic(){
       if(locked){ nearest = locked; overFood = true; }
     }
     updatePublicPatientVoiceGuide({
-      phase:'contact', item:nearest, touching:!!overFood,
-      openForPickup:!!(overFood&&!isGrasping&&openPrep),
+      phase:'contact', item:nearest, touching:!!voiceNearFood,
+      openForPickup:!!(voiceNearFood&&!isGrasping&&openPrep),
     });
     if(!overFood){
       basicOpenStart = 0; basicGraspStart = 0; basicGraspCandidate = ''; basicGraspArmed = false;
@@ -12277,9 +12432,17 @@ function updateGraspLogic(){
 
     // Check if cursor is on any plate
     let onPlate = null;
+    let voiceNearPlate = null;
     let onPlateDistance = Infinity;
     for(const t of targets){
       const foodR = heldItem ? heldItem.r : 60;
+      const voiceMargin = !research.active
+        ? Math.max(52, Math.min(108, foodR * 0.55)) : 0;
+      const voiceWithinX = cursorX >= (t.x - t.w/2 - foodR - voiceMargin)
+        && cursorX <= (t.x + t.w/2 + foodR + voiceMargin);
+      const voiceWithinY = cursorY >= (t.y - t.h/2 - foodR - voiceMargin)
+        && cursorY <= (t.y + t.h/2 + foodR + voiceMargin);
+      if(!voiceNearPlate && voiceWithinX && voiceWithinY) voiceNearPlate = t;
       const withinX = cursorX >= (t.x - t.w/2 - foodR) && cursorX <= (t.x + t.w/2 + foodR);
       const withinY = cursorY >= (t.y - t.h/2 - foodR) && cursorY <= (t.y + t.h/2 + foodR);
       if(withinX && withinY){
@@ -12296,7 +12459,7 @@ function updateGraspLogic(){
     const releasing = isLevel6ToolGestureTask() ? handOpenPrep
       : (isPinchMode() ? handOpenPrep : !isGrasping);
     updatePublicPatientVoiceGuide({
-      phase:'held',item:heldItem,zones:targets,onTarget:!!onPlate,
+      phase:'held',item:heldItem,zones:targets,onTarget:!!voiceNearPlate,
       stillGrasped:!releasing,cursorY,
     });
     if(releasing){
@@ -12327,18 +12490,18 @@ function updateGraspLogic(){
           pilotRecordPlacement(onPlate, now);
           // 落單模式：配對改由單上數量判斷（夾多咗或唔在單上計錯）；其他模式維持類型配對。
           const dimsumOrderDrop = isDimsumOrderGame() && onPlate.type === 'dimsum_plate';
-          const laundryOrderDrop = isLaundryOrderGame() && onPlate.type === 'laundry_rack';
+          const laundryOrderDrop = isLaundryRackGame() && onPlate.type === 'laundry_rack';
           const fridgeDrop = isFridgeGame() && onPlate.type === 'fridge';
           const dropMatched = dimsumOrderDrop
             ? dimsumOrderAccepts(heldItem)
             : (laundryOrderDrop
-              ? laundryOrderAccepts(heldItem)
+              ? laundryRackAccepts(heldItem)
               : (fridgeDrop
                 ? fridgeTryPlace(heldItem, cursorX, cursorY, onPlate)
                 : heldItem.targetType === onPlate.type));
           if(dropMatched){
             if(dimsumOrderDrop) dimsumOrderPlace(heldItem);
-            else if(laundryOrderDrop) laundryOrderPlace(heldItem);
+            else if(laundryOrderDrop) laundryRackPlace(heldItem);
             score += 10; correctCount++;
             pilotBump('correct');
             wrongStreak = 0;
@@ -12629,6 +12792,12 @@ function drawLaundryRackTarget(ctx, t){
     const ratio = t.img.naturalWidth / t.img.naturalHeight;
     rw = t.w; rh = rw / ratio;
     if(rh > t.h){ rh = t.h; rw = rh * ratio; }
+  }
+  // Basic mode is deliberately a near-frame-width visual. The logical target
+  // remains stable while the photograph is magnified for low vision.
+  if(isLaundryBasicGame()){
+    rw *= 1.60;
+    rh *= 1.60;
   }
   // The rack photo is mostly white. A quiet blue-grey backing keeps its rails
   // visible against the new default white background without adding clutter.
@@ -12974,6 +13143,7 @@ function renderGame(){
   // 目標盤（真實單白圓隱磁盤：徑向漸變 + 隱隱影支支、圓形 rim）
   const LBL_SIZE = state.labelFont || 36;
   for(const t of targets){
+    if(t.style === 'photo-puzzle'){ drawTsuenWanPuzzleTarget(ctx, t); continue; }
     if(t.style === 'panel'){ drawPanelTarget(ctx, t, LBL_SIZE); continue; }
     if(t.style === 'steamer'){ drawSteamerTarget(ctx, t, LBL_SIZE); continue; }
     if(t.style === 'bigplate'){ drawBigPlateTarget(ctx, t); continue; }
@@ -13041,6 +13211,12 @@ function renderGame(){
   // 食物
   for(const f of foods){
     if(f.removed) continue;
+    // During Level 5 dim-sum transport, temporarily hide only a source basket
+    // that would be visually covered by the moving basket. It reappears as
+    // soon as the held item moves clear, so the display never shows a pile-up.
+    if(isPublicLevel5DimsumLayout() && heldItem && f !== heldItem
+      && Math.hypot(f.x-heldItem.x,f.y-heldItem.y)
+        < (f.visualR||f.r) + (heldItem.visualR||heldItem.r) + 18) continue;
     // v73 保齡球滾動／冧樽期間，波同標籤由場景層接手，避免半空浮字
     if(isBowlingLaneTheme() && bowlingStrike.phase!=='idle') continue;
     // v75 籃球投籃動畫進行中，波同標籤由場景層接手
@@ -13048,23 +13224,24 @@ function renderGame(){
     // v74 模擬茶樓：點心飛入蒸籠／蒸緊嗰陣由場景層接手畫，避免出現兩件點心
     if(isTeahouseDimsumMode() && teahouseServe.phase!=='idle') continue;
     ctx.save();
-    const visualPoint=publicLevel6HeldDisplayPoint(f.x,f.y,f.r,f.held);
+    const visualR=f.visualR||f.r;
+    const visualPoint=publicLevel6HeldDisplayPoint(f.x,f.y,visualR,f.held);
     const drawX=visualPoint.x,drawY=visualPoint.y;
     if(f.drawItem){
       // 主題自繪物件（麻雀 / 啤牌 / 煮飯 / 插花 / 晾衫）＋大字標籤
-      f.drawItem(ctx, drawX, drawY, f.r * (f.drawScale || 0.92));
-      drawItemLabel(ctx, f.label, drawX, drawY + f.r * (f.labelGap || 1.04));
+      f.drawItem(ctx, drawX, drawY, visualR * (f.drawScale || 0.92));
+      drawItemLabel(ctx, f.label, drawX, drawY + visualR * (f.labelGap || 1.04));
     } else if(f.img && f.img.complete && f.img.naturalWidth > 0){
       // 保持縱橫比（特別重要對 distractor 動物）：長邊完全充滿 2r
       const iw = f.img.naturalWidth, ih = f.img.naturalHeight;
-      const targetMax = f.r * 2;
+      const targetMax = visualR * 2;
       let dw, dh;
       if(iw >= ih){ dw = targetMax; dh = targetMax * ih / iw; }
       else        { dh = targetMax; dw = targetMax * iw / ih; }
       ctx.drawImage(f.img, drawX - dw/2, drawY - dh/2, dw, dh);
     } else {
       ctx.beginPath();
-      ctx.arc(drawX, drawY, f.r, 0, Math.PI*2);
+      ctx.arc(drawX, drawY, visualR, 0, Math.PI*2);
       ctx.fillStyle = f.color || '#D4A017';
       ctx.fill();
       ctx.strokeStyle = 'rgba(0,0,0,0.15)';
@@ -13078,7 +13255,7 @@ function renderGame(){
     }
     if(f.held){
       ctx.beginPath();
-      ctx.arc(drawX, drawY, f.r + 6, 0, Math.PI*2);
+      ctx.arc(drawX, drawY, visualR + 6, 0, Math.PI*2);
       ctx.strokeStyle = '#D4A017';
       ctx.lineWidth = 3;
       ctx.stroke();
@@ -18865,7 +19042,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v80-20260901-calibration-runtime-fix";
+  const LEVEL_APP_BUILD = "v81-20260902-patient-usability";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

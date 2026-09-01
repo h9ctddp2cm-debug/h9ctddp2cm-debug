@@ -107,8 +107,8 @@ test('English Level 6 waiting prompt keeps the correct open-hand cue', async t =
       };
     });
     assert.equal(cue.cue, 'open', 'English waiting prompt must remain an open-hand cue');
-    assert.equal(cue.emoji, '✋🏻');
-    assert.match(cue.text, /Align with camera/i);
+    assert.equal(cue.emoji, undefined, 'small right-side gesture emoji is removed');
+    assert.equal(cue.text, '', 'the duplicate right-middle prompt card is empty and hidden');
   });
 });
 
@@ -314,7 +314,8 @@ async function runToolGestureFlow(page, task) {
         ? (neededTypes.includes(item.type)
           ? layout.targets.find(value => value.type === orderInfo.targetType)
           : null)
-        : layout.targets.find(value => value.type === item.type),
+        : (layout.targets.find(value => value.type === item.type)
+          || layout.targets.find(value => value.type === 'laundry_rack')),
     })).find(value => value.target);
     if (!pair) throw new Error('Level 6 layout has no item matching a visible target');
     const { item, target } = pair;
