@@ -18,7 +18,6 @@
 
   /*
    * Patient- and therapist-facing copy used outside the existing PILOT_TEXT
-   * research dictionary. Keep complete phrases here so English reads naturally;
    * the smaller phrase table below handles values assembled at runtime.
    */
   const EN = {
@@ -59,7 +58,6 @@
     '伸出患手 → 手指輕捏 → 張開手指':'Reach with the affected hand → lightly pinch → open the fingers.',
     '衫夾':'Clothes peg',
     '筷子':'Chopsticks',
-    '研究模式（Pilot Study）':'Research mode (Pilot Study)',
     '訓練由仁濟醫院職業治療師鄧姑娘設計，網頁由 AI 協助製作':'Training designed by Ms Tang, Occupational Therapist, Yan Chai Hospital. Website created with AI assistance.',
     '圖片來源 / Image credits':'Image credits',
     '選擇遊戲':'Choose a game',
@@ -276,7 +274,7 @@
     '再玩一次':'Repeat session',
     '即時動作回看':'Movement review',
     '不錄頭部 · 未自動上傳':'Head excluded · not uploaded',
-    '影片只暫存在本頁。下載後請按研究方案及機構私隱要求處理。':'The video remains temporarily on this page. After downloading, handle it according to the study protocol and institutional privacy requirements.',
+    '影片只暫存在本頁。下載後請按機構私隱要求處理。':'The video remains temporarily on this page. After downloading, handle it according to institutional privacy requirements.',
     '下載／儲存影片':'Download/save video',
     '刪除影片':'Delete video',
     '未重評':'Not reassessed',
@@ -311,7 +309,6 @@
     '容易至中等':'Easy to moderate',
     '中等':'Moderate',
     '中等至較難':'Moderate to challenging',
-    '研究情境':'Research scenario',
     '等待偵測手部':'Waiting for hand detection',
     '手放鏡頭前':'Place the hand in front of the camera',
     '等待鏡頭':'Waiting for camera',

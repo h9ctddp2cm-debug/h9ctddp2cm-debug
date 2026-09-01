@@ -30,6 +30,13 @@
     // prescribed excursion. This is a game gate, not a goniometric claim.
     returnFloorToleranceDeg: 6,
     relativeReturnCap: 0.45,
+    patientTargetToleranceDeg: 8,
+    patientGateStableFrames: 2,
+    patientTargetFeedbackMs: 150,
+    patientHoldExitFrames: 3,
+    patientDownSmoothAlpha: 0.16,
+    patientReturnToleranceDeg: 14,
+    patientReturnFloorToleranceDeg: 9,
   };
 
   function clamp01(value) {
@@ -184,9 +191,11 @@
         selectedStartDeg:0,
         selectedTargetDeg:Number(targetDeg)||defaultTarget(level||'3'),peakEstimatedAngle:null,
         targetReached:false,repetitions:0,cycleArmed:false,targetStableFrames:0,returnStableFrames:0,
+        activeGateStableFrames:config.gateStableFrames,holdBelowTargetFrames:0,
         returnFloorDeg:null,startFloorDeg:null,
         holdDurationMs:Math.max(0,Number(options&&options.holdDurationMs)||0),
         holdStartedAtMs:null,holdRemainingSec:null,holdComplete:false,holdRestartCount:0,
+        holdGracePauseAtMs:null,
         holdAtTarget:false,holdInterrupted:false,lastUpdateMs:null,
         startStableFrames:0,
         rawAngle:null,worldAngle:null,filteredAngle:null,estimatedAngle:null,
@@ -201,17 +210,26 @@
     function failClosed(reason) {
       state.gameReady=false; state.newFrame=false; state.reason=reason;
       state.startStableFrames=0; state.targetStableFrames=0; state.returnStableFrames=0;
+      state.holdBelowTargetFrames=0;
       if(state.phase==='target-hold'){
         state.holdStartedAtMs=null;state.holdRemainingSec=null;state.holdComplete=false;
-        state.holdAtTarget=false;state.holdInterrupted=true;
+        state.holdAtTarget=false;state.holdInterrupted=true;state.holdGracePauseAtMs=null;
       }
       if (!state.calibrated) state.samples=[];
     }
     function update(packet) {
       const input=packet||{};
+      const patientAssist=input.patientAssist===true;
+      const targetTolerance=patientAssist
+        ? config.patientTargetToleranceDeg : config.targetToleranceDeg;
+      const gateFrames=patientAssist
+        ? config.patientGateStableFrames : config.gateStableFrames;
+      const targetFeedback=patientAssist
+        ? config.patientTargetFeedbackMs : config.targetFeedbackMs;
       const fresh=input.frameFresh===true || input.frame?.fresh===true;
       const generation=input.frameGeneration ?? input.frame?.generation;
       const currentTime=Number.isFinite(input.nowMs)?input.nowMs:generation*(1000/30);
+      state.activeGateStableFrames=gateFrames;
       state.frame={fresh,generation,ageMs:input.frame?.ageMs??null,
         reason:input.frame?.reason||(fresh?'fresh-decoded-frame':'frame-stale')};
       if (!fresh) { failClosed('frame-stale'); state.framingReady=false; return snapshot(); }
@@ -290,8 +308,10 @@
         return snapshot();
       }
       if(state.calibrated) {
+        const smoothAlpha=patientAssist && Number.isFinite(state.filteredAngle)
+          && angle<state.filteredAngle ? config.patientDownSmoothAlpha : config.smoothAlpha;
         state.filteredAngle=Number.isFinite(state.filteredAngle)
-          ? state.filteredAngle+config.smoothAlpha*(angle-state.filteredAngle) : angle;
+          ? state.filteredAngle+smoothAlpha*(angle-state.filteredAngle) : angle;
         // Map the observed arm-down baseline to training zero while preserving
         // a reachable overhead endpoint. Plain subtraction makes 180° impossible
         // whenever the front/oblique camera reports a non-zero resting offset.
@@ -302,7 +322,7 @@
         state.progress=clamp01((state.estimatedAngle-state.trainingMin)/(state.trainingMax-state.trainingMin));
         state.peakEstimatedAngle=Math.max(state.peakEstimatedAngle??state.estimatedAngle,state.estimatedAngle);
         const returnWindow=Math.min(
-          config.returnToleranceDeg,
+          patientAssist ? config.patientReturnToleranceDeg : config.returnToleranceDeg,
           Math.max(5,(state.trainingMax-state.trainingMin)*config.returnAt)
         );
 
@@ -314,38 +334,51 @@
           const inWindow=state.estimatedAngle>=Math.max(0,state.selectedStartDeg-config.startToleranceDeg)
             && state.estimatedAngle<=state.selectedStartDeg+returnWindow;
           const atOwnFloor=state.estimatedAngle<=relativeCapDeg
-            && state.estimatedAngle<=state.startFloorDeg+config.returnFloorToleranceDeg;
+            && state.estimatedAngle<=state.startFloorDeg+
+              (patientAssist ? config.patientReturnFloorToleranceDeg : config.returnFloorToleranceDeg);
           const atStart=inWindow||atOwnFloor;
           state.startStableFrames=atStart?state.startStableFrames+1:0;
           state.targetStableFrames=0; state.returnStableFrames=0;
-          if(state.startStableFrames>=config.gateStableFrames){
+          if(state.startStableFrames>=gateFrames){
             state.phase='outward'; state.startStableFrames=0; state.startFloorDeg=null;
           }
         }else if(state.phase==='outward'){
-          state.targetStableFrames=state.estimatedAngle>=state.selectedTargetDeg-config.targetToleranceDeg
+          state.targetStableFrames=state.estimatedAngle>=state.selectedTargetDeg-targetTolerance
             ? state.targetStableFrames+1:0;
           state.returnStableFrames=0;
-          if(state.targetStableFrames>=config.gateStableFrames){
+          if(state.targetStableFrames>=gateFrames){
             state.targetReached=true; state.cycleArmed=true;
             state.holdComplete=state.holdDurationMs<=0;
             state.holdStartedAtMs=state.holdDurationMs>0
-              ? currentTime+config.targetFeedbackMs : null;
+              ? currentTime+targetFeedback : null;
             state.holdRemainingSec=state.holdDurationMs>0
               ? Math.ceil(state.holdDurationMs/1000) : null;
-            state.holdAtTarget=true;state.holdInterrupted=false;
+            state.holdAtTarget=true;state.holdInterrupted=false;state.holdBelowTargetFrames=0;
+            state.holdGracePauseAtMs=null;
             state.phase=state.holdDurationMs>0?'target-hold':'await-return';
           }
         }else if(state.phase==='target-hold'){
-          const atTarget=state.estimatedAngle>=state.selectedTargetDeg-config.targetToleranceDeg;
+          const atTarget=state.estimatedAngle>=state.selectedTargetDeg-targetTolerance;
           state.targetStableFrames=atTarget?state.targetStableFrames+1:0;
           state.returnStableFrames=0;
-          if(!atTarget){
+          if(atTarget) state.holdBelowTargetFrames=0;
+          else if(patientAssist) state.holdBelowTargetFrames+=1;
+          const withinPatientGrace=patientAssist && !atTarget
+            && state.holdBelowTargetFrames<config.patientHoldExitFrames;
+          if(withinPatientGrace){
+            state.holdAtTarget=true;state.holdInterrupted=false;
+            if(!Number.isFinite(state.holdGracePauseAtMs)) state.holdGracePauseAtMs=currentTime;
+          }else if(!atTarget){
             state.holdStartedAtMs=null;state.holdRemainingSec=null;state.holdComplete=false;
-            state.holdAtTarget=false;state.holdInterrupted=true;
+            state.holdAtTarget=false;state.holdInterrupted=true;state.holdGracePauseAtMs=null;
           }else{
             state.holdAtTarget=true;
+            if(Number.isFinite(state.holdGracePauseAtMs) && Number.isFinite(state.holdStartedAtMs)){
+              state.holdStartedAtMs+=Math.max(0,currentTime-state.holdGracePauseAtMs);
+            }
+            state.holdGracePauseAtMs=null;
             if(!Number.isFinite(state.holdStartedAtMs)){
-              state.holdStartedAtMs=currentTime+config.targetFeedbackMs;
+              state.holdStartedAtMs=currentTime+targetFeedback;
               state.holdRemainingSec=Math.ceil(state.holdDurationMs/1000);
               state.holdRestartCount+=1;
             }
@@ -366,14 +399,16 @@
           const inWindow=state.estimatedAngle>=Math.max(0,state.selectedStartDeg-config.startToleranceDeg)
             && state.estimatedAngle<=state.selectedStartDeg+returnWindow;
           const atOwnFloor=state.estimatedAngle<=relativeCapDeg
-            && state.estimatedAngle<=state.returnFloorDeg+config.returnFloorToleranceDeg;
+            && state.estimatedAngle<=state.returnFloorDeg+
+              (patientAssist ? config.patientReturnFloorToleranceDeg : config.returnFloorToleranceDeg);
           state.returnStableFrames=inWindow||atOwnFloor?state.returnStableFrames+1:0;
         }
         if(state.phase==='await-return'&&state.cycleArmed
-            &&state.returnStableFrames>=config.gateStableFrames){
+            &&state.returnStableFrames>=gateFrames){
           state.repetitions+=1;state.cycleArmed=false;state.targetStableFrames=0;
           state.holdStartedAtMs=null;state.holdRemainingSec=null;state.holdComplete=false;
           state.holdAtTarget=false;state.holdInterrupted=false;
+          state.holdBelowTargetFrames=0;state.holdGracePauseAtMs=null;
           state.selectedStartDeg=0;
           state.trainingMin=state.selectedStartDeg;
           state.prescribedExcursionDeg=state.selectedTargetDeg-state.selectedStartDeg;
@@ -398,6 +433,7 @@
         holdDurationMs:state.holdDurationMs,holdRemainingSec:state.holdRemainingSec,
         holdComplete:state.holdComplete,holdRestartCount:state.holdRestartCount,
         holdAtTarget:state.holdAtTarget,holdInterrupted:state.holdInterrupted,
+        holdBelowTargetFrames:state.holdBelowTargetFrames,
         holdFeedbackActive:state.phase==='target-hold' && state.holdAtTarget
           && Number.isFinite(state.holdStartedAtMs) && Number.isFinite(state.lastUpdateMs)
           && state.lastUpdateMs<state.holdStartedAtMs,
@@ -408,7 +444,7 @@
         returnStableFrames:state.returnStableFrames,
         trainingMin:state.trainingMin,trainingMax:state.trainingMax,progress:state.progress,signalSource:state.signalSource,
         startReady:state.phase!=='await-start',
-        returnReady:state.returnStableFrames>=config.gateStableFrames,
+        returnReady:state.returnStableFrames>=state.activeGateStableFrames,
         // Latch the endpoint for the current transport so a small drop during
         // target dwell does not cancel a valid reach.
         targetReady:state.cycleArmed,
@@ -473,7 +509,8 @@
       if(![0,1,2,3,4,5].includes(value))return false;
       state.holdDurationMs=value*1000;
       state.holdStartedAtMs=null;state.holdRemainingSec=null;state.holdComplete=false;
-      state.holdAtTarget=false;state.holdInterrupted=false;
+      state.holdAtTarget=false;state.holdInterrupted=false;state.holdBelowTargetFrames=0;
+      state.holdGracePauseAtMs=null;
       return true;
     }
     return {config,state,reset,setTarget,setHoldDuration,setExerciseMode,startChoices,update,snapshot,guidance,toText};
