@@ -43,7 +43,7 @@ test('real photo assets are loaded for the beef ball and the rooster plate', () 
 /* ---------------- Source contract: one central big plate ---------------- */
 
 test('order mode uses a single central big-plate target instead of two bowls', () => {
-  assert.match(publicSource, /if\(isDimsumOrderGame\(\)\)\{[\s\S]{0,600}type:'dimsum_plate'[\s\S]{0,200}style:'bigplate'[\s\S]{0,200}x:cw \/ 2/);
+  assert.match(publicSource, /if\(isDimsumBowlGame\(\)\)\{[\s\S]{0,800}type:'dimsum_plate'[\s\S]{0,240}style:'bigplate'[\s\S]{0,120}x:cw\/2/);
   assert.match(publicSource, /if\(t\.style === 'bigplate'\)\{ drawBigPlateTarget\(ctx, t\); continue; \}/);
   // Placed dim sum are drawn ON the plate so the patient can see progress.
   assert.match(publicSource, /for\(const p of dimsumPlateContents\)\{/);
@@ -54,13 +54,13 @@ test('order mode uses a single central big-plate target instead of two bowls', (
 /* ---------------- Source contract: order-driven matching ---------------- */
 
 test('both drop paths use order-quantity matching for the big plate', () => {
-  const graspPath = /const dimsumOrderDrop = isDimsumOrderGame\(\) && onPlate\.type === 'dimsum_plate';[\s\S]{0,320}dimsumOrderAccepts\(heldItem\)/;
-  const dwellPath = /const dwellDimsumOrderDrop = isDimsumOrderGame\(\) && onPlate\.type === 'dimsum_plate';[\s\S]{0,320}dimsumOrderAccepts\(heldItem\)/;
+  const graspPath = /const dimsumOrderDrop = isDimsumBowlGame\(\) && onPlate\.type === 'dimsum_plate';[\s\S]{0,320}dimsumBowlAccepts\(heldItem\)/;
+  const dwellPath = /const dwellDimsumOrderDrop = isDimsumBowlGame\(\) && onPlate\.type === 'dimsum_plate';[\s\S]{0,320}dimsumBowlAccepts\(heldItem\)/;
   assert.match(publicSource, graspPath);
   assert.match(publicSource, dwellPath);
   // Successful order drops are recorded on the plate before scoring.
-  assert.match(publicSource, /if\(dimsumOrderDrop\) dimsumOrderPlace\(heldItem\);/);
-  assert.match(publicSource, /if\(dwellDimsumOrderDrop\) dimsumOrderPlace\(heldItem\);/);
+  assert.match(publicSource, /if\(dimsumOrderDrop\) dimsumBowlPlace\(heldItem\);/);
+  assert.match(publicSource, /if\(dwellDimsumOrderDrop\) dimsumBowlPlace\(heldItem\);/);
 });
 
 test('order mode is fail-safe against spawn deadlocks', () => {
@@ -79,7 +79,7 @@ test('order lifecycle is wired into init, reset and completion', () => {
 });
 
 test('research pilot track is not affected by order mode', () => {
-  assert.match(publicSource, /return state\.level === '67' && state\.theme === 'chopstick_dimsum' && !research\.active;/);
+  assert.match(publicSource, /function isDimsumBowlGame\(\)\{\s*return state\.level === '67' && state\.theme === 'chopstick_dimsum' && !research\.active;/);
 });
 
 /* ---------------- Behavioural: order module ---------------- */
@@ -90,7 +90,7 @@ function makeOrderModule(opts = {}){
   assert.ok(start > 0 && end > start, 'order module not found in index.html');
   const code = publicSource.slice(start, end);
   const calls = {speak: [], applause: 0, timeouts: [], ensure: 0};
-  const state = Object.assign({level: '67', theme: 'chopstick_dimsum', running: true}, opts.state);
+  const state = Object.assign({level: '67', theme: 'chopstick_dimsum', dimsumDifficulty:'complex', running: true}, opts.state);
   const research = Object.assign({active: false}, opts.research);
   const rng = opts.random || (() => 0.5);
   const fakeMath = {random: rng, floor: Math.floor};

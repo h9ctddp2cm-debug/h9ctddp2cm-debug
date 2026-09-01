@@ -314,7 +314,8 @@ async function runToolGestureFlow(page, task) {
         ? (neededTypes.includes(item.type)
           ? layout.targets.find(value => value.type === orderInfo.targetType)
           : null)
-        : (layout.targets.find(value => value.type === item.type)
+        : (layout.targets.find(value => value.type === 'dimsum_plate')
+          || layout.targets.find(value => value.type === item.type)
           || layout.targets.find(value => value.type === 'laundry_rack')),
     })).find(value => value.target);
     if (!pair) throw new Error('Level 6 layout has no item matching a visible target');

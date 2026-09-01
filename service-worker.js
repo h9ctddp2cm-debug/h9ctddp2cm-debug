@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v81-20260902-patient-usability";
+const CACHE_VERSION = "fthue-rehab-v82-20260902-layout-difficulty-fix";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

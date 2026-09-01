@@ -138,9 +138,8 @@ test('lane geometry stays on-canvas in both iPad orientations', () => {
     assert.ok(g.py1 <= ch, `panel bottom on screen (${cw}x${ch}): ${g.py1}`);
     assert.ok(g.laneX - g.pw / 2 >= 0, 'panel left edge on screen');
     assert.ok(g.laneX + g.pw / 2 <= cw, 'panel right edge on screen');
-    // pins stand just above the existing item-path top (ch*0.34), so the
-    // ball's normal lift travel visually reaches the pin deck
-    assert.ok(Math.abs(g.pinBaseY - ch * 0.315) < 1e-6);
+    // Pins sit on the visible timber pin deck, below the former floating rack.
+    assert.ok(Math.abs(g.pinBaseY - ch * 0.390) < 1e-6);
     assert.ok(g.py0 + g.topH < g.py1, 'lane section has positive height');
   }
 });

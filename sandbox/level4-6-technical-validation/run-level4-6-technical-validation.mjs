@@ -331,7 +331,9 @@ try {
         ? (neededTypes.includes(item.type)
           ? layout.targets.find(target=>target.type===orderTargetType)
           : null)
-        : (basicLaundryTarget || layout.targets.find(target=>target.type===item.type))}))
+        : (layout.targets.find(target=>target.type==="dimsum_plate")
+          || basicLaundryTarget
+          || layout.targets.find(target=>target.type===item.type))}))
         .find(value=>value.target);
       if(!pair) throw new Error("No matching Level 6 item/target");
       const at=point=>({nx:point.x/layout.canvas.width,ny:point.y/layout.canvas.height});

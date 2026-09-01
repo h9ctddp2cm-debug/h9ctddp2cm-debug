@@ -51,9 +51,10 @@ test('fridge order defs cover all 12 requested foods', () => {
 
 test('fridge target sits at the top, grocery bag spawn at the bottom', () => {
   assert.match(publicSource, /const tw = cw;/);
+  assert.match(publicSource, /const th = ch\*0\.80;/);
   assert.match(publicSource, /type:'fridge', label:'雪櫃', img:imgFridgeWide[\s\S]{0,160}style:'fridge', x:cw \/ 2, y:th \/ 2, w:tw/);
   assert.match(publicSource, /if\(t\.style === 'fridge'\)\{ drawFridgeTarget\(ctx, t\); continue; \}/);
-  assert.match(publicSource, /function fridgeBagSpot\(cw, ch, r\)\{[\s\S]{0,200}ch - r - \(portrait \? 96 : 56\)/);
+  assert.match(publicSource, /function fridgeBagSpot\(cw, ch, r\)\{[\s\S]{0,220}ch\*0\.90/);
   // Placed foods are drawn inside the fridge so the patient sees progress.
   assert.match(publicSource, /for\(const p of fridgePlacedFoods\)\{/);
 });

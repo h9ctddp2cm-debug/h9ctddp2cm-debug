@@ -112,7 +112,7 @@ test('public photo game uses a large upper photo and a separate moving puzzle pi
   assert.match(html, /style:photoLarge\?'photo-puzzle':style/);
   assert.match(html, /const tw=photoLarge\?Math\.min\(cw\*\.90,1080\)/);
   assert.match(html, /bottom=Math\.min\(ch-pieceHalf-24,ch\*\.84\)/);
-  assert.match(html, /top=target \? target\.y\+target\.h\*\.29/);
+  assert.match(html, /top=g\.holeY\+g\.holeH\/2/);
 });
 
 test('public flower game uses the wide patterned planter while research keeps its vase', () => {
