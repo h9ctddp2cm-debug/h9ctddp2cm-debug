@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v90-20260902-dimsum-flower-chopstick-fix";
+const CACHE_VERSION = "fthue-rehab-v92-20260902-edge-hand-stability";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");
