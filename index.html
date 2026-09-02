@@ -9514,6 +9514,7 @@ let shoulderHoldSpokenSecond = null;
 let shoulderHoldInterruptedSpoken = false;
 let totalWrong = 0;
 let basicOpenStart = 0, basicGraspStart = 0, basicGraspCandidate = '', basicGraspArmed = false;
+let basicPostReleaseOpenStart = 0;
 let basicContactCandidate = '', basicContactUntil = 0;
 let wrongStreak = 0;  // 連續錯誤次數，到 5 就自動暫停從新講規則
 let timeLeft = 60;
@@ -9943,6 +9944,7 @@ function initGame(){
   releaseDwellStart = 0; releaseDwellPlate = null;
   releaseDwellPauseAt = 0; releaseDwellLastOpenAt = 0;
   basicOpenStart = 0; basicGraspStart = 0; basicGraspCandidate = ''; basicGraspArmed = false;
+  basicPostReleaseOpenStart = 0;
   basicContactCandidate = ''; basicContactUntil = 0;
   gripActive = false;
   isGrasping = false;
@@ -12514,6 +12516,7 @@ function updateGraspLogic(){
       trackingDetail
     );
     basicOpenStart = 0; basicGraspStart = 0; basicGraspCandidate = '';
+    if(basicPostReleaseOpenStart) basicPostReleaseOpenStart = nowMs();
     basicContactCandidate = ''; basicContactUntil = 0;
     return;
   }
@@ -12523,6 +12526,7 @@ function updateGraspLogic(){
     // tracking grace is longer than Level 5's 650 ms drop dwell.
     basicOpenStart = 0; basicGraspStart = 0; basicGraspCandidate = '';
     basicGraspArmed = false; basicContactCandidate = ''; basicContactUntil = 0;
+    if(basicPostReleaseOpenStart) basicPostReleaseOpenStart = nowMs();
     releaseDwellStart = 0; releaseDwellPlate = null;
     releaseDwellPauseAt = 0; releaseDwellLastOpenAt = 0;
     setActionPrompt('鏡頭對準', '患手掌心及指尖入鏡');
@@ -12531,6 +12535,20 @@ function updateGraspLogic(){
 
   if(!heldItem){
     const now = nowMs();
+    const postReleaseOpenMs = level5PostReleaseOpenMs();
+    if(postReleaseOpenMs && basicPostReleaseOpenStart){
+      // A completed Level 5 drop must be followed by a clearly separated,
+      // continuously open hand. Any closed/noisy frame restarts this interval,
+      // so the release itself cannot immediately arm and re-grab an item.
+      if(isGrasping || !openPrep) basicPostReleaseOpenStart = now;
+      basicOpenStart = 0; basicGraspStart = 0; basicGraspCandidate = '';
+      basicGraspArmed = false; basicContactCandidate = ''; basicContactUntil = 0;
+      if(now - basicPostReleaseOpenStart < postReleaseOpenMs){
+        setActionPrompt('已放開', '保持張開手');
+        return;
+      }
+      basicPostReleaseOpenStart = 0;
+    }
     let nearest = null, nearestDist = Infinity;
     for(const f of foods){
       if(f.removed || f.held) continue;
@@ -12707,6 +12725,7 @@ function updateGraspLogic(){
           heldItem.removed = true;
           heldItem.held = false;
           heldItem = null;
+          basicPostReleaseOpenStart = level5PostReleaseOpenMs() ? now : 0;
           updatePublicPatientVoiceGuide({phase:'drop'});
           noteHoldEnd();
           noteReleaseAttemptEnd(true);
@@ -12726,6 +12745,7 @@ function updateGraspLogic(){
           });
           setActionPrompt('已放開', parkedItem.targetType === 'distractor' ? '動物已移開' : '點心已移到空白位');
           heldItem = null;
+          basicPostReleaseOpenStart = level5PostReleaseOpenMs() ? now : 0;
           updatePublicPatientVoiceGuide({phase:'drop'});
           noteHoldEnd();
           noteReleaseAttemptEnd(true);
@@ -14217,6 +14237,7 @@ const PUBLIC_GRASP_HOLD_MS = 120;
 const PUBLIC_LEVEL6_GRASP_HOLD_MS = 80;
 const PUBLIC_RELEASE_HOLD_MS = 220;
 const PUBLIC_RELEASE_CONTINUITY_GRACE_MS = 100;
+const PUBLIC_LEVEL5_POST_RELEASE_OPEN_MS = 650;
 const ADV_CONTACT_GRACE_MS = 450;
 const PUBLIC_ADV_CONTACT_GRACE_MS = 700;
 function advancedGraspArmMs(){ return isPatientVisualCueMode() ? PUBLIC_GRASP_ARM_MS : GRASP_ARM_MS; }
@@ -14226,6 +14247,22 @@ function advancedGraspHoldMs(){
 }
 function advancedReleaseHoldMs(){ return isPatientVisualCueMode() ? PUBLIC_RELEASE_HOLD_MS : RELEASE_HOLD_MS; }
 function advancedContactGraceMs(){ return isPatientVisualCueMode() ? PUBLIC_ADV_CONTACT_GRACE_MS : ADV_CONTACT_GRACE_MS; }
+function level5PostReleaseOpenMs(){
+  return !research.active && state.level === '5' ? PUBLIC_LEVEL5_POST_RELEASE_OPEN_MS : 0;
+}
+function level5PostReleaseOpenLocked(controller, now){
+  const lockMs = level5PostReleaseOpenMs();
+  if(!lockMs || !controller.postReleaseOpenStart) return false;
+  if(!handReleasedOrOpen()) controller.postReleaseOpenStart = now;
+  if(now - controller.postReleaseOpenStart >= lockMs){
+    controller.postReleaseOpenStart = 0;
+    return false;
+  }
+  controller.armed = false; controller.openStart = 0;
+  controller.graspStart = 0; controller.graspId = null;
+  controller.contactId = null; controller.contactUntil = 0;
+  return true;
+}
 /* Selection tolerance. Research strata tighten the tolerance for FTHUE 6/7 so that
    placement must be more precise; normal (non-study) play is unchanged. */
 function selTol(){
@@ -14310,17 +14347,18 @@ const picker = {
   hoverId:null, start:0, pct:0, armed:false, lock:null, startId:null,
   openStart:0, graspStart:0, graspId:null, heldId:null, relStart:0,
   relPauseAt:0, relLastOpenAt:0,
-  contactId:null, contactUntil:0,
+  contactId:null, contactUntil:0, postReleaseOpenStart:0,
   reset(){
     this.hoverId=null; this.start=0; this.pct=0; this.armed=false; this.lock=null;
     this.startId=null; this.openStart=0; this.graspStart=0; this.graspId=null;
     this.heldId=null; this.relStart=0; this.relPauseAt=0; this.relLastOpenAt=0;
-    this.contactId=null; this.contactUntil=0;
+    this.contactId=null; this.contactUntil=0; this.postReleaseOpenStart=0;
   },
   poll(items, releaseZone){
     this.pct = 0;
     if(cursorX < 0 || !handDetected){
       this.hoverId = null; this.openStart = 0; this.graspStart = 0; this.graspId = null;
+      if(this.postReleaseOpenStart) this.postReleaseOpenStart = nowMs();
       return null;
     }
     const now = nowMs();
@@ -14331,6 +14369,7 @@ const picker = {
       this.armed = false; this.openStart = 0; this.graspStart = 0; this.graspId = null;
       this.relStart = 0; this.relPauseAt = 0; this.relLastOpenAt = 0;
       this.contactId = null; this.contactUntil = 0;
+      if(this.postReleaseOpenStart) this.postReleaseOpenStart = now;
       return null;
     }
     if(this.heldId && isGraspStyleMode()){
@@ -14358,7 +14397,8 @@ const picker = {
           const id = this.heldId;
           this.heldId = null; this.relStart = 0; this.relPauseAt = 0;
           this.relLastOpenAt = 0; this.armed = false;
-          this.openStart = now; this.graspStart = 0; this.graspId = null; this.pct = 0;
+          this.openStart = 0; this.graspStart = 0; this.graspId = null; this.pct = 0;
+          this.postReleaseOpenStart = level5PostReleaseOpenMs() ? now : 0;
           updatePublicPatientVoiceGuide({phase:'drop'});
           return !releaseZone || heldItemTouchesZone(held, releaseZone) ? id : '__invalid__';
         }
@@ -14387,6 +14427,11 @@ const picker = {
       } else {
         this.startId = null;
       }
+      return null;
+    }
+    if(level5PostReleaseOpenLocked(this, now)){
+      this.hoverId = null; this.start = 0; this.startId = null; this.lock = null;
+      setActionPrompt('已放開', '保持張開手');
       return null;
     }
     let best = nearestItem(items);
@@ -14455,15 +14500,18 @@ const carrier = {
   heldId:null, hoverId:null, startId:null, start:0, pct:0, armed:false, relStart:0,
   relPauseAt:0, relLastOpenAt:0,
   openStart:0, graspStart:0, graspId:null, contactId:null, contactUntil:0,
+  postReleaseOpenStart:0,
   reset(){ this.heldId=null; this.hoverId=null; this.startId=null; this.start=0;
            this.pct=0; this.armed=false; this.relStart=0; this.relPauseAt=0;
            this.relLastOpenAt=0; this.openStart=0;
-           this.graspStart=0; this.graspId=null; this.contactId=null; this.contactUntil=0; },
+           this.graspStart=0; this.graspId=null; this.contactId=null; this.contactUntil=0;
+           this.postReleaseOpenStart=0; },
   poll(items, zones){
     const ev = { grab:null, drop:null, zone:null };
     this.pct = 0;
     if(cursorX < 0 || !handDetected){
       this.openStart=0; this.graspStart=0; this.graspId=null;
+      if(this.postReleaseOpenStart) this.postReleaseOpenStart=nowMs();
       return ev;
     }
     const now = nowMs();
@@ -14472,9 +14520,15 @@ const carrier = {
       this.armed=false; this.openStart=0; this.graspStart=0; this.graspId=null;
       this.relStart=0; this.relPauseAt=0; this.relLastOpenAt=0;
       this.contactId=null; this.contactUntil=0;
+      if(this.postReleaseOpenStart) this.postReleaseOpenStart=now;
       return ev;
     }
     if(!this.heldId){
+      if(level5PostReleaseOpenLocked(this, now)){
+        this.hoverId=null; this.startId=null; this.start=0;
+        setActionPrompt('已放開', '保持張開手');
+        return ev;
+      }
       let best = nearestItem(items);
       if(best){
         this.contactId = best.id;
@@ -14554,7 +14608,9 @@ const carrier = {
           ev.drop = this.heldId; ev.zone = z;
           this.heldId = null; this.relStart = 0; this.relPauseAt = 0;
           this.relLastOpenAt = 0; this.armed = false;
-          this.openStart = now; this.pct = 0;
+          this.openStart = 0;
+          this.postReleaseOpenStart = level5PostReleaseOpenMs() ? now : 0;
+          this.pct = 0;
           updatePublicPatientVoiceGuide({phase:'drop'});
         }
       } else {
@@ -19254,7 +19310,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v88-20260902-chopstick-small-range-fix";
+  const LEVEL_APP_BUILD = "v89-20260902-level5-release-lock";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

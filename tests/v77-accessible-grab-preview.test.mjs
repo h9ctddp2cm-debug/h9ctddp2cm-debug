@@ -28,6 +28,40 @@ test('Level 5 fist stays smaller than normal iPad pickup objects', () => {
   assert.ok(flower > fist);
 });
 
+test('public Level 5 requires a continuously open hand after every release before re-arming', () => {
+  assert.match(html, /const PUBLIC_LEVEL5_POST_RELEASE_OPEN_MS = 650;/);
+  assert.match(html, /return !research\.active && state\.level === '5' \? PUBLIC_LEVEL5_POST_RELEASE_OPEN_MS : 0;/);
+
+  const standard = html.slice(
+    html.indexOf('function updateGraspLogic()'),
+    html.indexOf('/* ---------- 繪製 ---------- */'),
+  );
+  assert.match(standard, /if\(isGrasping \|\| !openPrep\) basicPostReleaseOpenStart = now;/);
+  assert.match(standard, /if\(now - basicPostReleaseOpenStart < postReleaseOpenMs\)\{[\s\S]*?return;/);
+  assert.equal(
+    (standard.match(/basicPostReleaseOpenStart = level5PostReleaseOpenMs\(\) \? now : 0;/g) || []).length,
+    2,
+    'both matched-target and parked-item drops start the Level 5 open-hand lock',
+  );
+
+  const advanced = html.slice(
+    html.indexOf('function level5PostReleaseOpenLocked('),
+    html.indexOf('function advDrawBackdrop('),
+  );
+  assert.match(advanced, /if\(!handReleasedOrOpen\(\)\) controller\.postReleaseOpenStart = now;/);
+  assert.match(advanced, /controller\.armed = false; controller\.openStart = 0;/);
+  assert.equal(
+    (advanced.match(/postReleaseOpenStart = level5PostReleaseOpenMs\(\) \? now : 0;/g) || []).length,
+    2,
+    'picker and carrier both start the Level 5 open-hand lock after release',
+  );
+  assert.equal(
+    (advanced.match(/level5PostReleaseOpenLocked\(this, now\)/g) || []).length,
+    2,
+    'picker and carrier both enforce the lock before searching for another item',
+  );
+});
+
 test('public large emoji cursor has no surrounding circle', () => {
   const standard = html.slice(
     html.indexOf('// 游標：Level 5–6 以大型膚色手勢'),
