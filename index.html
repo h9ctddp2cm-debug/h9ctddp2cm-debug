@@ -6133,6 +6133,10 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                                 detected: !1,
                                 reason: "no-hand-detected"
                             };
+                            if (qaHand.reason) return {
+                                detected: !1,
+                                reason: qaHand.reason
+                            };
                             if (isLevel6ToolGestureTask()) {
                                 if (qaHand.frameGeneration !== frame.generation) return {
                                     detected: !1,
@@ -6209,7 +6213,9 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                             y: cursorY
                         }), lastPathX = cursorX, lastPathY = cursorY, handOpenPrep = void 0 === res.isOpenPrep ? !res.isGrasping : !!res.isOpenPrep,
                         isGraspStyleMode() ? isGrasping = res.isGrasping || !1 : usesAdvancedThemeModule() && void 0 !== res.isGrasping && (isGrasping = !!res.isGrasping);
-                    } else isGraspStyleMode() && (!res.reason || "no-hand-detected" === res.reason) && cursorX >= 0 && now - lastDetectedAt < DETECTION_LOST_GRACE_MS ? (handDetected = !0,
+                    } else isGraspStyleMode() && function(res) {
+                        return !res?.reason || "no-hand-detected" === res.reason || "5" === state.level && "required-landmarks-missing" === res.reason;
+                    }(res) && cursorX >= 0 && now - lastDetectedAt < DETECTION_LOST_GRACE_MS ? (handDetected = !0,
                     detectionHeldGrace = !0, function(now) {
                         interactionTrackingPauseAt || (interactionTrackingPauseAt = now);
                     }(now)) : (handDetected = !1, detectionHeldGrace = !1, interactionTrackingPauseAt = 0,
@@ -10193,7 +10199,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
 <script src="level4-three-games-module.js"></script>
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v92-20260902-edge-hand-stability";
+  const LEVEL_APP_BUILD = "v93-20260902-level5-landmark-grace";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 
