@@ -3790,7 +3790,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                             scale: scale,
                             at: nowMs()
                         };
-                        const chopstickFlex = isLevel6Chopsticks() ? function(lm, isClosedPrev) {
+                        const useChopstickFlex = isLevel6Chopsticks(), chopstickFlex = useChopstickFlex ? function(lm, isClosedPrev) {
                             if (!hasFiniteHandLandmarks(lm, [ 0, 5, 8, 9, 12, 17 ])) return {
                                 isClosed: !1,
                                 isOpen: !1,
@@ -3826,9 +3826,9 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                                 adaptive: !0
                             };
                         }(chopstickFlex.indexRatio, chopstickFlex.middleRatio);
-                        const t = toolPinchAdapt.thresholds || state.personalToolPinch || TOOL_PINCH_DEFAULTS, bothReopened = nearRatio >= t.nearExit && farRatio >= t.farExit, flexT = chopstickFlexAdapt.thresholds, flexBothClosed = !(!chopstickFlex?.valid || !(chopstickFlex.isClosed || flexT && chopstickFlex.indexRatio <= flexT.indexEnter && chopstickFlex.middleRatio <= flexT.middleEnter)), flexBothReopened = !(!chopstickFlex?.valid || !(chopstickFlex.isOpen || flexT && chopstickFlex.indexRatio >= flexT.indexExit && chopstickFlex.middleRatio >= flexT.middleExit)), flexBothOpen = !(!chopstickFlex?.valid || !(chopstickFlex.isOpen || flexT && chopstickFlex.indexRatio >= flexT.indexOpen && chopstickFlex.middleRatio >= flexT.middleOpen));
+                        const t = toolPinchAdapt.thresholds || state.personalToolPinch || TOOL_PINCH_DEFAULTS, bothReopened = nearRatio >= t.nearExit && farRatio >= t.farExit, flexT = chopstickFlexAdapt.thresholds, flexBothClosed = !(!chopstickFlex?.valid || !(chopstickFlex.isClosed || flexT && chopstickFlex.indexRatio <= flexT.indexEnter && chopstickFlex.middleRatio <= flexT.middleEnter)), flexBothReopened = !(!chopstickFlex?.valid || !(chopstickFlex.isOpen || flexT && chopstickFlex.indexRatio >= flexT.indexExit && chopstickFlex.middleRatio >= flexT.middleExit)), flexBothOpen = !(!chopstickFlex?.valid || !(chopstickFlex.isOpen || flexT && chopstickFlex.indexRatio >= flexT.indexOpen && chopstickFlex.middleRatio >= flexT.middleOpen)), apertureClosed = ratio <= t.enter, decisiveFlexState = useChopstickFlex ? flexBothClosed ? "closed" : flexBothReopened ? "open" : "" : "";
                         return {
-                            isPinching: isPinchingPrev ? !(bothReopened || flexBothReopened) : ratio <= t.enter || flexBothClosed,
+                            isPinching: isPinchingPrev ? !(decisiveFlexState ? "open" === decisiveFlexState : bothReopened) : decisiveFlexState ? "closed" === decisiveFlexState : apertureClosed,
                             ratio: ratio,
                             indexRatio: indexRatio,
                             middleRatio: middleRatio,
@@ -3870,7 +3870,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                         ny: midY,
                         isGrasping: pinchHeld,
                         graspScore: pinch.score,
-                        isOpenPrep: !pinchHeld && (isLevel6() ? pinch.valid : pinch.isSeparated),
+                        isOpenPrep: !pinchHeld && (isLevel6() ? pinch.valid && !pinch.isPinching : pinch.isSeparated),
                         pinchRatio: pinch.ratio,
                         pinchIndexRatio: pinch.indexRatio,
                         pinchMiddleRatio: pinch.middleRatio,
@@ -4000,7 +4000,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
             span: span
         } : null;
     }
-    const GESTURE_CONFIRM_MS = 60;
+    const GESTURE_CONFIRM_MS = 60, PUBLIC_LEVEL6_TOOL_GESTURE_CONFIRM_MS = 180;
     let detectedGestureState = {
         mode: "",
         stable: !1,
@@ -4009,14 +4009,19 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
     };
     function stabiliseDetectedGesture(rawValue, mode) {
         const now = nowMs();
-        return detectedGestureState.mode !== mode ? (detectedGestureState = {
+        if (detectedGestureState.mode !== mode) return detectedGestureState = {
             mode: mode,
             stable: !1,
             candidate: rawValue,
             candidateAt: now
-        }, !1) : rawValue === detectedGestureState.stable || rawValue !== detectedGestureState.candidate ? (detectedGestureState.candidate = rawValue, 
-        detectedGestureState.candidateAt = now, detectedGestureState.stable) : (now - detectedGestureState.candidateAt >= GESTURE_CONFIRM_MS && (detectedGestureState.stable = rawValue), 
-        detectedGestureState.stable);
+        }, !1;
+        if (rawValue === detectedGestureState.stable) return detectedGestureState.candidate = rawValue, 
+        detectedGestureState.candidateAt = now, detectedGestureState.stable;
+        if (rawValue !== detectedGestureState.candidate) return detectedGestureState.candidate = rawValue, 
+        detectedGestureState.candidateAt = now, detectedGestureState.stable;
+        const confirmMs = "pinch" === mode && isLevel6RealToolTask() ? PUBLIC_LEVEL6_TOOL_GESTURE_CONFIRM_MS : GESTURE_CONFIRM_MS;
+        return now - detectedGestureState.candidateAt >= confirmMs && (detectedGestureState.stable = rawValue), 
+        detectedGestureState.stable;
     }
     function isGraspStyleMode() {
         return "grasp" === state.gameType || "pinch" === state.gameType;
@@ -6620,9 +6625,9 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                         }))), zones = [ (vase = L.vase, {
                             id: "vase",
                             x: vase.x,
-                            y: vase.y - .4 * vase.h,
-                            w: 1.05 * vase.w,
-                            h: .48 * vase.h
+                            y: vase.y - .3 * vase.h,
+                            w: 1.16 * vase.w,
+                            h: .82 * vase.h
                         }) ], ev = carrier.poll(items, zones);
                         var vase;
                         if (ev.grab) {
@@ -7375,9 +7380,12 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                     if (cursorPoint.x >= 0 && cursorPoint.y >= 0 && handDetected && !isShoulderFlexionLevel()) {
                         if (ctx.save(), isGraspStyleMode()) if (isPatientVisualCueMode()) {
                             const handEmoji = isGrasping ? "✊🏻" : "✋🏻", closedHandSize = isLevel6() ? Math.max(210, Math.min(280, .27 * Math.min(cw, ch))) : Math.max(104, Math.min(124, .16 * Math.min(cw, ch))), handSize = isGrasping ? closedHandSize : 1.5 * closedHandSize, overlapsObject = foods.some(f => !f.removed && Math.hypot(cursorPoint.x - f.x, cursorPoint.y - f.y) <= f.r + .34 * handSize);
-                            isLevel6() && isGrasping ? drawPublicLevel6ClosedPinchCursor(ctx, cursorPoint.x, cursorPoint.y, overlapsObject ? .74 : .84) : (ctx.globalAlpha = isGrasping ? overlapsObject ? .92 : .98 : overlapsObject ? .58 : .88, 
+                            if (isLevel6()) {
+                                const alpha = isGrasping ? overlapsObject ? .76 : .86 : overlapsObject ? .54 : .66;
+                                drawPublicLevel6ClosedPinchCursor(ctx, cursorPoint.x, cursorPoint.y, alpha);
+                            } else ctx.globalAlpha = isGrasping ? overlapsObject ? .92 : .98 : overlapsObject ? .58 : .88, 
                             ctx.font = `${Math.round(handSize)}px "Apple Color Emoji","Segoe UI Emoji",sans-serif`, 
-                            ctx.textAlign = "center", ctx.textBaseline = "middle", ctx.fillText(handEmoji, cursorPoint.x, cursorPoint.y + .03 * handSize));
+                            ctx.textAlign = "center", ctx.textBaseline = "middle", ctx.fillText(handEmoji, cursorPoint.x, cursorPoint.y + .03 * handSize);
                         } else isGrasping ? (ctx.beginPath(), ctx.arc(cursorPoint.x, cursorPoint.y, 28, 0, 2 * Math.PI), 
                         ctx.fillStyle = "rgba(224,123,57,0.85)", ctx.fill(), ctx.lineWidth = 3, ctx.strokeStyle = "#fff", 
                         ctx.stroke(), ctx.fillStyle = "#fff", ctx.font = 'bold 22px -apple-system,"PingFang TC","Noto Sans TC",sans-serif', 
@@ -7909,7 +7917,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
         return isLevel6() || isLevel67BareMode() ? "prep" === key ? "張開三指" : "hold" === key ? "三指輕捏" : "carry" === key ? "保持輕捏" : "張開三指放下" : isPegMode() ? "prep" === key ? "放鬆張開手指" : "hold" === key ? "輕輕合手指" : "carry" === key ? "保持手指輕合" : "放鬆張開手指放下" : isChopsticksMode() ? "prep" === key ? "食指及中指稍伸直" : "hold" === key ? "食指及中指稍屈曲" : "carry" === key ? "保持兩指稍屈曲" : "食指及中指稍伸直放下" : "prep" === key ? "張開手" : "hold" === key ? "輕輕合手拿起" : "carry" === key ? "保持輕握" : "張開手放下";
     }
     function updateGraspLogic() {
-        const openPrep = isLevel6ToolGestureTask() || isPinchMode() ? handOpenPrep : !isGrasping;
+        const publicLevel5 = "5" === state.level, PREP_OPEN_MS = publicLevel5 ? 70 : 100, GRASP_HOLD_MS = publicLevel5 ? 90 : 120, CONTACT_GRACE_MS = publicLevel5 ? 900 : 700, openPrep = isLevel6ToolGestureTask() || isPinchMode() ? handOpenPrep : !isGrasping;
         if (cursorX < 0 || !handDetected) return setActionPrompt("等待偵測手部", isLevel67BareMode() ? "拇指、食指、中指入鏡" : isPegMode() ? "手掌及指尖入鏡；勿遮住手指" : "掌心及指尖入鏡"), 
         basicOpenStart = 0, basicGraspStart = 0, basicGraspCandidate = "", basicPostReleaseOpenStart && (basicPostReleaseOpenStart = nowMs()), 
         basicContactCandidate = "", void (basicContactUntil = 0);
@@ -8018,9 +8026,9 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                 const d = dist(cursorX, cursorY, f.x, f.y);
                 d < nearestDist && (nearest = f, nearestDist = d);
             }
-            const pickupMargin = isLaundryRackGame() ? 220 : isFridgeGame() ? 210 : 100, voiceMargin = isLaundryRackGame() ? 260 : isFridgeGame() ? 250 : 150, voiceNearFood = nearest && nearestDist <= pickupContactRadius(nearest.r, voiceMargin);
+            const pickupMargin = isLaundryRackGame() ? 220 : isFridgeGame() ? 210 : isPublicLevel5DimsumLayout() ? 150 : 100, voiceMargin = isLaundryRackGame() ? 260 : isFridgeGame() ? 250 : 150, voiceNearFood = nearest && nearestDist <= pickupContactRadius(nearest.r, voiceMargin);
             let overFood = nearest && nearestDist <= pickupContactRadius(nearest.r, pickupMargin);
-            if (overFood) basicContactCandidate = nearest.id, basicContactUntil = now + 700; else if (basicContactCandidate && now <= basicContactUntil) {
+            if (overFood) basicContactCandidate = nearest.id, basicContactUntil = now + CONTACT_GRACE_MS; else if (basicContactCandidate && now <= basicContactUntil) {
                 const locked = foods.find(f => f.id === basicContactCandidate && !f.removed && !f.held);
                 locked && (nearest = locked, overFood = !0);
             }
@@ -8031,13 +8039,13 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                 openForPickup: !(!voiceNearFood || isGrasping || !openPrep)
             }), overFood) if (!isGrasping && openPrep) {
                 basicGraspStart = 0, basicGraspCandidate = nearest.id, basicOpenStart || (basicOpenStart = now);
-                const pct = Math.min(100, Math.round((now - basicOpenStart) / 100 * 100));
-                now - basicOpenStart >= 100 && (basicGraspArmed = !0), setActionPrompt(graspPrompt(basicGraspArmed ? "hold" : "prep"), basicGraspArmed ? graspPrompt("carry") : pct + "%");
+                const pct = Math.min(100, Math.round((now - basicOpenStart) / PREP_OPEN_MS * 100));
+                now - basicOpenStart >= PREP_OPEN_MS && (basicGraspArmed = !0), setActionPrompt(graspPrompt(basicGraspArmed ? "hold" : "prep"), basicGraspArmed ? graspPrompt("carry") : pct + "%");
             } else if (!basicGraspArmed || basicGraspCandidate !== nearest.id || openPrep || isGrasping) if (basicGraspArmed && basicGraspCandidate === nearest.id && isGrasping) {
                 basicGraspStart || (basicGraspStart = now, isLevel67GestureMode());
-                const pct = Math.min(100, Math.round((now - basicGraspStart) / 120 * 100));
-                now - basicGraspStart >= 120 ? (nearest.held = !0, heldItem = nearest, grabCount++, 
-                updatePublicPatientVoiceGuide({
+                const pct = Math.min(100, Math.round((now - basicGraspStart) / GRASP_HOLD_MS * 100));
+                now - basicGraspStart >= GRASP_HOLD_MS ? (nearest.held = !0, heldItem = nearest, 
+                grabCount++, updatePublicPatientVoiceGuide({
                     phase: "pickup",
                     item: nearest,
                     zones: targets
@@ -8440,10 +8448,10 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
         reach: 42
     }, PUBLIC_LEVEL5_POST_RELEASE_OPEN_MS = 650;
     function advancedGraspArmMs() {
-        return isPatientVisualCueMode() ? 100 : 420;
+        return "5" === state.level ? 70 : isPatientVisualCueMode() ? 100 : 420;
     }
     function advancedGraspHoldMs() {
-        return isLevel6() ? 80 : isPatientVisualCueMode() ? 120 : 480;
+        return isLevel6() ? 80 : "5" === state.level ? 90 : isPatientVisualCueMode() ? 120 : 480;
     }
     function advancedReleaseHoldMs() {
         return isPatientVisualCueMode() ? 220 : 1e3;
@@ -9866,8 +9874,8 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
         flowersPanel();
     }
     function flowerSnapToVase(p, vase) {
-        const dx = Math.max(-1, Math.min(1, (cursorX - vase.x) / Math.max(1, .52 * vase.w)));
-        p.x = vase.x + dx * vase.w * .34, p.y = vase.y - .34 * vase.h, p.rot = Math.max(-.42, Math.min(.42, null == p.rot ? .3 * dx : p.rot));
+        const dx = Math.max(-1, Math.min(1, (cursorX - vase.x) / Math.max(1, .3 * vase.w)));
+        p.x = vase.x + dx * vase.w * .43, p.y = vase.y - .34 * vase.h, p.rot = Math.max(-.42, Math.min(.42, null == p.rot ? .3 * dx : p.rot));
     }
     function drawVaseScene(ctx, L, opts) {
         const o = opts || {}, vase = L.vase;
@@ -9953,7 +9961,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
             if (ctx.save(), isGraspStyleMode()) {
                 if (isPatientVisualCueMode()) {
                     const handEmoji = isGrasping ? "✊🏻" : "✋🏻", closedHandSize = isLevel6() ? Math.max(210, Math.min(280, .27 * Math.min(gameCanvas.width, gameCanvas.height))) : Math.max(104, Math.min(124, .16 * Math.min(gameCanvas.width, gameCanvas.height))), handSize = isGrasping ? closedHandSize : 1.5 * closedHandSize;
-                    isLevel6() && isGrasping ? drawPublicLevel6ClosedPinchCursor(ctx, cursorX, cursorY, .82) : (ctx.globalAlpha = isGrasping ? .98 : .88, 
+                    isLevel6() ? drawPublicLevel6ClosedPinchCursor(ctx, cursorX, cursorY, isGrasping ? .84 : .66) : (ctx.globalAlpha = isGrasping ? .98 : .88, 
                     ctx.font = `${Math.round(handSize)}px "Apple Color Emoji","Segoe UI Emoji",sans-serif`, 
                     ctx.textAlign = "center", ctx.textBaseline = "middle", ctx.fillText(handEmoji, cursorX, cursorY + .03 * handSize));
                 } else ctx.beginPath(), ctx.arc(cursorX, cursorY, isGrasping ? 28 : 30, 0, 2 * Math.PI), 
@@ -10117,7 +10125,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
 <script src="level4-three-games-module.js"></script>
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v89-20260902-level5-release-lock";
+  const LEVEL_APP_BUILD = "v90-20260902-dimsum-flower-chopstick-fix";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 
