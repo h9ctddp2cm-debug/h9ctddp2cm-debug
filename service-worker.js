@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v86-20260902-large-baskets-no-dimsum-overlap";
+const CACHE_VERSION = "fthue-rehab-v87-20260902-level6-tool-sensitivity-clear-fist";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");
