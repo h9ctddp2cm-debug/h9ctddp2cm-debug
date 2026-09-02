@@ -138,6 +138,34 @@ test('Level 5 dim sum geometry derives radius from responsive slots and required
   assert.match(html,/publicLevel5DimsumGeometry\(cw,ch\)\.maxRadius/);
 });
 
+test('Level 5 dim sum refill selects the genuinely empty slot instead of overlapping an occupied slot',()=>{
+  const start=html.indexOf('function publicLevel5DimsumGeometry(cw,ch)');
+  const end=html.indexOf('function isPublicSideCardGame()',start);
+  assert.ok(start>=0&&end>start,'dim sum slot helpers exist');
+  const helpers=html.slice(start,end);
+  const {geometry,freeSlot}=new Function(
+    `${helpers}; return {
+      geometry:publicLevel5DimsumGeometry,
+      freeSlot:publicLevel5DimsumFreeSlot
+    };`
+  )();
+  const cw=1330,ch=759;
+  const g=geometry(cw,ch);
+  const r=g.maxRadius;
+  const existing=[
+    {x:g.slots[1].x,y:g.slots[1].y,r,removed:false},
+    {x:g.slots[2].x,y:g.slots[2].y,r,removed:false},
+  ];
+  const replacement=freeSlot(existing,cw,ch,r);
+  assert.deepEqual(replacement,g.slots[0],
+    'refill returns to the vacated left slot, not the occupied lower-right slot');
+  for(const food of existing){
+    assert.ok(Math.hypot(replacement.x-food.x,replacement.y-food.y)>=
+      r+food.r+g.visibleGap-0.5,'replacement preserves the configured visual gap');
+  }
+  assert.match(html,/const slot = publicLevel5DimsumFreeSlot\(existingFoods,cw,ch,r\)/);
+});
+
 test('chopstick tool-relative flex can enter and release while aperture is occluded, but one digit cannot release',async t=>{
   if(!browser) return t.skip('playwright unavailable');
   await withPage({width:1180,height:820},async page=>{

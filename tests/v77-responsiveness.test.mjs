@@ -196,9 +196,22 @@ test('390x844 public Level 5 card, Mahjong, steamer, and laundry choices stay se
   const basketGap=basketH+Math.max(12,ch*.02);
   assert.ok(basketGap>basketH,'laundry rows have a positive gap');
 
+  // The reported 1330x759 landscape view uses the 2x wide-screen multiplier.
+  const wideCw=1330,wideCh=759;
+  const compactWideH=Math.min(wideCh*.27,(wideCw/2*.52)*.72,wideCh*.14);
+  const formerSafeW=(compactWideH*.80)/(.92*(198/300));
+  const wideBasketW=Math.min(wideCw/2*.52,formerSafeW*2);
+  const wideBasketH=Math.min(wideCh*.24,wideBasketW*(198/300));
+  const wideBasketGap=wideBasketH+Math.max(12,wideCh*.02);
+  assert.ok(wideBasketW>=formerSafeW*1.99,
+    'wide-screen laundry baskets are twice the former safe width');
+  assert.ok(wideBasketGap>wideBasketH,
+    'the enlarged wide-screen basket rows retain a positive gap');
+
   assert.match(html,/Math\.min\(standardTw, cw \* 0\.36\)/);
   assert.match(html,/maxCardHeight = Math\.max\(72, \(bottom-top\)\/rows - 14\)/);
   assert.match(html,/Math\.min\(104, ch\*\.125\)/);
+  assert.match(html,/const sizeMultiplier = patientLarge && cw >= 900 \? 2 : 1/);
   assert.match(html,/basketRowGap = bh \+ Math\.max\(12,ch\*\.02\)/);
   assert.match(html,/isPublicSideCardGame\(\)/);
 });
