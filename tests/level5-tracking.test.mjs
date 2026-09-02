@@ -124,6 +124,24 @@ test('Level 5 visible two-finger curl and reopen survive a perspective-shifted c
   });
 });
 
+test('Level 5 accepts a small two-finger close and a small reopen without a full fist', async t => {
+  if (!browser) return t.skip('playwright unavailable');
+  await withPage(async page => {
+    const result = await page.evaluate(() => ({
+      close: window.__qa.gestureProbe.grasp(
+        [0.80, 0.80, 1, 1, 1], false, 'any',
+      ),
+      reopen: window.__qa.gestureProbe.grasp(
+        [0.84, 0.84, 1, 1, 1], true, 'any',
+      ),
+    }));
+    assert.equal(result.close.isGrasping, true,
+      'a modest affected-finger curl enters grasp');
+    assert.equal(result.reopen.isGrasping, false,
+      'a modest affected-finger reopen releases grasp');
+  });
+});
+
 test('Level 5 tracking grace preserves the held object but cannot finish stale release dwell', async t => {
   if (!browser) return t.skip('playwright unavailable');
   await withPage(async page => {

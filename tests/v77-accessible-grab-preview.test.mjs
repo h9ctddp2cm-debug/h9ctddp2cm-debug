@@ -14,7 +14,8 @@ test('public canvas hand remains large while the duplicate right-side cue is rem
   assert.match(html, /ctx\.globalAlpha=isGrasping \? \(overlapsObject \? \.92 : \.98\)/);
   assert.match(html, /ctx\.globalAlpha=isGrasping \? \.98 : \.88/);
   assert.match(html, /\.game-stage\.public-clean-hud\.patient-simple-hud \.status-bar\{\s*display:none !important;/);
-  assert.match(html, /if\(patientMode\)\{[\s\S]{0,300}statusBar\.innerHTML = '';/);
+  assert.match(html, /if\(patientMode && !mustShowOpenArmPrompt\)\{[\s\S]{0,300}statusBar\.innerHTML = '';/);
+  assert.match(html, /mustShowOpenArmPrompt[\s\S]{0,220}先張開筷子/);
 });
 
 test('Level 5 fist stays smaller than normal iPad pickup objects', () => {
@@ -33,8 +34,8 @@ test('Level 5 dim sum uses a tightly cropped sticky-rice image and easier pickup
   assert.equal(lotusPng.toString('ascii', 1, 4), 'PNG');
   assert.equal(lotusPng.readUInt32BE(16), 423);
   assert.equal(lotusPng.readUInt32BE(20), 378);
-  assert.match(html, /const PREP_OPEN_MS = research\.active \? 220 : \(publicLevel5 \? 70 : 100\);/);
-  assert.match(html, /const GRASP_HOLD_MS = research\.active \? 360 : \(publicLevel5 \? 90 : 120\);/);
+  assert.match(html, /const PREP_OPEN_MS = research\.active \? 220 : \(publicLevel5 \? 35 : 100\);/);
+  assert.match(html, /const GRASP_HOLD_MS = research\.active \? 360 : \(publicLevel5 \? 45 : 120\);/);
   assert.match(html, /isPublicLevel5DimsumLayout\(\) \? 150 : 100/);
   assert.match(html, /const PUBLIC_LEVEL5_GRASP_ARM_MS = 70;/);
   assert.match(html, /const PUBLIC_LEVEL5_GRASP_HOLD_MS = 90;/);

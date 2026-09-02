@@ -38,12 +38,12 @@ test('a poisoned open baseline is recaptured after sustained more-open evidence'
   // Closed-stage evidence collected against the poisoned baseline is discarded.
   assert.match(publicSource, /c\.moreOpenMs\s*>=\s*600[\s\S]{0,400}c\.closedScores\s*=\s*\[\]/);
   // Grasp-mode margin mirrors the light-close margin.
-  assert.match(publicSource, /value\s*<=\s*openMean\s*-\s*0\.015/);
+  assert.match(publicSource, /value\s*<=\s*openMean\s*-\s*0\.006/);
 });
 
 test('calibration dropout reset clears the v68 open-stage accumulators', () => {
-  assert.match(publicSource, /lostForMs\s*>\s*CALIB_DROPOUT_GRACE_MS[\s\S]{0,300}c\.openHoldMs\s*=\s*0/);
-  assert.match(publicSource, /lostForMs\s*>\s*CALIB_DROPOUT_GRACE_MS[\s\S]{0,300}c\.moreOpenMs\s*=\s*0/);
+  assert.match(publicSource, /lostForMs\s*>\s*CALIB_DROPOUT_GRACE_MS[\s\S]{0,500}c\.openHoldMs\s*=\s*0/);
+  assert.match(publicSource, /lostForMs\s*>\s*CALIB_DROPOUT_GRACE_MS[\s\S]{0,500}c\.moreOpenMs\s*=\s*0/);
 });
 
 test('all calibration state objects carry the v68 open-stage fields', () => {

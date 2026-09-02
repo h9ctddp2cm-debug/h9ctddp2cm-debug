@@ -10,7 +10,7 @@ const html = readFileSync(path.join(root, 'index.html'), 'utf8');
 test('current build markers stay aligned', () => {
   const manifest = readFileSync(path.join(root, 'manifest.webmanifest'), 'utf8');
   const worker = readFileSync(path.join(root, 'service-worker.js'), 'utf8');
-  const version = 'v90-20260902-dimsum-flower-chopstick-fix';
+  const version = 'v95-20260902-level5-realtime-index-chopsticks';
   assert.match(html, new RegExp(version));
   assert.match(manifest, new RegExp(version));
   assert.match(worker, new RegExp(version));
@@ -35,7 +35,8 @@ test('open and closed hand cues stay large on canvas without a duplicate side ca
   assert.match(html, /const handSize=isGrasping \? closedHandSize : closedHandSize\*1\.5;/);
   assert.match(html, /const gestureCue = openWords\.test\(main\) \? 'open' : 'close';/);
   assert.match(html, /\.game-stage\.public-clean-hud\.patient-simple-hud \.status-bar\{\s*display:none !important;/);
-  assert.match(html, /if\(patientMode\)\{[\s\S]{0,300}statusBar\.innerHTML = '';/);
+  assert.match(html, /if\(patientMode && !mustShowOpenArmPrompt\)\{[\s\S]{0,300}statusBar\.innerHTML = '';/);
+  assert.match(html, /mustShowOpenArmPrompt[\s\S]{0,220}先張開筷子/);
   assert.match(html, /statusBar\.dataset\.gestureCue = gestureCue/);
 });
 

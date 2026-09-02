@@ -38,7 +38,7 @@ test('processed left/right Level 6 cursor assets are transparent 191x133 PNG fil
   }
 });
 
-test('public Level 6 uses one stable affected-side image cue on both tracked cursor renderers',()=>{
+test('public Level 6 uses one stable affected-side image cue and reserves text for the chopstick arm gate',()=>{
   assert.match(html,/imgLevel6PinchRight\.src = 'img\/level6_pinch_right\.png'/);
   assert.match(html,/imgLevel6PinchLeft\.src = 'img\/level6_pinch_left\.png'/);
   assert.match(html,/function level6PinchHandGeometry[\s\S]*?activeAffectedSide\(\)==='left'/);
@@ -46,7 +46,7 @@ test('public Level 6 uses one stable affected-side image cue on both tracked cur
   assert.match(html,/if\(isLevel6\(\)\)\{[\s\S]{0,350}drawPublicLevel6ClosedPinchCursor\(ctx,cursorPoint\.x/);
   assert.match(html,/function advDrawCursor[\s\S]*?if\(isLevel6\(\)\)\{[\s\S]{0,350}drawPublicLevel6ClosedPinchCursor\(ctx,cursorX/);
   assert.doesNotMatch(html,/if\(isLevel6\(\) && isGrasping\)\{/);
-  assert.match(html,/if\(patientMode\)\{[\s\S]{0,300}statusBar\.innerHTML = '';/);
+  assert.match(html,/if\(patientMode && !mustShowOpenArmPrompt\)\{[\s\S]{0,300}statusBar\.innerHTML = '';/);
 });
 
 test('held-object display offset is side-aware and does not alter logical control coordinates',()=>{
@@ -173,6 +173,10 @@ test('chopstick tool-relative flex can enter and release while aperture is occlu
     const result=await page.evaluate(()=>{
       window.__qa.startGame({level:'67',level6Task:'chopsticks',duration:60,affectedSide:'right'});
       window.__qa.resetLevel6ToolAdapt();
+      window.__qa.setLevel6PersonalToolCalibration({
+        flex:{indexEnter:1.50,middleEnter:1.50,indexExit:1.60,middleExit:1.60,
+          indexOpen:1.68,middleOpen:1.68,calibrated:true}
+      });
       const entered=window.__qa.level6ChopstickFlexProbe(1.38,1.40,false,false);
       const released=window.__qa.level6ChopstickFlexProbe(1.76,1.74,true,true);
       const oneDigit=window.__qa.level6ChopstickFlexProbe(1.76,1.40,true,true);

@@ -45,15 +45,17 @@ test('peg light press remains hysteretic while accepting a modest calibrated-lik
   });
 });
 
-// Every normal-flow Level 6 activity uses the same selected-hand tripod pinch.
+// Every normal-flow Level 6 activity uses the selected-hand tripod pinch,
+// except the simplified chopstick task, which follows the index fingertip.
 const LEVEL6_TASKS = [
   { task: 'flowers', theme: 'flowers', name: 'Flower Arranging', gameType: 'pinch' },
-  { task: 'chopsticks', theme: 'chopstick_dimsum', name: 'Chopstick Dim Sum', gameType: 'pinch' },
+  { task: 'chopsticks', theme: 'chopstick_dimsum', name: 'Chopstick Dim Sum', gameType: 'dwell' },
   { task: 'peg', theme: 'peg_laundry', name: 'Cloth-Peg Laundry', gameType: 'pinch' },
   { task: 'cards', theme: 'cards', name: 'Playing Cards', gameType: 'pinch' },
   { task: 'mahjong', theme: 'mahjong', name: 'Mahjong', gameType: 'pinch' },
   { task: 'cooking', theme: 'cooking', name: 'Cook Egg Fried Rice', gameType: 'pinch' },
 ];
+const LEVEL6_GESTURE_TASKS = LEVEL6_TASKS.filter(({ task }) => task !== 'chopsticks');
 
 for (const { task, theme, name, gameType } of LEVEL6_TASKS) {
   test(`Level 6 ${name} task starts on the correct theme and interaction type`, async t => {
@@ -87,7 +89,7 @@ test('Level 6 has no shoulder-flexion target dependency', async t => {
       }
       return out;
     });
-    assert.ok(applied.every(value => value.gameType === 'pinch'));
+    assert.ok(applied.every(value => value.gameType === 'dwell'));
     assert.ok(applied.every(value => value.shoulderGameReady === false),
       'Level 6 does not initialize or wait for the shoulder controller');
   });
@@ -333,7 +335,7 @@ async function runToolGestureFlow(page, task) {
   }, task);
 }
 
-for (const { task } of LEVEL6_TASKS) {
+for (const { task } of LEVEL6_GESTURE_TASKS) {
   test(`Level 6 ${task} requires open → light asymmetric tripod close → hand transport → reopen`, async t => {
     if (!browser) return t.skip('playwright unavailable');
     await withPage({ width: 1180, height: 820 }, async page => {

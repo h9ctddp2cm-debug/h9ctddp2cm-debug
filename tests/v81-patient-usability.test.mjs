@@ -9,7 +9,8 @@ const source = readFileSync(path.join(root, 'index.html'), 'utf8');
 
 test('patient game HUD removes the small right-middle gesture emoji area', () => {
   assert.match(source, /\.game-stage\.public-clean-hud\.patient-simple-hud \.status-bar\{\s*display:none !important;\s*\}/);
-  assert.match(source, /function setActionPrompt\(main, detail\)\{[\s\S]{0,1800}if\(patientMode\)\{[\s\S]{0,300}statusBar\.innerHTML = '';/);
+  assert.match(source, /function setActionPrompt\(main, detail\)\{[\s\S]{0,1800}if\(patientMode && !mustShowOpenArmPrompt\)\{[\s\S]{0,300}statusBar\.innerHTML = '';/);
+  assert.match(source, /mustShowOpenArmPrompt[\s\S]{0,220}先張開筷子/);
 });
 
 test('voice coaching says 揸拳頭 near an ungrasped object and 打開隻手 near the target', () => {

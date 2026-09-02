@@ -17,9 +17,9 @@ const publicSource = readFileSync(path.join(root, 'index.html'), 'utf8');
 
 /* ---------------- Source contracts ---------------- */
 
-test('real-tool predicate covers exactly the chopstick and peg tasks in normal mode', () => {
+test('real-tool pinch predicate covers exactly the peg task in normal mode', () => {
   assert.match(publicSource,
-    /function isLevel6RealToolTask\(\)\{\s*return isLevel6\(\) && \(state\.level6Task === 'chopsticks' \|\| state\.level6Task === 'peg'\);\s*\}/);
+    /function isLevel6RealToolTask\(\)\{\s*return isLevel6\(\) && state\.level6Task === 'peg';\s*\}/);
 });
 
 test('gameplay pinch branch routes tool tasks through the tool interpreter', () => {

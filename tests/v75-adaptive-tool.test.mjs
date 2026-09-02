@@ -27,9 +27,9 @@ test('adaptive tracker exists with fail-closed movement gates', () => {
   assert.match(publicSource, /toolPinchAdapt\.thresholds = null;\s*return;/);
 });
 
-test('threshold priority: adaptive → personal calibration → defaults, never in research mode', () => {
+test('threshold priority: personal calibration → adaptive fallback → defaults, never in research mode', () => {
   assert.match(publicSource,
-    /const t = \(!research\.active && toolPinchAdapt\.thresholds\)\s*\|\| \(!research\.active && state\.personalToolPinch\)\s*\|\| TOOL_PINCH_DEFAULTS;/);
+    /const t = \(!research\.active && state\.personalToolPinch\)\s*\|\| \(!research\.active && toolPinchAdapt\.thresholds\)\s*\|\| TOOL_PINCH_DEFAULTS;/);
   assert.doesNotMatch(publicSource,/enter:Math\.max\(measuredT\.enter,TOOL_PINCH_DEFAULTS\.enter\)/);
 });
 

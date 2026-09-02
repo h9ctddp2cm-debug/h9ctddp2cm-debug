@@ -1109,8 +1109,14 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
 .level-motion figcaption{
   margin-top:4px; color:var(--teal-dark); font-size:12px; line-height:1.2; font-weight:850;
 }
-.level-select.has-shoulder-demos{ grid-template-columns:minmax(145px,.75fr) minmax(330px,1.25fr); }
-.level-motion.shoulder-demos{ grid-template-columns:1fr 1fr; gap:10px; align-items:start; }
+.level-select.has-shoulder-demos{
+  grid-template-columns:1fr;
+  align-items:start;
+}
+.level-motion.shoulder-demos{
+  grid-template-columns:1fr 1fr; gap:10px; align-items:start;
+  width:100%; max-width:440px; justify-self:center;
+}
 .level-motion.shoulder-demos figure{
   display:grid; grid-template-rows:auto minmax(64px,auto); overflow:hidden;
   border:1px solid rgba(26,107,90,.2); border-radius:14px; background:#f7f3ea;
@@ -1139,7 +1145,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
 .level-card .lv-note .lv-line{ display:block; margin-top:6px; }
 @media (max-width:819px){
   .level-select{ grid-template-columns:minmax(0,1fr) 210px; }
-  .level-select.has-shoulder-demos{ grid-template-columns:minmax(155px,.7fr) minmax(340px,1.3fr); }
+  .level-select.has-shoulder-demos{ grid-template-columns:1fr; }
 }
 @media (max-width:560px){
   .level-select{ grid-template-columns:1fr; gap:10px; }
@@ -2539,7 +2545,8 @@ const state = {
     openDone:false, closedDone:false, ready:false, openScores:[], closedScores:[] },
   personalGraspEnter:null, personalGraspExit:null,
   personalPinchEnter:null, personalPinchExit:null, personalPinchOpen:null,
-  personalToolPinch:null,   // v70: per-digit thresholds calibrated with the real tool in hand
+  personalToolPinch:null,   // v70: per-digit aperture thresholds calibrated with the real tool in hand
+  personalChopstickFlex:null, // v91: affected index/middle flex ranges measured during tool calibration
   mirrorX:true,
   selfieMode:false,       // camera-view games start with a plain white background
   sessionMode:'training', // training | trial
@@ -2771,14 +2778,14 @@ function isShoulderFlexionLevel(){
 function isLevel6(){ return !research.active && state.level === '67'; }
 function isLevel6Chopsticks(){ return isLevel6() && state.level6Task === 'chopsticks'; }
 function isLevel6Peg(){ return isLevel6() && state.level6Task === 'peg'; }
-function isLevel6ToolGestureTask(){ return isLevel6(); }
+function isLevel6ToolGestureTask(){ return isLevel6() && !isLevel6Chopsticks(); }
 /* v70: the chopstick and cloth-peg activities are played with the REAL tool in
    the affected hand. The tool physically limits finger excursion, so these two
    tasks calibrate and interpret the tripod aperture against the participant's
    own tool-constrained range instead of bare-hand separation gates. Normal
    flow only: the research track keeps its own predates-v70 tool modes. */
 function isLevel6RealToolTask(){
-  return isLevel6() && (state.level6Task === 'chopsticks' || state.level6Task === 'peg');
+  return isLevel6() && state.level6Task === 'peg';
 }
 function level6ToolWords(){
   return state.level6Task === 'peg'
@@ -4244,6 +4251,7 @@ function resetNormalCalibration(){
   state.personalPinchExit = null;
   state.personalPinchOpen = null;
   state.personalToolPinch = null;
+  state.personalChopstickFlex = null;
   ['calibDetectCheck','calibOpenCheck','calibCloseCheck'].forEach(id=>{
     renderCalibCheck(id, false);
   });
@@ -5092,10 +5100,10 @@ const LEVEL6_TASKS = {
   },
   chopsticks:{
     id:'chopsticks', theme:'chopstick_dimsum',
-    gameType:'pinch',
+    gameType:'dwell',
     label:'筷子點心', labelEn:'Chopstick Dim Sum',
-    hint:'患手揸住真筷子。睇落單指示，合埋筷子夾起點心，放入中央大碟，再揸開筷子放下',
-    actionCue:'揸開筷子 → 合埋夾起 → 移動 → 揸開放下',
+    hint:'患手揸住真筷子。用食指尖對準點心，停住便會夾起；移到中央大碟，停住便會放下',
+    actionCue:'食指尖對準 → 停住夾起 → 移到目標 → 停住放下',
   },
   peg:{
     id:'peg', theme:'peg_laundry',
@@ -5132,8 +5140,8 @@ function level6TaskProfile(){
   const basic=state.dimsumDifficulty!=='complex';
   return Object.assign({},task,{
     hint:basic
-      ? '患手揸住真筷子。可夾任何點心，移到中央大碗，再揸開筷子放下'
-      : '患手揸住真筷子。睇落單指示，合埋筷子夾起點心，放入中央大碟，再揸開筷子放下',
+      ? '患手揸住真筷子。食指尖對準任何點心，停住夾起，再移到中央大碗停住放下'
+      : '患手揸住真筷子。食指尖對準落單點心，停住夾起，再移到中央大碟停住放下',
   });
 }
 function level6TaskForTheme(themeId){
@@ -7139,11 +7147,21 @@ function computeChopstickFlexState(lm, isClosedPrev){
   const indexRatio=distance(lm[8],lm[0])/Math.max(distance(lm[5],lm[0]),.001);
   const middleRatio=distance(lm[12],lm[0])/Math.max(distance(lm[9],lm[0]),.001);
   const mean=(indexRatio+middleRatio)/2;
-  // Both chopstick fingers must agree. Hysteresis accepts a slight flexion to
-  // close while requiring a clear re-extension before release.
-  const flexThreshold=isClosedPrev?1.60:1.48;
-  const isClosed=indexRatio<=flexThreshold&&middleRatio<=flexThreshold;
-  const isOpen=indexRatio>=1.68&&middleRatio>=1.68;
+  // Never turn an absolute anatomical ratio into a chopstick close/open event.
+  // At entry a participant may naturally rest below the old 1.48 threshold;
+  // that static posture is not evidence of tool closure. Flex becomes decisive
+  // only after BOTH affected working fingers have supplied a participant-
+  // specific open/closed range (calibration first, genuine in-game motion only
+  // as a fallback). This also keeps the two-finger validity rule explicit.
+  const t=(!research.active && state.personalChopstickFlex)
+    || (!research.active && chopstickFlexAdapt.thresholds)
+    || null;
+  const isClosed=!!(t&&indexRatio<=t.indexEnter&&middleRatio<=t.middleEnter);
+  const isOpen=!!(t&&indexRatio>=(
+    isClosedPrev?t.indexExit:t.indexOpen
+  )&&middleRatio>=(
+    isClosedPrev?t.middleExit:t.middleOpen
+  ));
   return {isClosed,isOpen,score:clamp01((1.78-mean)/.55),indexRatio,middleRatio,valid:true};
 }
 
@@ -7163,7 +7181,7 @@ function interpretHandResults(results, inputMirrored=false){
         ? [0,5,9,13,17]
         : [0,2,4,5,8,9,12,13,16,17,20];
     if(!hasFiniteHandLandmarks(lm, required)){
-      results = null;
+      return { detected:false, reason:'required-landmarks-missing' };
     }else{
     // Cursor position
     const tip = lm[8]; // index finger tip = landmark 8 (reach mode)
@@ -7197,16 +7215,19 @@ function interpretHandResults(results, inputMirrored=false){
       return { detected:true, nx:interactionX(midX), ny:midY,
         isGrasping:pinchHeld,
         graspScore:pinch.score,
-        // Public Level 6 may arm from any valid raw state that is clearly not
-        // closing. This avoids requiring a large theoretical open aperture,
-        // while preventing the stabilizer's initial false state from treating
-        // a continuously closed hand as open preparation.
-        // Research retains the stricter visibly-separated requirement.
+        // Real-tool Level 6 arms only from a positively separated posture
+        // inside the participant's calibrated range. A stabilizer default or
+        // merely "not closed" ambiguous posture is never open preparation.
+        // Bare Level 6 retains its existing valid non-closing rule; research
+        // retains the visibly-separated requirement.
         isOpenPrep:!pinchHeld && (!research.active && isLevel6()
-          ? pinch.valid && !pinch.isPinching
+          ? (isLevel6RealToolTask()
+            ? pinch.valid && pinch.isSeparated
+            : pinch.valid && !pinch.isPinching)
           : pinch.isSeparated),
         pinchRatio:pinch.ratio, pinchIndexRatio:pinch.indexRatio,
-        pinchMiddleRatio:pinch.middleRatio, pinchScale:pinch.scale, lm, source:'tripod-pinch' };
+        pinchMiddleRatio:pinch.middleRatio, pinchScale:pinch.scale,
+        chopstickFlex:pinch.chopstickFlex || null, lm, source:'tripod-pinch' };
     }
     const usePalmCursor = state.gameType === 'grasp' || isGrossTabletop();
     const nx = interactionX(usePalmCursor ? palmX : tip.x);
@@ -7242,7 +7263,7 @@ function interpretHandResults(results, inputMirrored=false){
       };
     }
   }
-  return { detected:false };
+  return { detected:false, reason:'no-hand-detected' };
 }
 
 // 偵測食指尖位置，回傳 {detected, nx, ny}（nx/ny 已經鏡像處理，範圍 0-1）
@@ -7304,8 +7325,8 @@ function computeGraspScore(lm, isGraspingPrev){
   const score = clamp01((1.72 - meanTipDistance) / 1.02);
   const curledCount = graspFingerPairs.map(([mcp,tip]) =>
     distance(lm[tip], lm[0]) / Math.max(distance(lm[mcp], lm[0]), 0.001)
-  ).filter(value => value <= 1.45).length;
-  const openCount = fingerExtensionRatios.filter(value => value >= 1.72).length;
+  ).filter(value => value <= 1.58).length;
+  const openCount = fingerExtensionRatios.filter(value => value >= 1.62).length;
   // Enter only when at least two fingers curl. Once holding, two visibly
   // reopened fingers are enough for a limited-extension stroke hand.
   const visibleGrasp = curledCount >= 2;
@@ -7583,30 +7604,31 @@ function computeToolPinchState(lm, isPinchingPrev){
   if(chopstickFlex?.valid){
     updateChopstickFlexAdapt(chopstickFlex.indexRatio,chopstickFlex.middleRatio);
   }
-  // v75 threshold priority: live adaptive range (reflects the hand + tool +
-  // camera distance actually in front of the lens right now) → tool-in-hand
-  // calibration → conservative defaults. Fail-closed at every step.
-  const t = (!research.active && toolPinchAdapt.thresholds)
-    || (!research.active && state.personalToolPinch)
+  // Calibration is the session authority and must survive initGame's runtime
+  // history reset. Adaptive thresholds are a fallback only for direct/legacy
+  // starts where no participant calibration exists.
+  const t = (!research.active && state.personalToolPinch)
+    || (!research.active && toolPinchAdapt.thresholds)
     || TOOL_PINCH_DEFAULTS;
   // Never widen a participant's calibrated entry threshold to the generic
   // fallback: real chopsticks and pegs often have a much smaller total range.
   // Release still requires BOTH digits to clear the reopen point of their own
   // measured tool range — one drifting landmark can never release an item.
   const bothReopened = nearRatio >= t.nearExit && farRatio >= t.farExit;
-  const flexT=chopstickFlexAdapt.thresholds;
+  const flexT=(!research.active && state.personalChopstickFlex)
+    || chopstickFlexAdapt.thresholds;
   const flexBothClosed=!!(chopstickFlex?.valid && (
-    chopstickFlex.isClosed || (flexT &&
+    flexT && (
       chopstickFlex.indexRatio<=flexT.indexEnter &&
       chopstickFlex.middleRatio<=flexT.middleEnter)
   ));
   const flexBothReopened=!!(chopstickFlex?.valid && (
-    chopstickFlex.isOpen || (flexT &&
+    flexT && (
       chopstickFlex.indexRatio>=flexT.indexExit &&
       chopstickFlex.middleRatio>=flexT.middleExit)
   ));
   const flexBothOpen=!!(chopstickFlex?.valid && (
-    chopstickFlex.isOpen || (flexT &&
+    flexT && (
       chopstickFlex.indexRatio>=flexT.indexOpen &&
       chopstickFlex.middleRatio>=flexT.middleOpen)
   ));
@@ -7655,9 +7677,11 @@ function stabiliseDetectedGesture(rawValue, mode){
     detectedGestureState.candidateAt = now;
     return detectedGestureState.stable;
   }
-  const confirmMs = !research.active && mode === 'pinch' && isLevel6RealToolTask()
-    ? PUBLIC_LEVEL6_TOOL_GESTURE_CONFIRM_MS
-    : GESTURE_CONFIRM_MS;
+  const confirmMs = !research.active && mode === 'grasp' && state.level === '5'
+    ? 30
+    : (!research.active && mode === 'pinch' && isLevel6RealToolTask()
+      ? PUBLIC_LEVEL6_TOOL_GESTURE_CONFIRM_MS
+      : GESTURE_CONFIRM_MS);
   if(now - detectedGestureState.candidateAt >= confirmMs){
     detectedGestureState.stable = rawValue;
   }
@@ -7684,10 +7708,45 @@ function trackingMedianFrames(){
 }
 
 function clamp01(value){ return Math.max(0, Math.min(1, value)); }
-function cameraPointToCanvas(nx, ny, width, height){
-  const mappedX = clamp01((nx - CAMERA_SAFE_X) / (1 - CAMERA_SAFE_X * 2));
-  const mappedY = clamp01((ny - CAMERA_SAFE_TOP) / (1 - CAMERA_SAFE_TOP - CAMERA_SAFE_BOTTOM));
+function cameraCoverCrop(width, height, sourceWidth, sourceHeight){
+  const targetRatio = width / Math.max(height, 1);
+  const sourceRatio = sourceWidth / Math.max(sourceHeight, 1);
+  let left=0, top=0, visibleWidth=1, visibleHeight=1;
+  if(Number.isFinite(sourceRatio) && sourceRatio > 0){
+    if(sourceRatio > targetRatio){
+      visibleWidth=targetRatio/sourceRatio;
+      left=(1-visibleWidth)/2;
+    }else if(sourceRatio < targetRatio){
+      visibleHeight=sourceRatio/targetRatio;
+      top=(1-visibleHeight)/2;
+    }
+  }
+  return {left,top,visibleWidth,visibleHeight};
+}
+function cameraPointToCanvas(nx, ny, width, height, sourceWidth=width, sourceHeight=height){
+  // Landmarks are normalized to the decoded camera frame, while the video is
+  // presented with object-fit:cover. Apply the same centred crop before the
+  // existing safe-area expansion; otherwise a portrait iPad can drive the
+  // cursor toward a different edge than the visible hand.
+  const crop=cameraCoverCrop(width,height,sourceWidth,sourceHeight);
+  const safeLeft=crop.left+crop.visibleWidth*CAMERA_SAFE_X;
+  const safeTop=crop.top+crop.visibleHeight*CAMERA_SAFE_TOP;
+  const safeWidth=crop.visibleWidth*(1-CAMERA_SAFE_X*2);
+  const safeHeight=crop.visibleHeight*(1-CAMERA_SAFE_TOP-CAMERA_SAFE_BOTTOM);
+  const mappedX = clamp01((nx - safeLeft) / Math.max(safeWidth,.001));
+  const mappedY = clamp01((ny - safeTop) / Math.max(safeHeight,.001));
   return { x:mappedX * width, y:mappedY * height };
+}
+function clampInteractionPoint(x,y,width,height,radius=0){
+  // Keep the controller visible, and keep a carried sprite completely on the
+  // canvas. This is a display/transport guard only; gesture thresholds and
+  // target hit boxes remain unchanged.
+  const base=Math.max(12,Math.min(28,Math.min(width,height)*.025));
+  const inset=Math.min(Math.min(width,height)/2,Math.max(base,Number(radius)||0));
+  return {
+    x:Math.max(inset,Math.min(width-inset,x)),
+    y:Math.max(inset,Math.min(height-inset,y))
+  };
 }
 function medianValue(values){
   const sorted = values.slice().sort((a,b)=>a-b);
@@ -7863,7 +7922,7 @@ function startCalibLoop(){
         if(!c.detectedStart) c.detectedStart = now;
         if(!c.detectedDone && now - c.detectedStart >= 800) c.detectedDone = true;
         if(isGraspStyleMode()){
-          const value = isPinchMode() ? res.pinchRatio : res.graspScore;
+        const value = isPinchMode() ? res.pinchRatio : res.graspScore;
           if(!c.openDone){
             // v68: accumulate qualifying open-hand time instead of a blind
             // timer, and only sample the baseline from frames that actually
@@ -7893,6 +7952,10 @@ function startCalibLoop(){
                 (c.openNear = c.openNear || []).push(Math.min(res.pinchIndexRatio, res.pinchMiddleRatio));
                 (c.openFar = c.openFar || []).push(Math.max(res.pinchIndexRatio, res.pinchMiddleRatio));
               }
+              if(isLevel6Chopsticks() && res.chopstickFlex?.valid){
+                (c.openFlexIndex = c.openFlexIndex || []).push(res.chopstickFlex.indexRatio);
+                (c.openFlexMiddle = c.openFlexMiddle || []).push(res.chopstickFlex.middleRatio);
+              }
               const openDelta = Number.isFinite(previousOpenTick) && previousOpenTick > 0
                 ? Math.min(120, now - previousOpenTick) : 0;
               c.openHoldMs = (c.openHoldMs || 0) + openDelta;
@@ -7917,7 +7980,7 @@ function startCalibLoop(){
                 // Pressing a low-resistance peg produces much less whole-hand
                 // change than a grasp. Accept a small but sustained difference.
                 ? value >= openMean + Math.max(0.004, openMean * 0.010)
-                : value >= openMean + 0.015;
+                : value >= openMean + 0.006;
             const previousTick = c.closedTickAt;
             c.closedTickAt = now;
             if(changedEnough){
@@ -7926,6 +7989,10 @@ function startCalibLoop(){
               if(isLevel6RealToolTask() && Number.isFinite(res.pinchIndexRatio) && Number.isFinite(res.pinchMiddleRatio)){
                 (c.closedNear = c.closedNear || []).push(Math.min(res.pinchIndexRatio, res.pinchMiddleRatio));
                 (c.closedFar = c.closedFar || []).push(Math.max(res.pinchIndexRatio, res.pinchMiddleRatio));
+              }
+              if(isLevel6Chopsticks() && res.chopstickFlex?.valid){
+                (c.closedFlexIndex = c.closedFlexIndex || []).push(res.chopstickFlex.indexRatio);
+                (c.closedFlexMiddle = c.closedFlexMiddle || []).push(res.chopstickFlex.middleRatio);
               }
               // Accumulate qualifying light-close time instead of demanding one
               // unbroken hold. Closing the hand often drops the landmarker for
@@ -7953,7 +8020,7 @@ function startCalibLoop(){
                 ? value >= openMean + Math.max(0.012, openMean * 0.020)
                 : isPegMode()
                   ? value <= openMean - Math.max(0.004, openMean * 0.010)
-                  : value <= openMean - 0.015;
+                  : value <= openMean - 0.006;
               if(moreOpenThanBaseline){
                 const moreOpenDelta = Number.isFinite(previousTick) && previousTick > 0
                   ? Math.min(120, now - previousTick) : 0;
@@ -7966,6 +8033,8 @@ function startCalibLoop(){
                   c.closedScores = [];
                   c.openNear = []; c.openFar = [];
                   c.closedNear = []; c.closedFar = [];
+                  c.openFlexIndex = []; c.openFlexMiddle = [];
+                  c.closedFlexIndex = []; c.closedFlexMiddle = [];
                   c.closedHoldMs = 0;
                   c.closedTickAt = 0;
                   c.moreOpenMs = 0;
@@ -7985,12 +8054,20 @@ function startCalibLoop(){
             c.openScores.length && c.closedScores.length){
           const openMean = medianValue(c.openScores);
           const closedMean = medianValue(c.closedScores);
-          const gap = Math.max(isPegMode() ? 0.006 : 0.04, closedMean - openMean);
-          thresholds.personalGraspEnter = openMean + gap * (isPegMode() ? 0.24 : 0.48);
-          thresholds.personalGraspExit = Math.min(
-            thresholds.personalGraspEnter - (isPegMode() ? 0.004 : 0.015),
-            openMean + gap * (isPegMode() ? 0.12 : 0.38),
-          );
+          const gap = Math.max(0.006, closedMean - openMean);
+          if(isPegMode()){
+            // Preserve the existing Level 6 cloth-peg calibration unchanged.
+            thresholds.personalGraspEnter = openMean + gap * 0.24;
+            thresholds.personalGraspExit = Math.min(
+              thresholds.personalGraspEnter - 0.004,
+              openMean + gap * 0.12,
+            );
+          }else{
+            // Public Level 5 uses the participant's actual small available
+            // range; do not inflate it to a theoretical full-hand movement.
+            thresholds.personalGraspEnter = openMean + gap * 0.45;
+            thresholds.personalGraspExit = openMean + gap * 0.20;
+          }
         }
         if(c.ready && state.gameType === 'pinch' &&
             thresholds.personalPinchEnter == null && c.openScores.length && c.closedScores.length){
@@ -8039,6 +8116,30 @@ function startCalibLoop(){
             farOpen: closedFarMean + gapFar * 0.74,
             scoreOpen: Math.max(0.10, closedMean + gapC * 0.80),
           };
+        }
+        if(c.ready && isLevel6Chopsticks() && state.personalChopstickFlex == null &&
+            (c.openFlexIndex || []).length && (c.closedFlexIndex || []).length &&
+            (c.openFlexMiddle || []).length && (c.closedFlexMiddle || []).length){
+          const indexClosed=medianValue(c.closedFlexIndex);
+          const indexOpen=medianValue(c.openFlexIndex);
+          const middleClosed=medianValue(c.closedFlexMiddle);
+          const middleOpen=medianValue(c.openFlexMiddle);
+          const indexSpan=indexOpen-indexClosed;
+          const middleSpan=middleOpen-middleClosed;
+          // Both working fingers must exhibit the same-direction movement. Do
+          // not manufacture a range with a large floor: a valid small-range
+          // participant keeps thresholds strictly inside their measured span.
+          if(indexSpan>=0.008 && middleSpan>=0.008){
+            state.personalChopstickFlex={
+              indexEnter:indexClosed+indexSpan*.44,
+              middleEnter:middleClosed+middleSpan*.44,
+              indexExit:indexClosed+indexSpan*.62,
+              middleExit:middleClosed+middleSpan*.62,
+              indexOpen:indexClosed+indexSpan*.74,
+              middleOpen:middleClosed+middleSpan*.74,
+              calibrated:true,
+            };
+          }
         }
         document.getElementById('btnStartGame').disabled = !c.ready;
         if(c.ready && !calibDetectedOnce){
@@ -8092,6 +8193,8 @@ function startCalibLoop(){
           c.toolVals = [];
           c.openNear = []; c.openFar = [];
           c.closedNear = []; c.closedFar = [];
+          c.openFlexIndex = []; c.openFlexMiddle = [];
+          c.closedFlexIndex = []; c.closedFlexMiddle = [];
           c.openTickAt = 0;
           c.moreOpenMs = 0;
           c.closedHoldMs = 0;
@@ -9593,6 +9696,8 @@ function moveHeldItemWithController(){
     return carryPoint;
   }
   if(heldItem){
+    // updateTracking bounds the selected-hand cursor using the held radius, so
+    // transport can stay exactly attached to that logical controller point.
     heldItem.x = cursorX;
     heldItem.y = cursorY;
     return {x:cursorX, y:cursorY};
@@ -9616,7 +9721,10 @@ function publicLevel6HeldDisplayPoint(x,y,r,held=true){
   // changed, so every safety, movement and destination gate stays identical.
   const radius=Math.max(12,Number(r)||36);
   const direction=activeAffectedSide()==='right' ? -1 : 1;
-  return {x:x+direction*Math.min(62,radius*.78),y:y};
+  return clampInteractionPoint(
+    x+direction*Math.min(62,radius*.78),y,
+    gameCanvas.width,gameCanvas.height,radius
+  );
 }
 function level6PinchHandGeometry(x,y){
   const side=activeAffectedSide()==='left'?'left':'right';
@@ -9971,6 +10079,7 @@ function initGame(){
   resetToolPinchAdapt();
   resetPublicPatientVoiceGuideCycle(true);
   detectedGestureState = {mode:'', stable:false, candidate:false, candidateAt:0};
+  interactionTrackingPauseAt = 0;
   resetHandFrameAdmission();
   resetPublicGameWorkAdmission();
   cursorX = -1; cursorY = -1;
@@ -10104,12 +10213,17 @@ function initGame(){
 
 function resizeGameCanvas(){
   const stage = document.querySelector('.game-stage');
-  const w = stage.clientWidth  || window.innerWidth;
-  const h = stage.clientHeight || window.innerHeight;
+  const w = Math.round(stage.clientWidth  || window.innerWidth || 390);
+  const h = Math.round(stage.clientHeight || window.innerHeight || 844);
+  // Safari can emit resize events while its dynamic chrome settles without a
+  // real layout change. Reassigning either canvas dimension clears the backing
+  // store and presents as a one-frame object jump, so make identical resizes a
+  // strict no-op.
+  if(gameCanvas.width === w && gameCanvas.height === h) return;
   const oldVase = (typeof flowers !== 'undefined' && flowers.layout && flowers.layout.vase)
     ? {...flowers.layout.vase} : null;
-  gameCanvas.width  = w || 390;
-  gameCanvas.height = h || 844;
+  gameCanvas.width  = w;
+  gameCanvas.height = h;
   gameCtx = gameCanvas.getContext('2d');
   if(oldVase && typeof advCurrent !== 'undefined' && advCurrent === 'flowers' && flowers.active){
     const relative = flowers.placed.map(p=>({
@@ -10849,6 +10963,32 @@ function gameLoop(rafNow){
 const DETECTION_LOST_GRACE_MS = 750;  // edge miss: briefly retain the last stable cursor and gesture
 let lastDetectedAt = 0;
 let detectionHeldGrace = false; // 現正在 grace window 內（偵測 miss 但沒 reset）
+let interactionTrackingPauseAt = 0;
+function graspTrackingGraceEligible(res){
+  if(!res?.reason || res.reason === 'no-hand-detected') return true;
+  // Level 5 uses the whole-hand open/close gesture. Near the image edge,
+  // MediaPipe can briefly lose one fingertip while the palm remains visible.
+  // Treat that one public Level 5 case like a short detector miss; Level 6
+  // real-tool tasks remain fail-closed and must reacquire every landmark.
+  return !research.active && state.level === '5'
+    && res.reason === 'required-landmarks-missing';
+}
+function pauseInteractionTracking(now){
+  if(!interactionTrackingPauseAt) interactionTrackingPauseAt = now;
+}
+function resumeInteractionTracking(now){
+  if(!interactionTrackingPauseAt) return;
+  const pausedFor = Math.max(0, now - interactionTrackingPauseAt);
+  if(basicOpenStart) basicOpenStart += pausedFor;
+  if(basicGraspStart) basicGraspStart += pausedFor;
+  if(basicPostReleaseOpenStart) basicPostReleaseOpenStart += pausedFor;
+  if(releaseDwellStart) releaseDwellStart += pausedFor;
+  if(releaseDwellPauseAt) releaseDwellPauseAt += pausedFor;
+  if(releaseDwellLastOpenAt) releaseDwellLastOpenAt += pausedFor;
+  if(basicContactUntil) basicContactUntil += pausedFor;
+  if(detectedGestureState.candidateAt) detectedGestureState.candidateAt += pausedFor;
+  interactionTrackingPauseAt = 0;
+}
 
 // QA-only：以 hook 注入的虛擬手部位置（不需相機）
 let qaHand = null;   // { nx, ny, isGrasping }
@@ -10857,7 +10997,7 @@ let qaHand = null;   // { nx, ny, isGrasping }
 // deliberately exercise duplicate RAF handling.
 let qaFrameGeneration = 0;
 let lastAcceptedToolHandGeneration = -1;
-function qaToolHandResults(kind, gesture, side, missing, apertures, handednessConfidence){
+function qaToolHandResults(kind, gesture, side, missing, apertures, handednessConfidence, flexExtensions){
   const lm=Array.from({length:21},()=>({x:.5,y:.5,z:0}));
   lm[0]={x:.42,y:.72,z:0};lm[5]={x:.43,y:.55,z:0};lm[9]={x:.52,y:.53,z:0};lm[17]={x:.62,y:.58,z:0};
   if(kind==='chopsticks' && research.active){
@@ -10875,6 +11015,15 @@ function qaToolHandResults(kind, gesture, side, missing, apertures, handednessCo
       ? apertures.middle : (gesture==='closed'?.11:.22);
     lm[8]={x:lm[4].x+indexGap,y:lm[4].y,z:0};
     lm[12]={x:lm[4].x+middleGap,y:lm[4].y,z:0};
+    if(kind==='chopsticks' && flexExtensions){
+      const place=(mcp,tip,extension)=>{
+        const base=lm[mcp],wrist=lm[0];
+        lm[tip]={x:wrist.x+(base.x-wrist.x)*Number(extension),
+          y:wrist.y+(base.y-wrist.y)*Number(extension),z:0};
+      };
+      if(Number.isFinite(Number(flexExtensions.index))) place(5,8,flexExtensions.index);
+      if(Number.isFinite(Number(flexExtensions.middle))) place(9,12,flexExtensions.middle);
+    }
   }
   for(const index of Array.isArray(missing)?missing:[]) lm[index]={x:NaN,y:NaN,z:NaN};
   return {
@@ -10895,7 +11044,8 @@ function readHand(frame){
     lastAcceptedToolHandGeneration=generation;
   }
   if(state.qaMode){
-    if(!qaHand) return { detected:false };
+    if(!qaHand) return { detected:false, reason:'no-hand-detected' };
+    if(qaHand.reason) return {detected:false, reason:qaHand.reason};
     if(isLevel6ToolGestureTask()){
       if(qaHand.frameGeneration !== frame.generation){
         return {detected:false,reason:'hand-frame-stale'};
@@ -11736,6 +11886,9 @@ function updateTracking(frameOverride){
     ? updateLevel4ReachController(grossPose, level4WorldPose, frame)
     : level4Reach;
   const shoulderMotion = updateShoulderFlexionController(grossPose, level4WorldPose, frame);
+  // Exclude a detector dropout from every gesture/dwell clock. Resume before
+  // readHand(), because that function also owns the Level 6 hysteresis timer.
+  resumeInteractionTracking(now);
   // Levels 3–4 are driven by shoulder/elbow/wrist Pose only. Running the hand
   // model as well on every iPad frame halved the effective frame rate and made
   // the live game behave differently from the movement test.
@@ -11761,7 +11914,10 @@ function updateTracking(frameOverride){
     if(res.lm) lastHandLm = res.lm;
 
     const mapped = (res.lm && !state.qaMode)
-      ? cameraPointToCanvas(res.nx, res.ny, cw, ch)
+      ? cameraPointToCanvas(
+          res.nx, res.ny, cw, ch,
+          gameVideo.videoWidth || cw, gameVideo.videoHeight || ch
+        )
       : {x:clamp01(res.nx) * cw, y:clamp01(res.ny) * ch};
     if(isLevel3Tabletop()){
       mapped.x = cw * 0.50 + affectedSideSign() * level3Motion.progress * cw * 0.32;
@@ -11771,10 +11927,18 @@ function updateTracking(frameOverride){
       const visualProgress=clamp01(Number(shoulderMotion.progress)||0);
       mapped.y = ch * (0.80 - 0.48 * visualProgress);
     }
-    const stablePoint = stabiliseTrackingPoint(mapped.x, mapped.y);
+    const publicLevel5Realtime = !research.active && state.level === '5';
+    // Level 5 follows the live affected-hand position directly. Do not stack a
+    // three-frame median and EMA, which made the cursor visibly lag behind.
+    const stablePoint = publicLevel5Realtime
+      ? {x:mapped.x, y:mapped.y}
+      : stabiliseTrackingPoint(mapped.x, mapped.y);
     const px = stablePoint.x;
     const py = stablePoint.y;
-    if(dotEmaX < 0){ dotEmaX = px; dotEmaY = py; }
+    if(publicLevel5Realtime){
+      dotEmaX = px;
+      dotEmaY = py;
+    }else if(dotEmaX < 0){ dotEmaX = px; dotEmaY = py; }
     else{
       const dx = px - dotEmaX, dy = py - dotEmaY;
       const movement = Math.hypot(dx, dy);
@@ -11793,8 +11957,11 @@ function updateTracking(frameOverride){
         dotEmaY += alpha * dy;
       }
     }
-    cursorX = dotEmaX;
-    cursorY = dotEmaY;
+    const boundedPoint = clampInteractionPoint(
+      dotEmaX, dotEmaY, cw, ch, heldItem ? heldItem.r : 0
+    );
+    cursorX = boundedPoint.x;
+    cursorY = boundedPoint.y;
     posHistory.push({ t: now, x: cursorX, y: cursorY });
     // Phase-specific cursor path length (research metrics)
     if(research.active && research.phaseMetrics && lastPathX >= 0 && cursorX >= 0){
@@ -11812,12 +11979,15 @@ function updateTracking(frameOverride){
       // 進階活動（例如煮飯抓鬆冷飯）在 Level 6–7 亦需要知道手掌開／合
       isGrasping = !!res.isGrasping;
     }
-  } else if(!isLevel6ToolGestureTask() && cursorX >= 0 && (now - lastDetectedAt) < DETECTION_LOST_GRACE_MS){
+  } else if(isGraspStyleMode()
+    && graspTrackingGraceEligible(res)
+    && cursorX >= 0 && (now - lastDetectedAt) < DETECTION_LOST_GRACE_MS){
     // 偵測短暫 miss（2-3 幀）：保留上一幀的 cursor / grasp 狀態、不 reset EMA、不清 posHistory，
     // 因為90歲病人手到畫面邊邊時 MediaPipe 邊緣偵測不穩定。
     // handDetected 仍然維持 true，讓 downstream drop/pickup 邏輯可以完成
     handDetected = true;
     detectionHeldGrace = true;
+    pauseInteractionTracking(now);
     // cursor / dotEma / isGrasping 不變
   } else {
     // 真正失去偵測
@@ -11831,6 +12001,7 @@ function updateTracking(frameOverride){
     }
     handDetected = false;
     detectionHeldGrace = false;
+    interactionTrackingPauseAt = 0;
     if(!state.qaMode) lastHandLm = null;
     if(research.active && research.phaseMetrics) research.phaseMetrics.tracking_loss_ms += 1000 / 30;
     lastPathX = -1; lastPathY = -1; handOpenPrep = false;
@@ -11840,6 +12011,7 @@ function updateTracking(frameOverride){
     trackingPointHistory = [];
     isGrasping = false;
     detectedGestureState = {mode:'', stable:false, candidate:false, candidateAt:0};
+    if(isLevel6RealToolTask()) resetToolPinchAdapt();
     if(!heldItem) gripActive = false;
   }
   // Invoke every standalone game for every tracking pass, including stale or
@@ -12462,13 +12634,15 @@ function setActionPrompt(main, detail){
     detail = window.YCHLanguage.text(detail);
   }
   const patientMode = isPatientVisualCueMode();
+  const mustShowOpenArmPrompt = !research.active && isLevel6Chopsticks()
+    && main === '先張開筷子';
   const languageKey = document.documentElement.lang || (window.YCHLanguage?.isEnglish?.() ? 'en' : 'zh');
   const renderKey = JSON.stringify(patientMode
     ? [patientMode, languageKey, gestureCue, main,isLevel6()?activeAffectedSide():'']
     : [patientMode, languageKey, gestureCue, main, detail || '']);
   if(statusBar.dataset.actionRenderKey === renderKey) return;
   statusBar.dataset.actionRenderKey = renderKey;
-  if(patientMode){
+  if(patientMode && !mustShowOpenArmPrompt){
     // Spoken guidance and the large camera-tracked hand remain. The separate
     // right-middle gesture emoji/card duplicated the hand and obscured play.
     statusBar.innerHTML = '';
@@ -12515,10 +12689,13 @@ function graspPrompt(key){
   if(key === 'carry')   return '保持輕握';
   return '張開手放下';
 }
+function pickupArmPrompt(){
+  return isLevel6Chopsticks() ? '先張開筷子' : graspPrompt('prep');
+}
 function updateGraspLogic(){
   const publicLevel5 = !research.active && state.level === '5';
-  const PREP_OPEN_MS = research.active ? 220 : (publicLevel5 ? 70 : 100);
-  const GRASP_HOLD_MS = research.active ? 360 : (publicLevel5 ? 90 : 120);
+  const PREP_OPEN_MS = research.active ? 220 : (publicLevel5 ? 35 : 100);
+  const GRASP_HOLD_MS = research.active ? 360 : (publicLevel5 ? 45 : 120);
   const DROP_DWELL_MS = research.active ? 650 : 220;
   const RELEASE_CONTINUITY_GRACE_MS = research.active ? 0 : 100;
   const CONTACT_GRACE_MS = research.active ? 450 : (publicLevel5 ? 900 : 700);
@@ -12536,19 +12713,16 @@ function updateGraspLogic(){
       trackingDetail
     );
     basicOpenStart = 0; basicGraspStart = 0; basicGraspCandidate = '';
+    basicGraspArmed = false;
     if(basicPostReleaseOpenStart) basicPostReleaseOpenStart = nowMs();
     basicContactCandidate = ''; basicContactUntil = 0;
     return;
   }
   if(detectionHeldGrace){
     // Keep the last cursor visible through a brief detector miss, but never let
-    // stale landmarks accrue pickup or release dwell. In particular, the 750 ms
-    // tracking grace is longer than Level 5's 650 ms drop dwell.
-    basicOpenStart = 0; basicGraspStart = 0; basicGraspCandidate = '';
-    basicGraspArmed = false; basicContactCandidate = ''; basicContactUntil = 0;
-    if(basicPostReleaseOpenStart) basicPostReleaseOpenStart = nowMs();
-    releaseDwellStart = 0; releaseDwellPlate = null;
-    releaseDwellPauseAt = 0; releaseDwellLastOpenAt = 0;
+    // stale landmarks accrue pickup or release dwell. The clocks are paused in
+    // updateTracking(), preserving an already-proven open-before-close arm
+    // without turning missing frames into evidence for either gesture.
     setActionPrompt('鏡頭對準', '患手掌心及指尖入鏡');
     return;
   }
@@ -12595,7 +12769,8 @@ function updateGraspLogic(){
     if(!overFood){
       basicOpenStart = 0; basicGraspStart = 0; basicGraspCandidate = ''; basicGraspArmed = false;
       basicContactCandidate = ''; basicContactUntil = 0;
-      setActionPrompt(graspPrompt('prep'), '移到' + getTheme().itemWord + '上');
+      setActionPrompt(basicGraspArmed ? graspPrompt('hold') : pickupArmPrompt(),
+        basicGraspArmed ? graspPrompt('carry') : '穩定張開後再合埋夾起');
     } else if(!isGrasping && openPrep){
       basicGraspStart = 0; basicGraspCandidate = nearest.id;
       if(!basicOpenStart) basicOpenStart = now;
@@ -12612,7 +12787,9 @@ function updateGraspLogic(){
       setActionPrompt(graspPrompt('hold'), '保持指定手指動作');
     } else if(!basicGraspArmed || basicGraspCandidate !== nearest.id || !isGrasping){
       basicOpenStart = 0; basicGraspStart = 0; basicGraspArmed = false;
-      setActionPrompt(graspPrompt('prep'), isLevel67GestureMode() ? graspPrompt('hold') : '再輕輕合手');
+      setActionPrompt(pickupArmPrompt(), isLevel6Chopsticks()
+        ? '穩定張開後再合埋夾起'
+        : (isLevel67GestureMode() ? graspPrompt('hold') : '再輕輕合手'));
     } else {
       if(!basicGraspStart){
         basicGraspStart = now;
@@ -14391,6 +14568,7 @@ const picker = {
     this.pct = 0;
     if(cursorX < 0 || !handDetected){
       this.hoverId = null; this.openStart = 0; this.graspStart = 0; this.graspId = null;
+      this.armed = false;
       if(this.postReleaseOpenStart) this.postReleaseOpenStart = nowMs();
       return null;
     }
@@ -14482,6 +14660,9 @@ const picker = {
         if(!this.openStart) this.openStart = now;
         if(now - this.openStart >= advancedGraspArmMs()) this.armed = true;
       }
+      if(isGraspStyleMode() && !this.armed && isLevel6Chopsticks()){
+        setActionPrompt('先張開筷子', '穩定張開後再合埋夾起');
+      }
       return null;
     }
     this.hoverId = best.id;
@@ -14499,7 +14680,10 @@ const picker = {
         return null;
       }
       this.openStart = 0;
-      if(!this.armed) return null;
+      if(!this.armed){
+        if(isLevel6Chopsticks()) setActionPrompt('先張開筷子', '穩定張開後再合埋夾起');
+        return null;
+      }
       if(this.graspId !== best.id){ this.graspId = best.id; this.graspStart = now; }
       const holdMs = advancedGraspHoldMs();
       this.pct = Math.min(1, (now - this.graspStart) / holdMs);
@@ -14544,6 +14728,7 @@ const carrier = {
     this.pct = 0;
     if(cursorX < 0 || !handDetected){
       this.openStart=0; this.graspStart=0; this.graspId=null;
+      this.armed=false;
       if(this.postReleaseOpenStart) this.postReleaseOpenStart=nowMs();
       return ev;
     }
@@ -14581,6 +14766,9 @@ const carrier = {
           if(!this.openStart) this.openStart = now;
           if(now - this.openStart >= advancedGraspArmMs()) this.armed = true;
         }
+        if(isGraspStyleMode() && !this.armed && isLevel6Chopsticks()){
+          setActionPrompt('先張開筷子', '穩定張開後再合埋夾起');
+        }
         return ev;
       }
       if(isGraspStyleMode()){
@@ -14593,7 +14781,10 @@ const carrier = {
           return ev;
         }
         this.openStart = 0;
-        if(!this.armed) return ev;
+        if(!this.armed){
+          if(isLevel6Chopsticks()) setActionPrompt('先張開筷子', '穩定張開後再合埋夾起');
+          return ev;
+        }
         if(this.graspId !== best.id){ this.graspId = best.id; this.graspStart = now; }
         const holdMs = advancedGraspHoldMs();
         this.pct = Math.min(1, (now - this.graspStart) / holdMs);
@@ -18105,9 +18296,11 @@ window.__qa = {
         spec.handSide||activeAffectedSide(),
         spec.missingHand,
         spec.apertures,
-        Number(spec.handednessConfidence)
+        Number(spec.handednessConfidence),
+        spec.flexExtensions
       ),
     };
+    if(spec.noHand) qaHand.results={landmarks:[],handednesses:[]};
     if(Number.isFinite(Number(spec.stepMs))) timeOffsetMs+=Number(spec.stepMs);
     return this.setLevel4Pose(pose);
   },
@@ -18123,10 +18316,21 @@ window.__qa = {
       score,correctCount,grabCount,
       carrier:{heldId:carrier.heldId,hoverId:carrier.hoverId,armed:carrier.armed,
         openStart:carrier.openStart,graspStart:carrier.graspStart,graspId:carrier.graspId},
+      basic:{armed:basicGraspArmed,openStart:basicOpenStart,
+        graspStart:basicGraspStart,graspCandidate:basicGraspCandidate},
       gestureStabilizer:{...detectedGestureState},
       cursor:{x:cursorX,y:cursorY},
+      prompt:document.getElementById('statusBar')?.textContent?.trim()||'',
+      personalToolPinch:state.personalToolPinch?{...state.personalToolPinch}:null,
+      personalChopstickFlex:state.personalChopstickFlex?{...state.personalChopstickFlex}:null,
       shoulder:shoulderFlexionController?.snapshot()||null,
     };
+  },
+  setLevel6PersonalToolCalibration(spec={}){
+    state.personalToolPinch=spec.pinch?{...spec.pinch}:null;
+    state.personalChopstickFlex=spec.flex?{...spec.flex}:null;
+    resetToolPinchAdapt();
+    return this.level6ToolState();
   },
   shoulderFlexionState(){
     return shoulderFlexionController ? {
@@ -18249,13 +18453,22 @@ window.__qa = {
     if(poseLm) qaHand.poseLm = poseLm;
     return true;
   },
+  setTrackingMiss(reason){
+    const previous = qaHand || {nx:.5, ny:.5, isGrasping:false, isOpenPrep:true};
+    qaHand = {...previous, reason:String(reason || 'no-hand-detected')};
+    return true;
+  },
   clearHand(){ qaHand = null; return true; },
   snapCursor(){ dotEmaX = -1; dotEmaY = -1; posHistory = []; trackingPointHistory = []; return true; },
-  trackingProbe(nx, ny, samples){
+  trackingProbe(nx, ny, samples, sourceSize){
     trackingPointHistory = [];
+    const sourceWidth=Number(sourceSize?.width)||gameCanvas.width;
+    const sourceHeight=Number(sourceSize?.height)||gameCanvas.height;
     const points = (samples && samples.length ? samples : [[nx, ny]]).map(([x, y]) =>
       {
-        const mapped = cameraPointToCanvas(x, y, gameCanvas.width, gameCanvas.height);
+        const mapped = cameraPointToCanvas(
+          x, y, gameCanvas.width, gameCanvas.height, sourceWidth, sourceHeight
+        );
         return stabiliseTrackingPoint(mapped.x, mapped.y);
       }
     );
@@ -18411,6 +18624,7 @@ window.__qa = {
     score, correctCount, grabCount, wrongCount:totalWrong, timeLeft,
     running:!!state.running, handDetected, detectionHeldGrace,
     held: heldItem ? heldItem.label : null,
+    cursor:{x:cursorX,y:cursorY},
     paused: !!state.paused,
     safetyBlocking: isSafetyBlocking(),
     safety: JSON.parse(JSON.stringify(sessionSafety)),
@@ -19349,7 +19563,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v90-20260902-dimsum-flower-chopstick-fix";
+  const LEVEL_APP_BUILD = "v95-20260902-level5-realtime-index-chopsticks";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 
