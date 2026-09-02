@@ -75,23 +75,45 @@
     };
     return [arm.shoulder,arm.elbow,arm.otherShoulder].every(pointUsable) ? arm : null;
   }
-  function angleBetween(ax, ay, bx, by) {
-    const an=Math.hypot(ax,ay), bn=Math.hypot(bx,by);
+  function angleBetween(ax, ay, bx, by, bLenOverride) {
+    const an=Math.hypot(ax,ay);
+    const bn=Number.isFinite(bLenOverride) && bLenOverride>1e-5 ? bLenOverride : Math.hypot(bx,by);
     if (an < 1e-5 || bn < 1e-5) return null;
     return Math.acos(Math.max(-1,Math.min(1,(ax*bx+ay*by)/(an*bn))))*180/Math.PI;
   }
-  // Angle of the upper arm away from the downward trunk axis. A side/oblique
-  // camera is required; the value is an on-screen training estimate, not a
-  // clinical goniometric measurement.
-  function shoulderFlexion2D(arm, aspect) {
+  // Aspect-corrected 2D upper-arm vector (shoulder -> elbow), shared by the
+  // angle calculation and by the calibrated reference-length capture.
+  function armVector2D(arm, aspect) {
+    const a=Number.isFinite(aspect) && aspect>.25 && aspect<4 ? aspect : 1;
+    return {ux:(arm.elbow.x-arm.shoulder.x)*a, uy:arm.elbow.y-arm.shoulder.y};
+  }
+  // Angle of the upper arm away from the downward trunk axis. The value is an
+  // on-screen training estimate, not a clinical goniometric measurement.
+  //
+  // refArmLen (optional): the patient's own upper-arm image length captured
+  // once at their calibrated rest pose. A bedside tablet is typically
+  // front-facing (the patient must see the screen to follow the game), so a
+  // genuine forward shoulder raise is mostly a depth/toward-camera motion.
+  // That foreshortens the on-screen upper-arm vector as flexion approaches
+  // ~90 degrees, so normalizing the angle by the *live* (shrinking, noisy)
+  // vector length makes the direction ratio degenerate exactly in the
+  // clinically important 90+ degree range -- producing unstable mid-range
+  // readings (a true >90 degree raise reporting as only ~40 degrees).
+  // Normalizing by the fixed rest-pose length instead keeps the angle
+  // proportional to true elevation for any camera placement (front,
+  // oblique, or side), because it is the vertical component of a
+  // fixed-length rigid segment's projection that tracks true elevation, not
+  // the segment's apparent on-screen length. When refArmLen is unavailable
+  // (not yet calibrated, or too small to trust) this falls back to the
+  // original live-magnitude normalization unchanged.
+  function shoulderFlexion2D(arm, aspect, refArmLen) {
     if (!arm || !pointUsable(arm.elbow)) return null;
     const a=Number.isFinite(aspect) && aspect>.25 && aspect<4 ? aspect : 1;
     const hip=pointUsable(arm.hip) ? arm.hip : null;
     const tx=hip ? (hip.x-arm.shoulder.x)*a : 0;
     const ty=hip ? hip.y-arm.shoulder.y : 1;
-    const ux=(arm.elbow.x-arm.shoulder.x)*a;
-    const uy=arm.elbow.y-arm.shoulder.y;
-    return angleBetween(tx,ty,ux,uy);
+    const {ux,uy}=armVector2D(arm,aspect);
+    return angleBetween(tx,ty,ux,uy,refArmLen);
   }
   function shoulderFlexionWorld(worldLm,side) {
     const left=side==='left',shoulder=worldLm?.[left?11:12],elbow=worldLm?.[left?13:14],hip=worldLm?.[left?23:24];
@@ -187,7 +209,7 @@
         lastGeneration:null,
         exerciseMode:normalizeExerciseMode(state.exerciseMode||(options&&options.exerciseMode)),
         trackingTarget:'selected-anatomical-affected-arm',unaffectedHandFallback:false,
-        preSamples:[],anchor:null,samples:[],baseline:null,maximum:null,trainingMin:null,trainingMax:null,
+        preSamples:[],anchor:null,samples:[],baseline:null,refArmLen:null,maximum:null,trainingMin:null,trainingMax:null,
         selectedStartDeg:0,
         selectedTargetDeg:Number(targetDeg)||defaultTarget(level||'3'),peakEstimatedAngle:null,
         targetReached:false,repetitions:0,cycleArmed:false,targetStableFrames:0,returnStableFrames:0,
@@ -248,7 +270,9 @@
       // assistance only and must never become a tracking fallback or target.
       const arm=selectedArm(input.lm,state.side);
       if (!arm) { state.framingReady=false; failClosed('selected-arm-lost'); return snapshot(); }
-      const imageAngle=shoulderFlexion2D(arm,input.imageAspect);
+      const armVecNow=armVector2D(arm,input.imageAspect);
+      const armLenNow=Math.hypot(armVecNow.ux,armVecNow.uy);
+      const imageAngle=shoulderFlexion2D(arm,input.imageAspect,state.refArmLen);
       const worldAngle=shoulderFlexionWorld(input.worldLm,state.side);
       // The front/oblique camera's world model can report a large person- and
       // viewpoint-dependent offset. Use the visible selected upper-arm angle
@@ -286,7 +310,7 @@
       if (state.trunkLeanFrames>=config.safeguardStableFrames) {
         state.compensation='trunk-lean'; failClosed('movement-safeguard-trunk-lean'); return snapshot();
       }
-      state.samples.push({angle,generation});
+      state.samples.push({angle,generation,armLen:armLenNow});
       while(state.samples.length>config.windowFrames) state.samples.shift();
       const stable=stability(state.samples,config);
       if(state.phase==='capture-baseline' && stable.stable) {
@@ -294,6 +318,13 @@
         // measured an anatomical 0°. A stable arm-by-side pose may appear as
         // 20–30° in a front/oblique tablet view.
         state.baseline=stable.median;
+        // Lock in this rest pose's own on-screen upper-arm length as the
+        // normalization reference for all subsequent frames (see the long
+        // comment on shoulderFlexion2D). The rest pose is always the
+        // well-conditioned, non-foreshortened end of the range, so it is a
+        // reliable one-time reference regardless of camera placement.
+        const refCandidates=state.samples.map(s=>s.armLen).filter(v=>Number.isFinite(v)&&v>1e-5);
+        state.refArmLen=refCandidates.length ? median(refCandidates) : armLenNow;
         state.samples=[]; state.phase='await-start';
         state.trainingMin=state.selectedStartDeg;
         state.trainingMax=state.selectedTargetDeg;
@@ -426,7 +457,7 @@
         exerciseMode:state.exerciseMode,trackingTarget:state.trackingTarget,
         unaffectedHandFallback:state.unaffectedHandFallback,
         rawAngle:state.rawAngle,worldAngle:state.worldAngle,filteredAngle:state.filteredAngle,
-        estimatedAngle:state.estimatedAngle,baseline:state.baseline,maximum:state.maximum,
+        estimatedAngle:state.estimatedAngle,baseline:state.baseline,refArmLen:state.refArmLen,maximum:state.maximum,
         observedTargetAngle:state.observedTargetAngle,prescribedExcursionDeg:state.prescribedExcursionDeg,
         selectedStartDeg:state.selectedStartDeg,selectedTargetDeg:state.selectedTargetDeg,peakEstimatedAngle:state.peakEstimatedAngle,
         targetReached:state.targetReached,repetitions:state.repetitions,
@@ -516,7 +547,7 @@
     return {config,state,reset,setTarget,setHoldDuration,setExerciseMode,startChoices,update,snapshot,guidance,toText};
   }
 
-  const api={CONFIG,createController,exerciseModeAvailable,shoulderFlexionLevel,selectedArm,shoulderFlexion2D,shoulderFlexionWorld,torsoSignature,clamp01,median};
+  const api={CONFIG,createController,exerciseModeAvailable,shoulderFlexionLevel,selectedArm,shoulderFlexion2D,shoulderFlexionWorld,torsoSignature,armVector2D,clamp01,median};
   global.ShoulderFlexionController=api;
   if(typeof module!=='undefined'&&module.exports) module.exports=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

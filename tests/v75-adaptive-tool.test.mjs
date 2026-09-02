@@ -21,7 +21,7 @@ const publicSource = readFileSync(path.join(root, 'index.html'), 'utf8');
 
 test('adaptive tracker exists with fail-closed movement gates', () => {
   assert.match(publicSource, /const TOOL_ADAPT_MIN_SAMPLES = 90;/);
-  assert.match(publicSource, /const TOOL_ADAPT_MIN_SPAN = 0\.030;/);
+  assert.match(publicSource, /const TOOL_ADAPT_MIN_SPAN = 0\.020;/);
   assert.match(publicSource, /const TOOL_HAND_TOO_CLOSE_SCALE = 0\.55;/);
   // insufficient movement → thresholds stay null (fail closed to defaults)
   assert.match(publicSource, /toolPinchAdapt\.thresholds = null;\s*return;/);

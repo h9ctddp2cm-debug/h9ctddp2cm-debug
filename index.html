@@ -1287,10 +1287,6 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
       <h2 class="service-title">中風上肢訓練</h2>
       <span class="title-rule" aria-hidden="true"></span>
       <p class="lead">選擇 Level</p>
-      <p style="max-width:680px;margin:8px auto 0;font-weight:750;color:#5a6663;">
-        必須由職業治療師選擇 FTHUE Level；本網站不作診斷或自動分級<br>
-        <span lang="en">OT selection is required. This website does not diagnose or automatically assign FTHUE levels.</span>
-      </p>
     </div>
     <div class="level-grid">
       <article class="level-card">
@@ -1937,8 +1933,6 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
       </div>
       <div class="recording-indicator" id="recordingIndicator" role="status" aria-live="polite"
         data-testid="indicator-silent-recording">無聲錄影中 · 不錄頭部</div>
-      <div class="trial-mode-indicator" id="trialModeIndicator" role="status" aria-live="polite"
-        data-testid="indicator-trial-mode">試玩 · 不錄影／不提示</div>
       <div class="level4-calib" id="level4CalibBar" role="group" aria-label="Level 4 校準"
         data-testid="panel-level4-calibration">
         <div class="level4-auto-action" id="level4AutoAction" hidden>
@@ -5362,9 +5356,6 @@ function beginSessionMode(levelId, mode){
   research.active = false;
   selectLevel(levelId);
   adaptiveBeginSession(levelId, state.sessionMode);
-  document.getElementById('libraryLevelLabel').textContent += isTrialMode()
-    ? ' · 試玩 · 不錄影／不提示'
-    : ' · 訓練 · 錄影及姿勢提示';
 }
 document.getElementById('btnLevel2').addEventListener('click', ()=> beginSessionMode('2', 'training'));
 document.getElementById('btnLevel4').addEventListener('click', ()=> beginSessionMode('4', 'training'));
@@ -7366,9 +7357,9 @@ function computePegPressState(lm, isPressingPrev){
    Hysteresis prevents flicker: a closed pinch must cross PINCH_ENTER, and it is only
    released once the fingers reopen past PINCH_EXIT. This detects the pinch aperture only;
    it is not a force measurement. */
-const PINCH_ENTER = 0.52;   // tolerant fallback; personal calibration is preferred
-const PINCH_EXIT  = 0.66;   // reopen beyond this point to release
-const PINCH_OPEN  = 0.72;   // fingers clearly separated: valid preparation for a new pinch
+const PINCH_ENTER = 0.58;   // tolerant fallback; personal calibration is preferred
+const PINCH_EXIT  = 0.62;   // reopen beyond this point to release
+const PINCH_OPEN  = 0.66;   // fingers clearly separated: valid preparation for a new pinch
 function computePinchState(lm, isPinchingPrev){
   if(!hasFiniteHandLandmarks(lm, [0,4,5,8,9,12,17])){
     return { isPinching:false, ratio:null, isSeparated:false, score:0, valid:false };
@@ -7433,7 +7424,7 @@ function computePinchState(lm, isPinchingPrev){
    longer blocks release. Camera-observed hand motion only: the software does
    not identify the physical tool, measure force, or make goniometric claims. */
 const TOOL_PINCH_DEFAULTS = {
-  enter:0.52, nearExit:0.58, farExit:0.62, nearOpen:0.62, farOpen:0.68, scoreOpen:0.70,
+  enter:0.58, nearExit:0.60, farExit:0.63, nearOpen:0.61, farOpen:0.64, scoreOpen:0.62,
 };
 /* v75: in-game adaptive tool aperture. Bedside reports (30 Aug): with the real
    peg/chopsticks in a tripod grip some hands can NEVER reach the default (or a
@@ -7448,7 +7439,7 @@ const TOOL_PINCH_DEFAULTS = {
    dual-digit rule still mean a single drifting landmark can never release an
    item. Camera-observed motion only: no tool identification, no force. */
 const TOOL_ADAPT_MIN_SAMPLES = 90;
-const TOOL_ADAPT_MIN_SPAN = 0.030;
+const TOOL_ADAPT_MIN_SPAN = 0.020;
 const TOOL_ADAPT_MAX_SAMPLES = 300;
 const TOOL_HAND_TOO_CLOSE_SCALE = 0.55;
 const toolPinchAdapt = { near:[], far:[], combo:[], counter:0, thresholds:null };
@@ -7458,7 +7449,7 @@ const toolPinchAdapt = { near:[], far:[], combo:[], counter:0, thresholds:null }
    Entry/release always requires BOTH fingers, and adaptive thresholds remain
    unavailable until a real flex/reopen span has been observed. */
 const CHOPSTICK_FLEX_ADAPT_MIN_SAMPLES = 90;
-const CHOPSTICK_FLEX_ADAPT_MIN_SPAN = 0.080;
+const CHOPSTICK_FLEX_ADAPT_MIN_SPAN = 0.045;
 const chopstickFlexAdapt = { index:[], middle:[], counter:0, thresholds:null };
 let lastToolPinchLive = null; // {ratio, nearRatio, farRatio, scale, at}
 function resetToolPinchAdapt(){
@@ -7885,12 +7876,12 @@ function startCalibLoop(){
             const changedEnough = isPinchMode()
               // A clinically appropriate light pinch may use only part of the
               // available aperture. Do not require a near-tip-to-tip closure.
-              ? value <= openMean - Math.max(0.020, openMean * 0.035)
+              ? value <= openMean - Math.max(0.012, openMean * 0.020)
               : isPegMode()
                 // Pressing a low-resistance peg produces much less whole-hand
                 // change than a grasp. Accept a small but sustained difference.
-                ? value >= openMean + Math.max(0.006, openMean * 0.015)
-                : value >= openMean + 0.035;
+                ? value >= openMean + Math.max(0.004, openMean * 0.010)
+                : value >= openMean + 0.015;
             const previousTick = c.closedTickAt;
             c.closedTickAt = now;
             if(changedEnough){
@@ -7920,10 +7911,10 @@ function startCalibLoop(){
               // closed or transitioning hand. Recapture the open baseline
               // instead of leaving the light-close criterion unreachable.
               const moreOpenThanBaseline = isPinchMode()
-                ? value >= openMean + Math.max(0.020, openMean * 0.035)
+                ? value >= openMean + Math.max(0.012, openMean * 0.020)
                 : isPegMode()
-                  ? value <= openMean - Math.max(0.006, openMean * 0.015)
-                  : value <= openMean - 0.035;
+                  ? value <= openMean - Math.max(0.004, openMean * 0.010)
+                  : value <= openMean - 0.015;
               if(moreOpenThanBaseline){
                 const moreOpenDelta = Number.isFinite(previousTick) && previousTick > 0
                   ? Math.min(120, now - previousTick) : 0;
@@ -13919,7 +13910,7 @@ function buildAdvDom(){
 .adv-note{position:absolute;left:50%;transform:translateX(-50%);bottom:64px;z-index:12;
   width:min(560px,62%);background:rgba(24,24,24,0.76);color:#fff;border-radius:10px;
   padding:5px 9px;font-size:10px;line-height:1.35;text-align:center;pointer-events:none;display:none!important;}
-.adv-toast{position:absolute;left:50%;transform:translateX(-50%) translateY(8px);bottom:104px;z-index:44;
+.adv-toast{position:absolute;left:50%;transform:translateX(-50%) translateY(-8px);top:126px;z-index:44;
   background:rgba(10,125,117,0.96);color:#fff;padding:12px 20px;border-radius:14px;
   font-size:18px;font-weight:800;box-shadow:0 6px 20px rgba(0,0,0,0.3);opacity:0;
   transition:opacity .2s ease, transform .2s ease;pointer-events:none;text-align:center;max-width:90%;}
@@ -16250,12 +16241,22 @@ function laundrySetup(){
   const cols = Math.min(2, n);
   const rows = Math.ceil(n / cols);
   const sideHalf = isLevel4Tabletop() ? cw * 0.66 : cw * 0.48;
-  const bw = patientLarge
+  let bw = patientLarge
     ? Math.min(narrow ? 270 : 350, cw/cols*.52)
     : Math.min(narrow ? 176 : 230, sideHalf / cols - 10);
   let bh = patientLarge ? Math.min(ch*.27,bw*.72)
     : Math.min(narrow ? ch*0.12 : ch*0.18, bw*0.72);
-  if(level5VerticalFlow && rows > 1) bh = Math.min(bh, ch*.14);
+  if(level5VerticalFlow && rows > 1){
+    bh = Math.min(bh, ch*.14);
+    // basket_*.png is wider than tall (300x198) and drawSprite derives the
+    // drawn height from bw alone (not bh) — so when baskets stack in rows
+    // we must also shrink bw, otherwise the rendered image overflows its
+    // row band and visually overlaps the basket above/below it (reported:
+    // red/yellow and blue/green baskets overlapping each other).
+    const BASKET_IMG_ASPECT = 198 / 300;
+    const maxBwForRow = (bh * 0.80) / (0.92 * BASKET_IMG_ASPECT);
+    bw = Math.min(bw, maxBwForRow);
+  }
   const basketTop = ch*.25;
   const basketRowGap = bh + Math.max(12,ch*.02);
   laundry.baskets = laundry.colors.map((c, i)=>({
@@ -19214,7 +19215,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v83-20260902-positive-reward-latch";
+  const LEVEL_APP_BUILD = "v84-20260902-grasp-calib-front-shoulder";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

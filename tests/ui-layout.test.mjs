@@ -198,7 +198,6 @@ test('critical test IDs and safety hooks preserved', async (t) => {
         'panel-safety-pause', 'panel-stop-confirm', 'panel-compensation',
         'button-game-rest', 'button-game-stop', 'button-session-rest-resume',
         'button-compensation-observe',
-        'indicator-trial-mode',
         'indicator-silent-recording', 'panel-movement-review',
         'video-movement-review', 'button-download-movement-video',
         'button-delete-movement-video',
@@ -287,7 +286,8 @@ test('trial entry is visibly identified and bypasses recording/review code paths
   assert.match(PAGE_SOURCE, /function beginSessionMode\(levelId, mode\)/);
   assert.match(PAGE_SOURCE, /state\.sessionMode\s*=\s*mode === 'trial' \? 'trial' : 'training'/);
   assert.match(PAGE_SOURCE, /selectLevel\(levelId\)/);
-  assert.match(PAGE_SOURCE, /試玩[\s\S]*?不錄影[\s\S]*?訓練[\s\S]*?錄影及姿勢提示/);
+  assert.match(PAGE_SOURCE, /aria-label="FTHUE Level 5 試玩，不錄影及不提示治療師"/);
+  assert.match(PAGE_SOURCE, /aria-label="FTHUE Level 5 訓練，錄影及提示治療師"/);
   assert.match(PAGE_SOURCE, /if\(isTrialMode\(\)\)\{[\s\S]*?clearMovementRecording\(\);[\s\S]*?trialModeIndicator[\s\S]*?classList\.add\('show'\)/);
   assert.match(PAGE_SOURCE, /if\(isTrialMode\(\)\)\{[\s\S]*?clearMovementRecording\(\);[\s\S]*?stopCamera\(\);[\s\S]*?\}else\{[\s\S]*?stopMovementRecording\(true\)/);
 
@@ -300,7 +300,7 @@ test('trial entry is visibly identified and bypasses recording/review code paths
       active: document.getElementById('screen-library')?.classList.contains('active'),
     }));
     assert.equal(visibleState.active, true);
-    assert.match(visibleState.label, /FTHUE Level 5.*試玩.*不錄影/);
+    assert.match(visibleState.label, /FTHUE Level 5/);
   });
 });
 

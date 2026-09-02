@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v83-20260902-positive-reward-latch";
+const CACHE_VERSION = "fthue-rehab-v84-20260902-grasp-calib-front-shoulder";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

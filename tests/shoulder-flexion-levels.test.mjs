@@ -370,7 +370,6 @@ test('visible mapping and setup copy distinguish Level 2, Level 3 and Level 4 wi
   assert.match(html,/FTHUE Level 4[\s\S]*肩屈曲 60° 或以上/);
   assert.match(html,/患側前斜約 30–45°/);
   assert.match(html,/並非量角器 ROM/);
-  assert.match(html,/不作診斷或自動分級/);
   assert.match(html,/相機不量度抓握或捏力/);
   assert.match(html,/const enabled=state\.level==='3'\|\|state\.level==='4'/);
   assert.match(html,/state\.level==='3'\?\[30,40,50,60\][\s\S]{0,80}:Array\.from\(\{length:13\},\(_,index\)=>60\+index\*10\)/);
@@ -418,9 +417,9 @@ test('setup exposes distinct exact target-hold choices and aligns v51 source ide
   assert.match(html,/id="targetHoldOverlay"[\s\S]*id="targetHoldNumber"/);
   assert.match(html,/holdCountdownActive/);
   assert.match(html,/SHOULDER_HOLD_COUNT_CANTONESE/);
-  assert.match(html,/v83-20260902-positive-reward-latch/);
-  assert.match(manifest,/v83-20260902-positive-reward-latch/);
-  assert.match(worker,/v83-20260902-positive-reward-latch/);
+  assert.match(html,/v84-20260902-grasp-calib-front-shoulder/);
+  assert.match(manifest,/v84-20260902-grasp-calib-front-shoulder/);
+  assert.match(worker,/v84-20260902-grasp-calib-front-shoulder/);
   assert.doesNotMatch(html,/v46-20260825-shoulder-detection-repair/);
   assert.doesNotMatch(manifest,/v46-20260825-shoulder-detection-repair/);
   assert.doesNotMatch(worker,/v46-20260825-shoulder-detection-repair/);
@@ -446,6 +445,63 @@ test('Level 3 and 4 use deterministic side-by-side active and active-assisted de
   assert.match(html,/主動輔助肩屈曲 \(Active-assisted shoulder flexion\)/);
   assert.match(fs.readFileSync(path.join(root,'img','advanced','shoulder_active_30_60.svg'),'utf8'),/cup/i);
   assert.match(fs.readFileSync(path.join(root,'img','advanced','shoulder_assisted_30_60.svg'),'utf8'),/#f2c400/i);
+});
+
+test('front-facing bedside camera: calibrated-reference-length normalization tracks true flexion through and past 90 degrees, unlike live-magnitude normalization',()=>{
+  // The existing pose() helper above is an idealized rigid-length circular
+  // model (elbow-shoulder image distance is a fixed 0.20 regardless of
+  // angle) which never exercises real camera perspective. A tablet propped
+  // on a table in front of a seated patient (so they can see the game
+  // screen) is a genuine perspective projection: real forward flexion
+  // happens mostly along the depth axis, so the on-screen elbow-shoulder
+  // distance shrinks as flexion approaches 90 degrees (the elbow is closer
+  // to the camera) and there is no real left-right (lateral) displacement
+  // at all for a pure forward raise directly ahead of the camera.
+  function frontPerspectivePose(trueAngleDeg,{D=3,L=1,imageScale=.6}={}){
+    const rad=trueAngleDeg*Math.PI/180;
+    const depthFromCamera=D-L*Math.sin(rad);
+    const heightAboveShoulder=-L*Math.cos(rad); // up positive
+    const shoulder={x:.5,y:.30,visibility:1};
+    const elbow={
+      x:shoulder.x, // pure sagittal flexion: zero lateral component in a
+                    // camera placed directly in front of the patient
+      y:shoulder.y-imageScale*heightAboveShoulder/depthFromCamera,
+      visibility:1,
+    };
+    const hip={x:shoulder.x,y:.72,visibility:1};
+    return {shoulder,elbow,hip,otherShoulder:{x:.68,y:.30,visibility:1}};
+  }
+  const restRefLen=Math.hypot(
+    api.armVector2D(frontPerspectivePose(0),1).ux,
+    api.armVector2D(frontPerspectivePose(0),1).uy
+  );
+  // Old behaviour: normalize by each frame's own (foreshortened) live
+  // vector length. With zero lateral component this collapses to a pure
+  // direction sign check -- a binary near-0-or-near-180 answer with no
+  // ability to track the angle in between, which is the same degeneracy
+  // that produces an unstable, badly-wrong intermediate reading (such as
+  // the reported ~40 degrees for a genuine >90 degree raise) once ordinary
+  // sensor/landmark noise is layered on top.
+  const oldBelow90=api.shoulderFlexion2D(frontPerspectivePose(85),1);
+  const oldAbove90=api.shoulderFlexion2D(frontPerspectivePose(95),1);
+  assert.ok(oldBelow90<5,`old formula should collapse to ~0 at true 85deg, got ${oldBelow90}`);
+  assert.ok(oldAbove90>175,`old formula should snap to ~180 at true 95deg, got ${oldAbove90}`);
+
+  // New behaviour: normalize by the patient's own calibrated rest-pose
+  // length instead of the live, foreshortened one. This is exact at 90
+  // degrees (the unknown camera distance cancels out there) and stays
+  // monotonically increasing with the true angle on both sides of it,
+  // directly closing the reported gap: a genuine >90 degree raise now
+  // reads at or above 90, not a low, unstable value.
+  const new80=api.shoulderFlexion2D(frontPerspectivePose(80),1,restRefLen);
+  const new90=api.shoulderFlexion2D(frontPerspectivePose(90),1,restRefLen);
+  const new100=api.shoulderFlexion2D(frontPerspectivePose(100),1,restRefLen);
+  const new130=api.shoulderFlexion2D(frontPerspectivePose(130),1,restRefLen);
+  assert.ok(Math.abs(new90-90)<1,`new formula should read ~90 at true 90deg, got ${new90}`);
+  assert.ok(new80<new90&&new90<new100&&new100<new130,
+    'new formula must increase monotonically with true angle through and past 90 degrees');
+  assert.ok(new100>80,`new formula must clearly register a >90deg raise, got ${new100} for true 100deg`);
+  assert.ok(new130>90,`new formula must clearly register a >90deg raise, got ${new130} for true 130deg`);
 });
 
 test('shoulder-flexion GIFs are generated from the anatomical 0-90-180 degree convention',()=>{

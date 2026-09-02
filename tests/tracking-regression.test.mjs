@@ -40,7 +40,7 @@ test("portrait phones keep the camera inline in a compact preview instead of ful
   assert.match(publicSource, /height:min\(25dvh,210px\)/);
   assert.ok(publicSource.includes("videoEl.setAttribute('webkit-playsinline', '')"));
   assert.ok(publicSource.includes("videoEl.controls = false"));
-  assert.match(serviceWorkerSource, /fthue-rehab-v83-20260902-positive-reward-latch/);
+  assert.match(serviceWorkerSource, /fthue-rehab-v84-20260902-grasp-calib-front-shoulder/);
 });
 
 test("Levels 3 and 4 can use Pose when tabletop hands occlude the finger model", () => {
@@ -183,9 +183,9 @@ test("all items stay clear of targets and can be parked in blank space", () => {
 test("offline worker forces the current build instead of serving the stale game", () => {
   const manifest = JSON.parse(readFileSync(path.join(root, "manifest.webmanifest"), "utf8"));
   assert.ok(publicSource.includes('updateViaCache:"none"'));
-  assert.match(serviceWorkerSource, /fthue-rehab-v83-20260902-positive-reward-latch/);
-  assert.ok(publicSource.includes('const LEVEL_APP_BUILD = "v83-20260902-positive-reward-latch"'));
-  assert.equal(manifest.start_url, "./index.html?build=v83-20260902-positive-reward-latch");
+  assert.match(serviceWorkerSource, /fthue-rehab-v84-20260902-grasp-calib-front-shoulder/);
+  assert.ok(publicSource.includes('const LEVEL_APP_BUILD = "v84-20260902-grasp-calib-front-shoulder"'));
+  assert.equal(manifest.start_url, "./index.html?build=v84-20260902-grasp-calib-front-shoulder");
   assert.ok(publicSource.includes('const levelAppHadController = Boolean(navigator.serviceWorker.controller)'));
   assert.ok(publicSource.includes('if (!levelAppHadController || levelAppReloading) return'));
   assert.ok(publicSource.includes('navigator.serviceWorker.addEventListener("controllerchange"'));
@@ -242,7 +242,7 @@ test("Level 5 grasp requires two curled fingers and releases after two visibly r
 
 test("Level 5 calibration accepts the participant's available opening range without long holds", () => {
   assert.match(publicSource, /c\.openHoldMs\s*>=\s*750/);
-  assert.match(publicSource, /openMean\s*\+\s*0\.035/);
+  assert.match(publicSource, /openMean\s*\+\s*0\.015/);
   assert.match(publicSource, /c\.closedHoldMs\s*>=\s*450\s*\|\|\s*c\.closedScores\.length\s*>=\s*10/);
   assert.match(publicSource, /openMean\s*\+\s*gap\s*\*\s*\(isPegMode\(\)\s*\?\s*0\.24\s*:\s*0\.48\)/);
   assert.match(
@@ -252,7 +252,7 @@ test("Level 5 calibration accepts the participant's available opening range with
 });
 
 test("Level 6–7 calibration accepts a light pinch without inventing a larger aperture range", () => {
-  assert.match(publicSource, /openMean\s*-\s*Math\.max\(0\.020,\s*openMean\s*\*\s*0\.035\)/);
+  assert.match(publicSource, /openMean\s*-\s*Math\.max\(0\.012,\s*openMean\s*\*\s*0\.020\)/);
   assert.match(publicSource, /const gap = Math\.max\(0\.025, openMean - closedMean\)/);
   assert.match(publicSource, /personalPinchEnter = closedMean \+ gap \* 0\.56/);
   assert.match(publicSource, /personalPinchExit = closedMean \+ gap \* 0\.70/);
@@ -300,7 +300,7 @@ test("peg mode accepts a small calibrated light press and uses hysteresis for re
   assert.match(publicSource, /const enter = personal \? thresholds\.personalGraspEnter : 0\.56/);
   assert.match(publicSource, /const exit = personal \? thresholds\.personalGraspExit : 0\.51/);
   assert.match(publicSource, /score >= \(isPressingPrev \? exit : enter\)/);
-  assert.match(publicSource, /value >= openMean \+ Math\.max\(0\.006, openMean \* 0\.015\)/);
+  assert.match(publicSource, /value >= openMean \+ Math\.max\(0\.004, openMean \* 0\.010\)/);
   assert.match(publicSource, /isPegMode\(\) \? 0\.24 : 0\.48/);
 });
 
