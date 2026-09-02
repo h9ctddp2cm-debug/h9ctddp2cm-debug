@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v87-20260902-level6-tool-sensitivity-clear-fist";
+const CACHE_VERSION = "fthue-rehab-v88-20260902-chopstick-small-range-fix";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

@@ -2917,7 +2917,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                             thresholds.personalPinchOpen = Math.min(openMean - .02 * gap, closedMean + .8 * gap);
                         }
                         if (c.ready && isLevel6RealToolTask() && null == state.personalToolPinch && c.openScores.length && c.closedScores.length && (c.openNear || []).length && (c.closedNear || []).length) {
-                            const openMean = medianValue(c.openScores), closedMean = medianValue(c.closedScores), openNearMean = medianValue(c.openNear), closedNearMean = medianValue(c.closedNear), openFarMean = medianValue(c.openFar), closedFarMean = medianValue(c.closedFar), gapC = Math.max(.025, openMean - closedMean), gapNear = Math.max(.016, openNearMean - closedNearMean), gapFar = Math.max(.02, openFarMean - closedFarMean);
+                            const openMean = medianValue(c.openScores), closedMean = medianValue(c.closedScores), openNearMean = medianValue(c.openNear), closedNearMean = medianValue(c.closedNear), openFarMean = medianValue(c.openFar), closedFarMean = medianValue(c.closedFar), gapC = Math.max(.006, openMean - closedMean), gapNear = Math.max(.004, openNearMean - closedNearMean), gapFar = Math.max(.005, openFarMean - closedFarMean);
                             state.personalToolPinch = {
                                 enter: closedMean + .56 * gapC,
                                 nearExit: closedNearMean + .62 * gapNear,
@@ -10086,7 +10086,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
 <script src="level4-three-games-module.js"></script>
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v87-20260902-level6-tool-sensitivity-clear-fist";
+  const LEVEL_APP_BUILD = "v88-20260902-chopstick-small-range-fix";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 
