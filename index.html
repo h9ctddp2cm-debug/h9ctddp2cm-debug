@@ -7047,6 +7047,29 @@ let handFrameCache = { video:null, generation:null, result:null };
 function resetHandFrameAdmission(){
   handFrameCache = { video:null, generation:null, result:null };
   lastAcceptedToolHandGeneration = -1;
+  if(typeof resetAffectedHandTrack === 'function') resetAffectedHandTrack();
+}
+
+/* v96: short-term continuity for the selected affected hand.
+   MediaPipe's handedness label and score dip for a few frames when the hand
+   closes into a fist, grips a tool, or nears the frame edge. Strict label
+   selection alone then drops a hand that is still clearly the same tracked
+   hand, which cleared the cursor mid-grasp in Level 5 (whole-hand fist). The
+   strict pass still wins whenever a confident affected-side label exists;
+   continuity only rescues an ambiguous label that stays close to the last
+   accepted wrist, and only in public Level 5. Level 6 tool tasks keep the
+   strict fail-closed handedness rule (see level67-interactions tests). */
+const AFFECTED_HAND_TRACK_MS = 600;
+const AFFECTED_HAND_TRACK_DIST = 0.16;   // normalised camera-frame units
+const AFFECTED_HAND_OPPOSITE_REJECT = 0.80;
+let affectedHandTrack = { x:NaN, y:NaN, at:0 };
+function resetAffectedHandTrack(){ affectedHandTrack = { x:NaN, y:NaN, at:0 }; }
+function affectedHandContinuityEnabled(){ return !research.active && state.level === '5'; }
+function noteAffectedHandTrack(lm){
+  const wrist = lm?.[0];
+  if(wrist && Number.isFinite(wrist.x) && Number.isFinite(wrist.y)){
+    affectedHandTrack = { x:wrist.x, y:wrist.y, at:nowMs() };
+  }
 }
 
 function isAppleTouchDevice(){
@@ -7136,6 +7159,27 @@ function selectedAffectedHandIndex(results, inputMirrored=false){
   }
   // Missing/unknown handedness fails closed. Falling back to result 0 would let
   // an unaffected or assisting hand acquire and release Level 5 objects.
+  if(selected < 0 && affectedHandContinuityEnabled() && Number.isFinite(affectedHandTrack.x)
+      && nowMs() - affectedHandTrack.at <= AFFECTED_HAND_TRACK_MS){
+    // Continuity rescue: an ambiguous label near the last accepted wrist is the
+    // same hand. A confidently labelled opposite hand is still rejected, and a
+    // hand that jumped elsewhere is not admitted.
+    const groups = results.handednesses || results.handedness;
+    let bestDistance = Infinity;
+    for(let index=0; index<landmarks.length; index++){
+      const wrist = landmarks[index]?.[0];
+      if(!wrist || !Number.isFinite(wrist.x) || !Number.isFinite(wrist.y)) continue;
+      const side = mediaPipeAnatomicalHand(results, index, inputMirrored);
+      const confidence = Number(groups?.[index]?.[0]?.score);
+      if(side && side !== affected && Number.isFinite(confidence)
+          && confidence >= AFFECTED_HAND_OPPOSITE_REJECT) continue;
+      const dist = Math.hypot(wrist.x - affectedHandTrack.x, wrist.y - affectedHandTrack.y);
+      if(dist <= AFFECTED_HAND_TRACK_DIST && dist < bestDistance){
+        bestDistance = dist; selected = index;
+      }
+    }
+  }
+  if(selected >= 0) noteAffectedHandTrack(landmarks[selected]);
   return selected;
 }
 
@@ -7165,7 +7209,7 @@ function computeChopstickFlexState(lm, isClosedPrev){
   return {isClosed,isOpen,score:clamp01((1.78-mean)/.55),indexRatio,middleRatio,valid:true};
 }
 
-function interpretHandResults(results, inputMirrored=false){
+function interpretHandResults(results, inputMirrored=false, videoEl=null){
   if(results && results.landmarks && results.landmarks.length > 0){
     // CSS scaleX(-1) mirrors presentation, not the CanvasImageSource passed to
     // Hand Landmarker. Keep inference mirroring explicit so display settings
@@ -7244,10 +7288,15 @@ function interpretHandResults(results, inputMirrored=false){
   }
   // Tabletop hands are often partly hidden by the table edge. Pose landmarks
   // keep gross-arm levels playable even when the hand model loses the fingers.
-  // Normal Level 6 is a deliberate exception: every task must
-  // fail closed rather than substituting a pose wrist for an absent affected hand.
-  if(isGrossTabletop() && !isLevel6ToolGestureTask()){
-    const pose = (lastPoseLm && nowMs()-lastPoseTs < 250) ? lastPoseLm : detectPose(videoEl);
+  // Normal Level 6 is a deliberate exception: every task (chopsticks included)
+  // must fail closed rather than substituting a pose wrist for an absent
+  // affected hand. v96: before this, the chopsticks task fell through to this
+  // branch and referenced an undefined `videoEl`, which threw inside the
+  // calibration loop on the first hand-less frame and left "尚未偵測" forever.
+  if(isGrossTabletop() && !isLevel6()){
+    const pose = (lastPoseLm && nowMs()-lastPoseTs < 250)
+      ? lastPoseLm
+      : (videoEl ? detectPose(videoEl) : null);
     const wristIndex = activeAffectedSide() === 'left' ? 15 : 16;
     const wrist = pose?.[wristIndex];
     if(wrist && Number.isFinite(wrist.x) && Number.isFinite(wrist.y)
@@ -7293,7 +7342,14 @@ function detectWrist(videoEl, frame){
       results = null;
     }
   }
-  const interpreted = interpretHandResults(results,false);
+  let interpreted;
+  try{
+    interpreted = interpretHandResults(results,false,videoEl);
+  }catch(e){
+    // Never let a single-frame interpretation fault kill a RAF loop.
+    console.error('interpretHandResults failed', e);
+    interpreted = { detected:false, reason:'interpret-error' };
+  }
   handFrameCache = { video:videoEl, generation, result:interpreted };
   return interpreted;
 }
@@ -7888,6 +7944,7 @@ function startCalibLoop(){
     // failed closed as `hand-frame-stale` even while a clear hand was visible.
     const frame=level4FrameStatus(video);
     let res;
+    try{
     if(isLevel6()){
       // Every normal-flow Level 6 calibration uses a fresh selected-hand frame.
       // Pose must never make calibration ready when the hand is absent.
@@ -7908,6 +7965,12 @@ function startCalibLoop(){
         : {detected:false,nx:0,ny:0,lm:null};
     }else{
       res=detectWrist(video,frame);
+    }
+    }catch(e){
+      // v96: a per-frame fault must fail closed for this frame only. Before,
+      // an exception here ended the RAF chain and calibration never recovered.
+      console.error('calibration frame failed', e);
+      res={detected:false, reason:'calib-frame-error'};
     }
 
     if(res.detected){
@@ -10949,10 +11012,17 @@ function gameLoop(rafNow){
     const publicFrame = (!research.active && !state.qaMode)
       ? level4FrameStatus(gameVideo) : null;
     if(research.active || state.qaMode || admitPublicGameWork(rafNow, publicFrame)){
-      updateTracking(publicFrame);
-      if(usesAdvancedThemeModule()){ advUpdate(); advRender(); }
-      else { updateGameLogic(); renderGame(); }
-      drawLevel4SelectedArmOverlay(gameCtx, gameCanvas.width, gameCanvas.height);
+      try{
+        updateTracking(publicFrame);
+        if(usesAdvancedThemeModule()){ advUpdate(); advRender(); }
+        else { updateGameLogic(); renderGame(); }
+        drawLevel4SelectedArmOverlay(gameCtx, gameCanvas.width, gameCanvas.height);
+      }catch(e){
+        // v96: keep the RAF chain alive; a single faulty frame must not freeze
+        // the whole game for the participant. QA runs still surface the error.
+        if(state.qaMode) throw e;
+        console.error('game frame failed', e);
+      }
     }
   }
   gameRAF = requestAnimationFrame(gameLoop);
@@ -10970,8 +11040,15 @@ function graspTrackingGraceEligible(res){
   // MediaPipe can briefly lose one fingertip while the palm remains visible.
   // Treat that one public Level 5 case like a short detector miss; Level 6
   // real-tool tasks remain fail-closed and must reacquire every landmark.
+  if(!research.active && state.level === '5'
+    && res.reason === 'required-landmarks-missing') return true;
+  // v96: a momentary handedness dropout (label flip / low score while the
+  // whole hand closes into a fist) is treated like a short detector miss in
+  // public Level 5 only. The cursor and grasp state are merely held for up to
+  // DETECTION_LOST_GRACE_MS; nothing is tracked from the other hand. Level 6
+  // tasks stay fully fail-closed on handedness.
   return !research.active && state.level === '5'
-    && res.reason === 'required-landmarks-missing';
+    && res.reason === 'affected-hand-not-detected';
 }
 function pauseInteractionTracking(now){
   if(!interactionTrackingPauseAt) interactionTrackingPauseAt = now;
@@ -16931,6 +17008,13 @@ function flowerSnapToVase(p, vase){
   // width, while keeping the flower stem safely inside the visible rim.
   const dx = Math.max(-1, Math.min(1, (cursorX - vase.x) / Math.max(1, vase.w*0.30)));
   p.x = vase.x + dx * vase.w*0.43;
+  // v96: on a wide landscape planter the amplified slot could sit half outside
+  // the canvas (flower "stuck" at the screen corner). Keep the bloom visible.
+  const cw = gameCanvas.width || 0;
+  const bloomHalf = Math.max(0, (p.size || 0) * (p.scale || 1) * 0.36);
+  if(cw > bloomHalf*2){
+    p.x = Math.max(bloomHalf, Math.min(cw - bloomHalf, p.x));
+  }
   p.y = vase.y - vase.h*0.34;
   p.rot = Math.max(-0.42, Math.min(0.42, p.rot == null ? dx*0.30 : p.rot));
 }
@@ -18459,6 +18543,29 @@ window.__qa = {
     return true;
   },
   clearHand(){ qaHand = null; return true; },
+  // v96: direct hand-interpretation probes (no camera). `videoEl` is omitted on
+  // purpose so the pose fallback path is exercised without a media element.
+  interpretHand(results, mirrored){
+    try{
+      return interpretHandResults(results, !!mirrored);
+    }catch(e){
+      return { detected:false, reason:'THROW', error:String(e && e.message || e) };
+    }
+  },
+  graspGraceEligible(res){ return graspTrackingGraceEligible(res); },
+  // v96: place a synthetic flower at a given canvas cursor x and report the
+  // snapped position and the layout it was snapped against.
+  flowerSnapProbe(px){
+    if(!flowers.layout) flowersSetup();
+    const L=flowers.layout;
+    const prevX=cursorX; cursorX=Number(px);
+    const item={id:'probe',x:L.vase.x,y:L.vase.y,rot:null,scale:1.0,size:L.size*2.0};
+    flowerSnapToVase(item,L.vase);
+    cursorX=prevX;
+    return {x:item.x,y:item.y,size:item.size,scale:item.scale,
+      vase:{...L.vase},width:gameCanvas.width,height:gameCanvas.height};
+  },
+  resetHandTrack(){ resetAffectedHandTrack(); return true; },
   snapCursor(){ dotEmaX = -1; dotEmaY = -1; posHistory = []; trackingPointHistory = []; return true; },
   trackingProbe(nx, ny, samples, sourceSize){
     trackingPointHistory = [];
@@ -19563,7 +19670,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v95-20260902-level5-realtime-index-chopsticks";
+  const LEVEL_APP_BUILD = "v96-20260903-level5-6-detection-robustness";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 
