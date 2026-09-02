@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v84-20260902-grasp-calib-front-shoulder";
+const CACHE_VERSION = "fthue-rehab-v85-20260902-remove-personalised-range-label";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");
