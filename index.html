@@ -1823,10 +1823,10 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
         return isLevel6() && "chopsticks" === state.level6Task;
     }
     function isLevel6ToolGestureTask() {
-        return isLevel6();
+        return isLevel6() && !isLevel6Chopsticks();
     }
     function isLevel6RealToolTask() {
-        return isLevel6() && ("chopsticks" === state.level6Task || "peg" === state.level6Task);
+        return isLevel6() && "peg" === state.level6Task;
     }
     function level6ToolWords() {
         return "peg" === state.level6Task ? {
@@ -2483,11 +2483,11 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
         chopsticks: {
             id: "chopsticks",
             theme: "chopstick_dimsum",
-            gameType: "pinch",
+            gameType: "dwell",
             label: "筷子點心",
             labelEn: "Chopstick Dim Sum",
-            hint: "患手揸住真筷子。睇落單指示，合埋筷子夾起點心，放入中央大碟，再揸開筷子放下",
-            actionCue: "揸開筷子 → 合埋夾起 → 移動 → 揸開放下"
+            hint: "患手揸住真筷子。用食指尖對準點心，停住便會夾起；移到中央大碟，停住便會放下",
+            actionCue: "食指尖對準 → 停住夾起 → 移到目標 → 停住放下"
         },
         peg: {
             id: "peg",
@@ -2531,7 +2531,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
         if ("chopsticks" !== task.id) return task;
         const basic = "complex" !== state.dimsumDifficulty;
         return Object.assign({}, task, {
-            hint: basic ? "患手揸住真筷子。可夾任何點心，移到中央大碗，再揸開筷子放下" : "患手揸住真筷子。睇落單指示，合埋筷子夾起點心，放入中央大碟，再揸開筷子放下"
+            hint: basic ? "患手揸住真筷子。食指尖對準任何點心，停住夾起，再移到中央大碗停住放下" : "患手揸住真筷子。食指尖對準落單點心，停住夾起，再移到中央大碟停住放下"
         });
     }
     function level6TaskForTheme(themeId) {
@@ -4051,7 +4051,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
         detectedGestureState.candidateAt = now, detectedGestureState.stable;
         if (rawValue !== detectedGestureState.candidate) return detectedGestureState.candidate = rawValue,
         detectedGestureState.candidateAt = now, detectedGestureState.stable;
-        const confirmMs = "pinch" === mode && isLevel6RealToolTask() ? PUBLIC_LEVEL6_TOOL_GESTURE_CONFIRM_MS : GESTURE_CONFIRM_MS;
+        const confirmMs = "grasp" === mode && "5" === state.level ? 30 : "pinch" === mode && isLevel6RealToolTask() ? PUBLIC_LEVEL6_TOOL_GESTURE_CONFIRM_MS : GESTURE_CONFIRM_MS;
         return now - detectedGestureState.candidateAt >= confirmMs && (detectedGestureState.stable = rawValue),
         detectedGestureState.stable;
     }
@@ -6187,7 +6187,10 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                             const visualProgress = clamp01(Number(shoulderMotion.progress) || 0);
                             mapped.y = ch * (.8 - .48 * visualProgress);
                         }
-                        const stablePoint = function(x, y) {
+                        const publicLevel5Realtime = "5" === state.level, stablePoint = publicLevel5Realtime ? {
+                            x: mapped.x,
+                            y: mapped.y
+                        } : function(x, y) {
                             trackingPointHistory.push({
                                 x: x,
                                 y: y
@@ -6199,11 +6202,12 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                                 y: medianValue(trackingPointHistory.map(point => point.y))
                             };
                         }(mapped.x, mapped.y), px = stablePoint.x, py = stablePoint.y;
-                        if (dotEmaX < 0) dotEmaX = px, dotEmaY = py; else {
+                        if (publicLevel5Realtime) dotEmaX = px, dotEmaY = py; else if (dotEmaX < 0) dotEmaX = px,
+                        dotEmaY = py; else {
                             const dx = px - dotEmaX, dy = py - dotEmaY, movement = Math.hypot(dx, dy);
                             if (movement > TRACKING_DEAD_ZONE_PX) {
                                 heldItem && isLevel67BareMode();
-                                const alpha = "5" === state.level ? movement > 70 ? .72 : movement > 24 ? .58 : .42 : movement > 70 ? .45 : movement > 24 ? .32 : .2;
+                                const alpha = movement > 70 ? .45 : movement > 24 ? .32 : .2;
                                 dotEmaX += alpha * dx, dotEmaY += alpha * dy;
                             }
                         }
@@ -7991,7 +7995,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
         return isLevel6Chopsticks() ? "先張開筷子" : graspPrompt("prep");
     }
     function updateGraspLogic() {
-        const publicLevel5 = "5" === state.level, PREP_OPEN_MS = publicLevel5 ? 70 : 100, GRASP_HOLD_MS = publicLevel5 ? 90 : 120, CONTACT_GRACE_MS = publicLevel5 ? 900 : 700, openPrep = isLevel6ToolGestureTask() || isPinchMode() ? handOpenPrep : !isGrasping;
+        const publicLevel5 = "5" === state.level, PREP_OPEN_MS = publicLevel5 ? 35 : 100, GRASP_HOLD_MS = publicLevel5 ? 45 : 120, CONTACT_GRACE_MS = publicLevel5 ? 900 : 700, openPrep = isLevel6ToolGestureTask() || isPinchMode() ? handOpenPrep : !isGrasping;
         if (cursorX < 0 || !handDetected) return setActionPrompt("等待偵測手部", isLevel67BareMode() ? "拇指、食指、中指入鏡" : isPegMode() ? "手掌及指尖入鏡；勿遮住手指" : "掌心及指尖入鏡"),
         basicOpenStart = 0, basicGraspStart = 0, basicGraspCandidate = "", basicGraspArmed = !1,
         basicPostReleaseOpenStart && (basicPostReleaseOpenStart = nowMs()), basicContactCandidate = "",
@@ -10200,7 +10204,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
 <script src="level4-three-games-module.js"></script>
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v94-20260902-level5-light-grasp";
+  const LEVEL_APP_BUILD = "v95-20260902-level5-realtime-index-chopsticks";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v94-20260902-level5-light-grasp";
+const CACHE_VERSION = "fthue-rehab-v95-20260902-level5-realtime-index-chopsticks";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");
