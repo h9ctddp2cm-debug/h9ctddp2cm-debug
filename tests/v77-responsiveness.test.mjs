@@ -125,14 +125,15 @@ test('public tracking is more responsive while research retains its original fil
 
 test('public grasp timings and release continuity preserve research and safety gates',()=>{
   const basic=functionSource('updateGraspLogic');
-  assert.match(basic,/research\.active \? 220 : 100/);
-  assert.match(basic,/research\.active \? 360 : 120/);
+  assert.match(basic,/const publicLevel5 = !research\.active && state\.level === '5'/);
+  assert.match(basic,/research\.active \? 220 : \(publicLevel5 \? 70 : 100\)/);
+  assert.match(basic,/research\.active \? 360 : \(publicLevel5 \? 90 : 120\)/);
   assert.match(basic,/research\.active \? 650 : 220/);
   assert.match(basic,/RELEASE_CONTINUITY_GRACE_MS = research\.active \? 0 : 100/);
   assert.match(basic,/releaseDwellStart \+= now - releaseDwellPauseAt/);
   assert.match(basic,/if\(!releaseDwellPauseAt\) releaseDwellPauseAt = now/);
   assert.match(html,/const GESTURE_CONFIRM_MS = 60/);
-  assert.match(html,/isOpenPrep:!pinchHeld && \(!research\.active && isLevel6\(\)[\s\S]{0,80}\? pinch\.valid[\s\S]{0,40}: pinch\.isSeparated\)/);
+  assert.match(html,/isOpenPrep:!pinchHeld && \(!research\.active && isLevel6\(\)[\s\S]{0,80}\? pinch\.valid && !pinch\.isPinching[\s\S]{0,40}: pinch\.isSeparated\)/);
   assert.match(html,/const bothReopened = nearRatio >= t\.nearExit && farRatio >= t\.farExit/);
 
   assert.match(html,/const GRASP_ARM_MS = 420/);

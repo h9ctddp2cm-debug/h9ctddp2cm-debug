@@ -40,7 +40,7 @@ test("portrait phones keep the camera inline in a compact preview instead of ful
   assert.match(publicSource, /height:min\(25dvh,210px\)/);
   assert.ok(publicSource.includes("videoEl.setAttribute('webkit-playsinline', '')"));
   assert.ok(publicSource.includes("videoEl.controls = false"));
-  assert.match(serviceWorkerSource, /fthue-rehab-v89-20260902-level5-release-lock/);
+  assert.match(serviceWorkerSource, /fthue-rehab-v90-20260902-dimsum-flower-chopstick-fix/);
 });
 
 test("Levels 3 and 4 can use Pose when tabletop hands occlude the finger model", () => {
@@ -183,9 +183,9 @@ test("all items stay clear of targets and can be parked in blank space", () => {
 test("offline worker forces the current build instead of serving the stale game", () => {
   const manifest = JSON.parse(readFileSync(path.join(root, "manifest.webmanifest"), "utf8"));
   assert.ok(publicSource.includes('updateViaCache:"none"'));
-  assert.match(serviceWorkerSource, /fthue-rehab-v89-20260902-level5-release-lock/);
-  assert.ok(publicSource.includes('const LEVEL_APP_BUILD = "v89-20260902-level5-release-lock"'));
-  assert.equal(manifest.start_url, "./index.html?build=v89-20260902-level5-release-lock");
+  assert.match(serviceWorkerSource, /fthue-rehab-v90-20260902-dimsum-flower-chopstick-fix/);
+  assert.ok(publicSource.includes('const LEVEL_APP_BUILD = "v90-20260902-dimsum-flower-chopstick-fix"'));
+  assert.equal(manifest.start_url, "./index.html?build=v90-20260902-dimsum-flower-chopstick-fix");
   assert.ok(publicSource.includes('const levelAppHadController = Boolean(navigator.serviceWorker.controller)'));
   assert.ok(publicSource.includes('if (!levelAppHadController || levelAppReloading) return'));
   assert.ok(publicSource.includes('navigator.serviceWorker.addEventListener("controllerchange"'));
@@ -248,7 +248,7 @@ test("Level 5 calibration accepts the participant's available opening range with
   assert.match(publicSource, /openMean\s*\+\s*gap\s*\*\s*\(isPegMode\(\)\s*\?\s*0\.24\s*:\s*0\.48\)/);
   assert.match(
     publicSource,
-    /const PREP_OPEN_MS\s*=\s*research\.active \? 220 : 100[\s\S]*?const GRASP_HOLD_MS\s*=\s*research\.active \? 360 : 120[\s\S]*?const DROP_DWELL_MS\s*=\s*research\.active \? 650 : 220/
+    /const publicLevel5\s*=\s*!research\.active && state\.level === '5'[\s\S]*?const PREP_OPEN_MS\s*=\s*research\.active \? 220 : \(publicLevel5 \? 70 : 100\)[\s\S]*?const GRASP_HOLD_MS\s*=\s*research\.active \? 360 : \(publicLevel5 \? 90 : 120\)[\s\S]*?const DROP_DWELL_MS\s*=\s*research\.active \? 650 : 220/
   );
 });
 

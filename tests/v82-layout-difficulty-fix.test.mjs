@@ -8,7 +8,7 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const html=readFileSync(path.join(root,'index.html'),'utf8');
 
 test('release markers are aligned across the source release files',()=>{
-  const version='v89-20260902-level5-release-lock';
+  const version='v90-20260902-dimsum-flower-chopstick-fix';
   assert.match(html,new RegExp(version));
   assert.match(readFileSync(path.join(root,'service-worker.js'),'utf8'),new RegExp(version));
   assert.match(readFileSync(path.join(root,'manifest.webmanifest'),'utf8'),new RegExp(version));
@@ -32,7 +32,7 @@ test('fridge has an upper 80 percent target and lower 20 percent pickup lane',()
   assert.match(html,/const th = ch\*0\.80;/);
   assert.match(html,/y:Math\.min\(ch-visualR-18,ch\*0\.90\)/);
   assert.match(html,/visualR:isFridgeGame\(\) \? r \* 0\.50 : r/);
-  assert.match(html,/isFridgeGame\(\)\?210:100/);
+  assert.match(html,/isFridgeGame\(\) \? 210 : \(isPublicLevel5DimsumLayout\(\) \? 150 : 100\)/);
   assert.match(html,/isFridgeGame\(\)\?250:150/);
 });
 

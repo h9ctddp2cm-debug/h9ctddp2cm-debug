@@ -35,7 +35,7 @@ test('laundry offers basic and complex modes with tremor-tolerant pickup', () =>
   assert.match(source, /return isLaundryRackGame\(\) && state\.laundryDifficulty === 'complex';/);
   assert.match(source, /return isLaundryRackGame\(\) && state\.laundryDifficulty !== 'complex';/);
   assert.match(source, /rw \*= 1\.60;\s*rh \*= 1\.60;/);
-  assert.match(source, /const pickupMargin = isLaundryRackGame\(\) \? 220 : \(isFridgeGame\(\)\?210:100\);/);
+  assert.match(source, /const pickupMargin = isLaundryRackGame\(\) \? 220[\s\S]{0,100}isFridgeGame\(\) \? 210 : \(isPublicLevel5DimsumLayout\(\) \? 150 : 100\)/);
 });
 
 test('Tsuen Wan shoulder games use a large non-overlapping puzzle target', () => {

@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v89-20260902-level5-release-lock";
+const CACHE_VERSION = "fthue-rehab-v90-20260902-dimsum-flower-chopstick-fix";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

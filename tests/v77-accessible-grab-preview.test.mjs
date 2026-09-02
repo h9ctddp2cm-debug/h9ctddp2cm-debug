@@ -28,6 +28,48 @@ test('Level 5 fist stays smaller than normal iPad pickup objects', () => {
   assert.ok(flower > fist);
 });
 
+test('Level 5 dim sum uses a tightly cropped sticky-rice image and easier pickup timing', () => {
+  const lotusPng = readFileSync(path.join(root, 'img/lotusrice.png'));
+  assert.equal(lotusPng.toString('ascii', 1, 4), 'PNG');
+  assert.equal(lotusPng.readUInt32BE(16), 423);
+  assert.equal(lotusPng.readUInt32BE(20), 378);
+  assert.match(html, /const PREP_OPEN_MS = research\.active \? 220 : \(publicLevel5 \? 70 : 100\);/);
+  assert.match(html, /const GRASP_HOLD_MS = research\.active \? 360 : \(publicLevel5 \? 90 : 120\);/);
+  assert.match(html, /isPublicLevel5DimsumLayout\(\) \? 150 : 100/);
+  assert.match(html, /const PUBLIC_LEVEL5_GRASP_ARM_MS = 70;/);
+  assert.match(html, /const PUBLIC_LEVEL5_GRASP_HOLD_MS = 90;/);
+});
+
+test('public flower game accepts side releases and maps central reach across the planter', () => {
+  assert.match(html, /id:'vase', x:vase\.x, y:vase\.y - vase\.h\*0\.30,/);
+  assert.match(html, /w:vase\.w\*1\.16, h:vase\.h\*0\.82,/);
+  assert.match(html, /\(cursorX - vase\.x\) \/ Math\.max\(1, vase\.w\*0\.30\)/);
+  assert.match(html, /p\.x = vase\.x \+ dx \* vase\.w\*0\.43;/);
+});
+
+test('public Level 6 tool gestures reject conflicting cues and keep one stable cursor image', () => {
+  assert.match(html, /const PUBLIC_LEVEL6_TOOL_GESTURE_CONFIRM_MS = 180;/);
+  assert.match(html, /const decisiveFlexState=useChopstickFlex/);
+  assert.match(html, /const releaseConfirmed=decisiveFlexState[\s\S]*?decisiveFlexState === 'open'/);
+  assert.match(html, /const closeConfirmed=decisiveFlexState[\s\S]*?decisiveFlexState === 'closed'/);
+  assert.match(html, /mode === 'pinch' && isLevel6RealToolTask\(\)/);
+
+  const standardCursor = html.slice(
+    html.indexOf('// 游標：Level 5–6 以大型膚色手勢'),
+    html.indexOf('// Preserve the pre-v76 research grasp/pinch cursor exactly.'),
+  );
+  const advancedCursorStart = html.indexOf('function advDrawCursor(ctx, pct)');
+  const advancedCursor = html.slice(
+    advancedCursorStart,
+    html.indexOf('// Preserve the pre-v76 research grasp/pinch cursor exactly.', advancedCursorStart),
+  );
+  for(const cursor of [standardCursor, advancedCursor]){
+    assert.match(cursor, /if\(isLevel6\(\)\)\{/);
+    assert.match(cursor, /drawPublicLevel6ClosedPinchCursor/);
+    assert.doesNotMatch(cursor, /isLevel6\(\) && isGrasping/);
+  }
+});
+
 test('public Level 5 requires a continuously open hand after every release before re-arming', () => {
   assert.match(html, /const PUBLIC_LEVEL5_POST_RELEASE_OPEN_MS = 650;/);
   assert.match(html, /return !research\.active && state\.level === '5' \? PUBLIC_LEVEL5_POST_RELEASE_OPEN_MS : 0;/);
@@ -202,9 +244,11 @@ test('public advanced grasp timings are easier while research timings remain unc
   assert.match(html, /const RELEASE_HOLD_MS = 1000;/);
   assert.match(html, /const PUBLIC_GRASP_ARM_MS = 100;/);
   assert.match(html, /const PUBLIC_GRASP_HOLD_MS = 120;/);
+  assert.match(html, /const PUBLIC_LEVEL5_GRASP_ARM_MS = 70;/);
+  assert.match(html, /const PUBLIC_LEVEL5_GRASP_HOLD_MS = 90;/);
   assert.match(html, /const PUBLIC_LEVEL6_GRASP_HOLD_MS = 80;/);
   assert.match(html, /const PUBLIC_RELEASE_HOLD_MS = 220;/);
-  assert.match(html, /return isPatientVisualCueMode\(\) \? PUBLIC_GRASP_ARM_MS : GRASP_ARM_MS/);
+  assert.match(html, /return !research\.active && state\.level === '5'[\s\S]*?PUBLIC_LEVEL5_GRASP_ARM_MS/);
   assert.match(html, /return isLevel6\(\) \? PUBLIC_LEVEL6_GRASP_HOLD_MS/);
 });
 

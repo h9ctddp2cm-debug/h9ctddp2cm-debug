@@ -7197,12 +7197,13 @@ function interpretHandResults(results, inputMirrored=false){
       return { detected:true, nx:interactionX(midX), ny:midY,
         isGrasping:pinchHeld,
         graspScore:pinch.score,
-        // Public Level 6 may arm from any valid, stably non-pinching hand.
-        // Requiring a large theoretical open aperture made every task hard
-        // before the patient's fingers even reached the object.
+        // Public Level 6 may arm from any valid raw state that is clearly not
+        // closing. This avoids requiring a large theoretical open aperture,
+        // while preventing the stabilizer's initial false state from treating
+        // a continuously closed hand as open preparation.
         // Research retains the stricter visibly-separated requirement.
         isOpenPrep:!pinchHeld && (!research.active && isLevel6()
-          ? pinch.valid
+          ? pinch.valid && !pinch.isPinching
           : pinch.isSeparated),
         pinchRatio:pinch.ratio, pinchIndexRatio:pinch.indexRatio,
         pinchMiddleRatio:pinch.middleRatio, pinchScale:pinch.scale, lm, source:'tripod-pinch' };
@@ -7609,8 +7610,22 @@ function computeToolPinchState(lm, isPinchingPrev){
       chopstickFlex.indexRatio>=flexT.indexOpen &&
       chopstickFlex.middleRatio>=flexT.middleOpen)
   ));
-  const releaseConfirmed=bothReopened || flexBothReopened;
-  const isPinching = isPinchingPrev ? !releaseConfirmed : (ratio <= t.enter || flexBothClosed);
+  const apertureClosed=ratio <= t.enter;
+  // A real chopstick can hide the thumb and make aperture disagree with the
+  // two visible working fingers. When both working fingers give a decisive
+  // matching cue, prefer that tool-relative cue; otherwise fall back to the
+  // aperture. The shared confirmation timer then suppresses frame-to-frame
+  // switching without making an occluded thumb block a genuine open or close.
+  const decisiveFlexState=useChopstickFlex
+    ? (flexBothClosed ? 'closed' : (flexBothReopened ? 'open' : ''))
+    : '';
+  const releaseConfirmed=decisiveFlexState
+    ? decisiveFlexState === 'open'
+    : bothReopened;
+  const closeConfirmed=decisiveFlexState
+    ? decisiveFlexState === 'closed'
+    : apertureClosed;
+  const isPinching = isPinchingPrev ? !releaseConfirmed : closeConfirmed;
   return {
     isPinching, ratio, indexRatio, middleRatio, nearRatio, farRatio, scale,
     isSeparated: (nearRatio >= t.nearOpen && farRatio >= t.farOpen) || flexBothOpen,
@@ -7620,6 +7635,7 @@ function computeToolPinchState(lm, isPinchingPrev){
   };
 }
 const GESTURE_CONFIRM_MS = 60;
+const PUBLIC_LEVEL6_TOOL_GESTURE_CONFIRM_MS = 180;
 let detectedGestureState = { mode:'', stable:false, candidate:false, candidateAt:0 };
 function stabiliseDetectedGesture(rawValue, mode){
   // Use the application's monotonic clock so synthetic fresh-frame tests and
@@ -7639,7 +7655,10 @@ function stabiliseDetectedGesture(rawValue, mode){
     detectedGestureState.candidateAt = now;
     return detectedGestureState.stable;
   }
-  if(now - detectedGestureState.candidateAt >= GESTURE_CONFIRM_MS){
+  const confirmMs = !research.active && mode === 'pinch' && isLevel6RealToolTask()
+    ? PUBLIC_LEVEL6_TOOL_GESTURE_CONFIRM_MS
+    : GESTURE_CONFIRM_MS;
+  if(now - detectedGestureState.candidateAt >= confirmMs){
     detectedGestureState.stable = rawValue;
   }
   return detectedGestureState.stable;
@@ -12497,11 +12516,12 @@ function graspPrompt(key){
   return '張開手放下';
 }
 function updateGraspLogic(){
-  const PREP_OPEN_MS = research.active ? 220 : 100;
-  const GRASP_HOLD_MS = research.active ? 360 : 120;
+  const publicLevel5 = !research.active && state.level === '5';
+  const PREP_OPEN_MS = research.active ? 220 : (publicLevel5 ? 70 : 100);
+  const GRASP_HOLD_MS = research.active ? 360 : (publicLevel5 ? 90 : 120);
   const DROP_DWELL_MS = research.active ? 650 : 220;
   const RELEASE_CONTINUITY_GRACE_MS = research.active ? 0 : 100;
-  const CONTACT_GRACE_MS = research.active ? 450 : 700;
+  const CONTACT_GRACE_MS = research.active ? 450 : (publicLevel5 ? 900 : 700);
   // Preparation requires a positively observed open state for all Level 6
   // gesture tasks. This prevents an ambiguous/static closed hand from arming.
   const openPrep = isLevel6ToolGestureTask() ? handOpenPrep
@@ -12555,7 +12575,8 @@ function updateGraspLogic(){
       const d = dist(cursorX, cursorY, f.x, f.y);
       if(d < nearestDist){ nearest = f; nearestDist = d; }
     }
-    const pickupMargin = isLaundryRackGame() ? 220 : (isFridgeGame()?210:100);
+    const pickupMargin = isLaundryRackGame() ? 220
+      : (isFridgeGame() ? 210 : (isPublicLevel5DimsumLayout() ? 150 : 100));
     const voiceMargin = isLaundryRackGame() ? 260 : (isFridgeGame()?250:150);
     const voiceNearFood = nearest &&
       nearestDist <= pickupContactRadius(nearest.r, voiceMargin);
@@ -13482,8 +13503,12 @@ function renderGame(){
         const handSize=isGrasping ? closedHandSize : closedHandSize*1.5;
         const overlapsObject=foods.some(f=>!f.removed&&
           Math.hypot(cursorPoint.x-f.x,cursorPoint.y-f.y)<=f.r+handSize*.34);
-        if(isLevel6() && isGrasping){
-          drawPublicLevel6ClosedPinchCursor(ctx,cursorPoint.x,cursorPoint.y,overlapsObject?.74:.84);
+        if(isLevel6()){
+          // Keep one consistent hand silhouette on screen. Only its opacity
+          // changes slightly, so noisy open/close frames cannot create a
+          // distracting full-hand ↔ pinch-image flash.
+          const alpha=isGrasping ? (overlapsObject?.76:.86) : (overlapsObject?.54:.66);
+          drawPublicLevel6ClosedPinchCursor(ctx,cursorPoint.x,cursorPoint.y,alpha);
         }else{
           ctx.globalAlpha=isGrasping ? (overlapsObject ? .92 : .98)
             : (overlapsObject ? .58 : .88);
@@ -14234,16 +14259,24 @@ const GRASP_HOLD_MS = 480;
 const RELEASE_HOLD_MS = 1000;
 const PUBLIC_GRASP_ARM_MS = 100;
 const PUBLIC_GRASP_HOLD_MS = 120;
+const PUBLIC_LEVEL5_GRASP_ARM_MS = 70;
+const PUBLIC_LEVEL5_GRASP_HOLD_MS = 90;
 const PUBLIC_LEVEL6_GRASP_HOLD_MS = 80;
 const PUBLIC_RELEASE_HOLD_MS = 220;
 const PUBLIC_RELEASE_CONTINUITY_GRACE_MS = 100;
 const PUBLIC_LEVEL5_POST_RELEASE_OPEN_MS = 650;
 const ADV_CONTACT_GRACE_MS = 450;
 const PUBLIC_ADV_CONTACT_GRACE_MS = 700;
-function advancedGraspArmMs(){ return isPatientVisualCueMode() ? PUBLIC_GRASP_ARM_MS : GRASP_ARM_MS; }
+function advancedGraspArmMs(){
+  return !research.active && state.level === '5'
+    ? PUBLIC_LEVEL5_GRASP_ARM_MS
+    : (isPatientVisualCueMode() ? PUBLIC_GRASP_ARM_MS : GRASP_ARM_MS);
+}
 function advancedGraspHoldMs(){
   return isLevel6() ? PUBLIC_LEVEL6_GRASP_HOLD_MS
-    : (isPatientVisualCueMode() ? PUBLIC_GRASP_HOLD_MS : GRASP_HOLD_MS);
+    : (!research.active && state.level === '5'
+      ? PUBLIC_LEVEL5_GRASP_HOLD_MS
+      : (isPatientVisualCueMode() ? PUBLIC_GRASP_HOLD_MS : GRASP_HOLD_MS));
 }
 function advancedReleaseHoldMs(){ return isPatientVisualCueMode() ? PUBLIC_RELEASE_HOLD_MS : RELEASE_HOLD_MS; }
 function advancedContactGraceMs(){ return isPatientVisualCueMode() ? PUBLIC_ADV_CONTACT_GRACE_MS : ADV_CONTACT_GRACE_MS; }
@@ -16695,14 +16728,18 @@ function flowersUndo(){
 
 function flowerVaseZone(vase){
   return {
-    id:'vase', x:vase.x, y:vase.y - vase.h*0.40,
-    w:vase.w*1.05, h:vase.h*0.48,
+    id:'vase', x:vase.x, y:vase.y - vase.h*0.30,
+    // Public Level 5–6 users may approach from either side. The former narrow
+    // lip-only strip rejected valid releases near the left and right shoulders.
+    w:vase.w*1.16, h:vase.h*0.82,
   };
 }
 
 function flowerSnapToVase(p, vase){
-  const dx = Math.max(-1, Math.min(1, (cursorX - vase.x) / Math.max(1, vase.w*0.52)));
-  p.x = vase.x + dx * vase.w*0.34;
+  // Amplify the camera's comfortable central reach into the full planter
+  // width, while keeping the flower stem safely inside the visible rim.
+  const dx = Math.max(-1, Math.min(1, (cursorX - vase.x) / Math.max(1, vase.w*0.30)));
+  p.x = vase.x + dx * vase.w*0.43;
   p.y = vase.y - vase.h*0.34;
   p.rot = Math.max(-0.42, Math.min(0.42, p.rot == null ? dx*0.30 : p.rot));
 }
@@ -17066,8 +17103,10 @@ function advDrawCursor(ctx, pct){
         ? Math.max(210,Math.min(280,Math.min(gameCanvas.width,gameCanvas.height)*.27))
         : Math.max(104,Math.min(124,Math.min(gameCanvas.width,gameCanvas.height)*.16));
       const handSize=isGrasping ? closedHandSize : closedHandSize*1.5;
-      if(isLevel6() && isGrasping){
-        drawPublicLevel6ClosedPinchCursor(ctx,cursorX,cursorY,.82);
+      if(isLevel6()){
+        // The same image is used in both states; subtle opacity feedback is
+        // enough without repeatedly swapping two very different hand shapes.
+        drawPublicLevel6ClosedPinchCursor(ctx,cursorX,cursorY,isGrasping?.84:.66);
       }else{
         ctx.globalAlpha=isGrasping ? .98 : .88;
         ctx.font = `${Math.round(handSize)}px "Apple Color Emoji","Segoe UI Emoji",sans-serif`;
@@ -19310,7 +19349,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v89-20260902-level5-release-lock";
+  const LEVEL_APP_BUILD = "v90-20260902-dimsum-flower-chopstick-fix";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

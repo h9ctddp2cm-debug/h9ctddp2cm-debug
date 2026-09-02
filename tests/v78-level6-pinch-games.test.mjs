@@ -38,13 +38,14 @@ test('processed left/right Level 6 cursor assets are transparent 191x133 PNG fil
   }
 });
 
-test('public Level 6 uses affected-side image cues on both tracked cursor renderers',()=>{
+test('public Level 6 uses one stable affected-side image cue on both tracked cursor renderers',()=>{
   assert.match(html,/imgLevel6PinchRight\.src = 'img\/level6_pinch_right\.png'/);
   assert.match(html,/imgLevel6PinchLeft\.src = 'img\/level6_pinch_left\.png'/);
   assert.match(html,/function level6PinchHandGeometry[\s\S]*?activeAffectedSide\(\)==='left'/);
   assert.match(html,/function drawPublicLevel6ClosedPinchCursor[\s\S]*?geometry\.side==='left'/);
-  assert.match(html,/if\(isLevel6\(\) && isGrasping\)\{\s*drawPublicLevel6ClosedPinchCursor\(ctx,cursorPoint\.x/);
-  assert.match(html,/function advDrawCursor[\s\S]*?if\(isLevel6\(\) && isGrasping\)\{\s*drawPublicLevel6ClosedPinchCursor\(ctx,cursorX/);
+  assert.match(html,/if\(isLevel6\(\)\)\{[\s\S]{0,350}drawPublicLevel6ClosedPinchCursor\(ctx,cursorPoint\.x/);
+  assert.match(html,/function advDrawCursor[\s\S]*?if\(isLevel6\(\)\)\{[\s\S]{0,350}drawPublicLevel6ClosedPinchCursor\(ctx,cursorX/);
+  assert.doesNotMatch(html,/if\(isLevel6\(\) && isGrasping\)\{/);
   assert.match(html,/if\(patientMode\)\{[\s\S]{0,300}statusBar\.innerHTML = '';/);
 });
 
