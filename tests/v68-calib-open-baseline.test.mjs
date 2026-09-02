@@ -22,7 +22,7 @@ test('open baseline is sampled only from frames that actually look open', () => 
   assert.match(publicSource, /Number\.isFinite\(value\)\s*&&\s*calibLooksOpen\(res\)/);
   // The completion criterion is cumulative qualifying open time, not a blind
   // wall-clock timer started at first detection.
-  assert.match(publicSource, /c\.openHoldMs\s*>=\s*750/);
+  assert.match(publicSource, /const requiredOpenHoldMs = isLevel6RealToolTask\(\) \? 450 : 750/);
   assert.doesNotMatch(publicSource, /now\s*-\s*c\.openStart\s*>=\s*750/);
 });
 

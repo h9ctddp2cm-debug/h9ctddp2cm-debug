@@ -20,8 +20,8 @@ const publicSource = readFileSync(path.join(root, 'index.html'), 'utf8');
 /* ---------------- Source contracts ---------------- */
 
 test('adaptive tracker exists with fail-closed movement gates', () => {
-  assert.match(publicSource, /const TOOL_ADAPT_MIN_SAMPLES = 90;/);
-  assert.match(publicSource, /const TOOL_ADAPT_MIN_SPAN = 0\.020;/);
+  assert.match(publicSource, /const TOOL_ADAPT_MIN_SAMPLES = 24;/);
+  assert.match(publicSource, /const TOOL_ADAPT_MIN_SPAN = 0\.012;/);
   assert.match(publicSource, /const TOOL_HAND_TOO_CLOSE_SCALE = 0\.55;/);
   // insufficient movement → thresholds stay null (fail closed to defaults)
   assert.match(publicSource, /toolPinchAdapt\.thresholds = null;\s*return;/);
@@ -30,6 +30,14 @@ test('adaptive tracker exists with fail-closed movement gates', () => {
 test('threshold priority: adaptive → personal calibration → defaults, never in research mode', () => {
   assert.match(publicSource,
     /const t = \(!research\.active && toolPinchAdapt\.thresholds\)\s*\|\| \(!research\.active && state\.personalToolPinch\)\s*\|\| TOOL_PINCH_DEFAULTS;/);
+  assert.doesNotMatch(publicSource,/enter:Math\.max\(measuredT\.enter,TOOL_PINCH_DEFAULTS\.enter\)/);
+});
+
+test('public tool adaptation learns a small real movement range quickly', () => {
+  assert.match(publicSource, /const TOOL_ADAPT_MIN_SAMPLES = 24;/);
+  assert.match(publicSource, /const TOOL_ADAPT_MIN_SPAN = 0\.012;/);
+  assert.match(publicSource, /const CHOPSTICK_FLEX_ADAPT_MIN_SAMPLES = 24;/);
+  assert.match(publicSource, /const CHOPSTICK_FLEX_ADAPT_MIN_SPAN = 0\.020;/);
 });
 
 test('adaptive state is reset at game start and stop', () => {

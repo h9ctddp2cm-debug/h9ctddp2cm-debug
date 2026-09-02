@@ -191,7 +191,8 @@ test('v67 Level 6 calibration: brief landmark dropouts do not reset stage progre
 test('v67 Level 6 calibration: light-close evidence accumulates instead of demanding one unbroken hold',()=>{
   assert.match(publicSource,/c\.closedHoldMs\s*=\s*\(c\.closedHoldMs \|\| 0\)\s*\+\s*delta/);
   assert.match(publicSource,/Math\.min\(120, now - previousTick\)/);
-  assert.match(publicSource,/c\.closedHoldMs >= 450 \|\| c\.closedScores\.length >= 10/);
+  assert.match(publicSource,/const requiredClosedHoldMs = isLevel6RealToolTask\(\) \? 280 : 450/);
+  assert.match(publicSource,/const requiredClosedSamples = isLevel6RealToolTask\(\) \? 6 : 10/);
   // Only a clear reopen restarts the evidence.
   assert.match(publicSource,/if\(clearlyOpenAgain\) c\.closedHoldMs = 0/);
 });

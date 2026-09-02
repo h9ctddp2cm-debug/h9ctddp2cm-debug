@@ -10,7 +10,7 @@ const html = readFileSync(path.join(root, 'index.html'), 'utf8');
 test('current build markers stay aligned', () => {
   const manifest = readFileSync(path.join(root, 'manifest.webmanifest'), 'utf8');
   const worker = readFileSync(path.join(root, 'service-worker.js'), 'utf8');
-  const version = 'v86-20260902-large-baskets-no-dimsum-overlap';
+  const version = 'v87-20260902-level6-tool-sensitivity-clear-fist';
   assert.match(html, new RegExp(version));
   assert.match(manifest, new RegExp(version));
   assert.match(worker, new RegExp(version));
@@ -31,7 +31,7 @@ test('patient-simple HUD is restricted to public Levels 5 and 6', () => {
 
 test('open and closed hand cues stay large on canvas without a duplicate side card', () => {
   assert.match(html, /const handEmoji = isGrasping \? '✊🏻' : '✋🏻';/);
-  assert.match(html, /const closedHandSize=Math\.max\(210,Math\.min\(280,/);
+  assert.match(html, /const closedHandSize=isLevel6\(\)[\s\S]{0,150}\? Math\.max\(210,Math\.min\(280,[\s\S]{0,150}: Math\.max\(104,Math\.min\(124,/);
   assert.match(html, /const handSize=isGrasping \? closedHandSize : closedHandSize\*1\.5;/);
   assert.match(html, /const gestureCue = openWords\.test\(main\) \? 'open' : 'close';/);
   assert.match(html, /\.game-stage\.public-clean-hud\.patient-simple-hud \.status-bar\{\s*display:none !important;/);

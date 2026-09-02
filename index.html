@@ -7197,9 +7197,13 @@ function interpretHandResults(results, inputMirrored=false){
       return { detected:true, nx:interactionX(midX), ny:midY,
         isGrasping:pinchHeld,
         graspScore:pinch.score,
-        // Release is armed only after the same stabilized reopen state.
-        // It does not require reopening to a theoretical maximum.
-        isOpenPrep:!pinchHeld && pinch.isSeparated,
+        // Public Level 6 may arm from any valid, stably non-pinching hand.
+        // Requiring a large theoretical open aperture made every task hard
+        // before the patient's fingers even reached the object.
+        // Research retains the stricter visibly-separated requirement.
+        isOpenPrep:!pinchHeld && (!research.active && isLevel6()
+          ? pinch.valid
+          : pinch.isSeparated),
         pinchRatio:pinch.ratio, pinchIndexRatio:pinch.indexRatio,
         pinchMiddleRatio:pinch.middleRatio, pinchScale:pinch.scale, lm, source:'tripod-pinch' };
     }
@@ -7396,6 +7400,8 @@ function computePinchState(lm, isPinchingPrev){
     Number.isFinite(pinchThresholds.personalPinchEnter) &&
     Number.isFinite(pinchThresholds.personalPinchExit) &&
     Number.isFinite(pinchThresholds.personalPinchOpen);
+  // Preserve the participant's measured range. Raising a calibrated entry
+  // threshold can make a tool-constrained OPEN hand look permanently closed.
   const enter = personal ? pinchThresholds.personalPinchEnter : PINCH_ENTER;
   const exit = personal ? pinchThresholds.personalPinchExit : PINCH_EXIT;
   const open = personal ? pinchThresholds.personalPinchOpen : PINCH_OPEN;
@@ -7446,8 +7452,8 @@ const TOOL_PINCH_DEFAULTS = {
    still needs the combined aperture to close, and the 60 ms stabiliser plus
    dual-digit rule still mean a single drifting landmark can never release an
    item. Camera-observed motion only: no tool identification, no force. */
-const TOOL_ADAPT_MIN_SAMPLES = 90;
-const TOOL_ADAPT_MIN_SPAN = 0.020;
+const TOOL_ADAPT_MIN_SAMPLES = 24;
+const TOOL_ADAPT_MIN_SPAN = 0.012;
 const TOOL_ADAPT_MAX_SAMPLES = 300;
 const TOOL_HAND_TOO_CLOSE_SCALE = 0.55;
 const toolPinchAdapt = { near:[], far:[], combo:[], counter:0, thresholds:null };
@@ -7456,8 +7462,8 @@ const toolPinchAdapt = { near:[], far:[], combo:[], counter:0, thresholds:null }
    aperture, this remains measurable when the thumb and chopsticks overlap.
    Entry/release always requires BOTH fingers, and adaptive thresholds remain
    unavailable until a real flex/reopen span has been observed. */
-const CHOPSTICK_FLEX_ADAPT_MIN_SAMPLES = 90;
-const CHOPSTICK_FLEX_ADAPT_MIN_SPAN = 0.045;
+const CHOPSTICK_FLEX_ADAPT_MIN_SAMPLES = 24;
+const CHOPSTICK_FLEX_ADAPT_MIN_SPAN = 0.020;
 const chopstickFlexAdapt = { index:[], middle:[], counter:0, thresholds:null };
 let lastToolPinchLive = null; // {ratio, nearRatio, farRatio, scale, at}
 function resetToolPinchAdapt(){
@@ -7582,6 +7588,8 @@ function computeToolPinchState(lm, isPinchingPrev){
   const t = (!research.active && toolPinchAdapt.thresholds)
     || (!research.active && state.personalToolPinch)
     || TOOL_PINCH_DEFAULTS;
+  // Never widen a participant's calibrated entry threshold to the generic
+  // fallback: real chopsticks and pegs often have a much smaller total range.
   // Release still requires BOTH digits to clear the reopen point of their own
   // measured tool range — one drifting landmark can never release an item.
   const bothReopened = nearRatio >= t.nearExit && farRatio >= t.farExit;
@@ -7741,8 +7749,8 @@ const CALIB_DROPOUT_GRACE_MS = 1500;
    completes after genuine open-close movement is observed: a static posture —
    open, closed or fist — never satisfies the range gate, which also prevents
    the v68 poisoned-baseline failure in tool mode. */
-const TOOL_CALIB_MIN_RANGE = 0.030;
-const TOOL_CALIB_MIN_SAMPLES = 12;
+const TOOL_CALIB_MIN_RANGE = 0.012;
+const TOOL_CALIB_MIN_SAMPLES = 8;
 function toolCalibRange(vals){
   if(!Array.isArray(vals) || vals.length < TOOL_CALIB_MIN_SAMPLES) return null;
   const sorted = vals.slice().sort((a,b)=>a-b);
@@ -7869,7 +7877,8 @@ function startCalibLoop(){
               const openDelta = Number.isFinite(previousOpenTick) && previousOpenTick > 0
                 ? Math.min(120, now - previousOpenTick) : 0;
               c.openHoldMs = (c.openHoldMs || 0) + openDelta;
-              if(c.openHoldMs >= 750){
+              const requiredOpenHoldMs = isLevel6RealToolTask() ? 450 : 750;
+              if(c.openHoldMs >= requiredOpenHoldMs){
                 c.openDone = true;
                 c.closedHoldMs = 0;
                 c.closedTickAt = 0;
@@ -7906,7 +7915,10 @@ function startCalibLoop(){
               const delta = Number.isFinite(previousTick) && previousTick > 0
                 ? Math.min(120, now - previousTick) : 0;
               c.closedHoldMs = (c.closedHoldMs || 0) + delta;
-              if(c.closedHoldMs >= 450 || c.closedScores.length >= 10) c.closedDone = true;
+              const requiredClosedHoldMs = isLevel6RealToolTask() ? 280 : 450;
+              const requiredClosedSamples = isLevel6RealToolTask() ? 6 : 10;
+              if(c.closedHoldMs >= requiredClosedHoldMs ||
+                  c.closedScores.length >= requiredClosedSamples) c.closedDone = true;
             }else{
               // Only a clear reopen restarts the accumulated evidence; brief
               // mid-close jitter does not.
@@ -13438,14 +13450,19 @@ function renderGame(){
     if(isGraspStyleMode()){
       if(isPatientVisualCueMode()){
         const handEmoji = isGrasping ? '✊🏻' : '✋🏻';
-        const closedHandSize=Math.max(210,Math.min(280,Math.min(cw,ch)*.27));
+        // Level 5 objects remain larger than the fist cue, so increasing cue
+        // opacity cannot hide the item being grasped.
+        const closedHandSize=isLevel6()
+          ? Math.max(210,Math.min(280,Math.min(cw,ch)*.27))
+          : Math.max(104,Math.min(124,Math.min(cw,ch)*.16));
         const handSize=isGrasping ? closedHandSize : closedHandSize*1.5;
         const overlapsObject=foods.some(f=>!f.removed&&
           Math.hypot(cursorPoint.x-f.x,cursorPoint.y-f.y)<=f.r+handSize*.34);
         if(isLevel6() && isGrasping){
           drawPublicLevel6ClosedPinchCursor(ctx,cursorPoint.x,cursorPoint.y,overlapsObject?.74:.84);
         }else{
-          ctx.globalAlpha=overlapsObject ? .58 : .88;
+          ctx.globalAlpha=isGrasping ? (overlapsObject ? .92 : .98)
+            : (overlapsObject ? .58 : .88);
           ctx.font = `${Math.round(handSize)}px "Apple Color Emoji","Segoe UI Emoji",sans-serif`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
@@ -14193,12 +14210,16 @@ const GRASP_HOLD_MS = 480;
 const RELEASE_HOLD_MS = 1000;
 const PUBLIC_GRASP_ARM_MS = 100;
 const PUBLIC_GRASP_HOLD_MS = 120;
+const PUBLIC_LEVEL6_GRASP_HOLD_MS = 80;
 const PUBLIC_RELEASE_HOLD_MS = 220;
 const PUBLIC_RELEASE_CONTINUITY_GRACE_MS = 100;
 const ADV_CONTACT_GRACE_MS = 450;
 const PUBLIC_ADV_CONTACT_GRACE_MS = 700;
 function advancedGraspArmMs(){ return isPatientVisualCueMode() ? PUBLIC_GRASP_ARM_MS : GRASP_ARM_MS; }
-function advancedGraspHoldMs(){ return isPatientVisualCueMode() ? PUBLIC_GRASP_HOLD_MS : GRASP_HOLD_MS; }
+function advancedGraspHoldMs(){
+  return isLevel6() ? PUBLIC_LEVEL6_GRASP_HOLD_MS
+    : (isPatientVisualCueMode() ? PUBLIC_GRASP_HOLD_MS : GRASP_HOLD_MS);
+}
 function advancedReleaseHoldMs(){ return isPatientVisualCueMode() ? PUBLIC_RELEASE_HOLD_MS : RELEASE_HOLD_MS; }
 function advancedContactGraceMs(){ return isPatientVisualCueMode() ? PUBLIC_ADV_CONTACT_GRACE_MS : ADV_CONTACT_GRACE_MS; }
 /* Selection tolerance. Research strata tighten the tolerance for FTHUE 6/7 so that
@@ -16981,13 +17002,14 @@ function advDrawCursor(ctx, pct){
   if(isGraspStyleMode()){
     if(isPatientVisualCueMode()){
       const handEmoji = isGrasping ? '✊🏻' : '✋🏻';
-      const closedHandSize=Math.max(210,Math.min(280,
-        Math.min(gameCanvas.width,gameCanvas.height)*.27));
+      const closedHandSize=isLevel6()
+        ? Math.max(210,Math.min(280,Math.min(gameCanvas.width,gameCanvas.height)*.27))
+        : Math.max(104,Math.min(124,Math.min(gameCanvas.width,gameCanvas.height)*.16));
       const handSize=isGrasping ? closedHandSize : closedHandSize*1.5;
       if(isLevel6() && isGrasping){
         drawPublicLevel6ClosedPinchCursor(ctx,cursorX,cursorY,.82);
       }else{
-        ctx.globalAlpha=.68;
+        ctx.globalAlpha=isGrasping ? .98 : .88;
         ctx.font = `${Math.round(handSize)}px "Apple Color Emoji","Segoe UI Emoji",sans-serif`;
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillText(handEmoji, cursorX, cursorY + handSize * 0.03);
@@ -19228,7 +19250,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v86-20260902-large-baskets-no-dimsum-overlap";
+  const LEVEL_APP_BUILD = "v87-20260902-level6-tool-sensitivity-clear-fist";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

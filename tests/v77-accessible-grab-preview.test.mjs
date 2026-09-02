@@ -9,10 +9,23 @@ const html = readFileSync(path.join(root, 'index.html'), 'utf8');
 
 test('public canvas hand remains large while the duplicate right-side cue is removed', () => {
   assert.match(html, /const handEmoji = isGrasping \? '✊🏻' : '✋🏻';/);
-  assert.match(html, /const closedHandSize=Math\.max\(210,Math\.min\(280,/);
+  assert.match(html, /const closedHandSize=isLevel6\(\)[\s\S]{0,150}: Math\.max\(104,Math\.min\(124,/);
   assert.match(html, /const handSize=isGrasping \? closedHandSize : closedHandSize\*1\.5;/);
+  assert.match(html, /ctx\.globalAlpha=isGrasping \? \(overlapsObject \? \.92 : \.98\)/);
+  assert.match(html, /ctx\.globalAlpha=isGrasping \? \.98 : \.88/);
   assert.match(html, /\.game-stage\.public-clean-hud\.patient-simple-hud \.status-bar\{\s*display:none !important;/);
   assert.match(html, /if\(patientMode\)\{[\s\S]{0,300}statusBar\.innerHTML = '';/);
+});
+
+test('Level 5 fist stays smaller than normal iPad pickup objects', () => {
+  const canvasMin = 759;
+  const fist = Math.max(104, Math.min(124, canvasMin * 0.16));
+  const dimsumDiameter = 100 * 1.36 * 2;
+  const laundryGarment = 210;
+  const flower = 132;
+  assert.ok(dimsumDiameter > fist);
+  assert.ok(laundryGarment > fist);
+  assert.ok(flower > fist);
 });
 
 test('public large emoji cursor has no surrounding circle', () => {
@@ -155,8 +168,10 @@ test('public advanced grasp timings are easier while research timings remain unc
   assert.match(html, /const RELEASE_HOLD_MS = 1000;/);
   assert.match(html, /const PUBLIC_GRASP_ARM_MS = 100;/);
   assert.match(html, /const PUBLIC_GRASP_HOLD_MS = 120;/);
+  assert.match(html, /const PUBLIC_LEVEL6_GRASP_HOLD_MS = 80;/);
   assert.match(html, /const PUBLIC_RELEASE_HOLD_MS = 220;/);
   assert.match(html, /return isPatientVisualCueMode\(\) \? PUBLIC_GRASP_ARM_MS : GRASP_ARM_MS/);
+  assert.match(html, /return isLevel6\(\) \? PUBLIC_LEVEL6_GRASP_HOLD_MS/);
 });
 
 test('advanced interaction ignores stale frames and tolerates brief contact loss', () => {

@@ -8,7 +8,7 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const html=readFileSync(path.join(root,'index.html'),'utf8');
 
 test('release markers are aligned across the source release files',()=>{
-  const version='v86-20260902-large-baskets-no-dimsum-overlap';
+  const version='v87-20260902-level6-tool-sensitivity-clear-fist';
   assert.match(html,new RegExp(version));
   assert.match(readFileSync(path.join(root,'service-worker.js'),'utf8'),new RegExp(version));
   assert.match(readFileSync(path.join(root,'manifest.webmanifest'),'utf8'),new RegExp(version));

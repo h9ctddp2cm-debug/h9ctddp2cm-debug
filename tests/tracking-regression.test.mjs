@@ -40,7 +40,7 @@ test("portrait phones keep the camera inline in a compact preview instead of ful
   assert.match(publicSource, /height:min\(25dvh,210px\)/);
   assert.ok(publicSource.includes("videoEl.setAttribute('webkit-playsinline', '')"));
   assert.ok(publicSource.includes("videoEl.controls = false"));
-  assert.match(serviceWorkerSource, /fthue-rehab-v86-20260902-large-baskets-no-dimsum-overlap/);
+  assert.match(serviceWorkerSource, /fthue-rehab-v87-20260902-level6-tool-sensitivity-clear-fist/);
 });
 
 test("Levels 3 and 4 can use Pose when tabletop hands occlude the finger model", () => {
@@ -183,9 +183,9 @@ test("all items stay clear of targets and can be parked in blank space", () => {
 test("offline worker forces the current build instead of serving the stale game", () => {
   const manifest = JSON.parse(readFileSync(path.join(root, "manifest.webmanifest"), "utf8"));
   assert.ok(publicSource.includes('updateViaCache:"none"'));
-  assert.match(serviceWorkerSource, /fthue-rehab-v86-20260902-large-baskets-no-dimsum-overlap/);
-  assert.ok(publicSource.includes('const LEVEL_APP_BUILD = "v86-20260902-large-baskets-no-dimsum-overlap"'));
-  assert.equal(manifest.start_url, "./index.html?build=v86-20260902-large-baskets-no-dimsum-overlap");
+  assert.match(serviceWorkerSource, /fthue-rehab-v87-20260902-level6-tool-sensitivity-clear-fist/);
+  assert.ok(publicSource.includes('const LEVEL_APP_BUILD = "v87-20260902-level6-tool-sensitivity-clear-fist"'));
+  assert.equal(manifest.start_url, "./index.html?build=v87-20260902-level6-tool-sensitivity-clear-fist");
   assert.ok(publicSource.includes('const levelAppHadController = Boolean(navigator.serviceWorker.controller)'));
   assert.ok(publicSource.includes('if (!levelAppHadController || levelAppReloading) return'));
   assert.ok(publicSource.includes('navigator.serviceWorker.addEventListener("controllerchange"'));
@@ -241,9 +241,10 @@ test("Level 5 grasp requires two curled fingers and releases after two visibly r
 });
 
 test("Level 5 calibration accepts the participant's available opening range without long holds", () => {
-  assert.match(publicSource, /c\.openHoldMs\s*>=\s*750/);
+  assert.match(publicSource, /const requiredOpenHoldMs = isLevel6RealToolTask\(\) \? 450 : 750/);
   assert.match(publicSource, /openMean\s*\+\s*0\.015/);
-  assert.match(publicSource, /c\.closedHoldMs\s*>=\s*450\s*\|\|\s*c\.closedScores\.length\s*>=\s*10/);
+  assert.match(publicSource, /const requiredClosedHoldMs = isLevel6RealToolTask\(\) \? 280 : 450/);
+  assert.match(publicSource, /const requiredClosedSamples = isLevel6RealToolTask\(\) \? 6 : 10/);
   assert.match(publicSource, /openMean\s*\+\s*gap\s*\*\s*\(isPegMode\(\)\s*\?\s*0\.24\s*:\s*0\.48\)/);
   assert.match(
     publicSource,
@@ -284,7 +285,7 @@ test("all normal Level 6 games share tripod pinch while research tool modes rema
   assert.match(publicSource, /const asymmetricLightClose = nearRatio <= enter \* 0\.82/);
   assert.match(publicSource, /farRatio <= Math\.max\(exit, enter \* 1\.28\)/);
   assert.match(publicSource, /const pinchHeld = stabiliseDetectedGesture\(pinch\.isPinching, 'pinch'\)/);
-  assert.match(publicSource, /isOpenPrep:!pinchHeld && pinch\.isSeparated/);
+  assert.match(publicSource, /isOpenPrep:!pinchHeld && \(!research\.active && isLevel6\(\)[\s\S]{0,80}\? pinch\.valid[\s\S]{0,40}: pinch\.isSeparated\)/);
   assert.match(publicSource, /const GESTURE_CONFIRM_MS = 60/);
   assert.match(publicSource, /function computePegPressState\(lm, isPressingPrev\)/);
   assert.match(publicSource, /source:'peg-aperture'/);

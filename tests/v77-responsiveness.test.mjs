@@ -132,7 +132,7 @@ test('public grasp timings and release continuity preserve research and safety g
   assert.match(basic,/releaseDwellStart \+= now - releaseDwellPauseAt/);
   assert.match(basic,/if\(!releaseDwellPauseAt\) releaseDwellPauseAt = now/);
   assert.match(html,/const GESTURE_CONFIRM_MS = 60/);
-  assert.match(html,/isOpenPrep:!pinchHeld && pinch\.isSeparated/);
+  assert.match(html,/isOpenPrep:!pinchHeld && \(!research\.active && isLevel6\(\)[\s\S]{0,80}\? pinch\.valid[\s\S]{0,40}: pinch\.isSeparated\)/);
   assert.match(html,/const bothReopened = nearRatio >= t\.nearExit && farRatio >= t\.farExit/);
 
   assert.match(html,/const GRASP_ARM_MS = 420/);
@@ -140,6 +140,7 @@ test('public grasp timings and release continuity preserve research and safety g
   assert.match(html,/const RELEASE_HOLD_MS = 1000/);
   assert.match(html,/const PUBLIC_GRASP_ARM_MS = 100/);
   assert.match(html,/const PUBLIC_GRASP_HOLD_MS = 120/);
+  assert.match(html,/const PUBLIC_LEVEL6_GRASP_HOLD_MS = 80/);
   assert.match(html,/const PUBLIC_RELEASE_HOLD_MS = 220/);
   assert.match(html,/const PUBLIC_RELEASE_CONTINUITY_GRACE_MS = 100/);
   assert.match(html,/this\.relStart \+= now - this\.relPauseAt/);
