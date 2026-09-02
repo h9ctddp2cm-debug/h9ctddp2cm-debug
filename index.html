@@ -1857,10 +1857,6 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
             maxRadius: Math.max(1, maxRadius)
         };
     }
-    function publicLevel5DimsumSlot(index, cw, ch) {
-        const geometry = publicLevel5DimsumGeometry(cw, ch);
-        return geometry.slots[index % geometry.slots.length];
-    }
     function isPublicSideCardGame() {
         return !("5" !== state.level && "67" !== state.level || "cards" !== state.theme && "mahjong" !== state.theme);
     }
@@ -3319,7 +3315,10 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                 function() {
                     if (!foods.length) return;
                     if (isPublicLevel5DimsumLayout()) return void foods.filter(food => !food.removed && !food.isDistractor).forEach((food, index) => {
-                        const slot = publicLevel5DimsumSlot(index, gameCanvas.width, gameCanvas.height, food.r);
+                        const slot = function(index, cw, ch) {
+                            const geometry = publicLevel5DimsumGeometry(cw, ch);
+                            return geometry.slots[index % geometry.slots.length];
+                        }(index, gameCanvas.width, gameCanvas.height, food.r);
                         food.x = slot.x, food.y = slot.y, food.baseX = slot.x, food.baseY = slot.y;
                     });
                     const exclusion = getInstructionExclusionRect(gameCanvas.width, gameCanvas.height, Math.max(18, .16 * (foods[0]?.r || 100)));
@@ -5867,7 +5866,13 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
             return !0;
         }, slotRatios = isLevel4Tabletop() ? [ [ .4, .8 ], [ .6, .8 ] ] : publicLevel5Dimsum ? portrait ? [ [ .24, .66 ], [ .24, .88 ], [ .76, .88 ] ] : [ [ .18, .76 ], [ .5, .76 ], [ .82, .76 ] ] : isPublicLevel5VerticalFlow() ? portrait ? [ [ .24, .68 ], [ .76, .68 ], [ .5, .86 ] ] : [ [ .2, .72 ], [ .5, .78 ], [ .8, .72 ] ] : level67DimSum ? portrait ? [ [ .24, .34 ], [ .76, .34 ], [ .5, .55 ] ] : isDimsumOrderGame() ? [ [ .2, .3 ], [ .8, .3 ], [ .5, .44 ] ] : [ [ .22, .39 ], [ .5, .5 ], [ .78, .39 ] ] : isLaundryRackGame() ? portrait ? [ [ .2, .66 ], [ .8, .66 ], [ .5, .88 ] ] : [ [ .18, .78 ], [ .46, .78 ], [ .72, .78 ] ] : portrait ? dimSumTheme ? [ [ .22, .34 ], [ .5, .45 ], [ .78, .34 ] ] : [ [ .22, .45 ], [ .5, .45 ], [ .78, .45 ] ] : dimSumTheme ? [ [ .22, .42 ], [ .5, .54 ], [ .78, .42 ] ] : [ [ .22, .54 ], [ .5, .54 ], [ .78, .54 ] ], activeCount = existingFoods.filter(food => !food.removed).length;
         if (publicLevel5Dimsum) {
-            const slot = publicLevel5DimsumSlot(activeCount, cw, ch);
+            const slot = function(existingFoods, cw, ch, r) {
+                const geometry = publicLevel5DimsumGeometry(cw, ch), activeFoods = existingFoods.filter(food => !food.removed);
+                return geometry.slots.find(slot => activeFoods.every(food => {
+                    const otherR = Number.isFinite(food.r) ? food.r : r;
+                    return Math.hypot(slot.x - food.x, slot.y - food.y) >= r + otherR + geometry.visibleGap - .5;
+                })) || geometry.slots[activeFoods.length % geometry.slots.length];
+            }(existingFoods, cw, ch, r);
             return createFood(slot.x, slot.y);
         }
         for (let offset = 0; offset < slotRatios.length; offset++) {
@@ -9581,9 +9586,8 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
         const cw = gameCanvas.width, ch = gameCanvas.height, n = laundry.colors.length, narrow = cw < 700, sideRight = affectedSideSign() > 0, patientLarge = isPatientVisualCueMode(), level5VerticalFlow = isPublicLevel5VerticalFlow(), cols = Math.min(2, n), rows = Math.ceil(n / cols), sideHalf = isLevel4Tabletop() ? .66 * cw : .48 * cw;
         let bw = patientLarge ? Math.min(narrow ? 270 : 350, cw / cols * .52) : Math.min(narrow ? 176 : 230, sideHalf / cols - 10), bh = patientLarge ? Math.min(.27 * ch, .72 * bw) : Math.min(narrow ? .12 * ch : .18 * ch, .72 * bw);
         if (level5VerticalFlow && rows > 1) {
-            bh = Math.min(bh, .14 * ch);
-            const maxBwForRow = .8 * bh / (.92 * .66);
-            bw = Math.min(bw, maxBwForRow);
+            const compactBh = Math.min(bh, .14 * ch), BASKET_IMG_ASPECT = .66, sizeMultiplier = patientLarge && cw >= 900 ? 2 : 1, maxBwForRow = .8 * compactBh / (.92 * BASKET_IMG_ASPECT) * sizeMultiplier;
+            bw = Math.min(bw, maxBwForRow), bh = sizeMultiplier > 1 ? Math.min(.24 * ch, bw * BASKET_IMG_ASPECT) : compactBh;
         }
         const basketTop = .25 * ch, basketRowGap = bh + Math.max(12, .02 * ch);
         laundry.baskets = laundry.colors.map((c, i) => ({
@@ -10078,7 +10082,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
 <script src="level4-three-games-module.js"></script>
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v85-20260902-remove-personalised-range-label";
+  const LEVEL_APP_BUILD = "v86-20260902-large-baskets-no-dimsum-overlap";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v85-20260902-remove-personalised-range-label";
+const CACHE_VERSION = "fthue-rehab-v86-20260902-large-baskets-no-dimsum-overlap";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");
