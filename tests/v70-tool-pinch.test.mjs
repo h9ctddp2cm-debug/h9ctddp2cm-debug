@@ -56,6 +56,29 @@ test('personal tool thresholds are derived only for ready tool-task calibrations
     /c\.ready && isLevel6RealToolTask\(\) && state\.personalToolPinch == null/);
   assert.match(publicSource, /personalToolPinch:null,/);
   assert.match(publicSource, /state\.personalToolPinch = null;/);
+  assert.match(publicSource, /const gapC = Math\.max\(0\.006, openMean - closedMean\)/);
+  assert.match(publicSource, /const gapNear = Math\.max\(0\.004, openNearMean - closedNearMean\)/);
+  assert.match(publicSource, /const gapFar = Math\.max\(0\.005, openFarMean - closedFarMean\)/);
+});
+
+test('small valid chopstick calibration keeps entry and release inside the measured range', () => {
+  const closed = {combo: 0.388, near: 0.300, far: 0.430};
+  const open = {combo: 0.400, near: 0.309, far: 0.442};
+  const gapC = Math.max(0.006, open.combo - closed.combo);
+  const gapNear = Math.max(0.004, open.near - closed.near);
+  const gapFar = Math.max(0.005, open.far - closed.far);
+  const thresholds = {
+    enter: closed.combo + gapC * 0.56,
+    nearExit: closed.near + gapNear * 0.62,
+    farExit: closed.far + gapFar * 0.62,
+    nearOpen: closed.near + gapNear * 0.74,
+    farOpen: closed.far + gapFar * 0.74,
+  };
+  assert.ok(thresholds.enter > closed.combo && thresholds.enter < open.combo);
+  assert.ok(thresholds.nearExit > closed.near && thresholds.nearExit < open.near);
+  assert.ok(thresholds.farExit > closed.far && thresholds.farExit < open.far);
+  assert.ok(thresholds.nearOpen > thresholds.nearExit && thresholds.nearOpen < open.near);
+  assert.ok(thresholds.farOpen > thresholds.farExit && thresholds.farOpen < open.far);
 });
 
 test('tool defaults keep coherent hysteresis ordering', () => {

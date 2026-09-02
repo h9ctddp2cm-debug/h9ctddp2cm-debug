@@ -8005,9 +8005,13 @@ function startCalibLoop(){
           const closedNearMean = medianValue(c.closedNear);
           const openFarMean = medianValue(c.openFar);
           const closedFarMean = medianValue(c.closedFar);
-          const gapC = Math.max(0.025, openMean - closedMean);
-          const gapNear = Math.max(0.016, openNearMean - closedNearMean);
-          const gapFar = Math.max(0.020, openFarMean - closedFarMean);
+          // Keep every threshold inside the actual tool-constrained range.
+          // The previous 0.025/0.016/0.020 floors could exceed a valid small
+          // chopstick excursion (accepted from 0.012), making the OPEN posture
+          // look permanently closed and preventing every pickup.
+          const gapC = Math.max(0.006, openMean - closedMean);
+          const gapNear = Math.max(0.004, openNearMean - closedNearMean);
+          const gapFar = Math.max(0.005, openFarMean - closedFarMean);
           state.personalToolPinch = {
             enter: closedMean + gapC * 0.56,
             nearExit: closedNearMean + gapNear * 0.62,
@@ -19250,7 +19254,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v87-20260902-level6-tool-sensitivity-clear-fist";
+  const LEVEL_APP_BUILD = "v88-20260902-chopstick-small-range-fix";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 
