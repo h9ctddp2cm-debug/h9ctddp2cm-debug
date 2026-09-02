@@ -3265,9 +3265,9 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                 fridgeCrashPoint = null, fridgeRoundTimerId && (clearTimeout(fridgeRoundTimerId), 
                 fridgeRoundTimerId = null), releaseDwellStart = 0, releaseDwellPlate = null, releaseDwellPauseAt = 0, 
                 releaseDwellLastOpenAt = 0, basicOpenStart = 0, basicGraspStart = 0, basicGraspCandidate = "", 
-                basicGraspArmed = !1, basicContactCandidate = "", basicContactUntil = 0, gripActive = !1, 
-                isGrasping = !1, handOpenPrep = !1, resetToolPinchAdapt(), resetPublicPatientVoiceGuideCycle(!0), 
-                detectedGestureState = {
+                basicGraspArmed = !1, basicPostReleaseOpenStart = 0, basicContactCandidate = "", 
+                basicContactUntil = 0, gripActive = !1, isGrasping = !1, handOpenPrep = !1, resetToolPinchAdapt(), 
+                resetPublicPatientVoiceGuideCycle(!0), detectedGestureState = {
                     mode: "",
                     stable: !1,
                     candidate: !1,
@@ -5390,7 +5390,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
     function shoulderRewardVisualFinished() {
         return shoulderRewardCycle.active && nowMs() >= shoulderRewardCycle.finishAtMs;
     }
-    let shoulderHoldSpokenSecond = null, shoulderHoldInterruptedSpoken = !1, totalWrong = 0, basicOpenStart = 0, basicGraspStart = 0, basicGraspCandidate = "", basicGraspArmed = !1, basicContactCandidate = "", basicContactUntil = 0, wrongStreak = 0, timeLeft = 60, gameTimerId = null, foodIdSeq = 1;
+    let shoulderHoldSpokenSecond = null, shoulderHoldInterruptedSpoken = !1, totalWrong = 0, basicOpenStart = 0, basicGraspStart = 0, basicGraspCandidate = "", basicGraspArmed = !1, basicPostReleaseOpenStart = 0, basicContactCandidate = "", basicContactUntil = 0, wrongStreak = 0, timeLeft = 60, gameTimerId = null, foodIdSeq = 1;
     function beginLevel4StandardCarry(item) {
         if (!item || !isLevel4StandardTransportGame()) return;
         const matchingTarget = targets.find(target => target.type === item.targetType), pickupX = item.x, pickupFitsTarget = matchingTarget && Math.abs(pickupX - matchingTarget.x) <= matchingTarget.w / 2 + item.r;
@@ -7911,11 +7911,12 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
     function updateGraspLogic() {
         const openPrep = isLevel6ToolGestureTask() || isPinchMode() ? handOpenPrep : !isGrasping;
         if (cursorX < 0 || !handDetected) return setActionPrompt("等待偵測手部", isLevel67BareMode() ? "拇指、食指、中指入鏡" : isPegMode() ? "手掌及指尖入鏡；勿遮住手指" : "掌心及指尖入鏡"), 
-        basicOpenStart = 0, basicGraspStart = 0, basicGraspCandidate = "", basicContactCandidate = "", 
-        void (basicContactUntil = 0);
+        basicOpenStart = 0, basicGraspStart = 0, basicGraspCandidate = "", basicPostReleaseOpenStart && (basicPostReleaseOpenStart = nowMs()), 
+        basicContactCandidate = "", void (basicContactUntil = 0);
         if (detectionHeldGrace) return basicOpenStart = 0, basicGraspStart = 0, basicGraspCandidate = "", 
-        basicGraspArmed = !1, basicContactCandidate = "", basicContactUntil = 0, releaseDwellStart = 0, 
-        releaseDwellPlate = null, releaseDwellPauseAt = 0, releaseDwellLastOpenAt = 0, void setActionPrompt("鏡頭對準", "患手掌心及指尖入鏡");
+        basicGraspArmed = !1, basicContactCandidate = "", basicContactUntil = 0, basicPostReleaseOpenStart && (basicPostReleaseOpenStart = nowMs()), 
+        releaseDwellStart = 0, releaseDwellPlate = null, releaseDwellPauseAt = 0, releaseDwellLastOpenAt = 0, 
+        void setActionPrompt("鏡頭對準", "患手掌心及指尖入鏡");
         if (heldItem) {
             if (checkHoldTimeout()) return;
             moveHeldItemWithController();
@@ -7954,7 +7955,8 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                         adaptiveNoteTrial("grasp_release", "failure", {
                             reason: "wrong_target"
                         }), wrongStreak >= 5 && triggerRecoveryPause()), updateHUD(), heldItem.removed = !0, 
-                        heldItem.held = !1, heldItem = null, updatePublicPatientVoiceGuide({
+                        heldItem.held = !1, heldItem = null, basicPostReleaseOpenStart = level5PostReleaseOpenMs() ? now : 0, 
+                        updatePublicPatientVoiceGuide({
                             phase: "drop"
                         }), noteHoldEnd(), noteReleaseAttemptEnd(!0), ensureFoodCount(), setActionPrompt("已放開", "完成");
                     } else {
@@ -7986,7 +7988,8 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                         }(parkedItem);
                         parkedItem.label, parkedItem.targetType, Math.round(parked.x), Math.round(parked.y), 
                         setActionPrompt("已放開", "distractor" === parkedItem.targetType ? "動物已移開" : "點心已移到空白位"), 
-                        heldItem = null, updatePublicPatientVoiceGuide({
+                        heldItem = null, basicPostReleaseOpenStart = level5PostReleaseOpenMs() ? now : 0, 
+                        updatePublicPatientVoiceGuide({
                             phase: "drop"
                         }), noteHoldEnd(), noteReleaseAttemptEnd(!0);
                     }
@@ -8002,7 +8005,13 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                 setActionPrompt(graspPrompt(onPlate ? "release" : "carry"), onPlate ? "67" === state.level ? graspPrompt("release") : "張到今日可達幅度" : affectedDirectionLabel());
             }
         } else {
-            const now = nowMs();
+            const now = nowMs(), postReleaseOpenMs = level5PostReleaseOpenMs();
+            if (postReleaseOpenMs && basicPostReleaseOpenStart) {
+                if (!isGrasping && openPrep || (basicPostReleaseOpenStart = now), basicOpenStart = 0, 
+                basicGraspStart = 0, basicGraspCandidate = "", basicGraspArmed = !1, basicContactCandidate = "", 
+                basicContactUntil = 0, now - basicPostReleaseOpenStart < postReleaseOpenMs) return void setActionPrompt("已放開", "保持張開手");
+                basicPostReleaseOpenStart = 0;
+            }
             let nearest = null, nearestDist = 1 / 0;
             for (const f of foods) {
                 if (f.removed || f.held) continue;
@@ -8429,7 +8438,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
     const SEL_TOL = {
         grasp: 52,
         reach: 42
-    };
+    }, PUBLIC_LEVEL5_POST_RELEASE_OPEN_MS = 650;
     function advancedGraspArmMs() {
         return isPatientVisualCueMode() ? 100 : 420;
     }
@@ -8441,6 +8450,17 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
     }
     function advancedContactGraceMs() {
         return isPatientVisualCueMode() ? 700 : 450;
+    }
+    function level5PostReleaseOpenMs() {
+        return "5" === state.level ? PUBLIC_LEVEL5_POST_RELEASE_OPEN_MS : 0;
+    }
+    function level5PostReleaseOpenLocked(controller, now) {
+        const lockMs = level5PostReleaseOpenMs();
+        return !(!lockMs || !controller.postReleaseOpenStart || (handReleasedOrOpen() || (controller.postReleaseOpenStart = now), 
+        now - controller.postReleaseOpenStart >= lockMs ? (controller.postReleaseOpenStart = 0, 
+        1) : (controller.armed = !1, controller.openStart = 0, controller.graspStart = 0, 
+        controller.graspId = null, controller.contactId = null, controller.contactUntil = 0, 
+        0)));
     }
     function selTol() {
         return isGraspStyleMode() ? SEL_TOL.grasp : SEL_TOL.reach, isGraspStyleMode() ? 86 : 64;
@@ -8488,20 +8508,23 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
         relLastOpenAt: 0,
         contactId: null,
         contactUntil: 0,
+        postReleaseOpenStart: 0,
         reset() {
             this.hoverId = null, this.start = 0, this.pct = 0, this.armed = !1, this.lock = null, 
             this.startId = null, this.openStart = 0, this.graspStart = 0, this.graspId = null, 
             this.heldId = null, this.relStart = 0, this.relPauseAt = 0, this.relLastOpenAt = 0, 
-            this.contactId = null, this.contactUntil = 0;
+            this.contactId = null, this.contactUntil = 0, this.postReleaseOpenStart = 0;
         },
         poll(items, releaseZone) {
             if (this.pct = 0, cursorX < 0 || !handDetected) return this.hoverId = null, this.openStart = 0, 
-            this.graspStart = 0, this.graspId = null, null;
+            this.graspStart = 0, this.graspId = null, this.postReleaseOpenStart && (this.postReleaseOpenStart = nowMs()), 
+            null;
             const now = nowMs();
             if (detectionHeldGrace) return this.hoverId = this.heldId || null, this.start = 0, 
             this.startId = null, this.pct = 0, this.armed = !1, this.openStart = 0, this.graspStart = 0, 
             this.graspId = null, this.relStart = 0, this.relPauseAt = 0, this.relLastOpenAt = 0, 
-            this.contactId = null, this.contactUntil = 0, null;
+            this.contactId = null, this.contactUntil = 0, this.postReleaseOpenStart && (this.postReleaseOpenStart = now), 
+            null;
             if (this.heldId && isGraspStyleMode()) {
                 this.hoverId = this.heldId;
                 const held = items.find(it => it.id === this.heldId) || null;
@@ -8519,8 +8542,8 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                     if (this.pct = Math.min(1, (now - this.relStart) / releaseMs), now - this.relStart >= releaseMs) {
                         const id = this.heldId;
                         return this.heldId = null, this.relStart = 0, this.relPauseAt = 0, this.relLastOpenAt = 0, 
-                        this.armed = !1, this.openStart = now, this.graspStart = 0, this.graspId = null, 
-                        this.pct = 0, updatePublicPatientVoiceGuide({
+                        this.armed = !1, this.openStart = 0, this.graspStart = 0, this.graspId = null, this.pct = 0, 
+                        this.postReleaseOpenStart = level5PostReleaseOpenMs() ? now : 0, updatePublicPatientVoiceGuide({
                             phase: "drop"
                         }), !releaseZone || heldItemTouchesZone(held, releaseZone) ? id : "__invalid__";
                     }
@@ -8540,6 +8563,8 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                 return null;
             }
             var x, y, zone;
+            if (level5PostReleaseOpenLocked(this, now)) return this.hoverId = null, this.start = 0, 
+            this.startId = null, this.lock = null, setActionPrompt("已放開", "保持張開手"), null;
             let best = nearestItem(items);
             if (best ? (this.contactId = best.id, this.contactUntil = now + advancedContactGraceMs()) : isGraspStyleMode() && this.contactId && now <= this.contactUntil && (best = items.find(it => it.id === this.contactId && !it.gone) || null), 
             !best) return this.hoverId = null, this.start = 0, this.lock = null, this.graspStart = 0, 
@@ -8591,11 +8616,12 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
         graspId: null,
         contactId: null,
         contactUntil: 0,
+        postReleaseOpenStart: 0,
         reset() {
             this.heldId = null, this.hoverId = null, this.startId = null, this.start = 0, this.pct = 0, 
             this.armed = !1, this.relStart = 0, this.relPauseAt = 0, this.relLastOpenAt = 0, 
             this.openStart = 0, this.graspStart = 0, this.graspId = null, this.contactId = null, 
-            this.contactUntil = 0;
+            this.contactUntil = 0, this.postReleaseOpenStart = 0;
         },
         poll(items, zones) {
             const ev = {
@@ -8604,13 +8630,17 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                 zone: null
             };
             if (this.pct = 0, cursorX < 0 || !handDetected) return this.openStart = 0, this.graspStart = 0, 
-            this.graspId = null, ev;
+            this.graspId = null, this.postReleaseOpenStart && (this.postReleaseOpenStart = nowMs()), 
+            ev;
             const now = nowMs();
             if (detectionHeldGrace) return this.hoverId = this.heldId || null, this.startId = null, 
             this.start = 0, this.pct = 0, this.armed = !1, this.openStart = 0, this.graspStart = 0, 
             this.graspId = null, this.relStart = 0, this.relPauseAt = 0, this.relLastOpenAt = 0, 
-            this.contactId = null, this.contactUntil = 0, ev;
+            this.contactId = null, this.contactUntil = 0, this.postReleaseOpenStart && (this.postReleaseOpenStart = now), 
+            ev;
             if (!this.heldId) {
+                if (level5PostReleaseOpenLocked(this, now)) return this.hoverId = null, this.startId = null, 
+                this.start = 0, setActionPrompt("已放開", "保持張開手"), ev;
                 let best = nearestItem(items);
                 if (best ? (this.contactId = best.id, this.contactUntil = now + advancedContactGraceMs()) : isGraspStyleMode() && this.contactId && now <= this.contactUntil && (best = items.find(it => it.id === this.contactId && !it.gone) || null), 
                 this.hoverId = best ? best.id : null, updatePublicPatientVoiceGuide({
@@ -8666,7 +8696,8 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                     const releaseMs = advancedReleaseHoldMs();
                     this.pct = Math.min(1, (now - this.relStart) / releaseMs), now - this.relStart >= releaseMs && (ev.drop = this.heldId, 
                     ev.zone = z, this.heldId = null, this.relStart = 0, this.relPauseAt = 0, this.relLastOpenAt = 0, 
-                    this.armed = !1, this.openStart = now, this.pct = 0, updatePublicPatientVoiceGuide({
+                    this.armed = !1, this.openStart = 0, this.postReleaseOpenStart = level5PostReleaseOpenMs() ? now : 0, 
+                    this.pct = 0, updatePublicPatientVoiceGuide({
                         phase: "drop"
                     }));
                 } else this.relStart > 0 && this.relLastOpenAt > 0 && now - this.relLastOpenAt <= 100 ? this.relPauseAt || (this.relPauseAt = now) : (this.relStart = 0, 
@@ -10086,7 +10117,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
 <script src="level4-three-games-module.js"></script>
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v88-20260902-chopstick-small-range-fix";
+  const LEVEL_APP_BUILD = "v89-20260902-level5-release-lock";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 
