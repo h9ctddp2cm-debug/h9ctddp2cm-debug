@@ -1067,10 +1067,6 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
       <h2 class="service-title">中風上肢訓練</h2>
       <span class="title-rule" aria-hidden="true"></span>
       <p class="lead">選擇 Level</p>
-      <p style="max-width:680px;margin:8px auto 0;font-weight:750;color:#5a6663;">
-        必須由職業治療師選擇 FTHUE Level；本網站不作診斷或自動分級<br>
-        <span lang="en">OT selection is required. This website does not diagnose or automatically assign FTHUE levels.</span>
-      </p>
     </div>
     <div class="level-grid">
       <article class="level-card">
@@ -1546,8 +1542,6 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
       </div>
       <div class="recording-indicator" id="recordingIndicator" role="status" aria-live="polite"
         data-testid="indicator-silent-recording">無聲錄影中 · 不錄頭部</div>
-      <div class="trial-mode-indicator" id="trialModeIndicator" role="status" aria-live="polite"
-        data-testid="indicator-trial-mode">試玩 · 不錄影／不提示</div>
       <div class="level4-calib" id="level4CalibBar" role="group" aria-label="Level 4 校準"
         data-testid="panel-level4-calibration">
         <div class="level4-auto-action" id="level4AutoAction" hidden>
@@ -2694,7 +2688,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
             const desired = state.trainingStageId && state.trainingStageLevel === levelId ? state.trainingStageId : ADAPTIVE_STAGE_FOR_LEVEL[levelId] || "early_level4";
             controller.setStage(desired), adaptiveInvalidReason = "", adaptiveLastTrialId = "", 
             adaptiveRenderStreak(), adaptiveHideCard();
-        }(levelId, state.sessionMode), document.getElementById("libraryLevelLabel").textContent += isTrialMode() ? " · 試玩 · 不錄影／不提示" : " · 訓練 · 錄影及姿勢提示";
+        }(levelId, state.sessionMode);
     }
     document.getElementById("modeOptions").addEventListener("click", e => {
         const btn = e.target.closest(".option-btn");
@@ -2863,14 +2857,14 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                             const value = isPinchMode() ? res.pinchRatio : res.graspScore;
                             if (c.openDone) {
                                 if (!c.closedDone && Number.isFinite(value)) {
-                                    const openMean = medianValue(c.openScores), changedEnough = isPinchMode() ? value <= openMean - Math.max(.02, .035 * openMean) : isPegMode() ? value >= openMean + Math.max(.006, .015 * openMean) : value >= openMean + .035, previousTick = c.closedTickAt;
+                                    const openMean = medianValue(c.openScores), changedEnough = isPinchMode() ? value <= openMean - Math.max(.012, .02 * openMean) : isPegMode() ? value >= openMean + Math.max(.004, .01 * openMean) : value >= openMean + .015, previousTick = c.closedTickAt;
                                     if (c.closedTickAt = now, changedEnough) {
                                         c.moreOpenMs = 0, c.closedScores.push(value), isLevel6RealToolTask() && Number.isFinite(res.pinchIndexRatio) && Number.isFinite(res.pinchMiddleRatio) && ((c.closedNear = c.closedNear || []).push(Math.min(res.pinchIndexRatio, res.pinchMiddleRatio)), 
                                         (c.closedFar = c.closedFar || []).push(Math.max(res.pinchIndexRatio, res.pinchMiddleRatio)));
                                         const delta = Number.isFinite(previousTick) && previousTick > 0 ? Math.min(120, now - previousTick) : 0;
                                         c.closedHoldMs = (c.closedHoldMs || 0) + delta, (c.closedHoldMs >= 450 || c.closedScores.length >= 10) && (c.closedDone = !0);
                                     } else if ((isPinchMode() ? value >= openMean - .01 : value <= openMean + .004) && (c.closedHoldMs = 0), 
-                                    isPinchMode() ? value >= openMean + Math.max(.02, .035 * openMean) : isPegMode() ? value <= openMean - Math.max(.006, .015 * openMean) : value <= openMean - .035) {
+                                    isPinchMode() ? value >= openMean + Math.max(.012, .02 * openMean) : isPegMode() ? value <= openMean - Math.max(.004, .01 * openMean) : value <= openMean - .015) {
                                         const moreOpenDelta = Number.isFinite(previousTick) && previousTick > 0 ? Math.min(120, now - previousTick) : 0;
                                         c.moreOpenMs = (c.moreOpenMs || 0) + moreOpenDelta, c.moreOpenMs >= 600 && (c.openDone = !1, 
                                         c.openScores = [], c.openHoldMs = 0, c.openTickAt = 0, c.closedScores = [], c.openNear = [], 
@@ -3960,20 +3954,20 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
             result: interpreted
         }, interpreted;
     }
-    const PINCH_ENTER = .52, PINCH_EXIT = .66, PINCH_OPEN = .72, TOOL_PINCH_DEFAULTS = {
-        enter: .52,
-        nearExit: .58,
-        farExit: .62,
-        nearOpen: .62,
-        farOpen: .68,
-        scoreOpen: .7
-    }, TOOL_ADAPT_MIN_SAMPLES = 90, TOOL_ADAPT_MIN_SPAN = .03, TOOL_ADAPT_MAX_SAMPLES = 300, TOOL_HAND_TOO_CLOSE_SCALE = .55, toolPinchAdapt = {
+    const PINCH_ENTER = .58, PINCH_EXIT = .62, PINCH_OPEN = .66, TOOL_PINCH_DEFAULTS = {
+        enter: .58,
+        nearExit: .6,
+        farExit: .63,
+        nearOpen: .61,
+        farOpen: .64,
+        scoreOpen: .62
+    }, TOOL_ADAPT_MIN_SAMPLES = 90, TOOL_ADAPT_MIN_SPAN = .02, TOOL_ADAPT_MAX_SAMPLES = 300, TOOL_HAND_TOO_CLOSE_SCALE = .55, toolPinchAdapt = {
         near: [],
         far: [],
         combo: [],
         counter: 0,
         thresholds: null
-    }, CHOPSTICK_FLEX_ADAPT_MIN_SAMPLES = 90, CHOPSTICK_FLEX_ADAPT_MIN_SPAN = .08, chopstickFlexAdapt = {
+    }, CHOPSTICK_FLEX_ADAPT_MIN_SAMPLES = 90, CHOPSTICK_FLEX_ADAPT_MIN_SPAN = .045, chopstickFlexAdapt = {
         index: [],
         middle: [],
         counter: 0,
@@ -8304,7 +8298,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
     function buildAdvDom() {
         if (advDom) return advDom;
         const stage = document.querySelector(".game-stage"), css = document.createElement("style");
-        css.textContent = "\n.adv-panel{position:absolute;right:12px;top:72px;z-index:12;\n  width:clamp(250px,28vw,340px);background:rgba(255,255,255,0.93);border-radius:12px;\n  padding:7px 10px 8px;box-shadow:0 3px 14px rgba(0,0,0,0.18);text-align:left;\n  backdrop-filter:blur(5px);pointer-events:none;}\n.adv-panel .ap-step{font-size:12px;font-weight:800;color:#0a7d75;letter-spacing:0.02em;\n  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}\n.adv-panel .ap-text{font-size:clamp(16px,1.65vw,19px);font-weight:800;color:#1f1f1f;line-height:1.22;\n  margin:1px 0 2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}\n.adv-panel .ap-goal{font-size:13px;font-weight:700;color:#3f3f3f;line-height:1.25;\n  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}\n.adv-panel .ap-metric{display:none;}\n.adv-progress{height:5px;border-radius:999px;background:#e6e2d8;overflow:hidden;margin:4px 0 1px;}\n.adv-progress > i{display:block;height:100%;background:linear-gradient(90deg,#1A6B5A,#2E9E7E);width:0;transition:width .25s ease;}\n.adv-btnrow{position:absolute;right:0;top:calc(100% + 6px);display:flex;gap:6px;justify-content:flex-end;\n  flex-wrap:nowrap;width:max-content;max-width:calc(100vw - 16px);overflow-x:auto;padding:4px;\n  border-radius:10px;background:rgba(247,244,238,0.88);pointer-events:auto;}\n.adv-btnrow:empty{display:none;}\n.adv-btn{font-family:inherit;font-size:13px;font-weight:800;padding:7px 10px;border-radius:9px;\n  border:2px solid #1A6B5A;background:#fff;color:#12564a;cursor:pointer;min-height:42px;white-space:nowrap;}\n.adv-btn.solid{background:#0a7d75;color:#fff;border-color:#0a7d75;}\n.adv-btn.warn{border-color:#C0392B;color:#9c2c20;}\n.adv-note{position:absolute;left:50%;transform:translateX(-50%);bottom:64px;z-index:12;\n  width:min(560px,62%);background:rgba(24,24,24,0.76);color:#fff;border-radius:10px;\n  padding:5px 9px;font-size:10px;line-height:1.35;text-align:center;pointer-events:none;display:none!important;}\n.adv-toast{position:absolute;left:50%;transform:translateX(-50%) translateY(8px);bottom:104px;z-index:44;\n  background:rgba(10,125,117,0.96);color:#fff;padding:12px 20px;border-radius:14px;\n  font-size:18px;font-weight:800;box-shadow:0 6px 20px rgba(0,0,0,0.3);opacity:0;\n  transition:opacity .2s ease, transform .2s ease;pointer-events:none;text-align:center;max-width:90%;}\n.adv-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}\n.adv-note{bottom:56px;}\n@media (max-width:520px){\n  .hud{ gap:5px !important; }\n  .hud .hud-item{ padding:5px 7px !important; min-width:0 !important; }\n  .hud .hud-label{ font-size:12px !important; }\n  .hud .hud-value{ font-size:19px !important; }\n  .adv-panel{ width:min(54vw,220px); padding:6px 8px 7px; top:72px; right:8px; }\n  .adv-panel .ap-step{ font-size:12px; }\n  .adv-panel .ap-text{ font-size:16px; }\n  .adv-panel .ap-goal{ font-size:12px; }\n  .adv-btnrow{max-width:calc(100vw - 16px);}\n  .adv-btn{ font-size:13px; padding:7px 9px; min-height:42px; }\n  .adv-note{ display:none !important; }\n}\n.adv-toast small{display:block;font-size:15px;font-weight:700;opacity:0.92;margin-top:3px;}\n.reward-overlay{position:absolute;inset:0;z-index:60;background:rgba(12,32,26,0.975);backdrop-filter:blur(3px);\n  display:none;flex-direction:column;align-items:center;justify-content:flex-start;\n  padding:18px 16px 20px;overflow:auto;color:#fff;text-align:center;}\n.reward-overlay.show{display:flex;}\n.reward-tier{font-size:14px;font-weight:800;letter-spacing:0.12em;color:#FFD166;}\n.reward-title{font-size:clamp(26px,5vw,40px);font-weight:900;margin:4px 0 2px;}\n.reward-sub{font-size:clamp(15px,2.4vw,19px);font-weight:700;color:#CFEFE4;margin-bottom:10px;}\n.reward-canvas{width:min(920px,96%);border-radius:16px;background:#2F7A4F;box-shadow:0 8px 30px rgba(0,0,0,0.4);}\n.reward-detail{font-size:15px;line-height:1.7;margin-top:10px;max-width:720px;}\n.reward-prog{width:min(560px,92%);margin-top:12px;}\n.reward-prog .lbl{font-size:13px;font-weight:700;color:#CFEFE4;margin-bottom:5px;}\n.reward-auto{margin-top:12px;font-size:16px;font-weight:800;color:#FFD166;}\n.keepsake{position:absolute;inset:0;z-index:62;background:#F7F4EE;display:none;\n  flex-direction:column;align-items:center;padding:14px 14px 18px;overflow:auto;}\n.keepsake.show{display:flex;}\n.keepsake h2{font-size:22px;margin:2px 0 8px;color:#12564a;}\n.keepsake canvas.preview{width:min(520px,94%);border-radius:14px;box-shadow:0 6px 20px rgba(0,0,0,0.18);background:#fff;}\n.keepsake .field{width:min(520px,94%);margin-top:10px;text-align:left;}\n.keepsake label{display:block;font-size:14px;font-weight:800;color:#3a3a3a;margin-bottom:5px;}\n.keepsake input[type=text]{width:100%;font-family:inherit;font-size:20px;padding:12px;border-radius:12px;\n  border:2px solid #c9c2b4;background:#fff;min-height:48px;}\n.keepsake canvas.sig{width:100%;height:120px;border:2px dashed #c9c2b4;border-radius:12px;background:#fff;touch-action:none;}\n.sig-hint{font-size:12px;color:#6a6a6a;margin-top:4px;}\n@media (min-width:521px) and (orientation:portrait){\n  /* v75: top buttons wrap to a second row (~y90-145) on iPad portrait, so keep the\n     panel below them to avoid the 休息/停止 buttons covering the instructions. */\n  .adv-panel{width:min(43vw,310px);right:10px;top:152px;}\n}\n@media (max-height:520px){ .adv-panel{top:64px;padding:5px 8px 6px;width:min(300px,38vw);} .adv-panel .ap-text{font-size:15px;} }\n", 
+        css.textContent = "\n.adv-panel{position:absolute;right:12px;top:72px;z-index:12;\n  width:clamp(250px,28vw,340px);background:rgba(255,255,255,0.93);border-radius:12px;\n  padding:7px 10px 8px;box-shadow:0 3px 14px rgba(0,0,0,0.18);text-align:left;\n  backdrop-filter:blur(5px);pointer-events:none;}\n.adv-panel .ap-step{font-size:12px;font-weight:800;color:#0a7d75;letter-spacing:0.02em;\n  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}\n.adv-panel .ap-text{font-size:clamp(16px,1.65vw,19px);font-weight:800;color:#1f1f1f;line-height:1.22;\n  margin:1px 0 2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}\n.adv-panel .ap-goal{font-size:13px;font-weight:700;color:#3f3f3f;line-height:1.25;\n  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}\n.adv-panel .ap-metric{display:none;}\n.adv-progress{height:5px;border-radius:999px;background:#e6e2d8;overflow:hidden;margin:4px 0 1px;}\n.adv-progress > i{display:block;height:100%;background:linear-gradient(90deg,#1A6B5A,#2E9E7E);width:0;transition:width .25s ease;}\n.adv-btnrow{position:absolute;right:0;top:calc(100% + 6px);display:flex;gap:6px;justify-content:flex-end;\n  flex-wrap:nowrap;width:max-content;max-width:calc(100vw - 16px);overflow-x:auto;padding:4px;\n  border-radius:10px;background:rgba(247,244,238,0.88);pointer-events:auto;}\n.adv-btnrow:empty{display:none;}\n.adv-btn{font-family:inherit;font-size:13px;font-weight:800;padding:7px 10px;border-radius:9px;\n  border:2px solid #1A6B5A;background:#fff;color:#12564a;cursor:pointer;min-height:42px;white-space:nowrap;}\n.adv-btn.solid{background:#0a7d75;color:#fff;border-color:#0a7d75;}\n.adv-btn.warn{border-color:#C0392B;color:#9c2c20;}\n.adv-note{position:absolute;left:50%;transform:translateX(-50%);bottom:64px;z-index:12;\n  width:min(560px,62%);background:rgba(24,24,24,0.76);color:#fff;border-radius:10px;\n  padding:5px 9px;font-size:10px;line-height:1.35;text-align:center;pointer-events:none;display:none!important;}\n.adv-toast{position:absolute;left:50%;transform:translateX(-50%) translateY(-8px);top:126px;z-index:44;\n  background:rgba(10,125,117,0.96);color:#fff;padding:12px 20px;border-radius:14px;\n  font-size:18px;font-weight:800;box-shadow:0 6px 20px rgba(0,0,0,0.3);opacity:0;\n  transition:opacity .2s ease, transform .2s ease;pointer-events:none;text-align:center;max-width:90%;}\n.adv-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}\n.adv-note{bottom:56px;}\n@media (max-width:520px){\n  .hud{ gap:5px !important; }\n  .hud .hud-item{ padding:5px 7px !important; min-width:0 !important; }\n  .hud .hud-label{ font-size:12px !important; }\n  .hud .hud-value{ font-size:19px !important; }\n  .adv-panel{ width:min(54vw,220px); padding:6px 8px 7px; top:72px; right:8px; }\n  .adv-panel .ap-step{ font-size:12px; }\n  .adv-panel .ap-text{ font-size:16px; }\n  .adv-panel .ap-goal{ font-size:12px; }\n  .adv-btnrow{max-width:calc(100vw - 16px);}\n  .adv-btn{ font-size:13px; padding:7px 9px; min-height:42px; }\n  .adv-note{ display:none !important; }\n}\n.adv-toast small{display:block;font-size:15px;font-weight:700;opacity:0.92;margin-top:3px;}\n.reward-overlay{position:absolute;inset:0;z-index:60;background:rgba(12,32,26,0.975);backdrop-filter:blur(3px);\n  display:none;flex-direction:column;align-items:center;justify-content:flex-start;\n  padding:18px 16px 20px;overflow:auto;color:#fff;text-align:center;}\n.reward-overlay.show{display:flex;}\n.reward-tier{font-size:14px;font-weight:800;letter-spacing:0.12em;color:#FFD166;}\n.reward-title{font-size:clamp(26px,5vw,40px);font-weight:900;margin:4px 0 2px;}\n.reward-sub{font-size:clamp(15px,2.4vw,19px);font-weight:700;color:#CFEFE4;margin-bottom:10px;}\n.reward-canvas{width:min(920px,96%);border-radius:16px;background:#2F7A4F;box-shadow:0 8px 30px rgba(0,0,0,0.4);}\n.reward-detail{font-size:15px;line-height:1.7;margin-top:10px;max-width:720px;}\n.reward-prog{width:min(560px,92%);margin-top:12px;}\n.reward-prog .lbl{font-size:13px;font-weight:700;color:#CFEFE4;margin-bottom:5px;}\n.reward-auto{margin-top:12px;font-size:16px;font-weight:800;color:#FFD166;}\n.keepsake{position:absolute;inset:0;z-index:62;background:#F7F4EE;display:none;\n  flex-direction:column;align-items:center;padding:14px 14px 18px;overflow:auto;}\n.keepsake.show{display:flex;}\n.keepsake h2{font-size:22px;margin:2px 0 8px;color:#12564a;}\n.keepsake canvas.preview{width:min(520px,94%);border-radius:14px;box-shadow:0 6px 20px rgba(0,0,0,0.18);background:#fff;}\n.keepsake .field{width:min(520px,94%);margin-top:10px;text-align:left;}\n.keepsake label{display:block;font-size:14px;font-weight:800;color:#3a3a3a;margin-bottom:5px;}\n.keepsake input[type=text]{width:100%;font-family:inherit;font-size:20px;padding:12px;border-radius:12px;\n  border:2px solid #c9c2b4;background:#fff;min-height:48px;}\n.keepsake canvas.sig{width:100%;height:120px;border:2px dashed #c9c2b4;border-radius:12px;background:#fff;touch-action:none;}\n.sig-hint{font-size:12px;color:#6a6a6a;margin-top:4px;}\n@media (min-width:521px) and (orientation:portrait){\n  /* v75: top buttons wrap to a second row (~y90-145) on iPad portrait, so keep the\n     panel below them to avoid the 休息/停止 buttons covering the instructions. */\n  .adv-panel{width:min(43vw,310px);right:10px;top:152px;}\n}\n@media (max-height:520px){ .adv-panel{top:64px;padding:5px 8px 6px;width:min(300px,38vw);} .adv-panel .ap-text{font-size:15px;} }\n", 
         document.head.appendChild(css);
         const mk = (cls, html, id) => {
             const d = document.createElement("div");
@@ -9585,9 +9579,13 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
     function laundrySetup() {
         const cfg = laundryConfig(laundry.tier);
         laundry.colors = cfg.colors.slice(), laundry.cueLevel = cfg.cue;
-        const cw = gameCanvas.width, ch = gameCanvas.height, n = laundry.colors.length, narrow = cw < 700, sideRight = affectedSideSign() > 0, patientLarge = isPatientVisualCueMode(), level5VerticalFlow = isPublicLevel5VerticalFlow(), cols = Math.min(2, n), rows = Math.ceil(n / cols), sideHalf = isLevel4Tabletop() ? .66 * cw : .48 * cw, bw = patientLarge ? Math.min(narrow ? 270 : 350, cw / cols * .52) : Math.min(narrow ? 176 : 230, sideHalf / cols - 10);
-        let bh = patientLarge ? Math.min(.27 * ch, .72 * bw) : Math.min(narrow ? .12 * ch : .18 * ch, .72 * bw);
-        level5VerticalFlow && rows > 1 && (bh = Math.min(bh, .14 * ch));
+        const cw = gameCanvas.width, ch = gameCanvas.height, n = laundry.colors.length, narrow = cw < 700, sideRight = affectedSideSign() > 0, patientLarge = isPatientVisualCueMode(), level5VerticalFlow = isPublicLevel5VerticalFlow(), cols = Math.min(2, n), rows = Math.ceil(n / cols), sideHalf = isLevel4Tabletop() ? .66 * cw : .48 * cw;
+        let bw = patientLarge ? Math.min(narrow ? 270 : 350, cw / cols * .52) : Math.min(narrow ? 176 : 230, sideHalf / cols - 10), bh = patientLarge ? Math.min(.27 * ch, .72 * bw) : Math.min(narrow ? .12 * ch : .18 * ch, .72 * bw);
+        if (level5VerticalFlow && rows > 1) {
+            bh = Math.min(bh, .14 * ch);
+            const maxBwForRow = .8 * bh / (.92 * .66);
+            bw = Math.min(bw, maxBwForRow);
+        }
         const basketTop = .25 * ch, basketRowGap = bh + Math.max(12, .02 * ch);
         laundry.baskets = laundry.colors.map((c, i) => ({
             id: "b" + c,
@@ -10081,7 +10079,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
 <script src="level4-three-games-module.js"></script>
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v83-20260902-positive-reward-latch";
+  const LEVEL_APP_BUILD = "v84-20260902-grasp-calib-front-shoulder";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 
