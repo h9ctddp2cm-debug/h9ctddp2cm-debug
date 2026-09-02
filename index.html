@@ -2859,7 +2859,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                             const value = isPinchMode() ? res.pinchRatio : res.graspScore;
                             if (c.openDone) {
                                 if (!c.closedDone && Number.isFinite(value)) {
-                                    const openMean = medianValue(c.openScores), changedEnough = isPinchMode() ? value <= openMean - Math.max(.012, .02 * openMean) : isPegMode() ? value >= openMean + Math.max(.004, .01 * openMean) : value >= openMean + .015, previousTick = c.closedTickAt;
+                                    const openMean = medianValue(c.openScores), changedEnough = isPinchMode() ? value <= openMean - Math.max(.012, .02 * openMean) : isPegMode() ? value >= openMean + Math.max(.004, .01 * openMean) : value >= openMean + .006, previousTick = c.closedTickAt;
                                     if (c.closedTickAt = now, changedEnough) {
                                         c.moreOpenMs = 0, c.closedScores.push(value), isLevel6RealToolTask() && Number.isFinite(res.pinchIndexRatio) && Number.isFinite(res.pinchMiddleRatio) && ((c.closedNear = c.closedNear || []).push(Math.min(res.pinchIndexRatio, res.pinchMiddleRatio)),
                                         (c.closedFar = c.closedFar || []).push(Math.max(res.pinchIndexRatio, res.pinchMiddleRatio))),
@@ -2870,7 +2870,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                                         const requiredClosedHoldMs = isLevel6RealToolTask() ? 280 : 450, requiredClosedSamples = isLevel6RealToolTask() ? 6 : 10;
                                         (c.closedHoldMs >= requiredClosedHoldMs || c.closedScores.length >= requiredClosedSamples) && (c.closedDone = !0);
                                     } else if ((isPinchMode() ? value >= openMean - .01 : value <= openMean + .004) && (c.closedHoldMs = 0),
-                                    isPinchMode() ? value >= openMean + Math.max(.012, .02 * openMean) : isPegMode() ? value <= openMean - Math.max(.004, .01 * openMean) : value <= openMean - .015) {
+                                    isPinchMode() ? value >= openMean + Math.max(.012, .02 * openMean) : isPegMode() ? value <= openMean - Math.max(.004, .01 * openMean) : value <= openMean - .006) {
                                         const moreOpenDelta = Number.isFinite(previousTick) && previousTick > 0 ? Math.min(120, now - previousTick) : 0;
                                         c.moreOpenMs = (c.moreOpenMs || 0) + moreOpenDelta, c.moreOpenMs >= 600 && (c.openDone = !1,
                                         c.openScores = [], c.openHoldMs = 0, c.openTickAt = 0, c.closedScores = [], c.openNear = [],
@@ -2920,8 +2920,9 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                         if (renderCalibCheck("calibDetectCheck", c.detectedDone), renderCalibCheck("calibOpenCheck", c.openDone),
                         renderCalibCheck("calibCloseCheck", c.closedDone), c.ready = c.detectedDone && c.openDone && c.closedDone,
                         c.ready && "grasp" === state.gameType && null == thresholds.personalGraspEnter && c.openScores.length && c.closedScores.length) {
-                            const openMean = medianValue(c.openScores), closedMean = medianValue(c.closedScores), gap = Math.max(isPegMode() ? .006 : .04, closedMean - openMean);
-                            thresholds.personalGraspEnter = openMean + gap * (isPegMode() ? .24 : .48), thresholds.personalGraspExit = Math.min(thresholds.personalGraspEnter - (isPegMode() ? .004 : .015), openMean + gap * (isPegMode() ? .12 : .38));
+                            const openMean = medianValue(c.openScores), closedMean = medianValue(c.closedScores), gap = Math.max(.006, closedMean - openMean);
+                            isPegMode() ? (thresholds.personalGraspEnter = openMean + .24 * gap, thresholds.personalGraspExit = Math.min(thresholds.personalGraspEnter - .004, openMean + .12 * gap)) : (thresholds.personalGraspEnter = openMean + .45 * gap,
+                            thresholds.personalGraspExit = openMean + .2 * gap);
                         }
                         if (c.ready && "pinch" === state.gameType && null == thresholds.personalPinchEnter && c.openScores.length && c.closedScores.length) {
                             const openMean = medianValue(c.openScores), closedMean = medianValue(c.closedScores), gap = Math.max(.025, openMean - closedMean);
@@ -3916,7 +3917,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                         x: (lm[0].x + lm[5].x + lm[9].x + lm[13].x + lm[17].x) / 5,
                         y: (lm[0].y + lm[5].y + lm[9].y + lm[13].y + lm[17].y) / 5,
                         z: (lm[0].z + lm[5].z + lm[9].z + lm[13].z + lm[17].z) / 5
-                    }, palmScale = Math.max(distance(lm[0], lm[9]), distance(lm[5], lm[17]), .001), mainFingerPairs = [ [ 5, 8 ], [ 9, 12 ], [ 13, 16 ], [ 17, 20 ] ], graspFingerPairs = [ [ 2, 4 ], ...mainFingerPairs ], fingerExtensionRatios = mainFingerPairs.map(([mcp, tip]) => distance(lm[tip], lm[0]) / Math.max(distance(lm[mcp], lm[0]), .001)), meanTipDistance = mainFingerPairs.map(([, tip]) => tip).map(index => distance(lm[index], palmCenter) / palmScale).reduce((sum, value) => sum + value, 0) / 4, score = clamp01((1.72 - meanTipDistance) / 1.02), curledCount = graspFingerPairs.map(([mcp, tip]) => distance(lm[tip], lm[0]) / Math.max(distance(lm[mcp], lm[0]), .001)).filter(value => value <= 1.45).length, openCount = fingerExtensionRatios.filter(value => value >= 1.72).length, visibleGrasp = curledCount >= 2, visibleRelease = openCount >= 2;
+                    }, palmScale = Math.max(distance(lm[0], lm[9]), distance(lm[5], lm[17]), .001), mainFingerPairs = [ [ 5, 8 ], [ 9, 12 ], [ 13, 16 ], [ 17, 20 ] ], graspFingerPairs = [ [ 2, 4 ], ...mainFingerPairs ], fingerExtensionRatios = mainFingerPairs.map(([mcp, tip]) => distance(lm[tip], lm[0]) / Math.max(distance(lm[mcp], lm[0]), .001)), meanTipDistance = mainFingerPairs.map(([, tip]) => tip).map(index => distance(lm[index], palmCenter) / palmScale).reduce((sum, value) => sum + value, 0) / 4, score = clamp01((1.72 - meanTipDistance) / 1.02), curledCount = graspFingerPairs.map(([mcp, tip]) => distance(lm[tip], lm[0]) / Math.max(distance(lm[mcp], lm[0]), .001)).filter(value => value <= 1.58).length, openCount = fingerExtensionRatios.filter(value => value >= 1.62).length, visibleGrasp = curledCount >= 2, visibleRelease = openCount >= 2;
                     let isGrasping = isGraspingPrev ? openCount < 2 : curledCount >= 2;
                     const graspThresholds = state;
                     return Number.isFinite(graspThresholds.personalGraspEnter) && Number.isFinite(graspThresholds.personalGraspExit) && (isGrasping = isGraspingPrev ? !visibleRelease && score >= graspThresholds.personalGraspExit : visibleGrasp || score >= graspThresholds.personalGraspEnter),
@@ -6202,7 +6203,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
                             const dx = px - dotEmaX, dy = py - dotEmaY, movement = Math.hypot(dx, dy);
                             if (movement > TRACKING_DEAD_ZONE_PX) {
                                 heldItem && isLevel67BareMode();
-                                const alpha = movement > 70 ? .45 : movement > 24 ? .32 : .2;
+                                const alpha = "5" === state.level ? movement > 70 ? .72 : movement > 24 ? .58 : .42 : movement > 70 ? .45 : movement > 24 ? .32 : .2;
                                 dotEmaX += alpha * dx, dotEmaY += alpha * dy;
                             }
                         }
@@ -10199,7 +10200,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
 <script src="level4-three-games-module.js"></script>
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v93-20260902-level5-landmark-grace";
+  const LEVEL_APP_BUILD = "v94-20260902-level5-light-grasp";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

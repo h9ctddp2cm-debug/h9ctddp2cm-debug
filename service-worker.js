@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v93-20260902-level5-landmark-grace";
+const CACHE_VERSION = "fthue-rehab-v94-20260902-level5-light-grasp";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");
