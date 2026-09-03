@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v96-20260903-level5-6-detection-robustness";
+const CACHE_VERSION = "fthue-rehab-v97-20260903-level5-6-low-latency";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

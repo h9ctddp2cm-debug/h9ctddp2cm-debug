@@ -8,7 +8,7 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const html=readFileSync(path.join(root,'index.html'),'utf8');
 
 test('release markers are aligned across the source release files',()=>{
-  const version='v96-20260903-level5-6-detection-robustness';
+  const version='v97-20260903-level5-6-low-latency';
   assert.match(html,new RegExp(version));
   assert.match(readFileSync(path.join(root,'service-worker.js'),'utf8'),new RegExp(version));
   assert.match(readFileSync(path.join(root,'manifest.webmanifest'),'utf8'),new RegExp(version));

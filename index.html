@@ -2769,6 +2769,14 @@ function isLevel3Tabletop(){
 function isGrossTabletop(){
   return !research.active && ['2','3','4','67'].includes(state.level);
 }
+/* Pose is the movement authority for public Levels 2–4 only. Level 6 is kept
+   in the broader gross-tabletop family for layout/rules compatibility, but its
+   gameplay is controlled entirely by the affected Hand Landmarker. Running
+   Pose + Hand synchronously on every Level 6 camera frame doubled the main-
+   thread inference load and made the cursor visibly trail the participant. */
+function needsGrossPoseInference(){
+  return isGrossTabletop() && !isLevel6();
+}
 function isShoulderFlexionLevel(){
   // Normal Level 6 is controlled entirely by the selected affected hand.
   // Pose may still be drawn as an optional reference, but it cannot admit a
@@ -10167,8 +10175,8 @@ function initGame(){
   level3RoundVariant = null;
   level3PreviousVariantType = '';
   if(isLevel3Tabletop() || isShoulderFlexionLevel()) chooseLevel3RoundVariant();
-  if(isGrossTabletop()) ensurePoseLandmarker().catch(()=>null);
-  if(isLevel6ToolGestureTask()) ensureHandLandmarker().catch(()=>null);
+  if(needsGrossPoseInference()) ensurePoseLandmarker().catch(()=>null);
+  if(isLevel6()) ensureHandLandmarker().catch(()=>null);
 
   timeLeft = state.duration; // 由用家選擇
   updateHUD();
@@ -10276,8 +10284,11 @@ function initGame(){
 
 function resizeGameCanvas(){
   const stage = document.querySelector('.game-stage');
-  const w = Math.round(stage.clientWidth  || window.innerWidth || 390);
-  const h = Math.round(stage.clientHeight || window.innerHeight || 844);
+  const displayW = Math.round(stage.clientWidth  || window.innerWidth || 390);
+  const displayH = Math.round(stage.clientHeight || window.innerHeight || 844);
+  const backing = publicCanvasBackingSize(displayW, displayH);
+  const w = backing.width;
+  const h = backing.height;
   // Safari can emit resize events while its dynamic chrome settles without a
   // real layout change. Reassigning either canvas dimension clears the backing
   // store and presents as a one-frame object jump, so make identical resizes a
@@ -10299,6 +10310,27 @@ function resizeGameCanvas(){
       o.p.y = vase.y + o.ry*vase.h;
     });
   }
+}
+
+/* Keep the canvas CSS size at the full stage size, but cap its backing store on
+   a large ward monitor. Repainting large PNGs, shadows and outlined labels at
+   4K blocked the same main thread used by MediaPipe. A 1600 px long edge keeps
+   the patient UI crisp while bounding each public frame to <=1.44 MP. iPad and
+   phone layouts are already below this limit and remain pixel-for-pixel. */
+const PUBLIC_CANVAS_MAX_EDGE = 1600;
+const PUBLIC_CANVAS_MAX_PIXELS = 1440000;
+function publicCanvasBackingSize(width, height){
+  const w = Math.max(1, Math.round(Number(width) || 1));
+  const h = Math.max(1, Math.round(Number(height) || 1));
+  if(research.active) return {width:w, height:h, scale:1};
+  const edgeScale = Math.min(1, PUBLIC_CANVAS_MAX_EDGE / Math.max(w, h));
+  const pixelScale = Math.min(1, Math.sqrt(PUBLIC_CANVAS_MAX_PIXELS / (w*h)));
+  const scale = Math.min(edgeScale, pixelScale);
+  return {
+    width:Math.max(1, Math.round(w*scale)),
+    height:Math.max(1, Math.round(h*scale)),
+    scale
+  };
 }
 
 function isPortrait(){
@@ -11942,7 +11974,7 @@ function updateTracking(frameOverride){
   if(!state.qaMode && !frame.fresh) resetHandFrameAdmission();
   const productionFrameFresh = !state.qaMode && frame.fresh;
   let detectedPose = null;
-  if(isGrossTabletop()){
+  if(needsGrossPoseInference()){
     // Fail closed on a stale decoded image. Cached landmarks are only allowed
     // from the exact decoded-frame generation currently admitted; never carry
     // a last good pose across a frozen Safari camera surface.
@@ -11969,7 +12001,7 @@ function updateTracking(frameOverride){
   // Levels 3–4 are driven by shoulder/elbow/wrist Pose only. Running the hand
   // model as well on every iPad frame halved the effective frame rate and made
   // the live game behave differently from the movement test.
-  const res = (isGrossTabletop() && !isLevel6ToolGestureTask())
+  const res = needsGrossPoseInference()
     ? readGrossPoseHand(grossPose) : readHand(frame);
 
   if(res.detected){
@@ -12004,15 +12036,17 @@ function updateTracking(frameOverride){
       const visualProgress=clamp01(Number(shoulderMotion.progress)||0);
       mapped.y = ch * (0.80 - 0.48 * visualProgress);
     }
-    const publicLevel5Realtime = !research.active && state.level === '5';
-    // Level 5 follows the live affected-hand position directly. Do not stack a
-    // three-frame median and EMA, which made the cursor visibly lag behind.
-    const stablePoint = publicLevel5Realtime
+    const publicLevel56Realtime = !research.active
+      && (state.level === '5' || state.level === '67');
+    // Public Levels 5–6 follow the latest affected-hand position directly.
+    // A three-frame median followed by another EMA added multiple camera frames
+    // of avoidable latency, especially after the Level 6 inference workload.
+    const stablePoint = publicLevel56Realtime
       ? {x:mapped.x, y:mapped.y}
       : stabiliseTrackingPoint(mapped.x, mapped.y);
     const px = stablePoint.x;
     const py = stablePoint.y;
-    if(publicLevel5Realtime){
+    if(publicLevel56Realtime){
       dotEmaX = px;
       dotEmaY = py;
     }else if(dotEmaX < 0){ dotEmaX = px; dotEmaY = py; }
@@ -18356,7 +18390,7 @@ window.__qa = {
   setShoulderPose(spec){ return this.setLevel4Pose(spec); },
   setLevel6ToolFrame(spec){
     spec=spec||{};
-    if(!isLevel6ToolGestureTask()) throw new Error('Level 6 tripod-pinch frame requires a normal Level 6 task');
+    if(!isLevel6()) throw new Error('Level 6 hand frame requires a Level 6 task');
     const generation=Number.isFinite(Number(spec.generation))
       ? Number(spec.generation) : qaFrameGeneration+1;
     const rawAngle=Number.isFinite(Number(spec.shoulderAngle))?Number(spec.shoulderAngle):25;
@@ -19670,7 +19704,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v96-20260903-level5-6-detection-robustness";
+  const LEVEL_APP_BUILD = "v97-20260903-level5-6-low-latency";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 
