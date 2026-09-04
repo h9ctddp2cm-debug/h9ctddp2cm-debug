@@ -8,7 +8,7 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const html=readFileSync(path.join(root,'index.html'),'utf8');
 
 test('release markers are aligned across the source release files',()=>{
-  const version='v100-20260904-privacy-person-segmentation';
+  const version='v101-20260904-level56-fridge-laundry-cards';
   assert.match(html,new RegExp(version));
   assert.match(readFileSync(path.join(root,'service-worker.js'),'utf8'),new RegExp(version));
   assert.match(readFileSync(path.join(root,'manifest.webmanifest'),'utf8'),new RegExp(version));
@@ -28,10 +28,11 @@ test('photo puzzle uses one shared rectangular geometry for hole, crop and piece
   assert.match(html,/top=g\.holeY\+g\.holeH\/2;/);
 });
 
-test('fridge has an upper 80 percent target and lower 20 percent pickup lane',()=>{
-  assert.match(html,/const th = ch\*0\.80;/);
-  assert.match(html,/y:Math\.min\(ch-visualR-18,ch\*0\.90\)/);
-  assert.match(html,/visualR:isFridgeGame\(\) \? r \* 0\.50 : r/);
+test('fridge has an upper target and a lower pickup lane (v101: 33%/26% lane, 2x tray food + label inside lane)',()=>{
+  assert.match(html,/const th = ch\*\(1 - fridgeLaneFrac\(cw, ch\)\);/);
+  assert.match(html,/function fridgeLaneFrac\(cw, ch\)\{ return ch > cw \? 0\.26 : 0\.33; \}/);
+  assert.match(html,/y:laneTop \+ 8 \+ vr,/);
+  assert.match(html,/visualR:isFridgeGame\(\) \? fridgeTrayVisualRadius\(cw, ch, r\) : r/);
   assert.match(html,/isFridgeGame\(\) \? 210 : \(isPublicLevel5DimsumLayout\(\) \? 150 : 100\)/);
   assert.match(html,/isFridgeGame\(\)\?250:150/);
 });

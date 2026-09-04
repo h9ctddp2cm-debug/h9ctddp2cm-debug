@@ -92,7 +92,7 @@ function makeOrderModule(opts = {}){
   }, opts.state);
   const research = Object.assign({active: false}, opts.research);
   const rng = opts.random || (() => 0.5);
-  const fakeMath = {random: rng, floor: Math.floor};
+  const fakeMath = {random: rng, floor: Math.floor, max: Math.max};
   const imgNames = ['imgLaundryShirt1', 'imgLaundryShirt2', 'imgLaundryBoxers',
     'imgLaundryJeans', 'imgLaundrySkirt', 'imgLaundryVest', 'imgLaundrySocks'];
   const fn = new Function(
@@ -100,11 +100,14 @@ function makeOrderModule(opts = {}){
     'playApplauseSound', 'nowMs', 'setTimeout', 'clearTimeout', 'Math',
     ...imgNames,
     code + `
-return {isLaundryOrderGame, resetLaundryOrderGame, newLaundryOrder, laundryOrderText,
-  laundryOrderAccepts, laundryOrderPlace, laundryOrderLineFor,
+return {isLaundryOrderGame, isLaundryBasicGame, resetLaundryOrderGame, newLaundryOrder, laundryOrderText,
+  laundryOrderAccepts, laundryOrderPlace, laundryOrderLineFor, laundryBasicPlace, laundryRackPlace,
+  LAUNDRY_RACK_CAPACITY, LAUNDRY_RACK_SLOTS, LAUNDRY_RACK_CLEAR_DELAY_MS,
   get order(){ return laundryOrder; },
   get rack(){ return laundryRackContents; },
   get completed(){ return laundryOrdersCompleted; },
+  get batches(){ return laundryBatchesCompleted; },
+  get clearTimer(){ return laundryRackClearTimerId; },
   get celebrateUntil(){ return laundryOrderCelebrateUntil; }};`);
   const mod = fn(
     state, research, opts.foods || [],
@@ -141,7 +144,7 @@ test('the first order asks for exactly one clothes type, three pieces', () => {
   }
 });
 
-test('later orders mix 2-3 distinct types, 1-3 pieces each, within rack slots', () => {
+test('later orders mix 2-3 distinct types, 1-3 pieces each, within the six rack slots', () => {
   for(const r of [0.0, 0.31, 0.62, 0.99]){
     const {mod} = makeOrderModule({random: () => r});
     // Complete the first (single-line) order to unlock mixed orders.
@@ -156,7 +159,7 @@ test('later orders mix 2-3 distinct types, 1-3 pieces each, within rack slots', 
       assert.ok(line.need >= 1 && line.need <= 3, `need out of range: ${line.need}`);
       total += line.need;
     }
-    assert.ok(total <= 10, 'total pieces never exceed the rack hanging slots');
+    assert.ok(total <= 6, 'v101: total pieces never exceed the six rack hanging slots');
     assert.match(mod.laundryOrderText(), /^請將\d[件條對].+放上晾衫架。$/);
   }
 });
@@ -240,4 +243,83 @@ test('reset clears all order state', () => {
   assert.equal(mod.rack.length, 0);
   assert.equal(mod.completed, 0);
   assert.equal(mod.celebrateUntil, 0);
+});
+
+/* ---------------- v101: one garment at a time, six-garment rack cycle ---------------- */
+
+test('v101 source: Level 6 laundry shows one garment at a time from a centred lower slot', () => {
+  assert.match(publicSource, /if\(isLaundryRackGame\(\)\) return 1;/);
+  assert.match(publicSource, /if\(isLaundryRackGame\(\) && dimSumTargetCount\(\) === 1 && activeCount === 0\)\{[\s\S]{0,260}cw \* 0\.50[\s\S]{0,120}portrait \? 0\.80 : 0\.78/);
+  assert.match(publicSource, /const LAUNDRY_RACK_SLOTS = \[-0\.375, -0\.225, -0\.075, 0\.075, 0\.225, 0\.375\];/);
+  assert.match(publicSource, /const LAUNDRY_RACK_CAPACITY = 6;/);
+  assert.match(publicSource, /const railW = Math\.min\(rw, cw \* 0\.96\);[\s\S]{0,200}const railY = Math\.max\(t\.y - rh \* 0\.42, hudSafeTop\);[\s\S]{0,400}const maxW = railW \* 0\.13;/);
+  assert.match(publicSource, /laundryRack: isLaundryRackGame\(\) \? \{[\s\S]{0,200}capacity: LAUNDRY_RACK_CAPACITY/);
+});
+
+test('v101 basic mode: the sixth garment fills the rack, then one light timer clears it and announces new laundry', () => {
+  const {mod, calls, state} = makeOrderModule({state: {laundryDifficulty: 'basic'}});
+  assert.equal(mod.isLaundryBasicGame(), true);
+  const item = {targetType: 'laundry_shirt', img: {id: 'imgLaundryShirt1'}};
+  for(let i = 0; i < 5; i++) mod.laundryRackPlace(item);
+  assert.equal(mod.rack.length, 5);
+  assert.equal(calls.applause, 0);
+  assert.equal(calls.timeouts.length, 0);
+  mod.laundryRackPlace(item);
+  // Rack stays visibly full for the celebration; exactly one timer is scheduled.
+  assert.equal(mod.rack.length, 6);
+  assert.deepEqual(mod.rack.map(c => c.fx), mod.LAUNDRY_RACK_SLOTS);
+  assert.equal(calls.applause, 1);
+  assert.equal(mod.batches, 1);
+  assert.equal(calls.timeouts.length, 1);
+  assert.equal(calls.timeouts[0].ms, mod.LAUNDRY_RACK_CLEAR_DELAY_MS);
+  assert.ok(!calls.speak.some(t => /又有新衫要晾喇/.test(t)), 'announcement waits for the clear');
+  calls.timeouts[0].cb();
+  assert.equal(mod.rack.length, 0, 'rack cleared');
+  assert.equal(calls.speak[calls.speak.length - 1], '又有新衫要晾喇！');
+  assert.equal(mod.celebrateUntil, 0);
+  // The cycle repeats indefinitely.
+  for(let i = 0; i < 6; i++) mod.laundryRackPlace(item);
+  assert.equal(mod.batches, 2);
+  assert.equal(calls.timeouts.length, 2);
+  // Stopping the session before the timer fires leaves the rack untouched and silent.
+  state.running = false;
+  const spoken = calls.speak.length;
+  calls.timeouts[1].cb();
+  assert.equal(mod.rack.length, 6);
+  assert.equal(calls.speak.length, spoken);
+});
+
+test('v101 basic mode: hanging a seventh garment before the timer fires clears the rack immediately', () => {
+  const {mod, calls} = makeOrderModule({state: {laundryDifficulty: 'basic'}});
+  const item = {targetType: 'laundry_vest', img: null};
+  for(let i = 0; i < 6; i++) mod.laundryRackPlace(item);
+  assert.equal(mod.rack.length, 6);
+  mod.laundryRackPlace(item);
+  assert.equal(mod.rack.length, 1, 'old batch cleared, new garment is first on the rail');
+  assert.equal(mod.rack[0].fx, mod.LAUNDRY_RACK_SLOTS[0]);
+  assert.equal(mod.clearTimer, null);
+  assert.equal(calls.applause, 1);
+});
+
+test('v101 complex mode: orders after the first are announced with 又有新衫要晾喇 and never exceed six pieces', () => {
+  for(const r of [0.0, 0.5, 0.99]){
+    const {mod, calls} = makeOrderModule({random: () => r});
+    const first = mod.newLaundryOrder();
+    assert.doesNotMatch(calls.speak[0], /又有新衫要晾喇/);
+    for(let i = 0; i < first.lines[0].need; i++) mod.laundryOrderPlace({targetType: first.lines[0].type});
+    const second = mod.newLaundryOrder();
+    assert.match(calls.speak[calls.speak.length - 1], /^又有新衫要晾喇！請將/);
+    assert.ok(second.lines.reduce((sum, l) => sum + l.need, 0) <= 6);
+    assert.ok(second.lines.every(l => l.need >= 1));
+  }
+});
+
+test('v101 reset clears the basic-mode batch counter and pending clear timer', () => {
+  const {mod} = makeOrderModule({state: {laundryDifficulty: 'basic'}});
+  for(let i = 0; i < 6; i++) mod.laundryRackPlace({targetType: 'laundry_socks', img: null});
+  assert.ok(mod.clearTimer);
+  mod.resetLaundryOrderGame();
+  assert.equal(mod.rack.length, 0);
+  assert.equal(mod.batches, 0);
+  assert.equal(mod.clearTimer, null);
 });

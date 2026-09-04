@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v100-20260904-privacy-person-segmentation";
+const CACHE_VERSION = "fthue-rehab-v101-20260904-level56-fridge-laundry-cards";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

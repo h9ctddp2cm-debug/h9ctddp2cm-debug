@@ -22,8 +22,8 @@ test('voice coaching says 揸拳頭 near an ungrasped object and 打開隻手 ne
 
 test('fridge is full width with enlarged visuals and automatic clear arrangement', () => {
   assert.match(source, /const tw = cw;/);
-  assert.match(source, /const th = ch\*0\.80;/);
-  assert.match(source, /visualR:isFridgeGame\(\) \? r \* 0\.50 : r/);
+  assert.match(source, /const th = ch\*\(1 - fridgeLaneFrac\(cw, ch\)\);/);
+  assert.match(source, /visualR:isFridgeGame\(\) \? fridgeTrayVisualRadius\(cw, ch, r\) : r/);
   assert.match(source, /function fridgeArrangePlacedFoods\(rect\)/);
   assert.match(source, /fridgePlacedFoods\.push\([\s\S]{0,180}fridgeArrangePlacedFoods\(rect\)/);
 });
