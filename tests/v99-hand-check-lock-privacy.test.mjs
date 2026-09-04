@@ -49,7 +49,7 @@ test('v99 handedness-check switch lives in the affected-side card and is Level 5
   assert.match(functionSource('renderHandCheckSettings'), /block\.hidden = !handCheckSettingAvailable\(\);/);
 });
 
-test('v99 calibration privacy blur is canvas-based, default on, and never uses an extra model', () => {
+test('v99 calibration privacy blur is canvas-based and default on', () => {
   assert.match(html, /\n  privacyBlur:true,/);
   assert.match(html, /id="btnPrivacyBlur"/);
   assert.match(html, /\.calib-wrap\.privacy-blur video\{ opacity:0; \}/);
@@ -62,10 +62,11 @@ test('v99 calibration privacy blur is canvas-based, default on, and never uses a
   assert.match(win, /const u = state\.mirrorX \? \(1 - p\.x\) : p\.x;/);
   const loop = functionSource('startCalibLoop');
   assert.match(loop, /if\(privacyOn\) drawPrivacyBlurredVideo\(ctx, video, rectW, rectH\);/);
-  assert.match(loop, /drawPrivacySharpWindow\(ctx, video, rectW, rectH, windowPts\);/);
-  // Pose levels only reveal the affected shoulder/elbow/wrist, never the face.
-  assert.match(loop, /windowPts = \[res\.lm\[left \? 11 : 12\], res\.lm\[left \? 13 : 14\], res\.lm\[left \? 15 : 16\]\];/);
-  assert.doesNotMatch(html, /ImageSegmenter|selfie_segment/i);
+  assert.match(loop, /drawPrivacySharpWindow\(ctx, video, rectW, rectH, privacyWindowPts\);/);
+  // Pose levels use only the affected shoulder/elbow/wrist as the hand window / seed.
+  assert.match(loop, /privacyWindowPts = \[res\.lm\[left \? 11 : 12\], res\.lm\[left \? 13 : 14\], res\.lm\[left \? 15 : 16\]\];/);
+  // v100: person segmentation keeps the participant sharp; see tests/v100-privacy-person-mask.test.mjs.
+  assert.match(loop, /drawPrivacyPersonLayer\(ctx, video, rectW, rectH\);/);
 });
 
 /* ---------- browser behaviour ---------- */

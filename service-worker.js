@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v99-20260904-hand-check-switch-lock-privacy-blur";
+const CACHE_VERSION = "fthue-rehab-v100-20260904-privacy-person-segmentation";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

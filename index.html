@@ -7079,6 +7079,7 @@ function stopCamera(release=false){
   level4VideoFreshness?.stop();
   resetGamePoseFrameAdmission();
   resetHandAdmissionAndLock();
+  resetPrivacySegmentation();
   resetPublicGameWorkAdmission();
   // Navigation within this single-page app suspends frame admission but keeps
   // the granted stream alive. Only page/session teardown releases hardware.
@@ -8257,6 +8258,187 @@ function drawPrivacySharpWindow(ctx, video, rectW, rectH, points){
   return { x0, y0, w, h };
 }
 
+/* ---- v100 人像分割（Zoom 式）：只保留病人整個人清晰，其他背景（包括其他人）維持模糊 ----
+   用 MediaPipe selfie_segmenter（約 250 KB，本地 vendor）。分割輸入係縮細版影片，
+   輸出人像機率圖；只取「連接住已偵測手部／患側手腕」嗰一塊人像（無偵測時取最大一塊），
+   所以背景另一個人即使被模型認做人像亦唔會清晰。模型載入失敗時退回 v99 手部窗口。 */
+const PRIVACY_SEG_W = 192;              // 分割輸入寬度（像素）
+const PRIVACY_SEG_THRESHOLD = 0.5;      // 人像機率門檻
+const PRIVACY_SEG_SEED_RADIUS = 0.08;   // 種子點附近搜尋人像像素半徑（相對寬度）
+const PRIVACY_SEG_SEED_HOLD_MS = 2500;  // 偵測中斷後仍沿用上次種子點的時間
+const PRIVACY_SEG_EDGE_BLUR_PX = 3;     // 人像邊緣羽化
+const PRIVACY_SEG_INTERVAL_MS = 100;    // 分割節流：最多每 100 ms 一次（人像層每幀照畫）
+const PRIVACY_SEG_SLOW_INTERVAL_MS = 250; // 分割平均耗時超過 PRIVACY_SEG_SLOW_MS 時改用此間隔
+const PRIVACY_SEG_SLOW_MS = 50;
+let privacySegLastRunAt = 0, privacySegCostEma = 0;
+let privacySegmenter = null, privacySegmenterPromise = null, privacySegmenterFailed = false;
+let privacySegInput = null, privacySegMaskCanvas = null, privacySegLayer = null;
+let privacySegLastTs = 0;
+let privacySegMask = null;   // { alpha:Uint8Array|null, w, h, components, seeded }
+let privacySeed = null;      // { x, y, at } 原始（未鏡像）影片歸一化座標
+function privacySegmenterReady(){ return !!privacySegmenter; }
+async function ensurePrivacySegmenter(){
+  if(privacySegmenter) return privacySegmenter;
+  if(privacySegmenterFailed) return null;
+  if(privacySegmenterPromise) return privacySegmenterPromise;
+  privacySegmenterPromise = (async ()=>{
+    try{
+      const mpVision = await import("./vendor/mediapipe/vision_bundle.mjs");
+      const { ImageSegmenter, FilesetResolver } = mpVision;
+      const vision = await FilesetResolver.forVisionTasks("./vendor/mediapipe/wasm");
+      const options = {
+        baseOptions:{ modelAssetPath:"./vendor/mediapipe/models/selfie_segmenter.tflite", delegate: preferredHandDelegate() },
+        runningMode:"VIDEO",
+        outputCategoryMask:false,
+        outputConfidenceMasks:true
+      };
+      try{
+        privacySegmenter = await ImageSegmenter.createFromOptions(vision, options);
+      }catch(_e){
+        privacySegmenter = await ImageSegmenter.createFromOptions(vision, {
+          ...options, baseOptions:{ ...options.baseOptions, delegate:"CPU" }
+        });
+      }
+      return privacySegmenter;
+    }catch(err){
+      privacySegmenterFailed = true;
+      console.warn('privacy segmenter unavailable; falling back to hand window only', err);
+      return null;
+    }finally{
+      privacySegmenterPromise = null;
+    }
+  })();
+  return privacySegmenterPromise;
+}
+// 4 鄰接連通區域：回傳包含種子點（或最大）嗰塊人像的 alpha 圖
+function privacyPersonComponent(prob, w, h, seed, threshold){
+  const n = w * h;
+  if(!(prob && prob.length >= n) || n <= 0) return null;
+  const bin = new Uint8Array(n);
+  let count = 0;
+  for(let i = 0; i < n; i++){ if(prob[i] >= threshold){ bin[i] = 1; count++; } }
+  if(!count) return null;
+  const labels = new Int32Array(n);
+  const stack = new Int32Array(n);
+  const sizes = [0];
+  let nextLabel = 1;
+  for(let start = 0; start < n; start++){
+    if(!bin[start] || labels[start]) continue;
+    let sp = 0, size = 0;
+    stack[sp++] = start; labels[start] = nextLabel;
+    while(sp){
+      const i = stack[--sp]; size++;
+      const x = i % w, y = (i - x) / w;
+      if(x > 0 && bin[i - 1] && !labels[i - 1]){ labels[i - 1] = nextLabel; stack[sp++] = i - 1; }
+      if(x < w - 1 && bin[i + 1] && !labels[i + 1]){ labels[i + 1] = nextLabel; stack[sp++] = i + 1; }
+      if(y > 0 && bin[i - w] && !labels[i - w]){ labels[i - w] = nextLabel; stack[sp++] = i - w; }
+      if(y < h - 1 && bin[i + w] && !labels[i + w]){ labels[i + w] = nextLabel; stack[sp++] = i + w; }
+    }
+    sizes.push(size); nextLabel++;
+  }
+  let chosen = 0, seeded = false;
+  if(seed && Number.isFinite(seed.x) && Number.isFinite(seed.y)){
+    const sx = Math.min(w - 1, Math.max(0, Math.round(seed.x * w)));
+    const sy = Math.min(h - 1, Math.max(0, Math.round(seed.y * h)));
+    const r = Math.max(1, Math.round(PRIVACY_SEG_SEED_RADIUS * w));
+    let best = Infinity;
+    for(let dy = -r; dy <= r; dy++){
+      const y = sy + dy; if(y < 0 || y >= h) continue;
+      for(let dx = -r; dx <= r; dx++){
+        const x = sx + dx; if(x < 0 || x >= w) continue;
+        const l = labels[y * w + x];
+        if(l){ const d = dx * dx + dy * dy; if(d < best){ best = d; chosen = l; } }
+      }
+    }
+    seeded = chosen > 0;
+  }
+  if(!chosen){
+    let bestSize = 0;
+    for(let l = 1; l < nextLabel; l++){ if(sizes[l] > bestSize){ bestSize = sizes[l]; chosen = l; } }
+  }
+  const alpha = new Uint8Array(n);
+  for(let i = 0; i < n; i++){ if(labels[i] === chosen) alpha[i] = 255; }
+  return { alpha, label:chosen, components:nextLabel - 1, size:sizes[chosen], seeded };
+}
+function privacyRememberSeed(pt){
+  if(pt && Number.isFinite(pt.x) && Number.isFinite(pt.y)) privacySeed = { x:pt.x, y:pt.y, at:nowMs() };
+}
+function privacyCurrentSeed(){
+  if(!privacySeed) return null;
+  if(nowMs() - privacySeed.at > PRIVACY_SEG_SEED_HOLD_MS){ privacySeed = null; return null; }
+  return privacySeed;
+}
+// 每個校準循環運行一次分割；seedPt 係原始影片座標（未鏡像）的手腕／患側手腕
+function updatePrivacyPersonMask(video, seedPt){
+  if(seedPt) privacyRememberSeed(seedPt);
+  if(privacySegmenterFailed) return false;
+  if(!privacySegmenter){ ensurePrivacySegmenter(); return false; }
+  if(!(video && video.readyState >= 2 && video.videoWidth > 0)) return false;
+  const runAt = nowMs();
+  const interval = privacySegCostEma > PRIVACY_SEG_SLOW_MS ? PRIVACY_SEG_SLOW_INTERVAL_MS : PRIVACY_SEG_INTERVAL_MS;
+  if(runAt - privacySegLastRunAt < interval) return false;
+  privacySegLastRunAt = runAt;
+  const vw = video.videoWidth, vh = video.videoHeight;
+  const w = PRIVACY_SEG_W, h = Math.max(8, Math.round(w * vh / vw));
+  if(!privacySegInput) privacySegInput = document.createElement('canvas');
+  if(privacySegInput.width !== w || privacySegInput.height !== h){ privacySegInput.width = w; privacySegInput.height = h; }
+  const ictx = privacySegInput.getContext('2d');
+  ictx.drawImage(video, 0, 0, w, h);
+  let ts = Math.round(performance.now());
+  if(ts <= privacySegLastTs) ts = privacySegLastTs + 1;
+  privacySegLastTs = ts;
+  let result = null;
+  try{
+    result = privacySegmenter.segmentForVideo(privacySegInput, ts);
+    const m = result && result.confidenceMasks && result.confidenceMasks[0];
+    if(!m) return false;
+    const prob = m.getAsFloat32Array();
+    const mw = m.width, mh = m.height;
+    const comp = privacyPersonComponent(prob, mw, mh, privacyCurrentSeed(), PRIVACY_SEG_THRESHOLD);
+    privacySegMask = comp
+      ? { alpha:comp.alpha, w:mw, h:mh, components:comp.components, seeded:comp.seeded }
+      : { alpha:null, w:mw, h:mh, components:0, seeded:false };
+    const cost = nowMs() - runAt;
+    privacySegCostEma = privacySegCostEma ? privacySegCostEma * 0.8 + cost * 0.2 : cost;
+    return true;
+  }catch(err){
+    console.warn('privacy segmentation frame failed', err);
+    return false;
+  }finally{
+    try{ if(result && typeof result.close === 'function') result.close(); }catch(_e){}
+  }
+}
+// 將病人人像（清晰）畫返上模糊背景之上
+function drawPrivacyPersonLayer(ctx, video, rectW, rectH){
+  const mask = privacySegMask;
+  if(!(mask && mask.alpha) || !(video && video.readyState >= 2 && video.videoWidth > 0)) return false;
+  const { alpha, w, h } = mask;
+  if(!privacySegMaskCanvas){ privacySegMaskCanvas = document.createElement('canvas'); privacySegLayer = document.createElement('canvas'); }
+  if(privacySegMaskCanvas.width !== w || privacySegMaskCanvas.height !== h){ privacySegMaskCanvas.width = w; privacySegMaskCanvas.height = h; }
+  const mctx = privacySegMaskCanvas.getContext('2d');
+  const img = mctx.createImageData(w, h);
+  const d = img.data;
+  for(let i = 0, j = 0; i < alpha.length; i++, j += 4){ d[j] = 255; d[j + 1] = 255; d[j + 2] = 255; d[j + 3] = alpha[i]; }
+  mctx.putImageData(img, 0, 0);
+  if(privacySegLayer.width !== rectW || privacySegLayer.height !== rectH){ privacySegLayer.width = rectW; privacySegLayer.height = rectH; }
+  const lctx = privacySegLayer.getContext('2d');
+  const cover = privacyCoverRect(video, rectW, rectH);
+  lctx.save();
+  lctx.clearRect(0, 0, rectW, rectH);
+  lctx.imageSmoothingEnabled = true;
+  if(state.mirrorX){ lctx.translate(rectW, 0); lctx.scale(-1, 1); }
+  lctx.drawImage(video, cover.dx, cover.dy, cover.dw, cover.dh);
+  lctx.globalCompositeOperation = 'destination-in';
+  if('filter' in lctx) lctx.filter = 'blur(' + PRIVACY_SEG_EDGE_BLUR_PX + 'px)';
+  lctx.drawImage(privacySegMaskCanvas, cover.dx, cover.dy, cover.dw, cover.dh);
+  lctx.restore();
+  ctx.drawImage(privacySegLayer, 0, 0);
+  return true;
+}
+function resetPrivacySegmentation(){
+  privacySegMask = null; privacySeed = null; privacySegLastTs = 0; privacySegLastRunAt = 0;
+}
+
 function updateCalibrationCopy(){
   const hint = document.getElementById('calibHint');
   const openCheck = document.getElementById('calibOpenCheck');
@@ -8345,6 +8527,9 @@ function renderCalibCheck(id, done){
 function startCalibLoop(){
   updateCalibrationCopy();
   const video = document.getElementById('calibVideo');
+  // v100：預熱人像分割模型，令模糊開啟時人像盡快清晰。
+  resetPrivacySegmentation();
+  if(privacyBlurEnabled()) ensurePrivacySegmenter();
   const hint = document.getElementById('calibHint');
   function loop(){
     if(!screens.calib.classList.contains('active')){ return; }
@@ -8392,22 +8577,32 @@ function startCalibLoop(){
       res={detected:false, reason:'calib-frame-error'};
     }
 
+    // v99/v100 私隱：偵測後，先畫病人人像（分割），再在手部附近開清晰窗口（保證手部一定清晰）。
+    let privacyWindowPts = null;
+    if(privacyOn){
+      if(res.detected){
+        // 手部模型：21 點外框；Level 3–4 姿勢：只用患側肩／肘／腕。
+        if(isGrossTabletop() && Array.isArray(res.lm) && res.lm.length > 16){
+          const left = activeAffectedSide() === 'left';
+          privacyWindowPts = [res.lm[left ? 11 : 12], res.lm[left ? 13 : 14], res.lm[left ? 15 : 16]];
+        }else if(Array.isArray(res.lm) && res.lm.length >= 21){
+          privacyWindowPts = res.lm;
+        }else{
+          privacyWindowPts = [{ x: state.mirrorX ? (1 - res.nx) : res.nx, y: res.ny }];
+        }
+      }
+      // 種子點：手腕（手部模型 lm[0]；姿勢取患側手腕 = 第三點）
+      const seedPt = privacyWindowPts ? (privacyWindowPts.length >= 21 ? privacyWindowPts[0] : privacyWindowPts[privacyWindowPts.length - 1]) : null;
+      updatePrivacyPersonMask(video, seedPt);
+      drawPrivacyPersonLayer(ctx, video, rectW, rectH);
+    }
+
     if(res.detected){
       document.getElementById('pixelCount').textContent = isShoulderFlexionLevel()
         ? '✅ 偵測到已選患側肩及手肘'
         : '✅ 偵測到手部';
-      if(privacyOn){
-        // 手部模型：21 點外框；Level 3–4 姿勢：只用患側肩／肘／腕（不會露出面部）。
-        let windowPts = null;
-        if(isGrossTabletop() && Array.isArray(res.lm) && res.lm.length > 16){
-          const left = activeAffectedSide() === 'left';
-          windowPts = [res.lm[left ? 11 : 12], res.lm[left ? 13 : 14], res.lm[left ? 15 : 16]];
-        }else if(Array.isArray(res.lm) && res.lm.length >= 21){
-          windowPts = res.lm;
-        }else{
-          windowPts = [{ x: state.mirrorX ? (1 - res.nx) : res.nx, y: res.ny }];
-        }
-        drawPrivacySharpWindow(ctx, video, rectW, rectH, windowPts);
+      if(privacyOn && privacyWindowPts){
+        drawPrivacySharpWindow(ctx, video, rectW, rectH, privacyWindowPts);
       }
       if(research.active || isGraspStyleMode()){
         const now = nowMs();
@@ -11492,7 +11687,7 @@ function updateFramePerfOverlay(now){
     framePerf.overlayEl = el;
   }
   const p = framePerfSnapshot();
-  el.textContent = `perf v99  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
+  el.textContent = `perf v100  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
     + `鏡頭 ${p.video[0]}×${p.video[1]}  畫布 ${p.canvas[0]}×${p.canvas[1]}  dpr ${p.dpr}  手模型 ${p.handDelegate || '-'}\n`
     + `手 ${p.hand.hands} 隻  標籤 ${p.hand.label || '-'} ${p.hand.score}  接納 ${p.hand.path || '-'}  嚴格 ${p.hand.strict} 連續 ${p.hand.continuity} 單手 ${p.hand.lone} 拒絕 ${p.hand.rejected}\n`
     + `左右手檢查 ${p.hand.check === 'off' ? '關' : '開'}  鎖定手形 ${p.hand.lockSize || '-'}  大小拒絕 ${p.hand.sizeRejected}  遠處拒絕 ${p.hand.farRejected}`;
@@ -19164,6 +19359,20 @@ window.__qa = {
   setHandednessCheck(on){ setHandednessCheck(on !== false); return state.handednessCheck; },
   handLock(){ return { ...handLock, track:{ ...affectedHandTrack }, diag:{ ...handAdmitDiag } }; },
   setPrivacyBlur(on){ setPrivacyBlur(on !== false); return privacyBlurEnabled(); },
+  privacyPersonComponent(prob, w, h, seed, threshold){
+    return privacyPersonComponent(prob instanceof Float32Array ? prob : Float32Array.from(prob), w, h, seed || null, threshold ?? PRIVACY_SEG_THRESHOLD);
+  },
+  privacySegState(){
+    return { ready:privacySegmenterReady(), failed:privacySegmenterFailed, costMs:Math.round(privacySegCostEma), mask:privacySegMask ? { w:privacySegMask.w, h:privacySegMask.h, components:privacySegMask.components, seeded:privacySegMask.seeded, hasAlpha:!!privacySegMask.alpha } : null, seed:privacySeed ? { x:privacySeed.x, y:privacySeed.y } : null };
+  },
+  setPrivacyPersonMask(alpha, w, h){
+    privacySegMask = alpha ? { alpha:Uint8Array.from(alpha), w, h, components:1, seeded:true } : null;
+    if(alpha && screens.calib.classList.contains('active')){
+      const video = document.getElementById('calibVideo');
+      return drawPrivacyPersonLayer(calibCanvas.getContext('2d'), video, calibCanvas.width, calibCanvas.height);
+    }
+    return !!alpha;
+  },
   privacySharpWindow(points){
     const video = document.getElementById('calibVideo');
     if(!privacyBlurEnabled() || !Array.isArray(points)) return false;
@@ -20279,7 +20488,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v99-20260904-hand-check-switch-lock-privacy-blur";
+  const LEVEL_APP_BUILD = "v100-20260904-privacy-person-segmentation";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 
