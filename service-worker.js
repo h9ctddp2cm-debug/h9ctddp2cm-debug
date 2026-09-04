@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v103-20260905-l3-demo-palmar-grasp";
+const CACHE_VERSION = "fthue-rehab-v104-20260905-landing-copy-horizontal-cert";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

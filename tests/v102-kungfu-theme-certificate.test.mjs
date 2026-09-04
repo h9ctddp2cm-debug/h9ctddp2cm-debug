@@ -8,15 +8,15 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const loc = fs.readFileSync(path.join(root, 'localization.js'), 'utf8');
-const BUILD = 'v103-20260905-l3-demo-palmar-grasp';
+const BUILD = 'v104-20260905-landing-copy-horizontal-cert';
 
-test('v102 build markers are aligned across index, service worker and manifest', () => {
+test('v102+ build markers are aligned across index, service worker and manifest', () => {
   const sw = fs.readFileSync(path.join(root, 'service-worker.js'), 'utf8');
   const manifest = fs.readFileSync(path.join(root, 'manifest.webmanifest'), 'utf8');
   assert.match(html, new RegExp(`LEVEL_APP_BUILD\\s*=\\s*['"]${BUILD}['"]`));
   assert.match(sw, new RegExp(`CACHE_VERSION\\s*=\\s*"fthue-rehab-${BUILD}"`));
   assert.match(manifest, new RegExp(`start_url[^\\n]*${BUILD}`));
-  assert.match(html, /perf v103 {2}/);
+  assert.match(html, /perf v104 {2}/);
 });
 
 test('landing title block: service title above and larger than the kung-fu brand line', () => {
@@ -45,13 +45,15 @@ test('Level 2 card is archived (hidden) but not deleted; Level 2 code paths rema
 
 test('Levels 3–6 cards carry kung-fu names, slogans and the clinical name', () => {
   const pairs = [
-    ['佛光初現', '初現曙光，神功開竅', '肩屈曲 30–60°'],
-    ['大鵬展翅', '舉高膊頭，生龍活虎', '肩屈曲 60° 或以上'],
-    ['如來神掌', '揮灑自如，大開大合', '患手握放練習'],
-    ['萬佛朝宗', '終極境界，彈指神通', '患手三點捏握功能任務'],
+    ['佛光初現', '初現曙光，神功開竅', '膊頭屈曲 30–60°'],
+    ['大鵬展翅', '舉高膊頭，生龍活虎', '膊頭屈曲 60° 或以上'],
+    ['如來神掌', '揮灑自如，大開大合', null],
+    ['萬佛朝宗', '終極境界，彈指神通', null],
   ];
   for (const [name, slogan, clinical] of pairs) {
-    const re = new RegExp(`<h3 class="kungfu">${name}</h3>\\s*<p class="lv-kungfu-sub">${slogan}</p>\\s*<p class="lv-clinical">${clinical}</p>`);
+    // v104：Level 5/6 唔再顯示臨床名稱；Level 3/4 用「膊頭屈曲」
+    const tail = clinical ? `\\s*<p class="lv-clinical">${clinical}</p>` : `\\s*(?!<p class="lv-clinical">)`;
+    const re = new RegExp(`<h3 class="kungfu">${name}</h3>\\s*<p class="lv-kungfu-sub">${slogan}</p>${tail}`);
     assert.match(html, re, name);
     assert.ok(loc.includes(`'${name}'`), `EN entry for ${name}`);
     assert.ok(loc.includes(`'${slogan}'`), `EN entry for ${slogan}`);

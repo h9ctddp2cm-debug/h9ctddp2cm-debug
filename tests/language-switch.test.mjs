@@ -41,13 +41,14 @@ test('localization covers static, dynamic, accessibility, canvas and speech surf
 test('required shoulder demonstration labels localize exactly and remain clinically scoped',()=>{
   assert.match(localization,/'主動肩屈曲 \(Active shoulder flexion\)':'Active shoulder flexion'/);
   assert.match(localization,/'主動輔助肩屈曲 \(Active-assisted shoulder flexion\)':'Active-assisted shoulder flexion'/);
-  assert.match(html,/data-testid="demo-level-3-active"[\s\S]*主動肩屈曲 \(Active shoulder flexion\)/);
-  assert.match(html,/data-testid="demo-level-3-assisted"[\s\S]*主動輔助肩屈曲 \(Active-assisted shoulder flexion\)/);
+  assert.match(html,/data-testid="demo-level-3-active"[\s\S]*拿杯 \(active shoulder flexion\)/);
+  assert.match(localization,/'拿杯 \(active shoulder flexion\)':'Hold a cup \(active shoulder flexion\)'/);
+  assert.match(html,/data-testid="demo-level-3-assisted"[\s\S]*雙手舉棒 \(active-assisted shoulder flexion\)/);
   assert.doesNotMatch(html,/shoulder-demos[\s\S]{0,400}(疼痛|不適)/);
 });
 
 test('app, manifest, service worker and build output include localization consistently',()=>{
-  const version='v103-20260905-l3-demo-palmar-grasp';
+  const version='v104-20260905-landing-copy-horizontal-cert';
   assert.match(html,new RegExp(version));
   assert.equal(JSON.parse(manifest).start_url,`./index.html?build=${version}`);
   assert.match(worker,new RegExp(`fthue-rehab-${version}`));

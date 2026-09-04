@@ -366,8 +366,8 @@ test('a 180-degree target remains reachable after a non-zero camera baseline',()
 test('visible mapping and setup copy distinguish Level 2, Level 3 and Level 4 without automatic assignment or force claims',()=>{
   const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
   assert.match(html,/FTHUE Level 2[\s\S]*桌面承托訓練/);
-  assert.match(html,/FTHUE Level 3[\s\S]*肩屈曲 30–60°/);
-  assert.match(html,/FTHUE Level 4[\s\S]*肩屈曲 60° 或以上/);
+  assert.match(html,/FTHUE Level 3[\s\S]*膊頭屈曲 30–60°/);
+  assert.match(html,/FTHUE Level 4[\s\S]*膊頭屈曲 60° 或以上/);
   assert.match(html,/患側前斜約 30–45°/);
   assert.match(html,/並非量角器 ROM/);
   assert.match(html,/相機不量度抓握或捏力/);
@@ -418,9 +418,9 @@ test('setup exposes distinct exact target-hold choices and aligns v51 source ide
   assert.match(html,/id="targetHoldOverlay"[\s\S]*id="targetHoldNumber"/);
   assert.match(html,/holdCountdownActive/);
   assert.match(html,/SHOULDER_HOLD_COUNT_CANTONESE/);
-  assert.match(html,/v103-20260905-l3-demo-palmar-grasp/);
-  assert.match(manifest,/v103-20260905-l3-demo-palmar-grasp/);
-  assert.match(worker,/v103-20260905-l3-demo-palmar-grasp/);
+  assert.match(html,/v104-20260905-landing-copy-horizontal-cert/);
+  assert.match(manifest,/v104-20260905-landing-copy-horizontal-cert/);
+  assert.match(worker,/v104-20260905-landing-copy-horizontal-cert/);
   assert.doesNotMatch(html,/v46-20260825-shoulder-detection-repair/);
   assert.doesNotMatch(manifest,/v46-20260825-shoulder-detection-repair/);
   assert.doesNotMatch(worker,/v46-20260825-shoulder-detection-repair/);
@@ -442,8 +442,8 @@ test('Level 3 and 4 use deterministic side-by-side active and active-assisted de
   });
   assert.match(html,/shoulder-demos[\s\S]*demo-level-3-active[\s\S]*demo-level-3-assisted/);
   assert.match(html,/shoulder-demos[\s\S]*demo-level-4-active[\s\S]*demo-level-4-assisted/);
-  assert.match(html,/主動肩屈曲 \(Active shoulder flexion\)/);
-  assert.match(html,/主動輔助肩屈曲 \(Active-assisted shoulder flexion\)/);
+  assert.match(html,/拿杯 \(active shoulder flexion\)/);
+  assert.match(html,/雙手舉棒 \(active-assisted shoulder flexion\)/);
   assert.match(fs.readFileSync(path.join(root,'img','advanced','shoulder_active_30_60.svg'),'utf8'),/cup/i);
   assert.match(fs.readFileSync(path.join(root,'img','advanced','shoulder_assisted_30_60.svg'),'utf8'),/#f2c400/i);
 });

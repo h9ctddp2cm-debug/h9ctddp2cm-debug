@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>證書 · 中風上肢復康訓練十日完成 · 仁濟醫院職業治療部</title>
+<title>參與嘉許狀 · 中風上肢復康訓練 · 仁濟醫院職業治療部</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&display=swap" rel="stylesheet">
@@ -77,56 +77,39 @@
     border:.9mm solid var(--navy);
   }
 
-  /* 直排文字：由右至左排欄（每個 p 一欄，唔自動換行） */
+  /* 橫排文字：標題置中，正文由左至右 */
   .content{
-    position:absolute; inset:20mm 22mm 22mm 22mm;
-    writing-mode:vertical-rl;
-    text-orientation:mixed;
-    /* 直排（vertical-rl）下，flex column 嘅主軸係水平、由右至左 */
-    display:flex; flex-direction:column; align-items:flex-start;
+    position:absolute; inset:18mm 26mm 22mm 26mm;
+    display:flex; flex-direction:column; align-items:center;
   }
-  .content p{ margin:0; white-space:nowrap; }
-  .title-col{
-    display:flex; flex-direction:column; align-items:flex-start;
-    margin-right:9mm;
-  }
+  .content p{ margin:0; }
+  .title-col{ display:flex; flex-direction:column; align-items:center; }
   .title{
-    font-size:34mm; font-weight:900; letter-spacing:8mm;
-    color:var(--navy); line-height:1;
-    margin:4mm 0 0 6mm; white-space:nowrap;
+    font-size:24mm; font-weight:900; letter-spacing:10mm; text-indent:10mm;
+    color:var(--navy); line-height:1.1;
     text-shadow:0 .4mm 0 rgba(255,255,255,.9);
   }
-  /* 副題：兩行直排，同「證書」頂邊對齊，唔再用分隔線 */
-  .subtitle{
-    display:flex; flex-direction:column; align-items:flex-start;
-    margin-top:6mm; line-height:1.15;
-  }
-  .subtitle p{ white-space:nowrap; }
-  .subtitle .sub1{
-    font-size:7.4mm; font-weight:900; letter-spacing:1.6mm; color:var(--navy);
-  }
-  .subtitle .sub2{
-    font-size:6.2mm; font-weight:700; letter-spacing:1.4mm; color:var(--ink-soft);
-    margin-right:2.5mm; padding-top:2mm;
+  .subtitle{ display:flex; flex-direction:column; align-items:center; margin-top:3mm; line-height:1.3; }
+  .subtitle .sub1{ font-size:8.6mm; font-weight:900; letter-spacing:2.2mm; text-indent:2.2mm; color:var(--navy); }
+  .subtitle .sub2{ font-size:6.8mm; font-weight:700; letter-spacing:2mm; text-indent:2mm; color:var(--ink-soft); margin-top:1mm; }
+  .subtitle::after{
+    content:""; display:block; width:70mm; height:.7mm; background:var(--navy); margin:4mm auto 0;
   }
   .body{
-    display:flex; flex-direction:column; align-items:flex-start;
-    font-size:8.6mm; font-weight:700; line-height:1.8;
-    letter-spacing:.7mm;
-    color:var(--ink);
-    padding-top:3mm;
+    align-self:stretch;
+    font-size:7.6mm; font-weight:700; line-height:1.85; letter-spacing:.5mm;
+    color:var(--ink); margin-top:7mm; padding:0 8mm;
   }
-  .body p.indent{ padding-top:17.2mm; }
+  .body p.indent{ text-indent:2em; }
   .body .latin{ letter-spacing:.2mm; }
   /* 病人稱呼：留空（全形空格）畀治療師手寫，唔畫線 */
   .body .blank{ letter-spacing:0; }
   .sign{
-    display:flex; flex-direction:column; align-items:flex-start;
-    font-size:7mm; font-weight:700; letter-spacing:.9mm; line-height:1.9;
-    color:var(--ink);
-    padding-top:40mm; margin-left:auto; margin-right:12mm;
+    align-self:flex-end; text-align:right;
+    font-size:6.4mm; font-weight:700; letter-spacing:.8mm; line-height:1.9;
+    color:var(--ink); margin-top:auto; padding-right:8mm;
   }
-  .sign .date{ font-size:6.2mm; letter-spacing:.5mm; }
+  .sign .date{ font-size:5.8mm; letter-spacing:.5mm; }
 
   /* 左下角：仁濟醫院職業治療部 logo（透明底，直接疊喺水墨背景上） */
   .seal{
@@ -174,11 +157,8 @@
 
         <div class="body">
           <p>祝賀<span class="blank" aria-label="病人稱呼（手寫）">　　　　　　</span>：</p>
-          <p class="indent">在仁濟醫院職業治療部完成十天的</p>
-          <p>中風上肢復康訓練——</p>
-          <p>『<span class="latin">FTHUE-HK</span> 港式神功修煉』遊戲，</p>
-          <p>全程意志堅強、毅力超人、</p>
-          <p>可喜可賀！</p>
+          <p class="indent">在仁濟醫院職業治療部完成十天的中風上肢復康訓練——</p>
+          <p class="indent">『<span class="latin">FTHUE-HK</span> 港式神功修煉』遊戲，<br>全程意志堅強、毅力超人、可喜可賀！</p>
           <p class="indent">特發此獎，以茲紀念！</p>
         </div>
 

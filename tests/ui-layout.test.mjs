@@ -453,10 +453,8 @@ test('final FTHUE Level 2–7 movement wording is consistent', async (t) => {
       '萬佛朝宗',
     ]);
     assert.deepEqual(copy.clinical, [
-      '肩屈曲 30–60°',
-      '肩屈曲 60° 或以上',
-      '患手握放練習',
-      '患手三點捏握功能任務',
+      '膊頭屈曲 30–60°',
+      '膊頭屈曲 60° 或以上',
     ]);
     assert.match(copy.level2, /手臂放桌面/);
     assert.match(copy.level2, /肩、肘、腕及路徑入鏡/);

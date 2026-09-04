@@ -3,7 +3,7 @@
   "short_name": "FTHUE 復康",
   "description": "治療師監督下使用的中風上肢復康試玩、訓練及研究工具。",
   "lang": "zh-Hant",
-  "start_url": "./index.html?build=v103-20260905-l3-demo-palmar-grasp",
+  "start_url": "./index.html?build=v104-20260905-landing-copy-horizontal-cert",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
