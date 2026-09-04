@@ -106,11 +106,9 @@ for (const vp of VIEWPORTS) {
       assert.ok(result.level2.alt.length > 0, 'Level 2 image keeps alt text');
       for (const demo of result.demos) {
         assert.ok(demo.rect, `Level ${demo.level} ${demo.kind} demonstration is present`);
-        if (demo.level === '3' && demo.kind === 'active') {
-          assert.ok(/level3_therapist_shoulder_30_60\.gif$/.test(demo.src), 'Level 3 active uses the therapist cartoon GIF (v102)');
-        } else {
-          assert.ok(/\.svg$/.test(demo.src), `Level ${demo.level} ${demo.kind} uses deterministic SVG`);
-        }
+        // v105：Level 3／4 主動及輔助示範全部改用治療師卡通 GIF
+        const expected = new RegExp(`level${demo.level}_therapist_${demo.kind === 'active' ? 'cup' : 'bar'}\\.gif$`);
+        assert.ok(expected.test(demo.src), `Level ${demo.level} ${demo.kind} uses the therapist cartoon GIF (v105)`);
         assert.ok(demo.alt.length > 0, `Level ${demo.level} ${demo.kind} has alt text`);
         assert.ok(Math.abs(demo.rect.width / demo.rect.height - 220 / 190) < 0.03,
           `Level ${demo.level} ${demo.kind} demonstration keeps its stable aspect ratio`);

@@ -1120,8 +1120,9 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
 .trial-actions button:active{ transform:scale(.985); }
 .trial-actions button:focus-visible{ outline:3px solid rgba(26,107,90,.25); outline-offset:2px; }
 .level-card .lv-tag{
-  display:inline-block; background:var(--teal); color:#fff; font-size:13px; font-weight:800;
-  padding:5px 12px; border-radius:999px; margin-bottom:10px; letter-spacing:0.5px;
+  /* v105：治療師要求 Level 標籤用大標題同一橙色（--orange）橙字、無底色、加粗 */
+  display:inline-block; background:transparent; color:var(--orange); font-size:15px; font-weight:900;
+  padding:0; border-radius:0; margin-bottom:8px; letter-spacing:0.8px;
 }
 .level-card h3{ font-size:21px; margin:0 0 6px; color:var(--teal-dark); font-weight:800; }
 .level-card .lv-action{ font-size:15px; font-weight:700; color:var(--text); margin:0 0 10px; }
@@ -1368,15 +1369,16 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
           </div>
           <div class="level-motion shoulder-demos" aria-label="Level 3 膊頭屈曲動作示範">
             <figure>
-              <!-- v102：改用鄧姑娘卡通造型示範（由 img/advanced/level4_cartoon_side_forward.png 左邊人物製成）；
-                   原本 SVG shoulder_active_30_60.svg 保留喺 img/advanced/ -->
-              <img src="img/advanced/level3_therapist_shoulder_30_60.gif"
-                alt="膊頭屈曲動作示範：患者以患手持杯，在三十至六十度範圍內重複抬高手臂"
+              <!-- v105：鄧姑娘卡通 GIF 示範（四格連續圖 l3l4_cup_sheet4 / l3l4_bar_sheet4 製成）；
+                   Level 3 = 0°→30° 兩格，Level 4 = 0°→30°→60°→90° 四格來回。
+                   原本 SVG shoulder_active_*.svg / shoulder_assisted_*.svg 保留喺 img/advanced/ -->
+              <img src="img/advanced/level3_therapist_cup.gif"
+                alt="膊頭屈曲動作示範：患者以患手掌心握住杯身，在三十度左右範圍內重複抬高手臂"
                 data-testid="demo-level-3-active">
               <figcaption>拿杯 (active shoulder flexion)</figcaption>
             </figure>
             <figure>
-              <img src="img/advanced/shoulder_assisted_30_60.svg"
+              <img src="img/advanced/level3_therapist_bar.gif"
                 alt="雙手舉棒示範：患者雙手持黃色彈性阻力棒，在三十至六十度範圍內重複抬高手臂"
                 data-testid="demo-level-3-assisted">
               <figcaption>雙手舉棒 (active-assisted shoulder flexion)</figcaption>
@@ -1408,14 +1410,14 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
           </div>
           <div class="level-motion shoulder-demos" aria-label="Level 4 膊頭屈曲動作示範">
             <figure>
-              <img src="img/advanced/shoulder_active_60_plus.svg"
-                alt="膊頭屈曲動作示範：患者以患手持杯，由六十度或以上重複抬高手臂"
+              <img src="img/advanced/level4_therapist_cup.gif"
+                alt="膊頭屈曲動作示範：患者以患手掌心握住杯身，由膝旁逐步抬高至肩膊高度再放下"
                 data-testid="demo-level-4-active">
               <figcaption>拿杯 (active shoulder flexion)</figcaption>
             </figure>
             <figure>
-              <img src="img/advanced/shoulder_assisted_60_plus.svg"
-                alt="雙手舉棒示範：患者雙手持黃色彈性阻力棒，由六十度或以上重複抬高手臂"
+              <img src="img/advanced/level4_therapist_bar.gif"
+                alt="雙手舉棒示範：患者雙手持黃色訓練棒，手肘伸直，由大腿逐步抬高至肩膊高度再放下"
                 data-testid="demo-level-4-assisted">
               <figcaption>雙手舉棒 (active-assisted shoulder flexion)</figcaption>
             </figure>
@@ -11902,7 +11904,7 @@ function updateFramePerfOverlay(now){
     framePerf.overlayEl = el;
   }
   const p = framePerfSnapshot();
-  el.textContent = `perf v104  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
+  el.textContent = `perf v105  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
     + `鏡頭 ${p.video[0]}×${p.video[1]}  畫布 ${p.canvas[0]}×${p.canvas[1]}  dpr ${p.dpr}  手模型 ${p.handDelegate || '-'}\n`
     + `手 ${p.hand.hands} 隻  標籤 ${p.hand.label || '-'} ${p.hand.score}  接納 ${p.hand.path || '-'}  嚴格 ${p.hand.strict} 連續 ${p.hand.continuity} 單手 ${p.hand.lone} 拒絕 ${p.hand.rejected}\n`
     + `左右手檢查 ${p.hand.check === 'off' ? '關' : '開'}  鎖定手形 ${p.hand.lockSize || '-'}  大小拒絕 ${p.hand.sizeRejected}  遠處拒絕 ${p.hand.farRejected}`;
@@ -20864,7 +20866,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v104-20260905-landing-copy-horizontal-cert";
+  const LEVEL_APP_BUILD = "v105-20260905-therapist-gifs-orange-tags";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

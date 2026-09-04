@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v104-20260905-landing-copy-horizontal-cert";
+const CACHE_VERSION = "fthue-rehab-v105-20260905-therapist-gifs-orange-tags";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

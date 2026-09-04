@@ -376,11 +376,11 @@ test('visible mapping and setup copy distinguish Level 2, Level 3 and Level 4 wi
   assert.doesNotMatch(html,/state\.level==='67'\?\[60,70,80,90,100,110,120\]/);
   assert.match(html,/if\(levelId==='67'\) state\.shoulderTargetDeg=60/);
   assert.match(html,/FTHUE Level 2[\s\S]*img\/advanced\/level4_cartoon_side_forward\.png/);
-  // v102：Level 3 主動示範改用治療師卡通 GIF；SVG 檔保留
-  assert.match(html,/FTHUE Level 3[\s\S]*img\/advanced\/level3_therapist_shoulder_30_60\.gif[\s\S]*img\/advanced\/shoulder_assisted_30_60\.svg/);
-  assert.match(html,/FTHUE Level 4[\s\S]*img\/advanced\/shoulder_active_60_plus\.svg[\s\S]*img\/advanced\/shoulder_assisted_60_plus\.svg/);
-  assert.match(html,/患者以患手持杯，在三十至六十度範圍內重複抬高手臂/);
-  assert.match(html,/患者雙手持黃色彈性阻力棒，由六十度或以上重複抬高手臂/);
+  // v105：Level 3／4 四個示範全部改用治療師卡通 GIF（拿杯／舉棒）；SVG 檔保留
+  assert.match(html,/FTHUE Level 3[\s\S]*img\/advanced\/level3_therapist_cup\.gif[\s\S]*img\/advanced\/level3_therapist_bar\.gif/);
+  assert.match(html,/FTHUE Level 4[\s\S]*img\/advanced\/level4_therapist_cup\.gif[\s\S]*img\/advanced\/level4_therapist_bar\.gif/);
+  assert.match(html,/患者以患手掌心握住杯身，在三十度左右範圍內重複抬高手臂/);
+  assert.match(html,/患者雙手持黃色訓練棒，手肘伸直，由大腿逐步抬高至肩膊高度再放下/);
   assert.doesNotMatch(html,/id="shoulderStartOptions"/);
   assert.doesNotMatch(html,/Level 4：[^<\n]*(桌面承托|滑板|向前滑)/);
 });
@@ -418,9 +418,9 @@ test('setup exposes distinct exact target-hold choices and aligns v51 source ide
   assert.match(html,/id="targetHoldOverlay"[\s\S]*id="targetHoldNumber"/);
   assert.match(html,/holdCountdownActive/);
   assert.match(html,/SHOULDER_HOLD_COUNT_CANTONESE/);
-  assert.match(html,/v104-20260905-landing-copy-horizontal-cert/);
-  assert.match(manifest,/v104-20260905-landing-copy-horizontal-cert/);
-  assert.match(worker,/v104-20260905-landing-copy-horizontal-cert/);
+  assert.match(html,/v105-20260905-therapist-gifs-orange-tags/);
+  assert.match(manifest,/v105-20260905-therapist-gifs-orange-tags/);
+  assert.match(worker,/v105-20260905-therapist-gifs-orange-tags/);
   assert.doesNotMatch(html,/v46-20260825-shoulder-detection-repair/);
   assert.doesNotMatch(manifest,/v46-20260825-shoulder-detection-repair/);
   assert.doesNotMatch(worker,/v46-20260825-shoulder-detection-repair/);

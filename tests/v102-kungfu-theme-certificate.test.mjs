@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const loc = fs.readFileSync(path.join(root, 'localization.js'), 'utf8');
-const BUILD = 'v104-20260905-landing-copy-horizontal-cert';
+const BUILD = 'v105-20260905-therapist-gifs-orange-tags';
 
 test('v102+ build markers are aligned across index, service worker and manifest', () => {
   const sw = fs.readFileSync(path.join(root, 'service-worker.js'), 'utf8');
@@ -16,7 +16,7 @@ test('v102+ build markers are aligned across index, service worker and manifest'
   assert.match(html, new RegExp(`LEVEL_APP_BUILD\\s*=\\s*['"]${BUILD}['"]`));
   assert.match(sw, new RegExp(`CACHE_VERSION\\s*=\\s*"fthue-rehab-${BUILD}"`));
   assert.match(manifest, new RegExp(`start_url[^\\n]*${BUILD}`));
-  assert.match(html, /perf v104 {2}/);
+  assert.match(html, /perf v105 {2}/);
 });
 
 test('landing title block: service title above and larger than the kung-fu brand line', () => {
@@ -63,17 +63,31 @@ test('Levels 3–6 cards carry kung-fu names, slogans and the clinical name', ()
   assert.ok(loc.includes("'欲要成功，必先勤功！'"));
 });
 
-test('Level 3 active demo uses the therapist cartoon GIF; original SVG retained', () => {
-  assert.match(html, /data-testid="demo-level-3-active"/);
-  assert.match(html, /img\/advanced\/level3_therapist_shoulder_30_60\.gif"\s*\n?\s*alt="[^"]+"\s*\n?\s*data-testid="demo-level-3-active"/);
-  const gif = path.join(root, 'img', 'advanced', 'level3_therapist_shoulder_30_60.gif');
-  assert.ok(fs.existsSync(gif));
-  const buf = fs.readFileSync(gif);
-  assert.equal(buf.subarray(0, 6).toString('latin1'), 'GIF89a');
-  assert.ok(buf.length > 50_000 && buf.length < 1_000_000, 'GIF size sane');
-  assert.ok(fs.existsSync(path.join(root, 'img', 'advanced', 'shoulder_active_30_60.svg')));
-  assert.ok(fs.existsSync(path.join(root, 'img', 'advanced', 'shoulder_assisted_30_60.svg')));
-  assert.match(html, /img\/advanced\/shoulder_assisted_30_60\.svg/);
+test('Level 3/4 demos use the four therapist cartoon GIFs (v105); original SVGs retained', () => {
+  const gifs = [
+    ['level3_therapist_cup.gif', 'demo-level-3-active'],
+    ['level3_therapist_bar.gif', 'demo-level-3-assisted'],
+    ['level4_therapist_cup.gif', 'demo-level-4-active'],
+    ['level4_therapist_bar.gif', 'demo-level-4-assisted'],
+  ];
+  for (const [file, testid] of gifs) {
+    assert.match(html, new RegExp(`img/advanced/${file}"\\s*\\n?\\s*alt="[^"]+"\\s*\\n?\\s*data-testid="${testid}"`));
+    const gif = path.join(root, 'img', 'advanced', file);
+    assert.ok(fs.existsSync(gif), file);
+    const buf = fs.readFileSync(gif);
+    assert.equal(buf.subarray(0, 6).toString('latin1'), 'GIF89a');
+    assert.ok(buf.length > 50_000 && buf.length < 1_000_000, `${file} size sane`);
+  }
+  assert.ok(!fs.existsSync(path.join(root, 'img', 'advanced', 'level3_therapist_shoulder_30_60.gif')), 'v103 single GIF removed');
+  for (const svg of ['shoulder_active_30_60.svg', 'shoulder_assisted_30_60.svg', 'shoulder_active_60_plus.svg', 'shoulder_assisted_60_plus.svg']) {
+    assert.ok(fs.existsSync(path.join(root, 'img', 'advanced', svg)), svg);
+  }
+  assert.doesNotMatch(html, /img\/advanced\/shoulder_(active|assisted)_(30_60|60_plus)\.svg"/);
+});
+
+test('Level tags use the brand orange and are bold (v105)', () => {
+  assert.match(html, /\.level-card \.lv-tag\{[^}]*background:transparent[^}]*color:var\(--orange\)[^}]*font-weight:900/s);
+  assert.match(html, /\.home-head \.brand-title \.brand-en\{[^}]*color:var\(--orange\)/s);
 });
 
 test('certificate.html exists, is linked from the landing page, and carries the approved wording', () => {
