@@ -8,15 +8,15 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const html=readFileSync(path.join(root,'index.html'),'utf8');
 
 test('release markers are aligned across the source release files',()=>{
-  const version='v105-20260905-therapist-gifs-orange-tags';
+  const version='v106-20260905-flowers-bowling-sign';
   assert.match(html,new RegExp(version));
   assert.match(readFileSync(path.join(root,'service-worker.js'),'utf8'),new RegExp(version));
   assert.match(readFileSync(path.join(root,'manifest.webmanifest'),'utf8'),new RegExp(version));
 });
 
-test('bowling rack is lowered while keeping the enlarged v81 pins',()=>{
-  assert.match(html,/const pinBaseY=ch\*0\.390;/);
-  assert.match(html,/const ph=g\.topH\*0\.45,pwid=ph\*0\.3125;/);
+test('bowling rack is lowered (v106: further, under the sign) with large pins',()=>{
+  assert.match(html,/const pinBaseY=ch\*0\.540;/);
+  assert.match(html,/const ph=g\.topH\*0\.40,pwid=ph\*0\.3125;/);
 });
 
 test('photo puzzle uses one shared rectangular geometry for hole, crop and piece',()=>{

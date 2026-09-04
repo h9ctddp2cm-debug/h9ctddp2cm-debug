@@ -3354,12 +3354,45 @@ function bowlingLaneGeometry(cw,ch){
   const bgW=imgBowlingAlleyBg.naturalWidth||768,bgH=imgBowlingAlleyBg.naturalHeight||1028;
   const topSrcH=bgH*0.545;
   // Keep the rack visibly on the timber lane rather than floating against the
-  // rear wall. The larger v81 pins retain their size but sit slightly lower.
-  const pinBaseY=ch*0.390;
+  // rear wall. v106: the rack sits lower still (0.54ch) so the「荃灣保齡球場」
+  // sign has a clear band above the pins; the ball rest point follows the rack.
+  const pinBaseY=ch*0.540;
   const pw=cw,py0=0,py1=ch,topH=ch*0.50;
   const s=Math.max(cw/bgW,ch/bgH),dw=bgW*s,dh=bgH*s;
-  return {laneX,pw,py0,py1,topH,topSrcH,bgW,bgH,pinBaseY,
+  const ballTopY=pinBaseY-ch*0.05;
+  // Sign band: below the DOM HUD (score chips / control buttons / angle panel,
+  // measured in CSS px and scaled to canvas px), above the tallest back-row pin.
+  const portrait=ch>cw;
+  const cssScale=cw/Math.max(1,gameCanvas.clientWidth||cw);
+  const ph=topH*0.40;
+  const pinTopY=pinBaseY-3*ph*0.14-ph*0.82;
+  const signTop=(portrait?156:84)*cssScale;
+  const signBottom=pinTopY-8*cssScale;
+  const panelRight=262*cssScale; // 現在／目標 angle panel on the left
+  const signRatio=(imgBowlingSign.naturalWidth>0&&imgBowlingSign.naturalHeight>0)
+    ? imgBowlingSign.naturalWidth/imgBowlingSign.naturalHeight : 845/428;
+  let signH=Math.max(0,signBottom-signTop),signW=signH*signRatio;
+  const signMaxW=Math.max(0,2*(laneX-panelRight-6*cssScale));
+  if(signW>signMaxW){signW=signMaxW;signH=signW/signRatio;}
+  const signY=signBottom-signH;
+  return {laneX,pw,py0,py1,topH,topSrcH,bgW,bgH,pinBaseY,ballTopY,pinTopY,
+    signX:laneX-signW/2,signY,signW,signH,
     bgDx:(cw-dw)/2,bgDy:(ch-dh)/2,bgDw:dw,bgDh:dh};
+}
+function drawBowlingSign(ctx,g){
+  if(!(g.signW>20&&g.signH>10))return;
+  ctx.save();
+  if(imgBowlingSign.complete&&imgBowlingSign.naturalWidth>0){
+    ctx.shadowColor='rgba(0,0,0,0.35)';ctx.shadowBlur=g.signH*0.12;ctx.shadowOffsetY=g.signH*0.05;
+    ctx.drawImage(imgBowlingSign,g.signX,g.signY,g.signW,g.signH);
+  }else{
+    rrPath(ctx,g.signX,g.signY,g.signW,g.signH,g.signH*0.12);
+    ctx.fillStyle='#f3e3b8';ctx.fill();ctx.strokeStyle='#2f5a45';ctx.lineWidth=4;ctx.stroke();
+    ctx.fillStyle='#5a1f16';ctx.font='900 '+Math.round(g.signH*0.32)+'px "PingFang TC","Noto Sans TC",sans-serif';
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('荃灣保齡球場',g.signX+g.signW/2,g.signY+g.signH*0.5);
+  }
+  ctx.restore();
 }
 function drawBowlingBallSprite(ctx,x,y,r){
   ctx.save();
@@ -3376,7 +3409,7 @@ function drawBowlingBallItem(ctx,x,y,r){
   drawBowlingBallSprite(ctx,x,y,r*(1-0.45*prog));
 }
 function drawBowlingPins(ctx,g){
-  const ph=g.topH*0.45,pwid=ph*0.3125;
+  const ph=g.topH*0.40,pwid=ph*0.3125;
   const rows=[[0],[-0.5,0.5],[-1,0,1],[-1.5,-0.5,0.5,1.5]];
   const t=nowMs()-bowlingStrike.startedMs;
   let idx=0;
@@ -3411,7 +3444,7 @@ function drawBowlingRollBall(ctx,g){
   const t=nowMs()-bowlingStrike.startedMs;
   if(bowlingStrike.phase!=='roll'&&t>BOWLING_ROLL_MS+200)return;
   const p=clamp01(t/BOWLING_ROLL_MS);
-  const startY=gameCanvas.height*0.34;
+  const startY=g.ballTopY;
   const endY=g.pinBaseY-g.topH*0.05;
   const y=startY+(endY-startY)*(p*p*0.4+p*0.6);
   const baseR=isPortrait()?104:138;
@@ -3430,6 +3463,7 @@ function drawBowlingAlleyScene(ctx,cw,ch){
   }else{
     ctx.fillStyle='#d9b573';ctx.fillRect(0,0,cw,ch);
   }
+  drawBowlingSign(ctx,g);
   drawBowlingPins(ctx,g);
   drawBowlingRollBall(ctx,g);
   ctx.restore();
@@ -9020,6 +9054,8 @@ const imgFridgeMilk = new Image(); imgFridgeMilk.src = 'img/fridge_milk.png';
 /* v73 保齡球場景資產（Level 3/4 肩前屈獎勵畫面） */
 const imgBowlingAlleyBg = new Image(); imgBowlingAlleyBg.src = 'img/bowling_alley_bg.png';
 const imgBowlingPin = new Image(); imgBowlingPin.src = 'img/bowling_pin.png';
+/* v106 荃灣保齡球場招牌（治療師設計圖，透明背景）：掛喺球樽正上方，畀長者知道自己「身處」邊度 */
+const imgBowlingSign = new Image(); imgBowlingSign.src = 'img/bowling_sign.png';
 const imgBowlingBall = new Image(); imgBowlingBall.src = 'img/bowling_ball.png';
 /* v74 模擬茶樓場景資產（Level 3/4 點心主題「模擬茶樓」顯示模式） */
 const imgTeahouseBg = new Image(); imgTeahouseBg.src = 'img/teahouse_bg.png';
@@ -11904,7 +11940,7 @@ function updateFramePerfOverlay(now){
     framePerf.overlayEl = el;
   }
   const p = framePerfSnapshot();
-  el.textContent = `perf v105  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
+  el.textContent = `perf v106  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
     + `鏡頭 ${p.video[0]}×${p.video[1]}  畫布 ${p.canvas[0]}×${p.canvas[1]}  dpr ${p.dpr}  手模型 ${p.handDelegate || '-'}\n`
     + `手 ${p.hand.hands} 隻  標籤 ${p.hand.label || '-'} ${p.hand.score}  接納 ${p.hand.path || '-'}  嚴格 ${p.hand.strict} 連續 ${p.hand.continuity} 單手 ${p.hand.lone} 拒絕 ${p.hand.rejected}\n`
     + `左右手檢查 ${p.hand.check === 'off' ? '關' : '開'}  鎖定手形 ${p.hand.lockSize || '-'}  大小拒絕 ${p.hand.sizeRejected}  遠處拒絕 ${p.hand.farRejected}`;
@@ -13434,6 +13470,10 @@ function updateShoulderFlexionGame(){
     : clamp01(Number(shoulderFlexionState.progress)||0);
   const cw=gameCanvas.width,ch=gameCanvas.height;
   let laneX=cw*(ch>cw?.68:.58),bottom=ch*.78,top=ch*.34;
+  if(state.theme==='bowlinglane'&&!research.active){
+    // v106 招牌掛喺球樽上方，球樽落低咗，波嘅頂點跟住球樽走（純視覺，唔改角度判定）
+    top=bowlingLaneGeometry(cw,ch).ballTopY;
+  }
   if(state.theme==='tsuenwan'&&!research.active){
     laneX=cw*.50;
     const target=targets[0];
@@ -18030,10 +18070,10 @@ const FLOWER_KINDS = [
   // 第一批：花（全部裁自用戶設計圖）
   { key:'v75f_01', name:'紅玫瑰' },
   { key:'v75f_02', name:'橙玫瑰' },
-  { key:'v75f_03', name:'粉紅玫瑰' },
+  { key:'v75f_03', name:'粉玫瑰' },
   { key:'v75f_04', name:'黃菊花' },
   { key:'v75f_05', name:'橙菊花' },
-  { key:'v75f_06', name:'小雛菊' },
+  { key:'v75f_06', name:'雛菊' },
   { key:'v75f_07', name:'百合' },
   { key:'v75f_08', name:'蘭花' },
   // 第二批：葉（全部裁自用戶設計圖）
@@ -20866,7 +20906,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v105-20260905-therapist-gifs-orange-tags";
+  const LEVEL_APP_BUILD = "v106-20260905-flowers-bowling-sign";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

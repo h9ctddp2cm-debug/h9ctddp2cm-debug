@@ -50,6 +50,7 @@ test('Tsuen Wan shoulder games use a large non-overlapping puzzle target', () =>
 });
 
 test('bowling pins are substantially larger than the previous layout', () => {
-  assert.match(source, /const ph=g\.topH\*0\.45,pwid=ph\*0\.3125;/);
+  // v106 trims the pins slightly (0.45 -> 0.40 of topH) to fit the sign; still far above the v80 0.26.
+  assert.match(source, /const ph=g\.topH\*0\.40,pwid=ph\*0\.3125;/);
   assert.match(source, /const spread=g\.pw\*0\.145;/);
 });

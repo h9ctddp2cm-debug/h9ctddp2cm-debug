@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v105-20260905-therapist-gifs-orange-tags";
+const CACHE_VERSION = "fthue-rehab-v106-20260905-flowers-bowling-sign";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

@@ -91,6 +91,7 @@ function loadStrikeModule(){
   let applause = 0;
   const mod = new Function(
     'isShoulderFlexionLevel', 'state', 'nowMs', 'getAudioCtx', 'playApplauseSound', 'imgBowlingAlleyBg',
+    'imgBowlingSign', 'gameCanvas',
     code + '\nreturn {bowlingStrike,startBowlingStrike,updateBowlingStrike,resetBowlingStrike,bowlingLaneGeometry,isBowlingLaneTheme};'
   )(
     () => true,
@@ -99,6 +100,8 @@ function loadStrikeModule(){
     () => { throw new Error('no audio in tests'); },
     () => { applause++; },
     {naturalWidth: 768, naturalHeight: 1028},
+    {naturalWidth: 845, naturalHeight: 428},
+    {clientWidth: 0},
   );
   return {mod, setNow: v => { now = v; }, getApplause: () => applause};
 }
@@ -138,8 +141,15 @@ test('lane geometry stays on-canvas in both iPad orientations', () => {
     assert.ok(g.py1 <= ch, `panel bottom on screen (${cw}x${ch}): ${g.py1}`);
     assert.ok(g.laneX - g.pw / 2 >= 0, 'panel left edge on screen');
     assert.ok(g.laneX + g.pw / 2 <= cw, 'panel right edge on screen');
-    // Pins sit on the visible timber pin deck, below the former floating rack.
-    assert.ok(Math.abs(g.pinBaseY - ch * 0.390) < 1e-6);
+    // v106: pins sit lower on the timber deck so the sign has a band above them.
+    assert.ok(Math.abs(g.pinBaseY - ch * 0.540) < 1e-6);
+    assert.ok(Math.abs(g.ballTopY - (g.pinBaseY - ch * 0.05)) < 1e-6, 'ball rest point follows the rack');
+    // Sign: clear of the HUD, above the back-row pins, centred on the lane, wide enough to read.
+    assert.ok(g.signY >= (ch > cw ? 156 : 84) - 1e-6, `sign below HUD (${cw}x${ch}): ${g.signY}`);
+    assert.ok(g.signY + g.signH <= g.pinTopY, 'sign above the pins');
+    assert.ok(Math.abs((g.signX + g.signW / 2) - g.laneX) < 1e-6, 'sign centred on lane');
+    assert.ok(g.signX >= 262, 'sign clear of the angle panel');
+    assert.ok(g.signW >= 250, `sign wide enough to read (${cw}x${ch}): ${g.signW}`);
     assert.ok(g.py0 + g.topH < g.py1, 'lane section has positive height');
   }
 });
