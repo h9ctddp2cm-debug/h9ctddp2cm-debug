@@ -376,7 +376,8 @@ test('visible mapping and setup copy distinguish Level 2, Level 3 and Level 4 wi
   assert.doesNotMatch(html,/state\.level==='67'\?\[60,70,80,90,100,110,120\]/);
   assert.match(html,/if\(levelId==='67'\) state\.shoulderTargetDeg=60/);
   assert.match(html,/FTHUE Level 2[\s\S]*img\/advanced\/level4_cartoon_side_forward\.png/);
-  assert.match(html,/FTHUE Level 3[\s\S]*img\/advanced\/shoulder_active_30_60\.svg[\s\S]*img\/advanced\/shoulder_assisted_30_60\.svg/);
+  // v102：Level 3 主動示範改用治療師卡通 GIF；SVG 檔保留
+  assert.match(html,/FTHUE Level 3[\s\S]*img\/advanced\/level3_therapist_shoulder_30_60\.gif[\s\S]*img\/advanced\/shoulder_assisted_30_60\.svg/);
   assert.match(html,/FTHUE Level 4[\s\S]*img\/advanced\/shoulder_active_60_plus\.svg[\s\S]*img\/advanced\/shoulder_assisted_60_plus\.svg/);
   assert.match(html,/患者以患手持杯，在三十至六十度範圍內重複抬高手臂/);
   assert.match(html,/患者雙手持黃色彈性阻力棒，由六十度或以上重複抬高手臂/);
@@ -417,9 +418,9 @@ test('setup exposes distinct exact target-hold choices and aligns v51 source ide
   assert.match(html,/id="targetHoldOverlay"[\s\S]*id="targetHoldNumber"/);
   assert.match(html,/holdCountdownActive/);
   assert.match(html,/SHOULDER_HOLD_COUNT_CANTONESE/);
-  assert.match(html,/v101-20260904-level56-fridge-laundry-cards/);
-  assert.match(manifest,/v101-20260904-level56-fridge-laundry-cards/);
-  assert.match(worker,/v101-20260904-level56-fridge-laundry-cards/);
+  assert.match(html,/v102-20260905-kungfu-theme-certificate/);
+  assert.match(manifest,/v102-20260905-kungfu-theme-certificate/);
+  assert.match(worker,/v102-20260905-kungfu-theme-certificate/);
   assert.doesNotMatch(html,/v46-20260825-shoulder-detection-repair/);
   assert.doesNotMatch(manifest,/v46-20260825-shoulder-detection-repair/);
   assert.doesNotMatch(worker,/v46-20260825-shoulder-detection-repair/);

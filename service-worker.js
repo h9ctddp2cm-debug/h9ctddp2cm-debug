@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v101-20260904-level56-fridge-laundry-cards";
+const CACHE_VERSION = "fthue-rehab-v102-20260905-kungfu-theme-certificate";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

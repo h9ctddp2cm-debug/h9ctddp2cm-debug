@@ -716,6 +716,12 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
   color:var(--teal-dark); font:800 18px/1.35 inherit; cursor:pointer;
 }
 .research-entry small{ display:block; margin-top:5px; color:#4a5d5a; font-size:13px; font-weight:650; }
+.cert-entry{
+  display:block; width:100%; max-width:760px; margin:20px auto 0; padding:14px 18px;
+  border:2px dashed #b88a3a; border-radius:18px; background:#fbf6ec; text-decoration:none;
+  color:#6b4a12; font:800 17px/1.35 inherit; text-align:center;
+}
+.cert-entry small{ display:block; margin-top:4px; color:#7a6a4a; font-size:12.5px; font-weight:650; }
 .pilot-access-overlay{
   position:fixed; inset:0; z-index:1000; display:none;
   align-items:center; justify-content:center; padding:20px;
@@ -1060,6 +1066,24 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
   border-radius:999px; background:linear-gradient(90deg,var(--orange),var(--gold));
 }
 .home-head .lead{ margin:0; font-size:17px; color:var(--muted); }
+/* v102：港式神功修煉品牌行（細過「中風上肢復康訓練」）＋口號 */
+.home-head .brand-title{
+  margin:8px 0 0; color:var(--teal-dark); font-size:clamp(16px,1.7vw,19px);
+  line-height:1.4; font-weight:800; letter-spacing:.14em;
+}
+.home-head .brand-title .brand-en{
+  color:var(--orange); font-size:.86em; letter-spacing:.04em; margin-right:4px;
+}
+.home-head .motto{
+  margin:6px 0 0; color:#8a5a12; font-size:clamp(15px,1.6vw,18px);
+  font-weight:900; letter-spacing:.12em;
+}
+/* v102：Level 卡片神功名稱（h3）＋口號＋臨床名稱 */
+.level-card h3.kungfu{ font-size:26px; letter-spacing:.06em; }
+.level-card .lv-kungfu-sub{ margin:0 0 4px; font-size:14px; font-weight:800; color:#8a5a12; letter-spacing:.06em; }
+.level-card .lv-clinical{ margin:0 0 6px; font-size:15px; font-weight:800; color:var(--muted); }
+/* v102：Level 2 卡片暫時收埋（程式碼保留，唔顯示） */
+.level-card.level-card--archived{ display:none !important; }
 .level-grid{
   display:grid; grid-template-columns:1fr; gap:16px;
   width:100%; max-width:1180px; margin:0 auto;
@@ -1294,12 +1318,16 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
   <div id="screen-level" class="screen active">
     <div class="page-head home-head">
       <h1 class="institution-title">仁濟醫院職業治療部</h1>
-      <h2 class="service-title">中風上肢訓練</h2>
+      <h2 class="service-title">中風上肢復康訓練</h2>
+      <p class="brand-title"><span class="brand-en">FTHUE-HK</span> 港式神功修煉</p>
+      <p class="motto">欲要成功，必先勤功！</p>
       <span class="title-rule" aria-hidden="true"></span>
-      <p class="lead">選擇 Level</p>
+      <p class="lead">請選擇 Level 開始修煉</p>
     </div>
     <div class="level-grid">
-      <article class="level-card">
+      <!-- v102：FTHUE Level 2 卡片暫時收埋（唔刪除程式碼／圖片／測試 ID），
+           要重新顯示：刪走 hidden 同 level-card--archived 即可 -->
+      <article class="level-card level-card--archived" hidden data-archived-level="2">
         <button class="level-select" id="btnLevel2" data-level="2">
           <div class="level-copy">
             <span class="lv-tag">FTHUE Level 2</span>
@@ -1334,11 +1362,15 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
         <button class="level-select has-shoulder-demos" id="btnLevel3" data-level="3">
           <div class="level-copy">
             <span class="lv-tag">FTHUE Level 3</span>
-            <h3>肩屈曲 30–60°</h3>
+            <h3 class="kungfu">佛光初現</h3>
+            <p class="lv-kungfu-sub">初現曙光，神功開竅</p>
+            <p class="lv-clinical">肩屈曲 30–60°</p>
           </div>
           <div class="level-motion shoulder-demos" aria-label="Level 3 肩屈曲動作示範">
             <figure>
-              <img src="img/advanced/shoulder_active_30_60.svg"
+              <!-- v102：改用鄧姑娘卡通造型示範（由 img/advanced/level4_cartoon_side_forward.png 左邊人物製成）；
+                   原本 SVG shoulder_active_30_60.svg 保留喺 img/advanced/ -->
+              <img src="img/advanced/level3_therapist_shoulder_30_60.gif"
                 alt="肩屈曲動作示範：患者以患手持杯，在三十至六十度範圍內重複抬高手臂"
                 data-testid="demo-level-3-active">
               <figcaption>主動肩屈曲 (Active shoulder flexion)</figcaption>
@@ -1370,7 +1402,9 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
         <button class="level-select has-shoulder-demos" id="btnLevel4" data-level="4">
           <div class="level-copy">
             <span class="lv-tag">FTHUE Level 4</span>
-            <h3>肩屈曲 60° 或以上</h3>
+            <h3 class="kungfu">大鵬展翅</h3>
+            <p class="lv-kungfu-sub">舉高膊頭，生龍活虎</p>
+            <p class="lv-clinical">肩屈曲 60° 或以上</p>
             <p class="lv-action">患臂離桌｜個人化高位主動活動</p>
           </div>
           <div class="level-motion shoulder-demos" aria-label="Level 4 肩屈曲動作示範">
@@ -1407,7 +1441,9 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
         <button class="level-select" id="btnLevel5" data-level="5">
           <div class="level-copy">
             <span class="lv-tag">FTHUE Level 5</span>
-            <h3>患手握放練習</h3>
+            <h3 class="kungfu">如來神掌</h3>
+            <p class="lv-kungfu-sub">揮灑自如，大開大合</p>
+            <p class="lv-clinical">患手握放練習</p>
             <p class="lv-action">伸手 → 輕握 → 張手</p>
           </div>
           <div class="level-motion single">
@@ -1437,7 +1473,9 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
         <button class="level-select" id="btnLevel67" data-level="67">
           <div class="level-copy">
             <span class="lv-tag">FTHUE Level 6</span>
-            <h3>患手三點捏握功能任務</h3>
+            <h3 class="kungfu">萬佛朝宗</h3>
+            <p class="lv-kungfu-sub">終極境界，彈指神通</p>
+            <p class="lv-clinical">患手三點捏握功能任務</p>
             <p class="lv-action">三指張開 → 輕捏拿起 → 移動 → 張開放下</p>
           </div>
           <div class="level-motion double">
@@ -1476,6 +1514,11 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
         </details>
       </article>
     </div>
+    <!-- v102：治療師用——病人完成第十日訓練後，開啟 A4 橫向「參與嘉許狀」列印頁（新分頁） -->
+    <a class="cert-entry" id="lnkCertificate" href="certificate.html" target="_blank" rel="noopener"
+      data-testid="link-certificate">
+      頒發參與嘉許狀<small>完成十天訓練後由治療師開啟，A4 橫向列印，姓名及日期手寫</small>
+    </a>
     <!-- PUBLIC_BUILD_REMOVE_START: research entry requires the authenticated local backend -->
     <button class="research-entry" id="btnResearchMode">
       研究模式（Pilot Study）
@@ -11594,13 +11637,20 @@ function makeFoodAt(def, existingFoods){
       ? (portrait
         ? [[0.20,0.66],[0.80,0.66],[0.50,0.88]]
         : [[0.18,0.78],[0.46,0.78],[0.72,0.78]])
+      // v102：筷子公雞碟遊戲（簡單／複雜）——橫向大碟頂邊約在 57% 高度，
+      // 舊通用格 y=0.54 三格全部撞碟，跌入隨機／擠迫後備而令點心疊埋。
+      // 固定三格貼近上方（頂邊仍低於右上 HUD 按鈕），直向沿用原本 y=0.45 三格。
+      : (isDimsumBowlGame()
+      ? (portrait
+        ? [[0.22,0.45],[0.50,0.45],[0.78,0.45]]
+        : [[0.20,0.30],[0.50,0.34],[0.80,0.30]])
       : (portrait
       ? (dimSumTheme
         ? [[0.22,0.34],[0.50,0.45],[0.78,0.34]]
         : [[0.22,0.45],[0.50,0.45],[0.78,0.45]])
       : (dimSumTheme
         ? [[0.22,0.42],[0.50,0.54],[0.78,0.42]]
-        : [[0.22,0.54],[0.50,0.54],[0.78,0.54]]))))));
+        : [[0.22,0.54],[0.50,0.54],[0.78,0.54]])))))));
   const activeCount = existingFoods.filter(food => !food.removed).length;
   // v101 Level 6 晾衫：只有一件衫時放正中央下方（雙側對稱、離晾衫架最遠）
   if(isLaundryRackGame() && dimSumTargetCount() === 1 && activeCount === 0){
@@ -11638,6 +11688,15 @@ function makeFoodAt(def, existingFoods){
     const x = randRange(centerMin, centerMax);
     const y = randRange(spawnYmin, spawnYmax);
     if(positionIsClear(x, y)) return createFood(x, y);
+  }
+  // v102：隨機嘗試失敗後，先用較密格網搵一個「仍然保持食物間距」嘅位置，
+  // 唔好一跌就落到會疊埋嘅擠迫後備。
+  for(let row=0; row<9; row++){
+    for(let column=0; column<9; column++){
+      const x = centerMin + (centerMax-centerMin) * (column/8);
+      const y = spawnYmin + (spawnYmax-spawnYmin) * (row/8);
+      if(positionIsClear(x, y)) return createFood(x, y);
+    }
   }
   // Crowded-screen fallback: item-to-item spacing may be reduced, but prompt
   // and target protection remains mandatory.
@@ -11846,7 +11905,7 @@ function updateFramePerfOverlay(now){
     framePerf.overlayEl = el;
   }
   const p = framePerfSnapshot();
-  el.textContent = `perf v101  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
+  el.textContent = `perf v102  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
     + `鏡頭 ${p.video[0]}×${p.video[1]}  畫布 ${p.canvas[0]}×${p.canvas[1]}  dpr ${p.dpr}  手模型 ${p.handDelegate || '-'}\n`
     + `手 ${p.hand.hands} 隻  標籤 ${p.hand.label || '-'} ${p.hand.score}  接納 ${p.hand.path || '-'}  嚴格 ${p.hand.strict} 連續 ${p.hand.continuity} 單手 ${p.hand.lone} 拒絕 ${p.hand.rejected}\n`
     + `左右手檢查 ${p.hand.check === 'off' ? '關' : '開'}  鎖定手形 ${p.hand.lockSize || '-'}  大小拒絕 ${p.hand.sizeRejected}  遠處拒絕 ${p.hand.farRejected}`;
@@ -20808,7 +20867,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v101-20260904-level56-fridge-laundry-cards";
+  const LEVEL_APP_BUILD = "v102-20260905-kungfu-theme-certificate";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

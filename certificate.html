@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-HK">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>證書 · 中風上肢復康訓練十日完成 · 仁濟醫院職業治療部</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#1d2f66;
+    --ink:#22303f;
+    --ink-soft:#4a5a6e;
+    --paper:#f7f6f1;
+    --sheet-w:297mm;
+    --sheet-h:210mm;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:#5d6472;
+    font-family:"Noto Serif TC","DFKai-SB","標楷體","BiauKai","Kaiti TC","PMingLiU","新細明體",serif;
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+
+  /* ===== 控制列（唔會印出嚟） ===== */
+  .toolbar{
+    position:fixed; top:0; left:0; right:0; z-index:10;
+    display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center;
+    padding:10px 16px;
+    background:rgba(20,26,40,.92); color:#fff;
+    font-family:-apple-system,"Segoe UI","Noto Sans CJK TC","Noto Sans TC",sans-serif;
+    font-size:15px;
+  }
+  .toolbar a,.toolbar button{
+    font:inherit; font-weight:600;
+    border:0; border-radius:10px; padding:9px 16px; cursor:pointer;
+    text-decoration:none; color:#fff; background:#3b4a6b;
+  }
+  .toolbar button.primary{ background:#d64545; }
+  .toolbar button.primary:hover{ background:#b73434; }
+  .toolbar label{ display:flex; align-items:center; gap:6px; opacity:.9; }
+  .toolbar input[type=date]{ font:inherit; padding:6px 8px; border-radius:8px; border:0; }
+  .toolbar .hint{ opacity:.75; font-size:13px; margin-left:auto; }
+
+  /* ===== 證書本體：A4 橫向 ===== */
+  .stage{
+    display:flex; justify-content:center; align-items:flex-start;
+    padding:76px 16px 40px;
+  }
+  .sheet{
+    position:relative;
+    width:var(--sheet-w); height:var(--sheet-h);
+    flex:none;
+    background:var(--paper) url("img/cert/inkwash_bg.jpg") center/cover no-repeat;
+    box-shadow:0 18px 50px rgba(0,0,0,.35);
+    overflow:hidden;
+    transform-origin:top center;
+  }
+  /* 藍色回紋邊框（SVG 圖磁） */
+  .frame{
+    position:absolute; inset:7mm;
+    border:7mm solid transparent;
+    border-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'><rect width='60' height='60' fill='%23f7f6f1'/><path fill='none' stroke='%231d2f66' stroke-width='2.6' stroke-linecap='square' d='M2 2h56v56H2z M10 10h40v40H10z M17 17h26v26H17z M24 24h12v12H24z M30 30h0'/><path fill='none' stroke='%231d2f66' stroke-width='2.6' stroke-linecap='square' d='M2 30h8 M50 30h8 M30 2v8 M30 50v8'/></svg>") 20 / 7mm round;
+    pointer-events:none;
+  }
+  .frame::before{
+    content:""; position:absolute; inset:2.2mm;
+    border:.5mm solid var(--navy);
+  }
+  .frame::after{
+    content:""; position:absolute; inset:-9mm;
+    border:.9mm solid var(--navy);
+  }
+
+  /* 直排文字：由右至左排欄（每個 p 一欄，唔自動換行） */
+  .content{
+    position:absolute; inset:20mm 22mm 22mm 22mm;
+    writing-mode:vertical-rl;
+    text-orientation:mixed;
+    /* 直排（vertical-rl）下，flex column 嘅主軸係水平、由右至左 */
+    display:flex; flex-direction:column; align-items:flex-start;
+  }
+  .content p{ margin:0; white-space:nowrap; }
+  .title-col{
+    display:flex; flex-direction:column; align-items:flex-start;
+    margin-right:9mm;
+  }
+  .title{
+    font-size:34mm; font-weight:900; letter-spacing:8mm;
+    color:var(--navy); line-height:1;
+    margin:4mm 0 0 6mm; white-space:nowrap;
+    text-shadow:0 .4mm 0 rgba(255,255,255,.9);
+  }
+  /* 副題：兩行直排，同「證書」頂邊對齊，唔再用分隔線 */
+  .subtitle{
+    display:flex; flex-direction:column; align-items:flex-start;
+    margin-top:6mm; line-height:1.15;
+  }
+  .subtitle p{ white-space:nowrap; }
+  .subtitle .sub1{
+    font-size:7.4mm; font-weight:900; letter-spacing:1.6mm; color:var(--navy);
+  }
+  .subtitle .sub2{
+    font-size:6.2mm; font-weight:700; letter-spacing:1.4mm; color:var(--ink-soft);
+    margin-right:2.5mm; padding-top:2mm;
+  }
+  .body{
+    display:flex; flex-direction:column; align-items:flex-start;
+    font-size:8.6mm; font-weight:700; line-height:1.8;
+    letter-spacing:.7mm;
+    color:var(--ink);
+    padding-top:3mm;
+  }
+  .body p.indent{ padding-top:17.2mm; }
+  .body .latin{ letter-spacing:.2mm; }
+  /* 病人稱呼：留空（全形空格）畀治療師手寫，唔畫線 */
+  .body .blank{ letter-spacing:0; }
+  .sign{
+    display:flex; flex-direction:column; align-items:flex-start;
+    font-size:7mm; font-weight:700; letter-spacing:.9mm; line-height:1.9;
+    color:var(--ink);
+    padding-top:40mm; margin-left:auto; margin-right:12mm;
+  }
+  .sign .date{ font-size:6.2mm; letter-spacing:.5mm; }
+
+  /* 左下角：仁濟醫院職業治療部 logo（透明底，直接疊喺水墨背景上） */
+  .seal{
+    position:absolute; left:24mm; bottom:22mm;
+    width:60mm;
+  }
+  .seal img{ display:block; width:100%; height:auto; }
+
+  /* ===== 螢幕縮放至可視範圍 ===== */
+  @media screen{
+    .sheet{ transform:scale(var(--fit,1)); }
+    .stage{ height:calc(210mm * var(--fit,1) + 116px); }
+  }
+
+  /* ===== 列印 ===== */
+  @page{ size:A4 landscape; margin:0; }
+  @media print{
+    html,body{ background:#fff; }
+    .toolbar{ display:none !important; }
+    .stage{ padding:0; height:auto; display:block; }
+    .sheet{ transform:none; box-shadow:none; margin:0; page-break-after:avoid; }
+    .sheet{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  }
+</style>
+</head>
+<body>
+  <div class="toolbar" role="toolbar" aria-label="證書工具列">
+    <a href="index.html">← 返回遊戲</a>
+    <button type="button" class="primary" id="btnPrint">列印／儲存 PDF</button>
+    <span class="hint">A4 橫向 · 病人稱呼及月日印出後手寫 · 列印時請選「背景圖形」</span>
+  </div>
+
+  <div class="stage">
+    <section class="sheet" id="sheet" aria-label="證書">
+      <div class="frame" aria-hidden="true"></div>
+
+      <div class="content">
+        <div class="title-col">
+          <div class="title">證書</div>
+          <div class="subtitle">
+            <p class="sub1">中風上肢復康訓練</p>
+            <p class="sub2">參與嘉許狀</p>
+          </div>
+        </div>
+
+        <div class="body">
+          <p>祝賀<span class="blank" aria-label="病人稱呼（手寫）">　　　　　　</span>：</p>
+          <p class="indent">在仁濟醫院職業治療部完成十天的</p>
+          <p>中風上肢復康訓練——</p>
+          <p>『<span class="latin">FTHUE-HK</span> 港式神功修煉』遊戲，</p>
+          <p>全程意志堅強、毅力超人、</p>
+          <p>可喜可賀！</p>
+          <p class="indent">特發此獎，以茲紀念！</p>
+        </div>
+
+        <div class="sign">
+          <p>仁濟醫院職業治療師　鄧姑娘</p>
+          <p class="date" id="dateLine"><span id="dY">二〇二六</span>年<span id="dM">　　</span>月<span id="dD">　　</span>日</p>
+        </div>
+      </div>
+
+      <div class="seal">
+        <img src="img/cert/yan_chai_logo_full.png" alt="仁濟醫院職業治療部">
+      </div>
+    </section>
+  </div>
+
+<script>
+(function(){
+  // 日期：只印年份（中文數字），月／日留空畀治療師手寫；?year=2027 可覆寫
+  const params = new URLSearchParams(location.search);
+  const CN='〇一二三四五六七八九';
+  function cnYear(y){ return String(y).split('').map(c=>CN[+c]).join(''); }
+  const y = /^\d{4}$/.test(params.get('year')||'') ? +params.get('year') : new Date().getFullYear();
+  document.getElementById('dY').textContent = cnYear(y);
+
+  document.getElementById('btnPrint').addEventListener('click', ()=>window.print());
+
+  // 螢幕：將 A4 橫向縮放至視窗闊度
+  function fit(){
+    const mm = 297 * 96 / 25.4; // A4 闊度（px）
+    const avail = Math.max(320, window.innerWidth - 32);
+    const f = Math.min(1.35, avail / mm);
+    document.documentElement.style.setProperty('--fit', f.toFixed(4));
+  }
+  window.addEventListener('resize', fit);
+  fit();
+})();
+</script>
+</body>
+</html>

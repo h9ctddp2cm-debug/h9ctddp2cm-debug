@@ -8,7 +8,7 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const html=readFileSync(path.join(root,'index.html'),'utf8');
 
 test('v83 marker and shared Level 3–4 reward latch are present',()=>{
-  assert.match(html,/v101-20260904-level56-fridge-laundry-cards/);
+  assert.match(html,/v102-20260905-kungfu-theme-certificate/);
   assert.match(html,/const SHOULDER_REWARD_MIN_MS = 2600/);
   assert.match(html,/const SHOULDER_PHOTO_REWARD_MS = 3200/);
   assert.match(html,/const shoulderRewardCycle = \{/);

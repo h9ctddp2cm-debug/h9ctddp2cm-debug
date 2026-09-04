@@ -3,7 +3,7 @@
   "short_name": "FTHUE 復康",
   "description": "治療師監督下使用的中風上肢復康試玩、訓練及研究工具。",
   "lang": "zh-Hant",
-  "start_url": "./index.html?build=v101-20260904-level56-fridge-laundry-cards",
+  "start_url": "./index.html?build=v102-20260905-kungfu-theme-certificate",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",

@@ -99,14 +99,18 @@ for (const vp of VIEWPORTS) {
           ).length,
         };
       });
-      assert.ok(result.level2.rect, 'Level 2 GIF is present');
-      assert.ok(/\.(gif|png)$/.test(result.level2.src), 'Level 2 uses an instructional image');
-      assert.ok(result.level2.alt.length > 0, 'Level 2 GIF has alt text');
-      assert.ok(Math.abs(result.level2.rect.width / result.level2.rect.height - 16 / 9) < 0.03,
-        'Level 2 GIF should be 16:9');
+      // v102：Level 2 卡片暫時收埋（hidden），圖片仍在 DOM 但唔佈局
+      assert.ok(result.level2.rect, 'Level 2 image still exists in the DOM (archived, not deleted)');
+      assert.equal(result.level2.rect.width, 0, 'Level 2 card is hidden in v102');
+      assert.ok(/\.(gif|png)$/.test(result.level2.src), 'Level 2 keeps its instructional image');
+      assert.ok(result.level2.alt.length > 0, 'Level 2 image keeps alt text');
       for (const demo of result.demos) {
         assert.ok(demo.rect, `Level ${demo.level} ${demo.kind} demonstration is present`);
-        assert.ok(/\.svg$/.test(demo.src), `Level ${demo.level} ${demo.kind} uses deterministic SVG`);
+        if (demo.level === '3' && demo.kind === 'active') {
+          assert.ok(/level3_therapist_shoulder_30_60\.gif$/.test(demo.src), 'Level 3 active uses the therapist cartoon GIF (v102)');
+        } else {
+          assert.ok(/\.svg$/.test(demo.src), `Level ${demo.level} ${demo.kind} uses deterministic SVG`);
+        }
         assert.ok(demo.alt.length > 0, `Level ${demo.level} ${demo.kind} has alt text`);
         assert.ok(Math.abs(demo.rect.width / demo.rect.height - 220 / 190) < 0.03,
           `Level ${demo.level} ${demo.kind} demonstration keeps its stable aspect ratio`);
@@ -275,6 +279,11 @@ test('every FTHUE level offers trial and training modes with accessible controls
         } else {
           assert.ok(control.aria.includes('錄影'), `${vp.name}: training aria label states recording`);
         }
+        if (control.level === '2') {
+          // v102：Level 2 卡片收埋（hidden），控制鍵仍在 DOM 但唔佈局
+          assert.equal(control.width, 0, `${vp.name}: archived Level 2 ${control.mode} control is not laid out`);
+          continue;
+        }
         assert.ok(control.width >= 44 && control.height >= 44,
           `${vp.name}: ${control.level}/${control.mode} remains a 44px touch target`);
       }
@@ -427,6 +436,7 @@ test('final FTHUE Level 2–7 movement wording is consistent', async (t) => {
   await withPage(VIEWPORTS[1], async (page) => {
     const copy = await page.evaluate(() => ({
       headings: [...document.querySelectorAll('.level-card h3')].map(el => el.textContent.trim()),
+      clinical: [...document.querySelectorAll('.level-card .lv-clinical')].map(el => el.textContent.trim()),
       level2: window.SAFETY_LEVEL_NOTES?.['2'] || '',
       level3: window.SAFETY_LEVEL_NOTES?.['3'] || '',
       level4: window.SAFETY_LEVEL_NOTES?.['4'] || '',
@@ -434,8 +444,15 @@ test('final FTHUE Level 2–7 movement wording is consistent', async (t) => {
       level67: window.SAFETY_LEVEL_NOTES?.['67'] || '',
     }));
 
+    // v102：卡片 h3 改為港式神功名稱；臨床名稱移到 .lv-clinical（Level 2 卡片收埋但仍在 DOM）
     assert.deepEqual(copy.headings, [
       '桌面承托訓練',
+      '佛光初現',
+      '大鵬展翅',
+      '如來神掌',
+      '萬佛朝宗',
+    ]);
+    assert.deepEqual(copy.clinical, [
       '肩屈曲 30–60°',
       '肩屈曲 60° 或以上',
       '患手握放練習',

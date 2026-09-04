@@ -39,6 +39,8 @@ cp "$ROOT/manifest.webmanifest" "$DIST/manifest.webmanifest"
 cp "$ROOT/image-sources.json" "$DIST/image-sources.json"
 cp "$ROOT/service-worker.js" "$DIST/service-worker.js"
 cp "$ROOT/offline.html" "$DIST/offline.html"
+# v102: printable participation certificate (public only, no research strings)
+cp "$ROOT/certificate.html" "$DIST/certificate.html"
 cp -R "$ROOT/icons" "$DIST/icons"
 cp -R "$ROOT/vendor" "$DIST/vendor"
 
