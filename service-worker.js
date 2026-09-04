@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v102-20260905-kungfu-theme-certificate";
+const CACHE_VERSION = "fthue-rehab-v103-20260905-l3-demo-palmar-grasp";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");
