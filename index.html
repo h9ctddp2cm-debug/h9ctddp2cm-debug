@@ -164,6 +164,10 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
 }
 .calib-wrap video{ transform:scaleX(-1); }
 .calib-wrap canvas{ pointer-events:none; transform:none; }
+/* v99 privacy blur: the live video is hidden and the overlay canvas repaints a
+   heavily downscaled copy (soft blur) plus a sharp window around the tracked
+   hand only, so other patients in the ward are never shown clearly. */
+.calib-wrap.privacy-blur video{ opacity:0; }
 .calib-controls{
   display:flex; flex-direction:column; align-items:stretch;
   width:min(520px,100%); min-width:0;
@@ -1697,6 +1701,14 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
           <button class="option-btn" data-side="right" data-testid="button-affected-right">右患側</button>
         </div>
         <p id="affectedSideError" style="min-height:20px;margin:8px 0 0;color:#a1261b;font-weight:800;text-align:center;"></p>
+        <div id="handCheckBlock" hidden>
+          <p class="settings-sub-label" style="margin:6px 0 6px;font-weight:800;">左右手檢查</p>
+          <div class="option-row" id="handCheckOptions" role="group" aria-label="左右手檢查">
+            <button class="option-btn selected" data-check="on" data-testid="button-handcheck-on" aria-pressed="true">開（預設）</button>
+            <button class="option-btn" data-check="off" data-testid="button-handcheck-off" aria-pressed="false">關</button>
+          </div>
+          <p id="handCheckNote" data-testid="text-handcheck-note" style="margin:8px 0 0;font-size:14px;line-height:1.5;color:#4a4a4a;"></p>
+        </div>
       </div>
     </div>
     <div class="card collapsible" id="shoulderExerciseModeCard" data-accordion="shoulder-exercise-mode" hidden>
@@ -1882,6 +1894,8 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
       </div>
       <button class="btn-secondary" id="btnMirrorX" type="button"
         style="padding:9px;margin-top:8px;">左右反轉</button>
+      <button class="btn-secondary" id="btnPrivacyBlur" type="button" data-testid="button-privacy-blur"
+        aria-pressed="true" style="padding:9px;margin-top:8px;">背景模糊：開</button>
       <div class="calib-checklist" id="calibChecklist" hidden>
         <span id="calibDetectCheck">○ 偵測</span>
         <span id="calibOpenCheck">○ 張手</span>
@@ -2540,6 +2554,7 @@ const state = {
   level6LockedTheme: '',    // Set only by a Level 6 activity-library card; immutable throughout setup/play
   graspType: 'any',      // fixed: open-hand detection
   affectedSide: '',      // normal play: therapist must choose left or right before calibration
+  handednessCheck: true, // v99: therapist may switch the left/right label gate off (public Level 5/6 only)
   qaMode: false,         // QA-only: 經 hook 注入游標，不需相機
   calibration:{ detectedStart:0, openHoldMs:0, openTickAt:0, moreOpenMs:0, closedHoldMs:0, closedTickAt:0, lastSeenAt:0, detectedDone:false,
     openDone:false, closedDone:false, ready:false, openScores:[], closedScores:[] },
@@ -2548,6 +2563,7 @@ const state = {
   personalToolPinch:null,   // v70: per-digit aperture thresholds calibrated with the real tool in hand
   personalChopstickFlex:null, // v91: affected index/middle flex ranges measured during tool calibration
   mirrorX:true,
+  privacyBlur:true,   // v99 校準畫面背景模糊（保障同房病人私隱），治療師可關
   selfieMode:false,       // camera-view games start with a plain white background
   sessionMode:'training', // training | trial
   level4SessionThemes:['bilateral'],
@@ -5222,6 +5238,7 @@ function selectShoulderExerciseMode(mode){
   state.shoulderExerciseMode=mode;
   if(shoulderFlexionController) shoulderFlexionController.setExerciseMode(mode);
   renderShoulderExerciseModeSettings();
+  if(typeof renderHandCheckSettings === 'function') renderHandCheckSettings();
   const context=document.getElementById('settingsContext');
   if(context){
     const th=getTheme();
@@ -5637,6 +5654,7 @@ function selectActivity(themeId){
         : '相機：患手及手指入鏡。';
   }
   renderShoulderExerciseModeSettings();
+  if(typeof renderHandCheckSettings === 'function') renderHandCheckSettings();
   renderShoulderTargetSettings();
   renderLaundryDifficultySettings();
   renderDimsumDifficultySettings();
@@ -5754,6 +5772,38 @@ document.getElementById('affectedSideOptions').addEventListener('click', e=>{
   document.getElementById('affectedSideError').textContent = '';
   const goCalibError = document.getElementById('goCalibError');
   if(goCalibError) goCalibError.textContent = '';
+});
+/* v99: therapist switch for the left/right label gate (public Level 5/6 only).
+   Default ON. OFF admits any hand in view but the hand locked at calibration is
+   still tracked preferentially, so a passer-by or the assisting hand does not
+   take over while the participant's hand is visible. */
+const HAND_CHECK_NOTE_ON = '預設：只接納患側手。校準後會鎖定病人隻手繼續追蹤，標籤不穩定時亦不會突然跳去其他手。';
+const HAND_CHECK_NOTE_OFF = '關閉後畫面內任何一隻手都可以操作（仍會優先鎖定校準時嗰隻手）。只適合認知清醒、明白要用患側手、而且治療師在旁監督嘅病人。';
+function handCheckSettingAvailable(){ return state.level === '5' || state.level === '67'; }
+function renderHandCheckSettings(){
+  const block = document.getElementById('handCheckBlock');
+  if(!block) return;
+  block.hidden = !handCheckSettingAvailable();
+  const on = state.handednessCheck !== false;
+  document.querySelectorAll('#handCheckOptions .option-btn').forEach(b=>{
+    const selected = (b.dataset.check === 'on') === on;
+    b.classList.toggle('selected', selected);
+    b.setAttribute('aria-pressed', selected ? 'true' : 'false');
+  });
+  const note = document.getElementById('handCheckNote');
+  if(note){
+    note.textContent = on ? HAND_CHECK_NOTE_ON : HAND_CHECK_NOTE_OFF;
+    note.style.color = on ? '#4a4a4a' : '#8a2f0a';
+  }
+}
+function setHandednessCheck(on){
+  state.handednessCheck = on !== false;
+  renderHandCheckSettings();
+}
+document.getElementById('handCheckOptions').addEventListener('click', e=>{
+  const btn = e.target.closest('.option-btn');
+  if(!btn) return;
+  setHandednessCheck(btn.dataset.check !== 'off');
 });
 document.getElementById('shoulderTargetOptions').addEventListener('click',e=>{
   const button=e.target.closest('[data-shoulder-target]');
@@ -6097,7 +6147,7 @@ function waitForLiveCameraFrame(videoEl, timeoutMs = 1800){
   // frozen Safari surface.
   level4VideoFreshness?.start(videoEl);
   resetGamePoseFrameAdmission();
-  resetHandFrameAdmission();
+  resetHandAdmissionAndLock();
   resetPublicGameWorkAdmission();
   const decodedReady = ()=>{
     const frame = level4FrameStatus(videoEl);
@@ -7028,7 +7078,7 @@ async function startCamera(videoElId){
 function stopCamera(release=false){
   level4VideoFreshness?.stop();
   resetGamePoseFrameAdmission();
-  resetHandFrameAdmission();
+  resetHandAdmissionAndLock();
   resetPublicGameWorkAdmission();
   // Navigation within this single-page app suspends frame admission but keeps
   // the granted stream alive. Only page/session teardown releases hardware.
@@ -7056,6 +7106,12 @@ function resetHandFrameAdmission(){
   handFrameCache = { video:null, generation:null, result:null };
   lastAcceptedToolHandGeneration = -1;
   if(typeof resetAffectedHandTrack === 'function') resetAffectedHandTrack();
+}
+/* v99: the camera lifecycle also clears the calibration hand lock. Game start
+   and stale frames keep it (they only reset the short-term track above). */
+function resetHandAdmissionAndLock(){
+  resetHandFrameAdmission();
+  if(typeof resetHandLock === 'function') resetHandLock();
 }
 
 /* v96: short-term continuity for the selected affected hand.
@@ -7089,18 +7145,81 @@ const AFFECTED_HAND_TRACK_MS = 1500;
 const AFFECTED_HAND_TRACK_DIST = 0.16;   // normalised camera-frame units
 const AFFECTED_HAND_OPPOSITE_REJECT = 0.80;
 const LONE_HAND_ADMIT_MS = 1000;
+/* v99: hand LOCK. The hand accepted during camera calibration (and every hand
+   accepted afterwards) is remembered as a lock: last wrist position plus a
+   slowly-adapting hand size (wrist to middle-finger MCP, normalised). During
+   play, public Level 5/6:
+   - ignore any hand whose size is far outside the locked size (a person walking
+     past behind the participant is much smaller; a hand thrust at the lens is
+     much larger);
+   - when the tracked hand is fresh and the strict-label winner is far away
+     while another admissible hand is still at the tracked position, keep the
+     tracked hand (a passer-by mislabelled as the affected side does not steal
+     the cursor);
+   - when the tracked hand was lost and a hand reappears far from the locked
+     position, require it to persist for HAND_LOCK_REACQUIRE_MS before it is
+     admitted (a hand crossing the frame for a moment is ignored).
+   The lock survives game start (calibration → play) and is cleared only when
+   the camera stops/restarts. If every visible hand fails the size gate for
+   HAND_LOCK_SIZE_FORGET_MS, the size is forgotten so a participant who moved
+   much closer/further is not locked out.
+   Therapist switch state.handednessCheck === false (public Level 5/6 only):
+   the left/right label is ignored entirely; the lock rules above still decide
+   which hand is followed. Research mode ignores both. */
+const HAND_LOCK_SIZE_MIN_RATIO = 0.55;
+const HAND_LOCK_SIZE_MAX_RATIO = 1.90;
+const HAND_LOCK_FAR_DIST = 0.30;
+const HAND_LOCK_REACQUIRE_MS = 400;
+const HAND_LOCK_SIZE_FORGET_MS = 3000;
+const HAND_LOCK_SIZE_EMA = 0.15;
 let affectedHandTrack = { x:NaN, y:NaN, at:0 };
+let handLock = { x:NaN, y:NaN, size:NaN, at:0 };
 let loneOppositeSince = 0;   // start of the current lone + confidently-opposite streak
-const handAdmitDiag = { hands:0, label:'', score:0, path:'', rejected:0, strict:0, continuity:0, lone:0 };
+let farHandSince = 0;        // start of the current "hand far from the lock" streak
+let sizeRejectSince = 0;     // start of the current "every hand fails the size gate" streak
+const handAdmitDiag = { hands:0, label:'', score:0, path:'', rejected:0, strict:0, continuity:0, lone:0,
+  sizeRejected:0, farRejected:0, lockSize:0, check:'on' };
 function resetAffectedHandTrack(){ affectedHandTrack = { x:NaN, y:NaN, at:0 }; loneOppositeSince = 0; }
+function resetHandLock(){
+  handLock = { x:NaN, y:NaN, size:NaN, at:0 };
+  farHandSince = 0; sizeRejectSince = 0;
+  resetAffectedHandTrack();
+}
 function affectedHandContinuityEnabled(){
   return !research.active && (state.level === '5' || state.level === '67');
 }
 function loneHandAdmissionEnabled(){ return affectedHandContinuityEnabled(); }
+function handLockEnabled(){ return affectedHandContinuityEnabled(); }
+function handednessCheckOff(){
+  return handLockEnabled() && state.handednessCheck === false;
+}
+function handSpanOf(lm){
+  const wrist = lm?.[0];
+  const ref = lm?.[9] || lm?.[5];
+  if(!wrist || !ref || !Number.isFinite(wrist.x) || !Number.isFinite(wrist.y)
+      || !Number.isFinite(ref.x) || !Number.isFinite(ref.y)) return NaN;
+  const d = Math.hypot(ref.x - wrist.x, ref.y - wrist.y);
+  return d > 0 ? d : NaN;
+}
+function handSizeAdmissible(lm){
+  if(!Number.isFinite(handLock.size)) return true;
+  const span = handSpanOf(lm);
+  if(!Number.isFinite(span)) return true;   // partial landmark set: do not gate on size
+  const ratio = span / handLock.size;
+  return ratio >= HAND_LOCK_SIZE_MIN_RATIO && ratio <= HAND_LOCK_SIZE_MAX_RATIO;
+}
 function noteAffectedHandTrack(lm){
   const wrist = lm?.[0];
   if(wrist && Number.isFinite(wrist.x) && Number.isFinite(wrist.y)){
-    affectedHandTrack = { x:wrist.x, y:wrist.y, at:nowMs() };
+    const now = nowMs();
+    affectedHandTrack = { x:wrist.x, y:wrist.y, at:now };
+    const span = handSpanOf(lm);
+    handLock.x = wrist.x; handLock.y = wrist.y; handLock.at = now;
+    if(Number.isFinite(span)){
+      handLock.size = Number.isFinite(handLock.size)
+        ? handLock.size + HAND_LOCK_SIZE_EMA * (span - handLock.size)
+        : span;
+    }
   }
 }
 
@@ -7246,76 +7365,139 @@ function mediaPipeAnatomicalHand(results, index, inputMirrored=false){
   return inputMirrored ? (raw === 'left' ? 'right' : 'left') : raw;
 }
 function selectedAffectedHandIndex(results, inputMirrored=false){
-  const landmarks = Array.isArray(results?.landmarks) ? results.landmarks : [];
+  const allLandmarks = Array.isArray(results?.landmarks) ? results.landmarks : [];
   const affected = activeAffectedSide();
+  const groups = results?.handednesses || results?.handedness;
+  const lockOn = handLockEnabled();
+  const checkOff = handednessCheckOff();
+  const now = nowMs();
+  // v99 size gate: drop hands far outside the locked hand size. `eligible` maps
+  // positions in the filtered list back to result indices.
+  let eligible = [];
+  let sizeRejected = 0;
+  for(let index=0; index<allLandmarks.length; index++){
+    if(lockOn && !handSizeAdmissible(allLandmarks[index])){ sizeRejected++; continue; }
+    eligible.push(index);
+  }
+  if(lockOn && allLandmarks.length && !eligible.length){
+    if(!sizeRejectSince) sizeRejectSince = now;
+    if(now - sizeRejectSince >= HAND_LOCK_SIZE_FORGET_MS){
+      handLock.size = NaN; sizeRejectSince = 0;
+      eligible = allLandmarks.map((_, index)=>index); sizeRejected = 0;
+    }
+  }else{
+    sizeRejectSince = 0;
+  }
+  const wristOf = index=>allLandmarks[index]?.[0];
+  const distTo = (index, ref)=>{
+    const w = wristOf(index);
+    if(!w || !Number.isFinite(w.x) || !Number.isFinite(w.y) || !Number.isFinite(ref?.x)) return Infinity;
+    return Math.hypot(w.x - ref.x, w.y - ref.y);
+  };
+  const sideOf = index=>mediaPipeAnatomicalHand(results, index, inputMirrored);
+  const confOf = index=>Number(groups?.[index]?.[0]?.score);
+  const confidentOpposite = (index, floor)=>{
+    const side = sideOf(index); const c = confOf(index);
+    return !!side && side !== affected && Number.isFinite(c) && c >= floor;
+  };
+  const trackFresh = Number.isFinite(affectedHandTrack.x) && now - affectedHandTrack.at <= AFFECTED_HAND_TRACK_MS;
+  const nearestToTrack = (allowOpposite)=>{
+    let best = -1, bestDistance = Infinity;
+    for(const index of eligible){
+      if(!allowOpposite && confidentOpposite(index, AFFECTED_HAND_OPPOSITE_REJECT)) continue;
+      const dist = distTo(index, affectedHandTrack);
+      if(dist <= AFFECTED_HAND_TRACK_DIST && dist < bestDistance){ bestDistance = dist; best = index; }
+    }
+    return best;
+  };
   let selected = -1;
   let selectedConfidence = -Infinity;
   let admitPath = '';
-  if(landmarks.length !== 1) loneOppositeSince = 0;
-  for(let index=0; index<landmarks.length; index++){
-    if(mediaPipeAnatomicalHand(results, index, inputMirrored) !== affected) continue;
-    const groups = results.handednesses || results.handedness;
-    const confidence = Number(groups?.[index]?.[0]?.score);
-    // An uncertain side label is not enough to select a clinical control hand.
-    // Missing and low-confidence handedness fail closed rather than falling
-    // back to result zero or the opposite hand.
-    if(!Number.isFinite(confidence) || confidence < 0.55) continue;
-    if(selected < 0 || (Number.isFinite(confidence) && confidence > selectedConfidence)){
-      selected = index;
-      selectedConfidence = Number.isFinite(confidence) ? confidence : selectedConfidence;
-      admitPath = 'strict';
-    }
-  }
-  // Missing/unknown handedness fails closed. Falling back to result 0 would let
-  // an unaffected or assisting hand acquire and release Level 5 objects.
-  if(selected < 0 && affectedHandContinuityEnabled() && Number.isFinite(affectedHandTrack.x)
-      && nowMs() - affectedHandTrack.at <= AFFECTED_HAND_TRACK_MS){
-    // Continuity rescue: an ambiguous label near the last accepted wrist is the
-    // same hand. A confidently labelled opposite hand is still rejected, and a
-    // hand that jumped elsewhere is not admitted.
-    const groups = results.handednesses || results.handedness;
-    let bestDistance = Infinity;
-    for(let index=0; index<landmarks.length; index++){
-      const wrist = landmarks[index]?.[0];
-      if(!wrist || !Number.isFinite(wrist.x) || !Number.isFinite(wrist.y)) continue;
-      const side = mediaPipeAnatomicalHand(results, index, inputMirrored);
-      const confidence = Number(groups?.[index]?.[0]?.score);
-      if(side && side !== affected && Number.isFinite(confidence)
-          && confidence >= AFFECTED_HAND_OPPOSITE_REJECT) continue;
-      const dist = Math.hypot(wrist.x - affectedHandTrack.x, wrist.y - affectedHandTrack.y);
-      if(dist <= AFFECTED_HAND_TRACK_DIST && dist < bestDistance){
-        bestDistance = dist; selected = index; admitPath = 'continuity';
+  if(eligible.length !== 1) loneOppositeSince = 0;
+  if(checkOff){
+    // v99 therapist switch: the left/right label is ignored. Follow the locked
+    // hand; otherwise a single visible hand; otherwise the hand nearest to
+    // where the locked hand was last seen.
+    if(trackFresh){ selected = nearestToTrack(true); if(selected >= 0) admitPath = 'continuity'; }
+    if(selected < 0 && eligible.length === 1){ selected = eligible[0]; admitPath = 'lone'; }
+    if(selected < 0 && eligible.length > 1 && Number.isFinite(handLock.x)){
+      let bestDistance = Infinity;
+      for(const index of eligible){
+        const dist = distTo(index, handLock);
+        if(dist <= HAND_LOCK_FAR_DIST && dist < bestDistance){ bestDistance = dist; selected = index; admitPath = 'continuity'; }
       }
     }
-  }
-  if(selected < 0 && loneHandAdmissionEnabled() && landmarks.length === 1){
-    const groups = results.handednesses || results.handedness;
-    const side = mediaPipeAnatomicalHand(results, 0, inputMirrored);
-    const confidence = Number(groups?.[0]?.[0]?.score);
-    const confidentOpposite = !!side && side !== affected
-      && Number.isFinite(confidence) && confidence >= 0.55;
-    if(!confidentOpposite){
-      loneOppositeSince = 0;
-      selected = 0; admitPath = 'lone';
-    }else{
-      if(!loneOppositeSince) loneOppositeSince = nowMs();
-      if(nowMs() - loneOppositeSince >= LONE_HAND_ADMIT_MS){ selected = 0; admitPath = 'lone'; }
+  }else{
+    for(const index of eligible){
+      if(sideOf(index) !== affected) continue;
+      const confidence = confOf(index);
+      // An uncertain side label is not enough to select a clinical control hand.
+      // Missing and low-confidence handedness fail closed rather than falling
+      // back to result zero or the opposite hand.
+      if(!Number.isFinite(confidence) || confidence < 0.55) continue;
+      if(selected < 0 || (Number.isFinite(confidence) && confidence > selectedConfidence)){
+        selected = index;
+        selectedConfidence = Number.isFinite(confidence) ? confidence : selectedConfidence;
+        admitPath = 'strict';
+      }
     }
-  }else if(landmarks.length === 1){
-    loneOppositeSince = 0;   // admitted by the strict or continuity rule
+    // v99 lock: a strict winner far from a freshly tracked hand does not
+    // displace an admissible hand that is still at the tracked position.
+    if(lockOn && selected >= 0 && trackFresh && eligible.length > 1
+        && distTo(selected, affectedHandTrack) > HAND_LOCK_FAR_DIST){
+      const near = nearestToTrack(false);
+      if(near >= 0 && near !== selected){ selected = near; admitPath = 'continuity'; }
+    }
+    // Missing/unknown handedness fails closed. Falling back to result 0 would let
+    // an unaffected or assisting hand acquire and release Level 5 objects.
+    if(selected < 0 && affectedHandContinuityEnabled() && trackFresh){
+      // Continuity rescue: an ambiguous label near the last accepted wrist is the
+      // same hand. A confidently labelled opposite hand is still rejected, and a
+      // hand that jumped elsewhere is not admitted.
+      selected = nearestToTrack(false);
+      if(selected >= 0) admitPath = 'continuity';
+    }
+    if(selected < 0 && loneHandAdmissionEnabled() && eligible.length === 1){
+      const only = eligible[0];
+      if(!confidentOpposite(only, 0.55)){
+        loneOppositeSince = 0;
+        selected = only; admitPath = 'lone';
+      }else{
+        if(!loneOppositeSince) loneOppositeSince = now;
+        if(now - loneOppositeSince >= LONE_HAND_ADMIT_MS){ selected = only; admitPath = 'lone'; }
+      }
+    }else if(eligible.length === 1){
+      loneOppositeSince = 0;   // admitted by the strict or continuity rule
+    }
+  }
+  // v99 re-acquisition: after the tracked hand was lost, a hand appearing far
+  // from the locked position must persist briefly before it is admitted.
+  let farRejected = false;
+  if(lockOn && selected >= 0 && admitPath !== 'continuity' && !trackFresh
+      && Number.isFinite(handLock.x) && distTo(selected, handLock) > HAND_LOCK_FAR_DIST){
+    if(!farHandSince) farHandSince = now;
+    if(now - farHandSince < HAND_LOCK_REACQUIRE_MS){ selected = -1; admitPath = ''; farRejected = true; }
+  }else{
+    farHandSince = 0;
   }
   // Diagnostics for the ?perf=1 overlay and QA: which path admitted the hand.
   {
-    const groups = results?.handednesses || results?.handedness;
-    const idx = selected >= 0 ? selected : 0;
-    handAdmitDiag.hands = landmarks.length;
-    handAdmitDiag.label = landmarks.length ? (mediaPipeAnatomicalHand(results, idx, inputMirrored) || '?') : '';
-    handAdmitDiag.score = landmarks.length ? +(Number(groups?.[idx]?.[0]?.score) || 0).toFixed(2) : 0;
-    handAdmitDiag.path = selected >= 0 ? admitPath : (landmarks.length ? 'rejected' : 'none');
+    const idx = selected >= 0 ? selected : (eligible[0] ?? 0);
+    handAdmitDiag.hands = allLandmarks.length;
+    handAdmitDiag.label = allLandmarks.length ? (sideOf(idx) || '?') : '';
+    handAdmitDiag.score = allLandmarks.length ? +(Number(confOf(idx)) || 0).toFixed(2) : 0;
+    handAdmitDiag.path = selected >= 0 ? admitPath
+      : (farRejected ? 'far' : (allLandmarks.length ? (eligible.length ? 'rejected' : 'size') : 'none'));
+    handAdmitDiag.check = checkOff ? 'off' : 'on';
+    handAdmitDiag.lockSize = Number.isFinite(handLock.size) ? +handLock.size.toFixed(3) : 0;
     if(selected >= 0){ if(admitPath) handAdmitDiag[admitPath]++; }
-    else if(landmarks.length) handAdmitDiag.rejected++;
+    else if(allLandmarks.length){
+      handAdmitDiag.rejected++;
+      if(farRejected) handAdmitDiag.farRejected++;
+      else if(!eligible.length && sizeRejected) handAdmitDiag.sizeRejected++;
+    }
   }
-  if(selected >= 0) noteAffectedHandTrack(landmarks[selected]);
+  if(selected >= 0) noteAffectedHandTrack(allLandmarks[selected]);
   return selected;
 }
 
@@ -7980,6 +8162,101 @@ document.getElementById('btnMirrorX').addEventListener('click', ()=>{
 });
 applyMirrorMode();
 
+/* ---- v99 校準畫面背景模糊（私隱）----
+   不用額外 AI 模型：將影片縮小到很細再放大重畫，形成柔和模糊；
+   只有已偵測到手部（或 Level 3–4 患側上肢）附近一個窗口保持清晰。
+   影片本身照樣播放供偵測使用，只係畫面唔顯示。 */
+const PRIVACY_BLUR_SMALL_W = 40;      // 第一級縮小寬度（像素）
+const PRIVACY_BLUR_MID_W = 160;      // 第二級（令模糊更柔和）
+const PRIVACY_WINDOW_PAD = 0.28;      // 清晰窗口在手部外框之外的餘裕（相對外框尺寸）
+const PRIVACY_WINDOW_MIN = 0.18;      // 清晰窗口最小邊長（相對畫布短邊）
+let privacyBlurSmall = null, privacyBlurMid = null;
+function privacyBlurEnabled(){ return state.privacyBlur !== false; }
+function applyPrivacyBlurMode(){
+  const wrap = calibCanvas.parentElement;
+  if(wrap) wrap.classList.toggle('privacy-blur', privacyBlurEnabled());
+  const btn = document.getElementById('btnPrivacyBlur');
+  if(btn){
+    btn.textContent = '背景模糊：' + (privacyBlurEnabled() ? '開' : '關');
+    btn.setAttribute('aria-pressed', privacyBlurEnabled() ? 'true' : 'false');
+  }
+}
+function setPrivacyBlur(on){
+  state.privacyBlur = !!on;
+  applyPrivacyBlurMode();
+}
+document.getElementById('btnPrivacyBlur').addEventListener('click', ()=>{
+  setPrivacyBlur(!privacyBlurEnabled());
+});
+applyPrivacyBlurMode();
+// 影片以 object-fit:cover 填滿畫布時的實際繪製矩形（畫布像素）
+function privacyCoverRect(video, rectW, rectH){
+  const vw = video.videoWidth || 4, vh = video.videoHeight || 3;
+  const scale = Math.max(rectW / vw, rectH / vh);
+  const dw = vw * scale, dh = vh * scale;
+  return { dx:(rectW - dw) / 2, dy:(rectH - dh) / 2, dw, dh };
+}
+function drawPrivacyBlurredVideo(ctx, video, rectW, rectH){
+  if(!(video && video.readyState >= 2 && video.videoWidth > 0)) return false;
+  const cover = privacyCoverRect(video, rectW, rectH);
+  if(!privacyBlurSmall){
+    privacyBlurSmall = document.createElement('canvas');
+    privacyBlurMid = document.createElement('canvas');
+  }
+  const sw = PRIVACY_BLUR_SMALL_W, sh = Math.max(2, Math.round(sw * cover.dh / cover.dw));
+  const mw = PRIVACY_BLUR_MID_W, mh = Math.max(2, Math.round(mw * cover.dh / cover.dw));
+  if(privacyBlurSmall.width !== sw || privacyBlurSmall.height !== sh){ privacyBlurSmall.width = sw; privacyBlurSmall.height = sh; }
+  if(privacyBlurMid.width !== mw || privacyBlurMid.height !== mh){ privacyBlurMid.width = mw; privacyBlurMid.height = mh; }
+  const sctx = privacyBlurSmall.getContext('2d');
+  const mctx = privacyBlurMid.getContext('2d');
+  sctx.imageSmoothingEnabled = true; mctx.imageSmoothingEnabled = true;
+  sctx.drawImage(video, 0, 0, sw, sh);
+  mctx.drawImage(privacyBlurSmall, 0, 0, mw, mh);
+  ctx.save();
+  ctx.imageSmoothingEnabled = true;
+  if(state.mirrorX){ ctx.translate(rectW, 0); ctx.scale(-1, 1); }
+  ctx.drawImage(privacyBlurMid, cover.dx, cover.dy, cover.dw, cover.dh);
+  ctx.restore();
+  // 輕微加深，避免模糊後人影仍然太強烈
+  ctx.fillStyle = 'rgba(20,32,40,0.22)';
+  ctx.fillRect(0, 0, rectW, rectH);
+  return true;
+}
+// 用已偵測點（原始影片歸一化座標）的外框在模糊畫面上開一個清晰窗口
+function drawPrivacySharpWindow(ctx, video, rectW, rectH, points){
+  if(!(video && video.readyState >= 2 && video.videoWidth > 0)) return null;
+  const pts = (points || []).filter(p => p && Number.isFinite(p.x) && Number.isFinite(p.y));
+  if(!pts.length) return null;
+  const cover = privacyCoverRect(video, rectW, rectH);
+  let minX = 1, maxX = 0, minY = 1, maxY = 0;
+  for(const p of pts){
+    const u = state.mirrorX ? (1 - p.x) : p.x;
+    minX = Math.min(minX, u); maxX = Math.max(maxX, u);
+    minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
+  }
+  let x0 = cover.dx + minX * cover.dw, x1 = cover.dx + maxX * cover.dw;
+  let y0 = cover.dy + minY * cover.dh, y1 = cover.dy + maxY * cover.dh;
+  const minSide = Math.min(rectW, rectH) * PRIVACY_WINDOW_MIN;
+  const padX = Math.max((x1 - x0) * PRIVACY_WINDOW_PAD, (minSide - (x1 - x0)) / 2, 18);
+  const padY = Math.max((y1 - y0) * PRIVACY_WINDOW_PAD, (minSide - (y1 - y0)) / 2, 18);
+  x0 -= padX; x1 += padX; y0 -= padY; y1 += padY;
+  const w = x1 - x0, h = y1 - y0, r = Math.min(26, w / 2, h / 2);
+  ctx.save();
+  rrPath(ctx, x0, y0, w, h, r);
+  ctx.clip();
+  ctx.imageSmoothingEnabled = true;
+  if(state.mirrorX){ ctx.translate(rectW, 0); ctx.scale(-1, 1); }
+  ctx.drawImage(video, cover.dx, cover.dy, cover.dw, cover.dh);
+  ctx.restore();
+  ctx.save();
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+  rrPath(ctx, x0, y0, w, h, r);
+  ctx.stroke();
+  ctx.restore();
+  return { x0, y0, w, h };
+}
+
 function updateCalibrationCopy(){
   const hint = document.getElementById('calibHint');
   const openCheck = document.getElementById('calibOpenCheck');
@@ -8077,6 +8354,9 @@ function startCalibLoop(){
     if(calibCanvas.height !== rectH) calibCanvas.height = rectH;
     const ctx = calibCanvas.getContext('2d');
     ctx.clearRect(0,0,rectW,rectH);
+    // v99 私隱：先畫模糊背景；偵測到手部後再在手部附近開清晰窗口（下方）。
+    const privacyOn = privacyBlurEnabled();
+    if(privacyOn) drawPrivacyBlurredVideo(ctx, video, rectW, rectH);
 
     // Poll once per calibration iteration and pass this exact frame status to
     // hand inference. v65 omitted this argument, so detectWrist correctly
@@ -8116,6 +8396,19 @@ function startCalibLoop(){
       document.getElementById('pixelCount').textContent = isShoulderFlexionLevel()
         ? '✅ 偵測到已選患側肩及手肘'
         : '✅ 偵測到手部';
+      if(privacyOn){
+        // 手部模型：21 點外框；Level 3–4 姿勢：只用患側肩／肘／腕（不會露出面部）。
+        let windowPts = null;
+        if(isGrossTabletop() && Array.isArray(res.lm) && res.lm.length > 16){
+          const left = activeAffectedSide() === 'left';
+          windowPts = [res.lm[left ? 11 : 12], res.lm[left ? 13 : 14], res.lm[left ? 15 : 16]];
+        }else if(Array.isArray(res.lm) && res.lm.length >= 21){
+          windowPts = res.lm;
+        }else{
+          windowPts = [{ x: state.mirrorX ? (1 - res.nx) : res.nx, y: res.ny }];
+        }
+        drawPrivacySharpWindow(ctx, video, rectW, rectH, windowPts);
+      }
       if(research.active || isGraspStyleMode()){
         const now = nowMs();
         const c = research.active ? research.calibration : state.calibration;
@@ -11146,6 +11439,7 @@ const framePerf = {
 };
 function resetFramePerf(){
   handAdmitDiag.rejected = 0; handAdmitDiag.strict = 0; handAdmitDiag.continuity = 0; handAdmitDiag.lone = 0;
+  handAdmitDiag.sizeRejected = 0; handAdmitDiag.farRejected = 0;
   framePerf.trackMs = 0; framePerf.renderMs = 0; framePerf.frameMs = 0;
   framePerf.fps = 0; framePerf.samples = 0; framePerf.longFrames = 0; framePerf.lastAt = 0;
 }
@@ -11198,9 +11492,10 @@ function updateFramePerfOverlay(now){
     framePerf.overlayEl = el;
   }
   const p = framePerfSnapshot();
-  el.textContent = `perf v98  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
+  el.textContent = `perf v99  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
     + `鏡頭 ${p.video[0]}×${p.video[1]}  畫布 ${p.canvas[0]}×${p.canvas[1]}  dpr ${p.dpr}  手模型 ${p.handDelegate || '-'}\n`
-    + `手 ${p.hand.hands} 隻  標籤 ${p.hand.label || '-'} ${p.hand.score}  接納 ${p.hand.path || '-'}  嚴格 ${p.hand.strict} 連續 ${p.hand.continuity} 單手 ${p.hand.lone} 拒絕 ${p.hand.rejected}`;
+    + `手 ${p.hand.hands} 隻  標籤 ${p.hand.label || '-'} ${p.hand.score}  接納 ${p.hand.path || '-'}  嚴格 ${p.hand.strict} 連續 ${p.hand.continuity} 單手 ${p.hand.lone} 拒絕 ${p.hand.rejected}\n`
+    + `左右手檢查 ${p.hand.check === 'off' ? '關' : '開'}  鎖定手形 ${p.hand.lockSize || '-'}  大小拒絕 ${p.hand.sizeRejected}  遠處拒絕 ${p.hand.farRejected}`;
   el.style.display = state.running ? 'block' : 'none';
 }
 
@@ -18459,6 +18754,7 @@ window.__qa = {
     if(opts.duration) state.duration = opts.duration;
     if(Number.isFinite(Number(opts.dwellMs))) state.dwellMs = Number(opts.dwellMs);
     if(opts.affectedSide) state.affectedSide = opts.affectedSide;
+    if(typeof opts.handednessCheck === 'boolean') state.handednessCheck = opts.handednessCheck;
     qaHand = null;
     qaFrameGeneration = 0;
     showScreen('game');
@@ -18864,7 +19160,16 @@ window.__qa = {
     return {x:item.x,y:item.y,size:item.size,scale:item.scale,
       vase:{...L.vase},width:gameCanvas.width,height:gameCanvas.height};
   },
-  resetHandTrack(){ resetAffectedHandTrack(); return true; },
+  resetHandTrack(){ resetHandLock(); return true; },
+  setHandednessCheck(on){ setHandednessCheck(on !== false); return state.handednessCheck; },
+  handLock(){ return { ...handLock, track:{ ...affectedHandTrack }, diag:{ ...handAdmitDiag } }; },
+  setPrivacyBlur(on){ setPrivacyBlur(on !== false); return privacyBlurEnabled(); },
+  privacySharpWindow(points){
+    const video = document.getElementById('calibVideo');
+    if(!privacyBlurEnabled() || !Array.isArray(points)) return false;
+    drawPrivacySharpWindow(calibCanvas.getContext('2d'), video, calibCanvas.width, calibCanvas.height, points);
+    return true;
+  },
   snapCursor(){ dotEmaX = -1; dotEmaY = -1; posHistory = []; trackingPointHistory = []; return true; },
   trackingProbe(nx, ny, samples, sourceSize){
     trackingPointHistory = [];
@@ -19035,7 +19340,7 @@ window.__qa = {
     running:!!state.running, handDetected, detectionHeldGrace,
     held: heldItem ? heldItem.label : null,
     cursor:{x:cursorX,y:cursorY},
-    paused: !!state.paused,
+    paused: !!state.paused, handednessCheck: state.handednessCheck !== false, privacyBlur: privacyBlurEnabled(),
     safetyBlocking: isSafetyBlocking(),
     safety: JSON.parse(JSON.stringify(sessionSafety)),
     items: foods.filter(f=>!f.removed).map(f=>({label:f.label, type:f.targetType, x:f.x, y:f.y, r:f.r})),
@@ -19470,6 +19775,7 @@ window.addEventListener('ychlanguagechange', ()=>{
   }
   if(currentScreen === 'start'){
     renderShoulderExerciseModeSettings();
+    if(typeof renderHandCheckSettings === 'function') renderHandCheckSettings();
     renderShoulderTargetSettings();
     renderTimingSettings();
     renderLevel4ScenarioDemo();
@@ -19973,7 +20279,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v98-20260904-level56-hand-admission-render-cache-hold30s";
+  const LEVEL_APP_BUILD = "v99-20260904-hand-check-switch-lock-privacy-blur";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

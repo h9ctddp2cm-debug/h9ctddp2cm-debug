@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v98-20260904-level56-hand-admission-render-cache-hold30s";
+const CACHE_VERSION = "fthue-rehab-v99-20260904-hand-check-switch-lock-privacy-blur";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");
