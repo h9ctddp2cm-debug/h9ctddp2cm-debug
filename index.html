@@ -3139,7 +3139,7 @@ function drawTeahouseDimsumSprite(ctx,img,x,y,r){
     const iw=img.naturalWidth,ih=img.naturalHeight;
     let dw,dh;
     if(iw>=ih){dw=r*2;dh=r*2*ih/iw;}else{dh=r*2;dw=r*2*iw/ih;}
-    ctx.drawImage(img,x-dw/2,y-dh/2,dw,dh);
+    drawImageScaled(ctx,img,x-dw/2,y-dh/2,dw,dh);
   }else{
     ctx.fillStyle='#E8B04B';ctx.beginPath();ctx.arc(x,y,r*0.9,0,Math.PI*2);ctx.fill();
   }
@@ -3151,20 +3151,20 @@ function drawTeahouseScene(ctx,cw,ch){
   if(imgTeahouseBg.complete&&imgTeahouseBg.naturalWidth>0){
     const iw=imgTeahouseBg.naturalWidth,ih=imgTeahouseBg.naturalHeight;
     const s=Math.max(cw/iw,ch/ih),dw=iw*s,dh=ih*s;
-    ctx.drawImage(imgTeahouseBg,(cw-dw)/2,(ch-dh)/2,dw,dh);
+    drawImageScaled(ctx,imgTeahouseBg,(cw-dw)/2,(ch-dh)/2,dw,dh);
   }else{ctx.fillStyle='#c9a267';ctx.fillRect(0,0,cw,ch);}
   const t=nowMs()-teahouseServe.startedMs;
   // 上方：用戶設計嘅大碟＋蒸籠 sprite（達標後點心飛入去）
   if(imgThPlate.complete&&imgThPlate.naturalWidth>0){
-    ctx.drawImage(imgThPlate,g.laneX-g.plateW/2,g.plateY-g.plateH/2,g.plateW,g.plateH);
+    drawImageScaled(ctx,imgThPlate,g.laneX-g.plateW/2,g.plateY-g.plateH/2,g.plateW,g.plateH);
   }else{
     drawTeahousePlateEllipse(ctx,g.laneX,g.plateY,g.plateW,g.plateW*0.34);
     if(imgSteamerEmpty.complete&&imgSteamerEmpty.naturalWidth>0)
-      ctx.drawImage(imgSteamerEmpty,g.steamerX-g.sw/2,g.steamerY-g.sw*0.5,g.sw,g.sw);
+      drawImageScaled(ctx,imgSteamerEmpty,g.steamerX-g.sw/2,g.steamerY-g.sw*0.5,g.sw,g.sw);
   }
   // 下方：用戶設計嘅木托盤 sprite ＋ 白色細碟（點心由呢度隨住抬肩升上去）
   if(imgThTray.complete&&imgThTray.naturalWidth>0){
-    ctx.drawImage(imgThTray,g.laneX-g.trayW/2,g.trayY-g.trayH/2,g.trayW,g.trayH);
+    drawImageScaled(ctx,imgThTray,g.laneX-g.trayW/2,g.trayY-g.trayH/2,g.trayW,g.trayH);
   }
   drawTeahousePlateEllipse(ctx,g.laneX,g.dishY,g.dishW,g.dishW*0.30);
   // 中間：綠色向上大箭咀（提示抬高手臂將點心送上蒸籠）
@@ -3545,7 +3545,7 @@ function showScreen(name){
 
 /* Conservative default: an object should not be carried for longer than this
    before the participant is prompted to put it down, open the hand and relax. */
-const MAX_HOLD_MS = 5000;
+const MAX_HOLD_MS = 30000; // v98: 5 s 太短，會在正常搬運途中彈出紅色暫停畫面；臨床要求改為 30 s
 /* Consecutive slow/failed release attempts before a reassessment prompt. */
 const RELEASE_DIFFICULTY_LIMIT = 3;
 /* A release attempt is "delayed" when the hand needs noticeably longer than the
@@ -7067,12 +7067,36 @@ function resetHandFrameAdmission(){
    continuity only rescues an ambiguous label that stays close to the last
    accepted wrist, and only in public Level 5. Level 6 tool tasks keep the
    strict fail-closed handedness rule (see level67-interactions tests). */
-const AFFECTED_HAND_TRACK_MS = 600;
+/* v98: bedside report (Windows laptop webcam, mirrored to a ward TV): the cursor
+   vanished for ~20 s while the participant was clearly performing the task,
+   then reappeared "by luck". With a low table-height webcam the hand is seen
+   edge-on / from the dorsum far more often than on an iPad stand, and the
+   MediaPipe handedness label is then wrong or uncertain for long stretches,
+   not just a few frames. Public Level 5 AND Level 6 therefore now:
+   - keep the strict confident-label pass first (unchanged);
+   - extend the continuity rescue window from 600 ms to 1500 ms (a slow
+     laptop may only deliver 2-3 inferences in 600 ms) and apply it to Level 6;
+   - admit a LONE hand: when exactly one hand is in view, an affected/unknown/
+     uncertain label is admitted at once, and a confidently opposite-labelled
+     lone hand is admitted only after it has been continuously labelled as the
+     opposite hand, alone in view, for LONE_HAND_ADMIT_MS (a therapist hand
+     reaching in for a moment while the participant's hand is lost is therefore
+     still rejected; a persistently mislabelled edge-on affected hand is
+     recovered after one second). With two or more hands in view the strict
+     label rule still decides, so an assisting hand never displaces a visible
+     affected hand. Research mode is unchanged. */
+const AFFECTED_HAND_TRACK_MS = 1500;
 const AFFECTED_HAND_TRACK_DIST = 0.16;   // normalised camera-frame units
 const AFFECTED_HAND_OPPOSITE_REJECT = 0.80;
+const LONE_HAND_ADMIT_MS = 1000;
 let affectedHandTrack = { x:NaN, y:NaN, at:0 };
-function resetAffectedHandTrack(){ affectedHandTrack = { x:NaN, y:NaN, at:0 }; }
-function affectedHandContinuityEnabled(){ return !research.active && state.level === '5'; }
+let loneOppositeSince = 0;   // start of the current lone + confidently-opposite streak
+const handAdmitDiag = { hands:0, label:'', score:0, path:'', rejected:0, strict:0, continuity:0, lone:0 };
+function resetAffectedHandTrack(){ affectedHandTrack = { x:NaN, y:NaN, at:0 }; loneOppositeSince = 0; }
+function affectedHandContinuityEnabled(){
+  return !research.active && (state.level === '5' || state.level === '67');
+}
+function loneHandAdmissionEnabled(){ return affectedHandContinuityEnabled(); }
 function noteAffectedHandTrack(lm){
   const wrist = lm?.[0];
   if(wrist && Number.isFinite(wrist.x) && Number.isFinite(wrist.y)){
@@ -7088,6 +7112,78 @@ function interactionX(rawX){
   return state.mirrorX ? (1 - rawX) : rawX;
 }
 
+/* ---------- v98：手模型運算路徑自動選擇 ----------
+   iPad 一直用 CPU（WASM）路徑。Windows／Android 手提電腦預設 GPU（WebGL），
+   但部分內置顯示卡或被瀏覽器封鎖驅動的機器，WebGL 推論可以慢過 CPU 幾倍，
+   病人會見到「偵測很慢」。呢度只用已量度到的追蹤耗時去揀：
+   - 一局完結時，如 GPU 路徑平均追蹤 > HAND_DELEGATE_SLOW_MS，下一局試 CPU；
+   - CPU 局完結後同 GPU 比較，較快嗰個記入 localStorage，之後唔再切換；
+   - 網址 ?handDelegate=cpu 或 =gpu 可強制指定（現場排查用）。
+   期間唔會改變任何偵測門檻、手側判定或遊戲邏輯，只係換運算路徑。 */
+const HAND_DELEGATE_STORAGE_KEY = 'fthue.handDelegate.v98';
+const HAND_DELEGATE_SLOW_MS = 70;
+const HAND_DELEGATE_MIN_SAMPLES = 90;
+function handDelegateOverride(){
+  try{
+    const v = String(new URLSearchParams(window.location.search).get('handDelegate') || '').toLowerCase();
+    if(v === 'cpu') return 'CPU';
+    if(v === 'gpu') return 'GPU';
+  }catch(_e){}
+  return null;
+}
+function readHandDelegateRecord(){
+  try{
+    const raw = localStorage.getItem(HAND_DELEGATE_STORAGE_KEY);
+    const rec = raw ? JSON.parse(raw) : null;
+    return rec && typeof rec === 'object' ? rec : {};
+  }catch(_e){ return {}; }
+}
+function writeHandDelegateRecord(rec){
+  try{ localStorage.setItem(HAND_DELEGATE_STORAGE_KEY, JSON.stringify(rec)); }catch(_e){}
+}
+function preferredHandDelegate(){
+  const forced = handDelegateOverride();
+  if(forced) return forced;
+  if(isAppleTouchDevice()) return 'CPU';
+  const rec = readHandDelegateRecord();
+  return rec.pref === 'CPU' ? 'CPU' : 'GPU';
+}
+/* Called once per finished public game. Returns the decision for tests/QA. */
+function recordHandDelegatePerformance(perf){
+  const p = perf || framePerfSnapshot();
+  if(state.qaMode || research.active) return { action:'skip', reason:'not-public-play' };
+  if(handDelegateOverride()) return { action:'skip', reason:'url-override' };
+  if(isAppleTouchDevice()) return { action:'skip', reason:'apple-cpu-fixed' };
+  if(!p.handDelegate || !(p.samples >= HAND_DELEGATE_MIN_SAMPLES)) return { action:'skip', reason:'too-few-samples' };
+  if(!(state.level === '5' || state.level === '67')) return { action:'skip', reason:'not-hand-level' };
+  const rec = readHandDelegateRecord();
+  rec[p.handDelegate] = p.trackMs;
+  rec.updatedAt = Date.now();
+  let action = 'keep';
+  if(rec.settled){
+    action = 'settled';
+  }else if(p.handDelegate === 'GPU'){
+    if(p.trackMs > HAND_DELEGATE_SLOW_MS && !Number.isFinite(rec.CPU)){
+      rec.pref = 'CPU'; action = 'try-cpu';
+    }else if(p.trackMs <= HAND_DELEGATE_SLOW_MS){
+      rec.pref = 'GPU'; rec.settled = true; action = 'settle-gpu';
+    }
+  }else if(p.handDelegate === 'CPU'){
+    if(Number.isFinite(rec.GPU) && p.trackMs >= rec.GPU){
+      rec.pref = 'GPU'; rec.settled = true; action = 'settle-gpu';
+    }else{
+      rec.pref = 'CPU'; rec.settled = true; action = 'settle-cpu';
+    }
+  }
+  writeHandDelegateRecord(rec);
+  if(action === 'try-cpu' || (action === 'settle-gpu' && p.handDelegate !== 'GPU')){
+    // Rebuild lazily: the next game start awaits ensureHandLandmarker() again.
+    const old = handLandmarker;
+    handLandmarker = null; handLandmarkerPromise = null;
+    try{ if(old && typeof old.close === 'function') old.close(); }catch(_e){}
+  }
+  return { action, pref:rec.pref, gpuMs:rec.GPU, cpuMs:rec.CPU, settled:!!rec.settled };
+}
 async function ensureHandLandmarker(){
   if(handLandmarker) return handLandmarker;
   if(handLandmarkerPromise) return handLandmarkerPromise;
@@ -7100,7 +7196,7 @@ async function ensureHandLandmarker(){
     const options = {
       baseOptions: {
         modelAssetPath: "./vendor/mediapipe/models/hand_landmarker.task",
-        delegate: isAppleTouchDevice() ? "CPU" : "GPU"
+        delegate: preferredHandDelegate()
       },
       runningMode: "VIDEO",
       // Level 5 must not silently follow a therapist's or unaffected hand.
@@ -7112,11 +7208,13 @@ async function ensureHandLandmarker(){
     };
     try{
       handLandmarker = await HandLandmarker.createFromOptions(vision, options);
+      framePerf.handDelegate = options.baseOptions.delegate;
     }catch(error){
       handLandmarker = await HandLandmarker.createFromOptions(vision, {
         ...options,
         baseOptions:{...options.baseOptions, delegate:"CPU"}
       });
+      framePerf.handDelegate = 'CPU';
     }
     return handLandmarker;
   })();
@@ -7152,6 +7250,8 @@ function selectedAffectedHandIndex(results, inputMirrored=false){
   const affected = activeAffectedSide();
   let selected = -1;
   let selectedConfidence = -Infinity;
+  let admitPath = '';
+  if(landmarks.length !== 1) loneOppositeSince = 0;
   for(let index=0; index<landmarks.length; index++){
     if(mediaPipeAnatomicalHand(results, index, inputMirrored) !== affected) continue;
     const groups = results.handednesses || results.handedness;
@@ -7163,6 +7263,7 @@ function selectedAffectedHandIndex(results, inputMirrored=false){
     if(selected < 0 || (Number.isFinite(confidence) && confidence > selectedConfidence)){
       selected = index;
       selectedConfidence = Number.isFinite(confidence) ? confidence : selectedConfidence;
+      admitPath = 'strict';
     }
   }
   // Missing/unknown handedness fails closed. Falling back to result 0 would let
@@ -7183,9 +7284,36 @@ function selectedAffectedHandIndex(results, inputMirrored=false){
           && confidence >= AFFECTED_HAND_OPPOSITE_REJECT) continue;
       const dist = Math.hypot(wrist.x - affectedHandTrack.x, wrist.y - affectedHandTrack.y);
       if(dist <= AFFECTED_HAND_TRACK_DIST && dist < bestDistance){
-        bestDistance = dist; selected = index;
+        bestDistance = dist; selected = index; admitPath = 'continuity';
       }
     }
+  }
+  if(selected < 0 && loneHandAdmissionEnabled() && landmarks.length === 1){
+    const groups = results.handednesses || results.handedness;
+    const side = mediaPipeAnatomicalHand(results, 0, inputMirrored);
+    const confidence = Number(groups?.[0]?.[0]?.score);
+    const confidentOpposite = !!side && side !== affected
+      && Number.isFinite(confidence) && confidence >= 0.55;
+    if(!confidentOpposite){
+      loneOppositeSince = 0;
+      selected = 0; admitPath = 'lone';
+    }else{
+      if(!loneOppositeSince) loneOppositeSince = nowMs();
+      if(nowMs() - loneOppositeSince >= LONE_HAND_ADMIT_MS){ selected = 0; admitPath = 'lone'; }
+    }
+  }else if(landmarks.length === 1){
+    loneOppositeSince = 0;   // admitted by the strict or continuity rule
+  }
+  // Diagnostics for the ?perf=1 overlay and QA: which path admitted the hand.
+  {
+    const groups = results?.handednesses || results?.handedness;
+    const idx = selected >= 0 ? selected : 0;
+    handAdmitDiag.hands = landmarks.length;
+    handAdmitDiag.label = landmarks.length ? (mediaPipeAnatomicalHand(results, idx, inputMirrored) || '?') : '';
+    handAdmitDiag.score = landmarks.length ? +(Number(groups?.[idx]?.[0]?.score) || 0).toFixed(2) : 0;
+    handAdmitDiag.path = selected >= 0 ? admitPath : (landmarks.length ? 'rejected' : 'none');
+    if(selected >= 0){ if(admitPath) handAdmitDiag[admitPath]++; }
+    else if(landmarks.length) handAdmitDiag.rejected++;
   }
   if(selected >= 0) noteAffectedHandTrack(landmarks[selected]);
   return selected;
@@ -7741,8 +7869,11 @@ function stabiliseDetectedGesture(rawValue, mode){
     detectedGestureState.candidateAt = now;
     return detectedGestureState.stable;
   }
+  // v98: 30 ms confirmed a flip on the very next frame, so at threshold the
+  // open/closed hand icon flickered every frame ("不停又開又合"). 60 ms needs
+  // the new posture to survive two consecutive fresh frames at 30 fps.
   const confirmMs = !research.active && mode === 'grasp' && state.level === '5'
-    ? 30
+    ? 60
     : (!research.active && mode === 'pinch' && isLevel6RealToolTask()
       ? PUBLIC_LEVEL6_TOOL_GESTURE_CONFIRM_MS
       : GESTURE_CONFIRM_MS);
@@ -8739,7 +8870,7 @@ function drawDimsumPhoto(ctx, x, y, r, img){
     const iw = img.naturalWidth, ih = img.naturalHeight;
     let dw = r * 2, dh = dw * ih / iw;
     if(ih > iw){ dh = r * 2; dw = dh * iw / ih; }
-    ctx.drawImage(img, x - dw/2, y - dh/2, dw, dh);
+    drawImageScaled(ctx, img, x - dw/2, y - dh/2, dw, dh);
   } else {
     drawBeefBall(ctx, x, y, r);
   }
@@ -10153,6 +10284,7 @@ function initGame(){
   interactionTrackingPauseAt = 0;
   resetHandFrameAdmission();
   resetPublicGameWorkAdmission();
+  resetFramePerf();
   cursorX = -1; cursorY = -1;
   dotEmaX = -1; dotEmaY = -1;
   handDetected = false;
@@ -11003,6 +11135,75 @@ function updateHUD(){
   document.getElementById('hudTime').textContent = mm + ':' + ss;
 }
 
+/* ---------- v98：每幀效能量度 ----------
+   只量度、不改變任何遊戲邏輯。追蹤（含 MediaPipe 偵測）同繪圖各自計時，
+   以 EMA 平滑；長幀（>50 ms）另外計數。網址加 ?perf=1 會在畫面角落顯示
+   一個細小診斷視窗，方便治療師在病房用手提電腦／iPad 現場截圖回報。 */
+const FRAME_PERF_LONG_MS = 50;
+const framePerf = {
+  trackMs:0, renderMs:0, frameMs:0, fps:0, samples:0, longFrames:0,
+  lastAt:0, handDelegate:null, overlayAt:0, overlayEl:null,
+};
+function resetFramePerf(){
+  handAdmitDiag.rejected = 0; handAdmitDiag.strict = 0; handAdmitDiag.continuity = 0; handAdmitDiag.lone = 0;
+  framePerf.trackMs = 0; framePerf.renderMs = 0; framePerf.frameMs = 0;
+  framePerf.fps = 0; framePerf.samples = 0; framePerf.longFrames = 0; framePerf.lastAt = 0;
+}
+function noteFramePerf(now, trackMs, renderMs){
+  const k = framePerf.samples < 10 ? 0.3 : 0.08;
+  const ema = (prev, v) => framePerf.samples === 0 ? v : prev + (v - prev) * k;
+  framePerf.trackMs = ema(framePerf.trackMs, trackMs);
+  framePerf.renderMs = ema(framePerf.renderMs, renderMs);
+  if(framePerf.lastAt){
+    const dt = now - framePerf.lastAt;
+    if(dt > 0 && dt < 2000){
+      framePerf.frameMs = ema(framePerf.frameMs, dt);
+      if(framePerf.frameMs > 0) framePerf.fps = 1000 / framePerf.frameMs;
+      if(dt > FRAME_PERF_LONG_MS) framePerf.longFrames++;
+    }
+  }
+  framePerf.lastAt = now;
+  framePerf.samples++;
+}
+function framePerfSnapshot(){
+  return {
+    trackMs:+framePerf.trackMs.toFixed(1), renderMs:+framePerf.renderMs.toFixed(1),
+    frameMs:+framePerf.frameMs.toFixed(1), fps:+framePerf.fps.toFixed(1),
+    samples:framePerf.samples, longFrames:framePerf.longFrames,
+    handDelegate:framePerf.handDelegate,
+    canvas:[gameCanvas ? gameCanvas.width : 0, gameCanvas ? gameCanvas.height : 0],
+    video:[gameVideo ? gameVideo.videoWidth : 0, gameVideo ? gameVideo.videoHeight : 0],
+    dpr:+(window.devicePixelRatio || 1).toFixed(2),
+    scaledBitmaps:{ ...scaledBitmapStats },
+    hand:{ ...handAdmitDiag },
+  };
+}
+function framePerfOverlayEnabled(){
+  try{ return new URLSearchParams(window.location.search).get('perf') === '1'; }
+  catch(_e){ return false; }
+}
+function updateFramePerfOverlay(now){
+  if(!framePerfOverlayEnabled()) return;
+  if(now - framePerf.overlayAt < 500) return;
+  framePerf.overlayAt = now;
+  let el = framePerf.overlayEl;
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'framePerfOverlay';
+    el.setAttribute('aria-hidden','true');
+    el.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:99998;pointer-events:none;'
+      + 'background:rgba(10,20,18,.82);color:#e8fff6;font:12px/1.4 -apple-system,"PingFang TC",sans-serif;'
+      + 'padding:6px 9px;border-radius:10px;white-space:pre;';
+    document.body.appendChild(el);
+    framePerf.overlayEl = el;
+  }
+  const p = framePerfSnapshot();
+  el.textContent = `perf v98  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
+    + `鏡頭 ${p.video[0]}×${p.video[1]}  畫布 ${p.canvas[0]}×${p.canvas[1]}  dpr ${p.dpr}  手模型 ${p.handDelegate || '-'}\n`
+    + `手 ${p.hand.hands} 隻  標籤 ${p.hand.label || '-'} ${p.hand.score}  接納 ${p.hand.path || '-'}  嚴格 ${p.hand.strict} 連續 ${p.hand.continuity} 單手 ${p.hand.lone} 拒絕 ${p.hand.rejected}`;
+  el.style.display = state.running ? 'block' : 'none';
+}
+
 /* ---------- 主遊戲迴圈 ---------- */
 const PUBLIC_GAME_WORK_INTERVAL_MS = 1000 / 30;
 let publicGameWork = { at:-Infinity, generation:null, fresh:null, staleKey:'' };
@@ -11045,10 +11246,15 @@ function gameLoop(rafNow){
       ? level4FrameStatus(gameVideo) : null;
     if(research.active || state.qaMode || admitPublicGameWork(rafNow, publicFrame)){
       try{
+        const perfT0 = performance.now();
         updateTracking(publicFrame);
+        const perfT1 = performance.now();
         if(usesAdvancedThemeModule()){ advUpdate(); advRender(); }
         else { updateGameLogic(); renderGame(); }
         drawLevel4SelectedArmOverlay(gameCtx, gameCanvas.width, gameCanvas.height);
+        const perfT2 = performance.now();
+        noteFramePerf(perfT2, perfT1 - perfT0, perfT2 - perfT1);
+        updateFramePerfOverlay(perfT2);
       }catch(e){
         // v96: keep the RAF chain alive; a single faulty frame must not freeze
         // the whole game for the participant. QA runs still surface the error.
@@ -11079,7 +11285,9 @@ function graspTrackingGraceEligible(res){
   // public Level 5 only. The cursor and grasp state are merely held for up to
   // DETECTION_LOST_GRACE_MS; nothing is tracked from the other hand. Level 6
   // tasks stay fully fail-closed on handedness.
-  return !research.active && state.level === '5'
+  // v98: extended to public Level 6 tasks as well — a label dropout must not
+  // clear the cursor for a hand that is still visibly performing the task.
+  return !research.active && (state.level === '5' || state.level === '67')
     && res.reason === 'affected-hand-not-detected';
 }
 function pauseInteractionTracking(now){
@@ -13152,7 +13360,7 @@ function drawSteamerTarget(ctx, t, LBL_SIZE){
     const ratio = t.img.naturalWidth / t.img.naturalHeight;
     let dw = maxW, dh = dw / ratio;
     if(dh > maxH){ dh = maxH; dw = dh * ratio; }
-    ctx.drawImage(t.img, t.x - dw/2, t.y - dh/2 - t.h * 0.05, dw, dh);
+    drawImageScaled(ctx, t.img, t.x - dw/2, t.y - dh/2 - t.h * 0.05, dw, dh);
   }
   ctx.font = `bold ${labelSize}px "PingFang TC","Noto Sans TC",-apple-system,sans-serif`;
   ctx.textAlign = 'center';
@@ -13185,7 +13393,7 @@ function drawBigPlateTarget(ctx, t){
     const ratio = t.img.naturalWidth / t.img.naturalHeight;
     plateW = t.w; plateH = plateW / ratio;
     if(plateH > t.h){ plateH = t.h; plateW = plateH * ratio; }
-    ctx.drawImage(t.img, t.x - plateW / 2, t.y - plateH / 2, plateW, plateH);
+    drawImageScaled(ctx, t.img, t.x - plateW / 2, t.y - plateH / 2, plateW, plateH);
   } else {
     drawRiceBowl(ctx, t.x, t.y, Math.min(t.w, t.h) * 0.45);
   }
@@ -13197,7 +13405,7 @@ function drawBigPlateTarget(ctx, t){
       const iw = p.img.naturalWidth, ih = p.img.naturalHeight;
       let dw = itemR * 2, dh = dw * ih / iw;
       if(ih > iw){ dh = itemR * 2; dw = dh * iw / ih; }
-      ctx.drawImage(p.img, px - dw / 2, py - dh / 2, dw, dh);
+      drawImageScaled(ctx, p.img, px - dw / 2, py - dh / 2, dw, dh);
     } else {
       drawBeefBall(ctx, px, py, itemR);
     }
@@ -13319,7 +13527,7 @@ function drawLaundryRackTarget(ctx, t){
   ctx.ellipse(t.x, t.y + t.h * 0.46, t.w * 0.46, t.h * 0.06, 0, 0, Math.PI * 2);
   ctx.fill();
   if(t.img && t.img.complete && t.img.naturalWidth > 0){
-    ctx.drawImage(t.img, t.x - rw / 2, t.y - rh / 2, rw, rh);
+    drawImageScaled(ctx, t.img, t.x - rw / 2, t.y - rh / 2, rw, rh);
   } else {
     drawDryingPole(ctx, t.x, t.y, Math.min(t.w, t.h) * 0.45);
   }
@@ -13332,7 +13540,7 @@ function drawLaundryRackTarget(ctx, t){
       let dh = rh * 0.66, dw = dh * iw / ih;
       const maxW = rw * 0.20;
       if(dw > maxW){ dw = maxW; dh = dw * ih / iw; }
-      ctx.drawImage(c.img, px - dw / 2, railY, dw, dh);
+      drawImageScaled(ctx, c.img, px - dw / 2, railY, dw, dh);
     }
   }
   // hover：游標帶住衣物埋架時嘅提示外框
@@ -13427,7 +13635,7 @@ function drawFridgeTarget(ctx, t){
   ctx.ellipse(t.x, rect.y0 + rh + rh * 0.03, rw * 0.46, rh * 0.05, 0, 0, Math.PI * 2);
   ctx.fill();
   if(t.img && t.img.complete && t.img.naturalWidth > 0){
-    ctx.drawImage(t.img, rect.x0, rect.y0, rw, rh);
+    drawImageScaled(ctx, t.img, rect.x0, rect.y0, rw, rh);
   } else {
     ctx.fillStyle = '#EAF2F8';
     rrPath(ctx, rect.x0, rect.y0, rw, rh, 18);
@@ -13685,7 +13893,7 @@ function renderGame(){
     // draw image if available
     if(t.img && t.img.complete && t.img.naturalWidth > 0){
       const imgSz = Math.min(plateR * 2.0, LBL_SIZE * 3.2);
-      ctx.drawImage(t.img, t.x - imgSz/2, t.y - plateR * 1.0, imgSz, imgSz);
+      drawImageScaled(ctx, t.img, t.x - imgSz/2, t.y - plateR * 1.0, imgSz, imgSz);
       // label 在磮中較下
       ctx.fillStyle = '#1a1a1a';
       ctx.font = `bold ${Math.round(LBL_SIZE * 0.75)}px "PingFang TC","Noto Sans TC",-apple-system,sans-serif`;
@@ -13744,7 +13952,7 @@ function renderGame(){
       let dw, dh;
       if(iw >= ih){ dw = targetMax; dh = targetMax * ih / iw; }
       else        { dh = targetMax; dw = targetMax * iw / ih; }
-      ctx.drawImage(f.img, drawX - dw/2, drawY - dh/2, dw, dh);
+      drawImageScaled(ctx, f.img, drawX - dw/2, drawY - dh/2, dw, dh);
     } else {
       ctx.beginPath();
       ctx.arc(drawX, drawY, visualR, 0, Math.PI*2);
@@ -13882,6 +14090,7 @@ function roundRect(ctx, x, y, w, h, r){
    nothing is exported automatically and no recorded data is lost. */
 function endGame(endReason){
   const reason = endReason || 'time_up';
+  try{ recordHandDelegatePerformance(); }catch(_e){}
   if(typeof sessionSafety === 'object'){
     if(restPauseActive) endRest();
     if(reason === 'safety_stop' && !sessionSafety.stopReason){
@@ -14140,6 +14349,54 @@ function advImg(name){
 }
 function preloadAdvAssets(){ ADV_ASSETS.forEach(advImg); }
 
+/* ---------- v98：大圖降採樣快取 ----------
+   點心蒸籠相片係 1024×1024、動物 distractor 去到 1803×2726，之前每一幀都由
+   原尺寸重新縫合到 200 px 左右。低階 Windows 手提電腦（內置顯示卡、鏡射到
+   大電視）每幀要處理近千萬像素，畫面同偵測都會拖慢。呢度將每張大圖按實際
+   繪製尺寸（64 px 一級、向上取整）先光柵化一次到細 canvas，之後每幀只畫細
+   圖。細 sprite、圖集（source-rect 繪製）同鏡頭影像唔經此路徑。 */
+const SCALED_BITMAP_MIN_SOURCE_EDGE = 400;
+const SCALED_BITMAP_BUCKET_PX = 64;
+const SCALED_BITMAP_MAX_VARIANTS = 6;
+const scaledBitmapCache = new WeakMap();
+const scaledBitmapStats = { hits:0, builds:0, bypass:0 };
+function scaledBitmapFor(img, dw, dh){
+  if(!img || !img.complete || !img.naturalWidth || !img.naturalHeight) return null;
+  const iw = img.naturalWidth, ih = img.naturalHeight;
+  if(Math.max(iw, ih) < SCALED_BITMAP_MIN_SOURCE_EDGE){ scaledBitmapStats.bypass++; return null; }
+  const w = Math.abs(Number(dw)), h = Math.abs(Number(dh));
+  if(!(w >= 1 && h >= 1) || !Number.isFinite(w) || !Number.isFinite(h)){ scaledBitmapStats.bypass++; return null; }
+  const targetW = Math.min(iw, Math.ceil(w / SCALED_BITMAP_BUCKET_PX) * SCALED_BITMAP_BUCKET_PX);
+  const targetH = Math.min(ih, Math.ceil(h / SCALED_BITMAP_BUCKET_PX) * SCALED_BITMAP_BUCKET_PX);
+  // 只有在原圖面積明顯大過繪製面積時才值得快取（≥1.5 倍）。
+  if(targetW * targetH * 1.5 >= iw * ih){ scaledBitmapStats.bypass++; return null; }
+  let variants = scaledBitmapCache.get(img);
+  if(!variants){ variants = new Map(); scaledBitmapCache.set(img, variants); }
+  const key = targetW + 'x' + targetH;
+  const cached = variants.get(key);
+  if(cached){ scaledBitmapStats.hits++; return cached; }
+  try{
+    if(variants.size >= SCALED_BITMAP_MAX_VARIANTS) variants.clear();
+    const c = document.createElement('canvas');
+    c.width = targetW; c.height = targetH;
+    const cctx = c.getContext('2d');
+    if(!cctx) return null;
+    cctx.imageSmoothingEnabled = true;
+    try{ cctx.imageSmoothingQuality = 'high'; }catch(_e){}
+    cctx.drawImage(img, 0, 0, targetW, targetH);
+    variants.set(key, c);
+    scaledBitmapStats.builds++;
+    return c;
+  }catch(_e){
+    return null;
+  }
+}
+/* 與 ctx.drawImage(img, dx, dy, dw, dh) 同義，但大圖會先經降採樣快取。 */
+function drawImageScaled(ctx, img, dx, dy, dw, dh){
+  const bmp = scaledBitmapFor(img, dw, dh);
+  ctx.drawImage(bmp || img, dx, dy, dw, dh);
+}
+
 /* 以「最長邊 = size」等比繪製透明 PNG（中心對齊） */
 function drawSprite(ctx, img, cx, cy, size, opts){
   if(!img || !img.complete || !img.naturalWidth) return false;
@@ -14155,7 +14412,7 @@ function drawSprite(ctx, img, cx, cy, size, opts){
     ctx.shadowColor = 'rgba(0,0,0,0.28)';
     ctx.shadowBlur = 14; ctx.shadowOffsetY = 6;
   }
-  ctx.drawImage(img, -dw/2 + (o.ax || 0), -dh/2 + (o.ay || 0), dw, dh);
+  drawImageScaled(ctx, img, -dw/2 + (o.ax || 0), -dh/2 + (o.ay || 0), dw, dh);
   ctx.restore();
   return true;
 }
@@ -14169,7 +14426,7 @@ function drawSpriteBottom(ctx, img, cx, byy, size, rot, alpha){
   ctx.translate(cx, byy);
   if(rot) ctx.rotate(rot);
   if(alpha != null) ctx.globalAlpha = alpha;
-  ctx.drawImage(img, -dw/2, -dh, dw, dh);
+  drawImageScaled(ctx, img, -dw/2, -dh, dw, dh);
   ctx.restore();
   return true;
 }
@@ -17159,7 +17416,7 @@ function drawVaseScene(ctx, L, opts){
       ctx.save();
       ctx.shadowColor = 'rgba(0,0,0,0.28)';
       ctx.shadowBlur = 14; ctx.shadowOffsetY = 6;
-      ctx.drawImage(pot, vase.x-vase.w*0.5, vase.y-vase.h*0.5, vase.w, vase.h);
+      drawImageScaled(ctx, pot, vase.x-vase.w*0.5, vase.y-vase.h*0.5, vase.w, vase.h);
       ctx.restore();
     }
   } else {
@@ -18419,6 +18676,14 @@ window.__qa = {
       ),
     };
     if(spec.noHand) qaHand.results={landmarks:[],handednesses:[]};
+    // v98 QA: an assisting (therapist) hand elsewhere in the frame, so tests
+    // can assert that two-hand frames still follow the strict label rule.
+    if(spec.secondHand && qaHand.results?.landmarks?.length){
+      const other=qaHand.results.landmarks[0].map(pt=>({x:pt.x+.35,y:pt.y,z:pt.z}));
+      qaHand.results.landmarks.push(other);
+      qaHand.results.handednesses.push([{
+        categoryName:spec.secondHand==='left'?'Left':'Right', score:.98 }]);
+    }
     if(Number.isFinite(Number(spec.stepMs))) timeOffsetMs+=Number(spec.stepMs);
     return this.setLevel4Pose(pose);
   },
@@ -18759,6 +19024,10 @@ window.__qa = {
     };
   },
   returnHome(){ exitToLevelSelection(); return this.state(); },
+  perf(){ return framePerfSnapshot(); },
+  resetPerf(){ resetFramePerf(); return framePerfSnapshot(); },
+  handDelegate(){ return { preferred:preferredHandDelegate(), record:readHandDelegateRecord(), active:framePerf.handDelegate }; },
+  recordHandDelegate(perf){ return recordHandDelegatePerformance(perf); },
   state(){ return {
     screen: currentScreen, level: state.level, theme: state.theme, gameType: state.gameType,
     level6Task: state.level6Task, level6LockedTheme: state.level6LockedTheme,
@@ -19704,7 +19973,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v97-20260903-level5-6-low-latency";
+  const LEVEL_APP_BUILD = "v98-20260904-level56-hand-admission-render-cache-hold30s";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

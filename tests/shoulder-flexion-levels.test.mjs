@@ -417,9 +417,9 @@ test('setup exposes distinct exact target-hold choices and aligns v51 source ide
   assert.match(html,/id="targetHoldOverlay"[\s\S]*id="targetHoldNumber"/);
   assert.match(html,/holdCountdownActive/);
   assert.match(html,/SHOULDER_HOLD_COUNT_CANTONESE/);
-  assert.match(html,/v97-20260903-level5-6-low-latency/);
-  assert.match(manifest,/v97-20260903-level5-6-low-latency/);
-  assert.match(worker,/v97-20260903-level5-6-low-latency/);
+  assert.match(html,/v98-20260904-level56-hand-admission-render-cache-hold30s/);
+  assert.match(manifest,/v98-20260904-level56-hand-admission-render-cache-hold30s/);
+  assert.match(worker,/v98-20260904-level56-hand-admission-render-cache-hold30s/);
   assert.doesNotMatch(html,/v46-20260825-shoulder-detection-repair/);
   assert.doesNotMatch(manifest,/v46-20260825-shoulder-detection-repair/);
   assert.doesNotMatch(worker,/v46-20260825-shoulder-detection-repair/);

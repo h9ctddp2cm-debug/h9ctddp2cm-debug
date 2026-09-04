@@ -210,7 +210,7 @@ test('public flower game uses the wide patterned planter while research keeps it
   assert.match(html, /vaseH = patientLarge[\s\S]*?\? ch\*0\.25/);
   assert.match(html, /w:patientLarge\?cw:vaseH\*0\.68/);
   assert.match(html, /isPublicLevel5VerticalFlow\(\) \|\| \(isLevel6\(\)&&state\.theme==='flowers'\)\) \? ch\*0\.53/);
-  assert.match(html, /ctx\.drawImage\(pot, vase\.x-vase\.w\*0\.5, vase\.y-vase\.h\*0\.5, vase\.w, vase\.h\)/);
+  assert.match(html, /drawImageScaled\(ctx, pot, vase\.x-vase\.w\*0\.5, vase\.y-vase\.h\*0\.5, vase\.w, vase\.h\)/);
   assert.match(html, /drawSprite\(ctx, advImg\('v75_vase'\), vase\.x, vase\.y, vase\.h/);
 });
 

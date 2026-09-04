@@ -217,6 +217,6 @@ test('v67 Level 6 release: personal thresholds keep hysteresis ordering with an 
   assert.match(publicSource,/personalPinchExit = closedMean \+ gap \* 0\.70/);
   assert.match(publicSource,/closedMean \+ gap \* 0\.80/);
   // The hold-time and release-difficulty safety nets stay in place.
-  assert.match(publicSource,/const MAX_HOLD_MS = 5000/);
+  assert.match(publicSource,/const MAX_HOLD_MS = 30000/);
   assert.match(publicSource,/RELEASE_DIFFICULTY_LIMIT = 3/);
 });

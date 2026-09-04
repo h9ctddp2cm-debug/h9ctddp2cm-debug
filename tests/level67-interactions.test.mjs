@@ -380,7 +380,10 @@ for (const { task } of LEVEL6_GESTURE_TASKS) {
 
         start();
         frame('open', 5);
-        frame('closed', 6, { handSide: 'left' });
+        // v98: the handedness dropout grace (750 ms) now also holds the last
+        // cursor in Level 6, and a lone opposite hand is admitted after 1 s, so
+        // the wrong hand is shown together with a second hand for 900 ms.
+        frame('closed', 9, { handSide: 'left', secondHand: 'left', stepMs: 100 });
         const wrongHand = window.__qa.level6ToolState();
 
         start();
@@ -393,11 +396,18 @@ for (const { task } of LEVEL6_GESTURE_TASKS) {
         const staticClosed = window.__qa.level6ToolState();
         start();
         frame('open', 5);
-        frame('closed', 6, { handSide:'missing' });
+        // v98: a lone hand with a missing/uncertain label is admitted in
+        // public Level 6, so these fail-closed cases now include a second,
+        // confidently labelled assisting hand elsewhere in the frame.
+        // The 1500 ms continuity window must have lapsed as well, otherwise
+        // the label-less hand at the tracked wrist is legitimately kept.
+        frame('open', 1, { noHand:true, stepMs:1600 });
+        frame('closed', 6, { handSide:'missing', secondHand:'left' });
         const missingHandedness = window.__qa.level6ToolState();
         start();
         frame('open', 5);
-        frame('closed', 6, { handednessConfidence:.30 });
+        frame('open', 1, { noHand:true, stepMs:1600 });
+        frame('closed', 6, { handednessConfidence:.30, secondHand:'left' });
         const uncertainHandedness = window.__qa.level6ToolState();
         return { stale, wrongHand, partial, staticClosed, missingHandedness, uncertainHandedness };
       }, task);
@@ -410,8 +420,8 @@ for (const { task } of LEVEL6_GESTURE_TASKS) {
       assert.equal(result.wrongHand.handDetected, false, 'opposite hand cannot substitute for the selected affected hand');
       assert.equal(result.partial.handDetected, false, 'missing required landmarks fail closed');
       assert.equal(result.staticClosed.handOpenPrep, false, 'static grasp never creates an open preparation');
-      assert.equal(result.missingHandedness.handDetected, false, 'missing handedness fails closed');
-      assert.equal(result.uncertainHandedness.handDetected, false, 'uncertain handedness fails closed');
+      assert.equal(result.missingHandedness.handDetected, false, 'missing handedness fails closed while another hand is in view');
+      assert.equal(result.uncertainHandedness.handDetected, false, 'uncertain handedness fails closed while another hand is in view');
     });
   });
 }

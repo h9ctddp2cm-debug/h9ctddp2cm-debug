@@ -40,7 +40,7 @@ test("portrait phones keep the camera inline in a compact preview instead of ful
   assert.match(publicSource, /height:min\(25dvh,210px\)/);
   assert.ok(publicSource.includes("videoEl.setAttribute('webkit-playsinline', '')"));
   assert.ok(publicSource.includes("videoEl.controls = false"));
-  assert.match(serviceWorkerSource, /fthue-rehab-v97-20260903-level5-6-low-latency/);
+  assert.match(serviceWorkerSource, /fthue-rehab-v98-20260904-level56-hand-admission-render-cache-hold30s/);
 });
 
 test("Levels 3 and 4 can use Pose when tabletop hands occlude the finger model", () => {
@@ -184,9 +184,9 @@ test("all items stay clear of targets and can be parked in blank space", () => {
 test("offline worker forces the current build instead of serving the stale game", () => {
   const manifest = JSON.parse(readFileSync(path.join(root, "manifest.webmanifest"), "utf8"));
   assert.ok(publicSource.includes('updateViaCache:"none"'));
-  assert.match(serviceWorkerSource, /fthue-rehab-v97-20260903-level5-6-low-latency/);
-  assert.ok(publicSource.includes('const LEVEL_APP_BUILD = "v97-20260903-level5-6-low-latency"'));
-  assert.equal(manifest.start_url, "./index.html?build=v97-20260903-level5-6-low-latency");
+  assert.match(serviceWorkerSource, /fthue-rehab-v98-20260904-level56-hand-admission-render-cache-hold30s/);
+  assert.ok(publicSource.includes('const LEVEL_APP_BUILD = "v98-20260904-level56-hand-admission-render-cache-hold30s"'));
+  assert.equal(manifest.start_url, "./index.html?build=v98-20260904-level56-hand-admission-render-cache-hold30s");
   assert.ok(publicSource.includes('const levelAppHadController = Boolean(navigator.serviceWorker.controller)'));
   assert.ok(publicSource.includes('if (!levelAppHadController || levelAppReloading) return'));
   assert.ok(publicSource.includes('navigator.serviceWorker.addEventListener("controllerchange"'));
