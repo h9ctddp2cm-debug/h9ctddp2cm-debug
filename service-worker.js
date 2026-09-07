@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v107-20260907-lone-hand-grasp-stability";
+const CACHE_VERSION = "fthue-rehab-v108-20260907-peg-release-cheer-cartoons";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

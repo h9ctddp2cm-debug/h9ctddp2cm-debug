@@ -667,7 +667,31 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
 }
 
 /* ---------- RESULT SCREEN ---------- */
-#screen-result{ align-items:center; justify-content:center; padding:24px; }
+/* v108: justify-content:center in a scrolling column flex clips the TOP of a
+   card taller than the viewport (iPad landscape with the movement-review panel
+   showed the title cut off and unreachable). Auto margins on the stage centre
+   it when there is spare room and fall back to top-aligned + scrollable. */
+#screen-result{ align-items:center; justify-content:flex-start; padding:24px; }
+/* v108: result card flanked by two cheering therapist cartoons. The figures are
+   decorative (pointer-events none), never captured for data, and are hidden
+   whenever the strict-flow class is applied so that flow is unchanged. */
+.result-stage{
+  display:flex; align-items:flex-end; justify-content:center; gap:14px;
+  width:100%; max-width:1080px; margin:auto; flex:0 0 auto;
+}
+.result-stage .result-card{ flex:1 1 auto; min-width:0; }
+.result-cheer{
+  flex:0 0 auto; width:clamp(96px, 15vw, 190px); height:auto; align-self:flex-end;
+  filter:drop-shadow(0 4px 8px rgba(44,24,16,0.16));
+  pointer-events:none; user-select:none; -webkit-user-select:none;
+}
+.result-cheer[hidden]{ display:none; }
+.result-stage.research-mode .result-cheer{ display:none; }
+@media (max-width:700px){
+  .result-stage{ flex-wrap:wrap; gap:8px 18px; }
+  .result-cheer{ order:-1; width:clamp(84px, 24vw, 130px); }
+  .result-stage .result-card{ flex-basis:100%; }
+}
 .result-card{
   background:var(--surface); border:1.5px solid var(--border); border-radius:20px;
   padding:28px 24px; text-align:center; max-width:720px; width:100%;
@@ -2152,6 +2176,11 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
 
   <!-- ============ RESULT SCREEN ============ -->
   <div id="screen-result" class="screen">
+    <div class="result-stage" id="resultStage">
+      <!-- v108: two department therapist cartoons cheer the participant on
+           (thumbs-up on the left, fist-pump on the right). Public flow only. -->
+      <img class="result-cheer result-cheer-like" id="resultCheerLike"
+        src="img/advanced/result_cheer_like.png" alt="治療師卡通豎起拇指稱讚" width="250" height="720" decoding="async" loading="lazy">
     <div class="result-card">
       <h2 id="resultTitle">訓練完成</h2>
       <div id="resultContext" style="font-size:14px;font-weight:700;color:var(--muted);margin:-8px 0 4px;"></div>
@@ -2572,6 +2601,9 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
       <!-- PUBLIC_BUILD_REMOVE_END -->
       <button class="btn-primary" id="btnRetry">再玩一次</button>
       <button class="btn-secondary" id="btnHome">返回主頁</button>
+    </div>
+      <img class="result-cheer result-cheer-go" id="resultCheerGo"
+        src="img/advanced/result_cheer_go.png" alt="治療師卡通舉拳加油" width="278" height="720" decoding="async" loading="lazy">
     </div>
   </div>
 
@@ -7990,6 +8022,67 @@ const TOOL_ADAPT_MIN_SAMPLES = 24;
 const TOOL_ADAPT_MIN_SPAN = 0.012;
 const TOOL_ADAPT_MAX_SAMPLES = 300;
 const TOOL_HAND_TOO_CLOSE_SCALE = 0.55;
+/* v108 (therapist bedside report, 7 Sep): a hemiplegic hand holding the REAL
+   cloth peg could pick up but never release. Release demanded BOTH digits to
+   reopen to 62% of the calibrated range and, once a participant calibration
+   existed, the in-play adaptive tracker was ignored — so a hand that tires and
+   reopens less than during calibration stayed locked in a hold until the 30 s
+   safety pause. Public peg task only (research modes untouched):
+   - release point lowered to 50% and re-arm separation to 62% of each digit's
+     own calibrated range (ordering closed < release < re-arm preserved);
+   - a decisive reopen of ONE digit (past its re-arm point) releases when the
+     other digit has moved at least 30% of its own range — both digits still
+     have to move, so a single drifting landmark can never release an item;
+   - the in-play adaptive tracker may LOWER (never raise) release and re-arm
+     points below the calibrated ones once genuine open/close movement is seen;
+     the calibrated ENTRY threshold is never changed by this path. */
+const PUBLIC_PEG_RELEASE_RATIO = 0.50;
+const PUBLIC_PEG_REARM_RATIO = 0.62;
+const PUBLIC_PEG_DECISIVE_OTHER_RATIO = 0.30;
+const PUBLIC_PEG_ADAPT_FLOOR_RATIO = 0.25;
+/* Pair-baseline guard. near/far are the per-frame MIN/MAX digit ratios, so a
+   digit that stays static at its own closed baseline while the other digit
+   flies open (tracking drift) shows up as near = the static digit's closed
+   value, which can be as high as the calibrated far-closed mean. Every relaxed
+   NEAR threshold below is therefore floored at farClosed + 12% of the near
+   range (capped at the v70 62% point), so v108 is never easier to fool than
+   v107 by a single moving landmark. With a real tripod peg grip both tips sit
+   on the peg, the two closed baselines are close, and the floor stays low. */
+const PUBLIC_PEG_PAIR_MARGIN_RATIO = 0.12;
+function publicPegNearFloor(nearClosed, nearRange, farClosed){
+  if(!Number.isFinite(nearClosed) || !Number.isFinite(nearRange) || !Number.isFinite(farClosed)){
+    return -Infinity;
+  }
+  return Math.min(nearClosed + nearRange * 0.62, farClosed + nearRange * PUBLIC_PEG_PAIR_MARGIN_RATIO);
+}
+function publicPegReleaseRelaxationEnabled(){
+  return !research.active && typeof isLevel6RealToolTask === 'function' && isLevel6RealToolTask();
+}
+/* Effective thresholds for the public peg task: calibrated values, with release
+   and re-arm points lowered towards the participant's observed in-play range
+   (never below 25% of the calibrated range, never touching `enter`). */
+function publicPegEffectiveThresholds(calibrated, adaptive){
+  if(!calibrated) return calibrated;
+  if(!adaptive || !Number.isFinite(calibrated.nearClosed) || !Number.isFinite(calibrated.farClosed)){
+    return calibrated;
+  }
+  const nearFloor = Math.max(
+    calibrated.nearClosed + calibrated.nearRange * PUBLIC_PEG_ADAPT_FLOOR_RATIO,
+    publicPegNearFloor(calibrated.nearClosed, calibrated.nearRange, calibrated.farClosed));
+  const farFloor = calibrated.farClosed + calibrated.farRange * PUBLIC_PEG_ADAPT_FLOOR_RATIO;
+  const lowerTo = (own, learned, floor)=>
+    Number.isFinite(learned) ? Math.max(floor, Math.min(own, learned)) : own;
+  const nearExit = lowerTo(calibrated.nearExit, adaptive.nearExit, nearFloor);
+  const farExit = lowerTo(calibrated.farExit, adaptive.farExit, farFloor);
+  return {
+    ...calibrated,
+    nearExit,
+    farExit,
+    nearOpen: Math.max(nearExit, lowerTo(calibrated.nearOpen, adaptive.nearOpen, nearFloor)),
+    farOpen: Math.max(farExit, lowerTo(calibrated.farOpen, adaptive.farOpen, farFloor)),
+    adaptiveLowered: nearExit < calibrated.nearExit || farExit < calibrated.farExit,
+  };
+}
 const toolPinchAdapt = { near:[], far:[], combo:[], counter:0, thresholds:null };
 /* Public chopsticks get a second, tool-relative cue: index and middle fingertip
    extension from their own MCP joints to the wrist. Unlike thumb-to-tip
@@ -8119,14 +8212,36 @@ function computeToolPinchState(lm, isPinchingPrev){
   // Calibration is the session authority and must survive initGame's runtime
   // history reset. Adaptive thresholds are a fallback only for direct/legacy
   // starts where no participant calibration exists.
-  const t = (!research.active && state.personalToolPinch)
-    || (!research.active && toolPinchAdapt.thresholds)
+  const calibratedT = (!research.active && state.personalToolPinch) || null;
+  const adaptiveT = (!research.active && toolPinchAdapt.thresholds) || null;
+  // v108: public peg only — calibrated release/re-arm points may be lowered
+  // towards the observed in-play range. Entry is always the calibrated value.
+  const t = (calibratedT && publicPegReleaseRelaxationEnabled() && !useChopstickFlex
+      ? publicPegEffectiveThresholds(calibratedT, adaptiveT)
+      : calibratedT)
+    || adaptiveT
     || TOOL_PINCH_DEFAULTS;
   // Never widen a participant's calibrated entry threshold to the generic
   // fallback: real chopsticks and pegs often have a much smaller total range.
   // Release still requires BOTH digits to clear the reopen point of their own
   // measured tool range — one drifting landmark can never release an item.
   const bothReopened = nearRatio >= t.nearExit && farRatio >= t.farExit;
+  // v108 decisive-digit release (public peg, calibrated ranges only): one digit
+  // reopens past its re-arm point while the OTHER digit has still moved at
+  // least 30% of its own calibrated range. Both digits must move.
+  const decisiveReopen = publicPegReleaseRelaxationEnabled() && !useChopstickFlex
+    && Number.isFinite(t.nearClosed) && Number.isFinite(t.farClosed)
+    && Number.isFinite(t.nearRange) && Number.isFinite(t.farRange)
+    && ((nearRatio >= t.nearOpen
+          && farRatio >= t.farClosed + t.farRange * PUBLIC_PEG_DECISIVE_OTHER_RATIO)
+      || (farRatio >= t.farOpen
+          && nearRatio >= Math.max(t.nearClosed + t.nearRange * PUBLIC_PEG_DECISIVE_OTHER_RATIO,
+                                   publicPegNearFloor(t.nearClosed, t.nearRange, t.farClosed))));
+  if(!research.active){
+    lastToolPinchLive = { ...(lastToolPinchLive || {}), ratio, nearRatio, farRatio, scale,
+      at: nowMs(), nearExit:t.nearExit, farExit:t.farExit, nearOpen:t.nearOpen, farOpen:t.farOpen,
+      calibrated:!!calibratedT, adaptive:!!adaptiveT, lowered:!!t.adaptiveLowered };
+  }
   const flexT=(!research.active && state.personalChopstickFlex)
     || chopstickFlexAdapt.thresholds;
   const flexBothClosed=!!(chopstickFlex?.valid && (
@@ -8155,7 +8270,7 @@ function computeToolPinchState(lm, isPinchingPrev){
     : '';
   const releaseConfirmed=decisiveFlexState
     ? decisiveFlexState === 'open'
-    : bothReopened;
+    : (bothReopened || decisiveReopen);
   const closeConfirmed=decisiveFlexState
     ? decisiveFlexState === 'closed'
     : apertureClosed;
@@ -8939,13 +9054,25 @@ function startCalibLoop(){
           const gapC = Math.max(0.006, openMean - closedMean);
           const gapNear = Math.max(0.004, openNearMean - closedNearMean);
           const gapFar = Math.max(0.005, openFarMean - closedFarMean);
+          // v108: public peg releases at 50% and re-arms at 62% of each
+          // digit's own range (was 62% / 74%). Research keeps the v70 values.
+          const releaseRatio = publicPegReleaseRelaxationEnabled() ? PUBLIC_PEG_RELEASE_RATIO : 0.62;
+          const rearmRatio = publicPegReleaseRelaxationEnabled() ? PUBLIC_PEG_REARM_RATIO : 0.74;
+          // Pair-baseline guard (see publicPegNearFloor): the relaxed near
+          // release point never drops below farClosed + 12% of the near range.
+          const nearExitFloor = publicPegReleaseRelaxationEnabled()
+            ? publicPegNearFloor(closedNearMean, gapNear, closedFarMean) : -Infinity;
           state.personalToolPinch = {
             enter: closedMean + gapC * 0.56,
-            nearExit: closedNearMean + gapNear * 0.62,
-            farExit: closedFarMean + gapFar * 0.62,
-            nearOpen: closedNearMean + gapNear * 0.74,
-            farOpen: closedFarMean + gapFar * 0.74,
+            nearExit: Math.max(closedNearMean + gapNear * releaseRatio, nearExitFloor),
+            farExit: closedFarMean + gapFar * releaseRatio,
+            nearOpen: closedNearMean + gapNear * rearmRatio,
+            farOpen: closedFarMean + gapFar * rearmRatio,
             scoreOpen: Math.max(0.10, closedMean + gapC * 0.80),
+            // v108: per-digit closed baselines and ranges for the decisive-digit
+            // release path and the adaptive lowering floor.
+            nearClosed: closedNearMean, farClosed: closedFarMean,
+            nearRange: gapNear, farRange: gapFar,
           };
         }
         if(c.ready && isLevel6Chopsticks() && state.personalChopstickFlex == null &&
@@ -11943,6 +12070,20 @@ function framePerfSnapshot(){
     dpr:+(window.devicePixelRatio || 1).toFixed(2),
     scaledBitmaps:{ ...scaledBitmapStats },
     hand:{ ...handAdmitDiag },
+    tool: framePerfToolSnapshot(),
+  };
+}
+/* v108: peg-task aperture diagnostics for the ?perf=1 overlay (public only).
+   Ratios are camera-observed thumb-to-fingertip apertures over hand scale. */
+function framePerfToolSnapshot(){
+  if(!publicPegReleaseRelaxationEnabled() || !lastToolPinchLive) return null;
+  const l = lastToolPinchLive;
+  if(nowMs() - l.at > 1500) return null;
+  const f = v=> Number.isFinite(v) ? v.toFixed(3) : '-';
+  return {
+    near:f(l.nearRatio), far:f(l.farRatio), nearExit:f(l.nearExit), farExit:f(l.farExit),
+    nearOpen:f(l.nearOpen), farOpen:f(l.farOpen),
+    source: l.calibrated ? (l.lowered ? '校準+自適應降低' : '校準') : (l.adaptive ? '自適應' : '預設'),
   };
 }
 function framePerfOverlayEnabled(){
@@ -11965,10 +12106,13 @@ function updateFramePerfOverlay(now){
     framePerf.overlayEl = el;
   }
   const p = framePerfSnapshot();
-  el.textContent = `perf v107  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
+  el.textContent = `perf v108  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
     + `鏡頭 ${p.video[0]}×${p.video[1]}  畫布 ${p.canvas[0]}×${p.canvas[1]}  dpr ${p.dpr}  手模型 ${p.handDelegate || '-'}\n`
     + `手 ${p.hand.hands} 隻  標籤 ${p.hand.label || '-'} ${p.hand.score}  接納 ${p.hand.path || '-'}  嚴格 ${p.hand.strict} 連續 ${p.hand.continuity} 單手 ${p.hand.lone} 拒絕 ${p.hand.rejected}\n`
-    + `左右手檢查 ${p.hand.check === 'off' ? '關' : '開'}  鎖定手形 ${p.hand.lockSize || '-'}  大小拒絕 ${p.hand.sizeRejected}  遠處拒絕 ${p.hand.farRejected}`;
+    + `左右手檢查 ${p.hand.check === 'off' ? '關' : '開'}  鎖定手形 ${p.hand.lockSize || '-'}  大小拒絕 ${p.hand.sizeRejected}  遠處拒絕 ${p.hand.farRejected}`
+    + (p.tool
+      ? `\n衣夾 近指 ${p.tool.near} 放手≥${p.tool.nearExit} 張開≥${p.tool.nearOpen}  遠指 ${p.tool.far} 放手≥${p.tool.farExit} 張開≥${p.tool.farOpen}  門檻 ${p.tool.source}`
+      : '');
   el.style.display = state.running ? 'block' : 'none';
 }
 
@@ -15047,6 +15191,10 @@ function endGame(endReason){
   const session5Feedback = document.getElementById('researchSession5Feedback');
   const outcomePanel = document.getElementById('researchOutcomePanel');
   document.querySelector('.result-card').classList.toggle('research-mode', research.active);
+  document.getElementById('resultStage')?.classList.toggle('research-mode', research.active);
+  // v108: the ?perf=1 overlay is repainted only inside the running game loop,
+  // so hide it explicitly once the result screen takes over.
+  if(framePerf.overlayEl) framePerf.overlayEl.style.display = 'none';
   if(research.active){
     const en = pilotLang === 'en';
     // Concise phase-specific summary: motor and cognitive results are never merged.
@@ -19611,11 +19759,21 @@ window.__qa = {
     if(Number.isFinite(Number(spec.stepMs))) timeOffsetMs+=Number(spec.stepMs);
     return this.setLevel4Pose(pose);
   },
+  // v108 QA-only: force a ?perf=1 overlay refresh synchronously. QA frames are
+  // processed inside setLevel6ToolFrame, so the RAF pass that normally paints
+  // the overlay only ever sees a stale generation in QA mode.
+  perfOverlayRefresh(){
+    framePerf.overlayAt = -Infinity;
+    updateFramePerfOverlay(performance.now());
+    return document.getElementById('framePerfOverlay')?.textContent || '';
+  },
   level6ToolState(){
     const advancedHeldId=usesAdvancedThemeModule()?carrier.heldId:null;
     return {
       level6Task:state.level6Task,gameType:state.gameType,
       affectedSide:activeAffectedSide(),handDetected,isGrasping,handOpenPrep,
+      pinchLive:lastToolPinchLive?{...lastToolPinchLive,ageMs:nowMs()-lastToolPinchLive.at}:null,
+      perfTool:framePerfToolSnapshot(),relaxOn:publicPegReleaseRelaxationEnabled(),
       frameGeneration:qaFrameGeneration,
       held:heldItem?heldItem.label:(advancedHeldId||null),
       heldPosition:heldItem?{x:heldItem.x,y:heldItem.y}:
@@ -20940,7 +21098,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v107-20260907-lone-hand-grasp-stability";
+  const LEVEL_APP_BUILD = "v108-20260907-peg-release-cheer-cartoons";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

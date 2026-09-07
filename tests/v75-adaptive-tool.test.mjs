@@ -28,8 +28,14 @@ test('adaptive tracker exists with fail-closed movement gates', () => {
 });
 
 test('threshold priority: personal calibration → adaptive fallback → defaults, never in research mode', () => {
+  // v108: the calibrated set may be passed through publicPegEffectiveThresholds
+  // (public peg only); the priority order and the research gate are unchanged.
   assert.match(publicSource,
-    /const t = \(!research\.active && state\.personalToolPinch\)\s*\|\| \(!research\.active && toolPinchAdapt\.thresholds\)\s*\|\| TOOL_PINCH_DEFAULTS;/);
+    /const calibratedT = \(!research\.active && state\.personalToolPinch\) \|\| null;/);
+  assert.match(publicSource,
+    /const adaptiveT = \(!research\.active && toolPinchAdapt\.thresholds\) \|\| null;/);
+  assert.match(publicSource,
+    /const t = \(calibratedT && publicPegReleaseRelaxationEnabled\(\) && !useChopstickFlex\s*\? publicPegEffectiveThresholds\(calibratedT, adaptiveT\)\s*: calibratedT\)\s*\|\| adaptiveT\s*\|\| TOOL_PINCH_DEFAULTS;/);
   assert.doesNotMatch(publicSource,/enter:Math\.max\(measuredT\.enter,TOOL_PINCH_DEFAULTS\.enter\)/);
 });
 
