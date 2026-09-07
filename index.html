@@ -680,16 +680,24 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
   width:100%; max-width:1080px; margin:auto; flex:0 0 auto;
 }
 .result-stage .result-card{ flex:1 1 auto; min-width:0; }
+/* Each cartoon sits in a slot stretched to the card height, so the figures are
+   never taller than the card (trial mode has no video panel and a short card)
+   and both share one 297x771 canvas with feet and head heights aligned. */
 .result-cheer{
-  flex:0 0 auto; width:clamp(96px, 15vw, 190px); height:auto; align-self:flex-end;
+  flex:0 0 auto; width:clamp(96px, 15vw, 190px); align-self:stretch; position:relative;
+  min-height:0; pointer-events:none; user-select:none; -webkit-user-select:none;
+}
+.result-cheer img{
+  position:absolute; left:0; right:0; top:0; bottom:0; width:100%; height:100%;
+  object-fit:contain; object-position:center bottom;
   filter:drop-shadow(0 4px 8px rgba(44,24,16,0.16));
-  pointer-events:none; user-select:none; -webkit-user-select:none;
 }
 .result-cheer[hidden]{ display:none; }
 .result-stage.research-mode .result-cheer{ display:none; }
 @media (max-width:700px){
-  .result-stage{ flex-wrap:wrap; gap:8px 18px; }
-  .result-cheer{ order:-1; width:clamp(84px, 24vw, 130px); }
+  .result-stage{ flex-wrap:wrap; gap:8px 18px; align-items:flex-end; }
+  .result-cheer{ order:-1; width:clamp(84px, 24vw, 130px); align-self:flex-end; position:static; }
+  .result-cheer img{ position:static; width:100%; height:auto; }
   .result-stage .result-card{ flex-basis:100%; }
 }
 .result-card{
@@ -2179,8 +2187,8 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
     <div class="result-stage" id="resultStage">
       <!-- v108: two department therapist cartoons cheer the participant on
            (thumbs-up on the left, fist-pump on the right). Public flow only. -->
-      <img class="result-cheer result-cheer-like" id="resultCheerLike"
-        src="img/advanced/result_cheer_like.png" alt="治療師卡通豎起拇指稱讚" width="250" height="720" decoding="async" loading="lazy">
+      <div class="result-cheer result-cheer-like" id="resultCheerLikeSlot"><img id="resultCheerLike"
+        src="img/advanced/result_cheer_like.png" alt="治療師卡通豎起拇指稱讚" width="297" height="771" decoding="async" loading="lazy"></div>
     <div class="result-card">
       <h2 id="resultTitle">訓練完成</h2>
       <div id="resultContext" style="font-size:14px;font-weight:700;color:var(--muted);margin:-8px 0 4px;"></div>
@@ -2602,8 +2610,8 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
       <button class="btn-primary" id="btnRetry">再玩一次</button>
       <button class="btn-secondary" id="btnHome">返回主頁</button>
     </div>
-      <img class="result-cheer result-cheer-go" id="resultCheerGo"
-        src="img/advanced/result_cheer_go.png" alt="治療師卡通舉拳加油" width="278" height="720" decoding="async" loading="lazy">
+      <div class="result-cheer result-cheer-go" id="resultCheerGoSlot"><img id="resultCheerGo"
+        src="img/advanced/result_cheer_go.png" alt="治療師卡通舉拳加油" width="297" height="771" decoding="async" loading="lazy"></div>
     </div>
   </div>
 
@@ -12106,7 +12114,7 @@ function updateFramePerfOverlay(now){
     framePerf.overlayEl = el;
   }
   const p = framePerfSnapshot();
-  el.textContent = `perf v108  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
+  el.textContent = `perf v109  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
     + `鏡頭 ${p.video[0]}×${p.video[1]}  畫布 ${p.canvas[0]}×${p.canvas[1]}  dpr ${p.dpr}  手模型 ${p.handDelegate || '-'}\n`
     + `手 ${p.hand.hands} 隻  標籤 ${p.hand.label || '-'} ${p.hand.score}  接納 ${p.hand.path || '-'}  嚴格 ${p.hand.strict} 連續 ${p.hand.continuity} 單手 ${p.hand.lone} 拒絕 ${p.hand.rejected}\n`
     + `左右手檢查 ${p.hand.check === 'off' ? '關' : '開'}  鎖定手形 ${p.hand.lockSize || '-'}  大小拒絕 ${p.hand.sizeRejected}  遠處拒絕 ${p.hand.farRejected}`
@@ -21098,7 +21106,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v108-20260907-peg-release-cheer-cartoons";
+  const LEVEL_APP_BUILD = "v109-20260907-cheer-cartoon-equal-height";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

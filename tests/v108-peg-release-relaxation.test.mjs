@@ -71,8 +71,11 @@ test('perf HUD reports live peg numbers for bedside reporting', () => {
 
 test('result screen: two therapist cartoons flank the 成績單 card, hidden in research mode', () => {
   assert.match(publicSource, /<div class="result-stage" id="resultStage">/);
-  assert.match(publicSource, /<img class="result-cheer result-cheer-like" id="resultCheerLike"\s*src="img\/advanced\/result_cheer_like\.png"/);
-  assert.match(publicSource, /<img class="result-cheer result-cheer-go" id="resultCheerGo"\s*src="img\/advanced\/result_cheer_go\.png"/);
+  assert.match(publicSource, /<div class="result-cheer result-cheer-like" id="resultCheerLikeSlot"><img id="resultCheerLike"\s*src="img\/advanced\/result_cheer_like\.png"[^>]*width="297" height="771"/);
+  assert.match(publicSource, /<div class="result-cheer result-cheer-go" id="resultCheerGoSlot"><img id="resultCheerGo"\s*src="img\/advanced\/result_cheer_go\.png"[^>]*width="297" height="771"/);
+  // slots stretch to the card height so figures are never taller than a short (trial-mode) card
+  assert.match(publicSource, /\.result-cheer\{[^}]*align-self:stretch;/);
+  assert.match(publicSource, /\.result-cheer img\{[^}]*object-fit:contain; object-position:center bottom;/);
   assert.match(publicSource, /\.result-stage\.research-mode \.result-cheer\{ display:none; \}/);
   assert.match(publicSource, /\.result-cheer\[hidden\]\{ display:none; \}/);
   // the flex stage rule must survive the public sanitizer: no forbidden words in its header
