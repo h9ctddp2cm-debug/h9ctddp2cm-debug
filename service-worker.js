@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v110-20260907-peg-hold-hysteresis-gate";
+const CACHE_VERSION = "fthue-rehab-v111-20260907-trial-result-training-complete";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");
