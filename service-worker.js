@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v109-20260907-cheer-cartoon-equal-height";
+const CACHE_VERSION = "fthue-rehab-v110-20260907-peg-hold-hysteresis-gate";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");
