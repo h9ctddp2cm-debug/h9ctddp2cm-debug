@@ -85,7 +85,7 @@ test('v98 affected-hand admission constants and research isolation', () => {
   const grace = functionSource('graspTrackingGraceEligible');
   assert.match(grace, /\(state\.level === '5' \|\| state\.level === '67'\)\s*&& res\.reason === 'affected-hand-not-detected'/);
   const stab = functionSource('stabiliseDetectedGesture');
-  assert.match(stab, /mode === 'grasp' && state\.level === '5'\s*\?\s*60/);
+  assert.match(stab, /mode === 'grasp' && state\.level === '5'\s*\?\s*PUBLIC_LEVEL5_GRASP_CONFIRM_MS/);
 });
 
 /* ---------- browser behaviour ---------- */

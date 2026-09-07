@@ -7283,11 +7283,24 @@ const LONE_HAND_ADMIT_MS = 1000;
    Therapist switch state.handednessCheck === false (public Level 5/6 only):
    the left/right label is ignored entirely; the lock rules above still decide
    which hand is followed. Research mode ignores both. */
+/* v107 bedside report (HP ProBook, 720p webcam, participant inside 1 m):
+   the cursor vanished for seconds and the hand icon flickered although the
+   device ran at 30 fps. The ?perf=1 overlay showed 48 of 55 rejections were
+   size/far rejections of the ONLY visible hand (lock size 0.045). A lone hand
+   is therefore treated differently from a crowded frame:
+   - with exactly one hand in view the size window is the wide LONE window and
+     the size is forgotten after HAND_LOCK_SIZE_FORGET_LONE_MS (1 s, not 3 s);
+   - a lone hand confidently labelled as the affected side skips the far
+     re-acquisition debounce (there is no other hand it could be confused with).
+   Two or more hands in view keep the v99 strict window and debounce. */
 const HAND_LOCK_SIZE_MIN_RATIO = 0.55;
 const HAND_LOCK_SIZE_MAX_RATIO = 1.90;
+const HAND_LOCK_SIZE_LONE_MIN_RATIO = 0.40;
+const HAND_LOCK_SIZE_LONE_MAX_RATIO = 2.50;
 const HAND_LOCK_FAR_DIST = 0.30;
 const HAND_LOCK_REACQUIRE_MS = 400;
 const HAND_LOCK_SIZE_FORGET_MS = 3000;
+const HAND_LOCK_SIZE_FORGET_LONE_MS = 1000;
 const HAND_LOCK_SIZE_EMA = 0.15;
 let affectedHandTrack = { x:NaN, y:NaN, at:0 };
 let handLock = { x:NaN, y:NaN, size:NaN, at:0 };
@@ -7318,12 +7331,14 @@ function handSpanOf(lm){
   const d = Math.hypot(ref.x - wrist.x, ref.y - wrist.y);
   return d > 0 ? d : NaN;
 }
-function handSizeAdmissible(lm){
+function handSizeAdmissible(lm, lone=false){
   if(!Number.isFinite(handLock.size)) return true;
   const span = handSpanOf(lm);
   if(!Number.isFinite(span)) return true;   // partial landmark set: do not gate on size
   const ratio = span / handLock.size;
-  return ratio >= HAND_LOCK_SIZE_MIN_RATIO && ratio <= HAND_LOCK_SIZE_MAX_RATIO;
+  return lone
+    ? (ratio >= HAND_LOCK_SIZE_LONE_MIN_RATIO && ratio <= HAND_LOCK_SIZE_LONE_MAX_RATIO)
+    : (ratio >= HAND_LOCK_SIZE_MIN_RATIO && ratio <= HAND_LOCK_SIZE_MAX_RATIO);
 }
 function noteAffectedHandTrack(lm){
   const wrist = lm?.[0];
@@ -7492,13 +7507,15 @@ function selectedAffectedHandIndex(results, inputMirrored=false){
   // positions in the filtered list back to result indices.
   let eligible = [];
   let sizeRejected = 0;
+  const loneHand = allLandmarks.length === 1;   // v107: wide window for the only hand
   for(let index=0; index<allLandmarks.length; index++){
-    if(lockOn && !handSizeAdmissible(allLandmarks[index])){ sizeRejected++; continue; }
+    if(lockOn && !handSizeAdmissible(allLandmarks[index], loneHand)){ sizeRejected++; continue; }
     eligible.push(index);
   }
   if(lockOn && allLandmarks.length && !eligible.length){
     if(!sizeRejectSince) sizeRejectSince = now;
-    if(now - sizeRejectSince >= HAND_LOCK_SIZE_FORGET_MS){
+    const forgetMs = loneHand ? HAND_LOCK_SIZE_FORGET_LONE_MS : HAND_LOCK_SIZE_FORGET_MS;
+    if(now - sizeRejectSince >= forgetMs){
       handLock.size = NaN; sizeRejectSince = 0;
       eligible = allLandmarks.map((_, index)=>index); sizeRejected = 0;
     }
@@ -7589,11 +7606,15 @@ function selectedAffectedHandIndex(results, inputMirrored=false){
   }
   // v99 re-acquisition: after the tracked hand was lost, a hand appearing far
   // from the locked position must persist briefly before it is admitted.
+  // v107: a lone hand admitted by the strict label rule is the participant's
+  // hand returning after a rest; it is followed at once wherever it reappears.
   let farRejected = false;
-  if(lockOn && selected >= 0 && admitPath !== 'continuity' && !trackFresh
+  const loneStrict = loneHand && admitPath === 'strict';
+  if(lockOn && selected >= 0 && admitPath !== 'continuity' && !loneStrict && !trackFresh
       && Number.isFinite(handLock.x) && distTo(selected, handLock) > HAND_LOCK_FAR_DIST){
     if(!farHandSince) farHandSince = now;
     if(now - farHandSince < HAND_LOCK_REACQUIRE_MS){ selected = -1; admitPath = ''; farRejected = true; }
+    else farHandSince = 0;   // v107: admitted; the next far appearance is debounced afresh
   }else{
     farHandSince = 0;
   }
@@ -8149,6 +8170,10 @@ function computeToolPinchState(lm, isPinchingPrev){
 }
 const GESTURE_CONFIRM_MS = 60;
 const PUBLIC_LEVEL6_TOOL_GESTURE_CONFIRM_MS = 180;
+// v107: 60 ms (two frames) still flickered on a small 720p hand at 1 m; the
+// open/closed cue now needs ~6 consecutive fresh frames (180 ms, matching the
+// Level 6 tool confirmation) before it flips. Research mode keeps 60 ms.
+const PUBLIC_LEVEL5_GRASP_CONFIRM_MS = 180;
 let detectedGestureState = { mode:'', stable:false, candidate:false, candidateAt:0 };
 function stabiliseDetectedGesture(rawValue, mode){
   // Use the application's monotonic clock so synthetic fresh-frame tests and
@@ -8172,7 +8197,7 @@ function stabiliseDetectedGesture(rawValue, mode){
   // open/closed hand icon flickered every frame ("不停又開又合"). 60 ms needs
   // the new posture to survive two consecutive fresh frames at 30 fps.
   const confirmMs = !research.active && mode === 'grasp' && state.level === '5'
-    ? 60
+    ? PUBLIC_LEVEL5_GRASP_CONFIRM_MS
     : (!research.active && mode === 'pinch' && isLevel6RealToolTask()
       ? PUBLIC_LEVEL6_TOOL_GESTURE_CONFIRM_MS
       : GESTURE_CONFIRM_MS);
@@ -11940,7 +11965,7 @@ function updateFramePerfOverlay(now){
     framePerf.overlayEl = el;
   }
   const p = framePerfSnapshot();
-  el.textContent = `perf v106  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
+  el.textContent = `perf v107  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
     + `鏡頭 ${p.video[0]}×${p.video[1]}  畫布 ${p.canvas[0]}×${p.canvas[1]}  dpr ${p.dpr}  手模型 ${p.handDelegate || '-'}\n`
     + `手 ${p.hand.hands} 隻  標籤 ${p.hand.label || '-'} ${p.hand.score}  接納 ${p.hand.path || '-'}  嚴格 ${p.hand.strict} 連續 ${p.hand.continuity} 單手 ${p.hand.lone} 拒絕 ${p.hand.rejected}\n`
     + `左右手檢查 ${p.hand.check === 'off' ? '關' : '開'}  鎖定手形 ${p.hand.lockSize || '-'}  大小拒絕 ${p.hand.sizeRejected}  遠處拒絕 ${p.hand.farRejected}`;
@@ -12012,6 +12037,14 @@ function gameLoop(rafNow){
 // 偵測鑑定期：手接近畫面邊緣時 MediaPipe 會偷 miss frame，我們保留最後已知位置一段短時間，
 // 避免 cursor 跟食物 icon 在畫面邊邊疾抑。
 const DETECTION_LOST_GRACE_MS = 750;  // edge miss: briefly retain the last stable cursor and gesture
+// v107: public Level 5/6 keep the last cursor for 1.5 s so a short detector
+// miss no longer makes the cursor vanish; interactions stay paused meanwhile.
+const PUBLIC_LEVEL56_DETECTION_LOST_GRACE_MS = 1500;
+function detectionLostGraceMs(){
+  return !research.active && (state.level === '5' || state.level === '67')
+    ? PUBLIC_LEVEL56_DETECTION_LOST_GRACE_MS
+    : DETECTION_LOST_GRACE_MS;
+}
 let lastDetectedAt = 0;
 let detectionHeldGrace = false; // 現正在 grace window 內（偵測 miss 但沒 reset）
 let interactionTrackingPauseAt = 0;
@@ -13043,7 +13076,7 @@ function updateTracking(frameOverride){
     }
   } else if(isGraspStyleMode()
     && graspTrackingGraceEligible(res)
-    && cursorX >= 0 && (now - lastDetectedAt) < DETECTION_LOST_GRACE_MS){
+    && cursorX >= 0 && (now - lastDetectedAt) < detectionLostGraceMs()){
     // 偵測短暫 miss（2-3 幀）：保留上一幀的 cursor / grasp 狀態、不 reset EMA、不清 posHistory，
     // 因為90歲病人手到畫面邊邊時 MediaPipe 邊緣偵測不穩定。
     // handDetected 仍然維持 true，讓 downstream drop/pickup 邏輯可以完成
@@ -19743,6 +19776,7 @@ window.__qa = {
     }
   },
   graspGraceEligible(res){ return graspTrackingGraceEligible(res); },
+  detectionLostGraceMs(){ return detectionLostGraceMs(); },
   // v96: place a synthetic flower at a given canvas cursor x and report the
   // snapped position and the layout it was snapped against.
   flowerSnapProbe(px){
@@ -20906,7 +20940,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v106-20260905-flowers-bowling-sign";
+  const LEVEL_APP_BUILD = "v107-20260907-lone-hand-grasp-stability";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

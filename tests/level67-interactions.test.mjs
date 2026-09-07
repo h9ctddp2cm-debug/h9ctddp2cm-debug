@@ -380,10 +380,11 @@ for (const { task } of LEVEL6_GESTURE_TASKS) {
 
         start();
         frame('open', 5);
-        // v98: the handedness dropout grace (750 ms) now also holds the last
-        // cursor in Level 6, and a lone opposite hand is admitted after 1 s, so
-        // the wrong hand is shown together with a second hand for 900 ms.
-        frame('closed', 9, { handSide: 'left', secondHand: 'left', stepMs: 100 });
+        // v98: the handedness dropout grace also holds the last cursor in
+        // Level 6, and a lone opposite hand is admitted after 1 s, so the wrong
+        // hand is shown together with a second hand. v107 lengthened the public
+        // Level 5/6 grace to 1500 ms, so the wrong hands stay for 1700 ms.
+        frame('closed', 17, { handSide: 'left', secondHand: 'left', stepMs: 100 });
         const wrongHand = window.__qa.level6ToolState();
 
         start();

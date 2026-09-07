@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v106-20260905-flowers-bowling-sign";
+const CACHE_VERSION = "fthue-rehab-v107-20260907-lone-hand-grasp-stability";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

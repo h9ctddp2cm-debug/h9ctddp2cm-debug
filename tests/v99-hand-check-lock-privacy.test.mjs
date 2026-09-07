@@ -29,6 +29,10 @@ test('v99 hand lock constants and public-only scope', () => {
   assert.match(html, /const HAND_LOCK_FAR_DIST = 0\.30;/);
   assert.match(html, /const HAND_LOCK_REACQUIRE_MS = 400;/);
   assert.match(html, /const HAND_LOCK_SIZE_FORGET_MS = 3000;/);
+  // v107: the only visible hand uses a wide window and a 1 s forget time.
+  assert.match(html, /const HAND_LOCK_SIZE_LONE_MIN_RATIO = 0\.40;/);
+  assert.match(html, /const HAND_LOCK_SIZE_LONE_MAX_RATIO = 2\.50;/);
+  assert.match(html, /const HAND_LOCK_SIZE_FORGET_LONE_MS = 1000;/);
   assert.match(functionSource('handLockEnabled'), /affectedHandContinuityEnabled\(\)/);
   assert.match(functionSource('handednessCheckOff'), /handLockEnabled\(\) && state\.handednessCheck === false/);
   // Default ON on every page load.
@@ -225,25 +229,39 @@ test('v99 size gate rejects a much smaller background hand and forgets the size 
       out.tinyPath = diag().diag.path;
       // A hand of comparable size at the old place is admitted.
       out.normalBack = pick(results(hand('Left', 0.9, 0.42, 0.5, 0.11)), 'left');
-      // Only tiny hands for 3 s -> size forgotten, then admitted (lone).
+      // v107: only a tiny LONE hand for 1 s -> size forgotten after 1 s (was
+      // 3 s), and a lone hand with a confident affected label is then admitted
+      // at once even though it is far from the lock (no 400 ms debounce).
       window.advanceTime(1600);
-      for(let tms = 0; tms <= 3200; tms += 400){
-        out.lastTiny = pick(results(hand('Left', 0.99, 0.8, 0.2, 0.03)), 'left');
-        out.lastTinyPath = diag().diag.path;
+      out.tinyLone = [];
+      for(let tms = 0; tms <= 1200; tms += 400){
+        out.tinyLone.push({ idx: pick(results(hand('Left', 0.99, 0.8, 0.2, 0.03)), 'left'), path: diag().diag.path });
         window.advanceTime(400);
       }
-      // The size is forgotten at 3 s, but the hand is far from the lock, so the
-      // 400 ms re-acquisition debounce still applies once before admission.
-      out.tinyAfterDebounce = pick(results(hand('Left', 0.99, 0.8, 0.2, 0.03)), 'left');
+      // Re-establish a normal-size lock (the tiny admission above locked 0.03),
+      // then show the tiny hand TOGETHER with another tiny hand of the opposite
+      // label: the crowded-frame window (0.55) and the 3 s forget time still
+      // apply, so nothing is admitted.
+      window.__qa.resetHandTrack();
+      for(let i = 0; i < 5; i++){ pick(results(hand('Left', 0.95, 0.4, 0.5, 0.12)), 'left'); window.advanceTime(50); }
+      window.advanceTime(1600);
+      out.tinyCrowded = [];
+      for(let tms = 0; tms <= 2400; tms += 400){
+        const idx = pick(results(hand('Left', 0.99, 0.8, 0.2, 0.03), hand('Right', 0.99, 0.15, 0.8, 0.03)), 'left');
+        out.tinyCrowded.push({ idx, path: diag().diag.path });
+        window.advanceTime(400);
+      }
       return out;
     });
     assert.ok(Math.abs(r.lockSize - 0.12) < 0.01, `lock size ${r.lockSize}`);
     assert.equal(r.tinyAlone, -1);
     assert.equal(r.tinyPath, 'size');
     assert.equal(r.normalBack, 0);
-    assert.equal(r.lastTiny, -1);
-    assert.equal(r.lastTinyPath, 'far');
-    assert.equal(r.tinyAfterDebounce, 0);
+    assert.deepEqual(r.tinyLone.slice(0, 3).map(x => x.idx), [-1, -1, -1], JSON.stringify(r.tinyLone));
+    assert.deepEqual(r.tinyLone.slice(0, 3).map(x => x.path), ['size', 'size', 'size']);
+    assert.equal(r.tinyLone[3].idx, 0, JSON.stringify(r.tinyLone));
+    assert.equal(r.tinyLone[3].path, 'strict');
+    assert.ok(r.tinyCrowded.every(x => x.idx === -1 && x.path === 'size'), JSON.stringify(r.tinyCrowded));
   });
 });
 
@@ -257,21 +275,38 @@ test('v99 re-acquisition: after the tracked hand is lost, a hand far from the lo
       const out = {};
       pick(results(hand('Left', 0.95, 0.4, 0.5)), 'left');
       window.advanceTime(2000);   // track stale, lock still remembered
-      out.farFirst = pick(results(hand('Left', 0.95, 0.9, 0.9)), 'left');
+      // v107: a LONE hand with a confident affected label (the participant
+      // raising the hand again after a rest) is admitted at once, wherever it is.
+      out.loneStrictFar = pick(results(hand('Left', 0.95, 0.9, 0.9)), 'left');
+      out.loneStrictPath = diag().diag.path;
+      // A lone hand with an uncertain label still needs the 400 ms debounce.
+      window.advanceTime(2000);
+      out.farFirst = pick(results(hand('Left', 0.40, 0.1, 0.1)), 'left');
       out.farPath = diag().diag.path;
       window.advanceTime(200);
-      out.farAt200 = pick(results(hand('Left', 0.95, 0.9, 0.9)), 'left');
+      out.farAt200 = pick(results(hand('Left', 0.40, 0.1, 0.1)), 'left');
       window.advanceTime(250);
-      out.farAt450 = pick(results(hand('Left', 0.95, 0.9, 0.9)), 'left');
+      out.farAt450 = pick(results(hand('Left', 0.40, 0.1, 0.1)), 'left');
+      // Two hands in view: the confident far hand is debounced as in v99.
+      window.advanceTime(2000);
+      out.crowdedFar = pick(results(hand('Left', 0.95, 0.9, 0.9), hand('Right', 0.95, 0.5, 0.9)), 'left');
+      out.crowdedPath = diag().diag.path;
+      window.advanceTime(450);
+      out.crowdedAt450 = pick(results(hand('Left', 0.95, 0.9, 0.9), hand('Right', 0.95, 0.5, 0.9)), 'left');
       // Lost again; re-appearing near the lock is admitted on the first frame.
       window.advanceTime(2000);
       out.nearFirst = pick(results(hand('Left', 0.95, 0.88, 0.9)), 'left');
       return out;
     });
+    assert.equal(r.loneStrictFar, 0);
+    assert.equal(r.loneStrictPath, 'strict');
     assert.equal(r.farFirst, -1);
     assert.equal(r.farPath, 'far');
     assert.equal(r.farAt200, -1);
     assert.equal(r.farAt450, 0);
+    assert.equal(r.crowdedFar, -1);
+    assert.equal(r.crowdedPath, 'far');
+    assert.equal(r.crowdedAt450, 0);
     assert.equal(r.nearFirst, 0);
   });
 });
