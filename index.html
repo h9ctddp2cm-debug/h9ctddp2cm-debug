@@ -1559,11 +1559,15 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
         </details>
       </article>
     </div>
+    <!-- PUBLIC_BUILD_REMOVE_START: participation certificate entry (source/research build only —
+         not mentioned in the Protocol/PIS/ICF; the public build must not offer or hint at any
+         participant reward/incentive) -->
     <!-- v102：治療師用——病人完成第十日訓練後，開啟 A4 橫向「參與嘉許狀」列印頁（新分頁） -->
     <a class="cert-entry" id="lnkCertificate" href="certificate.html" target="_blank" rel="noopener"
       data-testid="link-certificate">
       頒發參與嘉許狀<small>完成十天訓練後由治療師開啟，A4 橫向列印，姓名及日期手寫</small>
     </a>
+    <!-- PUBLIC_BUILD_REMOVE_END -->
     <!-- PUBLIC_BUILD_REMOVE_START: research entry requires the authenticated local backend -->
     <button class="research-entry" id="btnResearchMode">
       研究模式（Pilot Study）
@@ -12186,7 +12190,7 @@ function updateFramePerfOverlay(now){
     framePerf.overlayEl = el;
   }
   const p = framePerfSnapshot();
-  el.textContent = `perf v112  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
+  el.textContent = `perf v113  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
     + `鏡頭 ${p.video[0]}×${p.video[1]}  畫布 ${p.canvas[0]}×${p.canvas[1]}  dpr ${p.dpr}  手模型 ${p.handDelegate || '-'}\n`
     + `手 ${p.hand.hands} 隻  標籤 ${p.hand.label || '-'} ${p.hand.score}  接納 ${p.hand.path || '-'}  嚴格 ${p.hand.strict} 連續 ${p.hand.continuity} 單手 ${p.hand.lone} 拒絕 ${p.hand.rejected}\n`
     + `左右手檢查 ${p.hand.check === 'off' ? '關' : '開'}  鎖定手形 ${p.hand.lockSize || '-'}  大小拒絕 ${p.hand.sizeRejected}  遠處拒絕 ${p.hand.farRejected}`
@@ -21176,7 +21180,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v112-20260912-public-no-recording";
+  const LEVEL_APP_BUILD = "v113-20260912-public-no-certificate";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

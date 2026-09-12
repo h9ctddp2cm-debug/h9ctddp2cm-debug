@@ -39,8 +39,9 @@ cp "$ROOT/manifest.webmanifest" "$DIST/manifest.webmanifest"
 cp "$ROOT/image-sources.json" "$DIST/image-sources.json"
 cp "$ROOT/service-worker.js" "$DIST/service-worker.js"
 cp "$ROOT/offline.html" "$DIST/offline.html"
-# v102: printable participation certificate (public only, no research strings)
-cp "$ROOT/certificate.html" "$DIST/certificate.html"
+# v113: the participation certificate is not mentioned in the Protocol/PIS/ICF and is not
+# copied into the public build (IRB sensitivity around any participant reward/incentive).
+# It remains in the source/research tree for a possible future ethics-approved version.
 cp -R "$ROOT/icons" "$DIST/icons"
 cp -R "$ROOT/vendor" "$DIST/vendor"
 
@@ -49,7 +50,7 @@ cp -R "$ROOT/vendor" "$DIST/vendor"
 # shared runtime with research mode fixed off, eliminates unreachable study
 # branches, and fails closed on any residual study state/handler/function.
 node "$ROOT/scripts/sanitize-public.cjs" "$DIST/index.html" "$DIST/localization.js"
-if grep -Eq 'data-pplx-inline-edit|__PORT_5000__|localhost:5000|btnResearchMode|applyInterventionDeepLink|role=.intervention|window\.__qa|window\.advanceTime|qaSyntheticHand|render_game_to_text' "$DIST/index.html"; then
+if grep -Eq 'data-pplx-inline-edit|__PORT_5000__|localhost:5000|btnResearchMode|applyInterventionDeepLink|role=.intervention|window\.__qa|window\.advanceTime|qaSyntheticHand|render_game_to_text|cert-entry|lnkCertificate|certificate\.html|嘉許狀' "$DIST/index.html"; then
   echo "BUILD FAILED: authoring, research-entry, or QA-only code remains in dist/public" >&2
   exit 1
 fi
@@ -66,6 +67,7 @@ fi
 fail() { echo "BUILD FAILED: $1" >&2; exit 1; }
 
 if [ -e "$DIST/research" ]; then fail "research/ leaked into dist/public"; fi
+if [ -e "$DIST/certificate.html" ]; then fail "participation certificate leaked into dist/public (not in Protocol/PIS/ICF)"; fi
 if [ -e "$DIST/sandbox" ]; then fail "diagnostic sandbox leaked into dist/public"; fi
 if find "$DIST" \( -name '*.test.js' -o -name '*.R' -o -name 'README.md' \
   -o -name '*.zip' -o -name 'auth.config.json' -o -name '.git' \

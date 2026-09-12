@@ -63,7 +63,7 @@ function sanitizePublicLocalization(filePath) {
   if (!filePath) return;
   const forbiddenStudyCopy =
     /(?:\bresearch\b|\bpilot\b|study protocol|研究模式|研究情境|研究方案)/i;
-  const forbiddenRecordingCopy = /(?:錄影|錄頭部|recording|試玩|\bTrial\b|影片只暫存|回看或下載|下載／儲存影片|刪除影片)/i;
+  const forbiddenRecordingCopy = /(?:錄影|錄頭部|recording|試玩|\bTrial\b|影片只暫存|回看或下載|下載／儲存影片|刪除影片|嘉許狀|[Cc]ertificate of participation)/i;
   const publicCopy = fs.readFileSync(filePath, 'utf8')
     .split(/\n/)
     .map(line => line
@@ -119,7 +119,7 @@ function sanitizeCss(css) {
     const body = css.slice(open + 1, close);
     // v112: the public build has no recording capability, so its indicator and
     // review-panel styles go too.
-    const forbiddenSelector = /(?:research|pilot|recording-indicator|movement-review)/i.test(header);
+    const forbiddenSelector = /(?:research|pilot|recording-indicator|movement-review|cert-entry)/i.test(header);
     if (!forbiddenSelector) {
       out += header + '{' + (/^\s*@(?:media|supports|layer|container)\b/i.test(header)
         ? sanitizeCss(body) : body) + '}';
@@ -205,6 +205,9 @@ async function main() {
       'movement recording code'],
     [/(?:data-session-mode="training"|button-mode-training)/, 'recording training-mode button'],
     [/(?:錄影|無聲錄|不錄頭部|試玩|Trial mode|Silent recording)/, 'recording / trial wording'],
+    // v113: the participation certificate is not mentioned in the Protocol/PIS/ICF; the
+    // public build must not offer or hint at any participant reward/incentive.
+    [/(?:cert-entry|lnkCertificate|certificate\.html|嘉許狀)/, 'participation certificate entry'],
     [/\bresearch(?:[A-Z_$]|\b|\.)/i, 'research state/function/reference'],
     [/\bpilot(?:[A-Z_$]|\b|\.)/i, 'pilot state/function/reference'],
     [/\b(?:RESEARCH|PILOT)_[A-Z0-9_]+/, 'research protocol constant'],

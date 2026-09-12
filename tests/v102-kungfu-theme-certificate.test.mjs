@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const loc = fs.readFileSync(path.join(root, 'localization.js'), 'utf8');
-const BUILD = 'v112-20260912-public-no-recording';
+const BUILD = 'v113-20260912-public-no-certificate';
 
 test('v102+ build markers are aligned across index, service worker and manifest', () => {
   const sw = fs.readFileSync(path.join(root, 'service-worker.js'), 'utf8');
@@ -16,7 +16,7 @@ test('v102+ build markers are aligned across index, service worker and manifest'
   assert.match(html, new RegExp(`LEVEL_APP_BUILD\\s*=\\s*['"]${BUILD}['"]`));
   assert.match(sw, new RegExp(`CACHE_VERSION\\s*=\\s*"fthue-rehab-${BUILD}"`));
   assert.match(manifest, new RegExp(`start_url[^\\n]*${BUILD}`));
-  assert.match(html, /perf v112 {2}/);
+  assert.match(html, /perf v113 {2}/);
 });
 
 test('landing title block: service title above and larger than the kung-fu brand line', () => {
@@ -111,8 +111,11 @@ test('certificate.html exists, is linked from the landing page, and carries the 
   assert.match(cert, /@page\s*\{[^}]*size\s*:\s*A4 landscape/);
   assert.ok(fs.existsSync(path.join(root, 'img', 'cert', 'yan_chai_logo_full.png')));
   assert.ok(fs.existsSync(path.join(root, 'img', 'cert', 'inkwash_bg.jpg')));
+  // v113: the certificate is not mentioned in the Protocol/PIS/ICF, so it is no longer
+  // copied into the public build — it stays available in the source/research tree only.
   const build = fs.readFileSync(path.join(root, 'scripts', 'build-dist.sh'), 'utf8');
-  assert.match(build, /cp "\$ROOT\/certificate\.html" "\$DIST\/certificate\.html"/);
+  assert.doesNotMatch(build, /cp "\$ROOT\/certificate\.html"/);
+  assert.match(html, /PUBLIC_BUILD_REMOVE_START: participation certificate entry/);
 });
 
 test('certificate logo PNG has a transparent background (no white box)', () => {
