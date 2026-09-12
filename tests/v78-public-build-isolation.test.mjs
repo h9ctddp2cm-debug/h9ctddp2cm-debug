@@ -98,7 +98,7 @@ test('browser cannot activate hidden/direct research calibration while public sa
     const safetyShown=document.getElementById('safetyPauseOverlay').classList.contains('show');
     window.resetSafetyRuntime();
     const level5Button=document.querySelector(
-      '[data-session-level="5"][data-session-mode="training"]',
+      '[data-session-level="5"][data-session-mode="trial"]',
     ) || document.getElementById('btnLevel5');
     level5Button.click();
     const level5Opened=document.getElementById('screen-library').classList.contains('active');
@@ -138,7 +138,8 @@ test('public Level 5 affected-side flow opens calibration without a runtime erro
   page.on('pageerror',error=>pageErrors.push(error.message));
   await page.goto(pathToFileURL(publicIndex).href,{waitUntil:'domcontentloaded'});
 
-  await page.locator('[data-session-level="5"][data-session-mode="training"]').click();
+  // v112: the public build only has the non-recording mode button.
+  await page.locator('[data-session-level="5"][data-session-mode="trial"]').click();
   await page.locator('.activity-card[data-theme="laundry"]').click();
   await page.locator('[data-side="right"]').click();
   await page.locator('#btnGoCalib').click();

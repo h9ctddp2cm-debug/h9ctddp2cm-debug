@@ -273,9 +273,12 @@ test('every FTHUE level offers trial and training modes with accessible controls
       }
       for (const control of controls) {
         if (control.mode === 'trial') {
-          assert.ok(control.aria.includes('不錄影'), `${vp.name}: trial aria label states no recording`);
+          // v112: the non-recording mode is simply 「訓練」 (no recording wording on the public surface).
+          assert.equal(control.aria, `FTHUE Level ${control.level === '67' ? '6' : control.level} 訓練`, `${vp.name}: non-recording aria label`);
+          assert.equal(control.label, '訓練', `${vp.name}: non-recording label`);
         } else {
           assert.ok(control.aria.includes('錄影'), `${vp.name}: training aria label states recording`);
+          assert.equal(control.label, '訓練＋錄影', `${vp.name}: recording label (source build only)`);
         }
         if (control.level === '2') {
           // v102：Level 2 卡片收埋（hidden），控制鍵仍在 DOM 但唔佈局
@@ -291,12 +294,12 @@ test('every FTHUE level offers trial and training modes with accessible controls
 
 test('trial entry is visibly identified and bypasses recording/review code paths', async (t) => {
   assert.match(PAGE_SOURCE, /function beginSessionMode\(levelId, mode\)/);
-  assert.match(PAGE_SOURCE, /state\.sessionMode\s*=\s*mode === 'trial' \? 'trial' : 'training'/);
+  assert.match(PAGE_SOURCE, /state\.sessionMode\s*=\s*\(mode === 'trial' \|\| !movementRecordingApi\.available\) \? 'trial' : 'training'/);
   assert.match(PAGE_SOURCE, /selectLevel\(levelId\)/);
-  assert.match(PAGE_SOURCE, /aria-label="FTHUE Level 5 試玩，不錄影及不提示治療師"/);
-  assert.match(PAGE_SOURCE, /aria-label="FTHUE Level 5 訓練，錄影及提示治療師"/);
-  assert.match(PAGE_SOURCE, /if\(isTrialMode\(\)\)\{[\s\S]*?clearMovementRecording\(\);[\s\S]*?trialModeIndicator[\s\S]*?classList\.add\('show'\)/);
-  assert.match(PAGE_SOURCE, /if\(isTrialMode\(\)\)\{[\s\S]*?clearMovementRecording\(\);[\s\S]*?stopCamera\(\);[\s\S]*?\}else\{[\s\S]*?stopMovementRecording\(true\)/);
+  assert.match(PAGE_SOURCE, /aria-label="FTHUE Level 5 訓練"/);
+  assert.match(PAGE_SOURCE, /aria-label="FTHUE Level 5 訓練及錄影，提示治療師"/);
+  assert.match(PAGE_SOURCE, /if\(isTrialMode\(\)\)\{[\s\S]*?movementRecordingApi\.clear\(\);[\s\S]*?trialModeIndicator[\s\S]*?classList\.add\('show'\)/);
+  assert.match(PAGE_SOURCE, /if\(isTrialMode\(\)\)\{[\s\S]*?movementRecordingApi\.clear\(\);[\s\S]*?stopCamera\(\);[\s\S]*?\}else\{[\s\S]*?movementRecordingApi\.stop\(true\)/);
 
   if (!browser) return t.skip('playwright unavailable');
   await withPage(VIEWPORTS[1], async (page) => {

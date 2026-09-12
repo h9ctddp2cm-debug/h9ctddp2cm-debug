@@ -277,7 +277,7 @@ test('trial mode never produces a clinical upgrade or downgrade recommendation',
   assert.equal(up.accept(), null);
   assert.equal(up.snapshot().stageId, 'early_level4');
   // Neutral practice wording only.
-  assert.equal(up.progressText('zh'), '試玩連續成功 15/15');
+  assert.equal(up.progressText('zh'), '連續成功 15/15');
 
   const down = controller({ mode: 'trial', stageId: 'mid_level4' });
   const downFinal = feed(down, 'failure', REQUIRED, 'l');
@@ -332,6 +332,6 @@ test('the therapist card is explicit that no automatic assessment happens', () =
 
 test('the adaptive module ships offline with a bumped cache version', () => {
   assert.match(build, /cp "\$ROOT\/fthue-adaptive-progression\.js" "\$DIST\/fthue-adaptive-progression\.js"/);
-  assert.match(serviceWorker, /fthue-rehab-v111-20260907-trial-result-training-complete/);
+  assert.match(serviceWorker, /fthue-rehab-v112-20260912-public-no-recording/);
   assert.match(serviceWorker, /importScripts\("\.\/offline-assets\.js"\)/);
 });

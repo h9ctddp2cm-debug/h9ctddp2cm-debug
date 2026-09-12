@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v111-20260907-trial-result-training-complete";
+const CACHE_VERSION = "fthue-rehab-v112-20260912-public-no-recording";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

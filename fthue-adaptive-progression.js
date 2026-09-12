@@ -82,8 +82,8 @@
     zh: {
       validSuccess: '有效連續成功',
       validFailure: '有效連續失敗',
-      practiceSuccess: '試玩連續成功',
-      practiceFailure: '試玩連續失敗',
+      practiceSuccess: '連續成功',
+      practiceFailure: '連續失敗',
       invalidTrial: '追蹤／校準問題，本次不計',
       ready: '準備開始，尚未有有效試作',
       upgradeTitle: '治療師參考：可考慮進階',
@@ -94,14 +94,14 @@
         + '是否調整級別須由治療師臨床判斷後確認。',
       accept: '接受建議並更新訓練級別',
       decline: '不接受，維持現有級別',
-      practiceTitle: '試玩練習進度',
-      practiceNote: '試玩模式只顯示練習次數，不提供級別建議。',
+      practiceTitle: '練習進度',
+      practiceNote: '只顯示練習次數，不提供級別建議。',
     },
     en: {
       validSuccess: 'Valid consecutive successes',
       validFailure: 'Valid consecutive failures',
-      practiceSuccess: 'Practice consecutive successes',
-      practiceFailure: 'Practice consecutive failures',
+      practiceSuccess: 'Consecutive successes',
+      practiceFailure: 'Consecutive failures',
       invalidTrial: 'Tracking / calibration problem — this trial is not counted',
       ready: 'Ready to start. No valid trial yet.',
       upgradeTitle: 'For therapist review: progression may be considered',
@@ -114,7 +114,7 @@
       accept: 'Accept and update the training stage',
       decline: 'Decline and keep the current stage',
       practiceTitle: 'Practice progress',
-      practiceNote: 'Trial mode shows practice counts only and gives no stage recommendation.',
+      practiceNote: 'Shows practice counts only and gives no stage recommendation.',
     },
   };
 
