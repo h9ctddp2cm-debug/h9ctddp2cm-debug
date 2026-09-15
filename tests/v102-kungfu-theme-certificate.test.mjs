@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const loc = fs.readFileSync(path.join(root, 'localization.js'), 'utf8');
-const BUILD = 'v114-20260914-public-no-keepsake';
+const BUILD = 'v114-20260914-public-no-keepsake-b';
 
 test('v102+ build markers are aligned across index, service worker and manifest', () => {
   const sw = fs.readFileSync(path.join(root, 'service-worker.js'), 'utf8');
