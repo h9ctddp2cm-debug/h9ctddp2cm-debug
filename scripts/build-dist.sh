@@ -25,6 +25,10 @@ cp "$ROOT/level4-video-freshness.js" "$DIST/level4-video-freshness.js"
 cp "$ROOT/shoulder-flexion-controller.js" "$DIST/shoulder-flexion-controller.js"
 cp "$ROOT/fthue-adaptive-progression.js" "$DIST/fthue-adaptive-progression.js"
 cp -R "$ROOT/img" "$DIST/img"
+# v114: img/cert (department logo + ink-wash background) is used only by certificate.html,
+# which is itself excluded from the public build since v113. Remove the orphaned assets so
+# they are not precached/served for no reason.
+rm -rf "$DIST/img/cert"
 cp -R "$ROOT/audio" "$DIST/audio"
 
 # The three Level 4 real-life instructional GIFs must always ship so the guide
@@ -50,7 +54,7 @@ cp -R "$ROOT/vendor" "$DIST/vendor"
 # shared runtime with research mode fixed off, eliminates unreachable study
 # branches, and fails closed on any residual study state/handler/function.
 node "$ROOT/scripts/sanitize-public.cjs" "$DIST/index.html" "$DIST/localization.js"
-if grep -Eq 'data-pplx-inline-edit|__PORT_5000__|localhost:5000|btnResearchMode|applyInterventionDeepLink|role=.intervention|window\.__qa|window\.advanceTime|qaSyntheticHand|render_game_to_text|cert-entry|lnkCertificate|certificate\.html|嘉許狀' "$DIST/index.html"; then
+if grep -Eq 'data-pplx-inline-edit|__PORT_5000__|localhost:5000|btnResearchMode|applyInterventionDeepLink|role=.intervention|window\.__qa|window\.advanceTime|qaSyntheticHand|render_game_to_text|cert-entry|lnkCertificate|certificate\.html|嘉許狀|bindKeepsake|drawKeepsake|ksPreview|ksName|ksSig|ksDownload|ksDataURL|ksRedraw|ksDateStr|留念' "$DIST/index.html"; then
   echo "BUILD FAILED: authoring, research-entry, or QA-only code remains in dist/public" >&2
   exit 1
 fi
@@ -68,6 +72,7 @@ fail() { echo "BUILD FAILED: $1" >&2; exit 1; }
 
 if [ -e "$DIST/research" ]; then fail "research/ leaked into dist/public"; fi
 if [ -e "$DIST/certificate.html" ]; then fail "participation certificate leaked into dist/public (not in Protocol/PIS/ICF)"; fi
+if [ -e "$DIST/img/cert" ]; then fail "orphaned img/cert assets leaked into dist/public"; fi
 if [ -e "$DIST/sandbox" ]; then fail "diagnostic sandbox leaked into dist/public"; fi
 if find "$DIST" \( -name '*.test.js' -o -name '*.R' -o -name 'README.md' \
   -o -name '*.zip' -o -name 'auth.config.json' -o -name '.git' \

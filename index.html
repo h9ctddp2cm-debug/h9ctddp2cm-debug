@@ -12190,7 +12190,7 @@ function updateFramePerfOverlay(now){
     framePerf.overlayEl = el;
   }
   const p = framePerfSnapshot();
-  el.textContent = `perf v113  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
+  el.textContent = `perf v114  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
     + `鏡頭 ${p.video[0]}×${p.video[1]}  畫布 ${p.canvas[0]}×${p.canvas[1]}  dpr ${p.dpr}  手模型 ${p.handDelegate || '-'}\n`
     + `手 ${p.hand.hands} 隻  標籤 ${p.hand.label || '-'} ${p.hand.score}  接納 ${p.hand.path || '-'}  嚴格 ${p.hand.strict} 連續 ${p.hand.continuity} 單手 ${p.hand.lone} 拒絕 ${p.hand.rejected}\n`
     + `左右手檢查 ${p.hand.check === 'off' ? '關' : '開'}  鎖定手形 ${p.hand.lockSize || '-'}  大小拒絕 ${p.hand.sizeRejected}  遠處拒絕 ${p.hand.farRejected}`
@@ -15684,6 +15684,10 @@ function buildAdvDom(){
   reward.setAttribute('role','dialog');
   reward.setAttribute('aria-label','成績回饋');
 
+  /* PUBLIC_BUILD_REMOVE_START: participation keepsake DOM (name input + signature pad + PNG
+     download) for flower arranging — source/research build only. Not mentioned in
+     Protocol/PIS/ICF and collects identifiable information (name + handwritten signature)
+     that must not appear in the public build. */
   const keep = mk('keepsake', `
     <h2>作品完成 · 加上你的名字</h2>
     <canvas class="preview" id="ksPreview" width="1000" height="1300"></canvas>
@@ -15703,8 +15707,9 @@ function buildAdvDom(){
     </div>`, 'keepsake');
   keep.setAttribute('role','dialog');
   keep.setAttribute('aria-label','插花作品留念');
+  /* PUBLIC_BUILD_REMOVE_END */
 
-  advDom = { panel, note, toast, reward, keep };
+  advDom = { panel, note, toast, reward, keep:(typeof keep!=='undefined' ? keep : null) };
   return advDom;
 }
 
@@ -18327,7 +18332,7 @@ function laundryRender(ctx){
 /* ==================================================================
    插花 = 自由創作（最簡單、不計分）
    自選花材／長葉，自由擺放、旋轉、縮放，插入花瓶。
-   完成後可打名／簽名，下載 PNG 留念（名字只留在此頁記憶中）。
+   研究版完成後可打名／簽名並下載 PNG（名字只留在此頁記憶中）；公開版完成後直接結束。
    ================================================================== */
 const FLOWER_KINDS = [
   // 第一批：花（全部裁自用戶設計圖）
@@ -18401,7 +18406,9 @@ function flowersPanel(){
     goal: flowers.msg || (isLevel4Tabletop()
       ? '在花材上停住，沿中線向前滑，再在花瓶口停住。'
       : '已插花材可以再拿起調整位置。'),
-    metric:'完成後可以寫上名字、簽名，下載作品 PNG 留念。',
+    metric:(typeof startFlowersKeepsake === 'function')
+      ? '完成後可以寫上名字、簽名，下載作品 PNG。'
+      : '完成後按「完成作品」即可結束。',
     pct: Math.min(1, flowers.placed.length / 8),
     buttons:[
       { label:'花 ⇄ 葉', onClick:()=>{
@@ -18519,7 +18526,9 @@ function flowersUpdate(){
           detail:'花束現有 ' + flowers.placed.length + ' 枝',
           progressLabel: flowers.placed.length < 3
             ? '再插 ' + (3 - flowers.placed.length) + ' 枝就可以完成作品'
-            : '隨時可以按「完成作品」寫名留念',
+            : (typeof startFlowersKeepsake === 'function')
+              ? '隨時可以按「完成作品」寫名'
+              : '隨時可以按「完成作品」',
           x:item.x, y:item.y, tts:false,
         });
         flowers.msg = '';
@@ -18649,9 +18658,13 @@ function flowersRender(ctx){
   advDrawHeldReleasePrompt(ctx, carrier.heldId);
 }
 
-/* ---------- 留念畫面（打名 / 簽名 / 下載 PNG） ---------- */
+/* ---------- 研究版完成畫面（打名 / 簽名 / 下載 PNG） ---------- */
+/* PUBLIC_BUILD_REMOVE_START: participation keepsake flow (name + signature + PNG download) for
+   flower arranging — source/research build only. Not mentioned in Protocol/PIS/ICF and
+   collects identifiable information (name + handwritten signature) that must not appear in
+   the public build. Every call site goes through flowersFinish() below. */
 let ksBound = false;
-function flowersFinish(){
+function startFlowersKeepsake(){
   const d = buildAdvDom();
   d.keep.classList.add('show');
   bindKeepsake();
@@ -18807,6 +18820,12 @@ function ksDownload(){
     x:gameCanvas.width/2, y:gameCanvas.height/2, tts:'作品已經下載。' });
   return url;
 }
+/* PUBLIC_BUILD_REMOVE_END */
+
+const flowersFinishApi = (typeof startFlowersKeepsake === 'function')
+  ? { run(){ return startFlowersKeepsake(); } }
+  : { run(){ playApplause(); speakCantonese('作品完成，非常好！' + nextEncourage()); endGame(); } };
+function flowersFinish(){ return flowersFinishApi.run(); }
 
 /* ==================================================================
    共用游標繪製 + 進階活動總調度
@@ -18879,9 +18898,9 @@ function advInit(){
   picker.reset(); carrier.reset();
   heldPromptKey = '';
   fxParticles = []; fxRings = [];
-  // 重開遊戲時關掉上一局的慶祝／留念畫面
+  // 重開遊戲時關掉上一局的慶祝／研究版完成畫面（keep 在公開版無此元素，需先檢查）
   advDom.reward.classList.remove('show');
-  advDom.keep.classList.remove('show');
+  if(advDom.keep) advDom.keep.classList.remove('show');
   clearTimeout(rewardAutoTimer);
   rewardOnContinue = null;
   advSetNote('');
@@ -21180,7 +21199,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v113-20260912-public-no-certificate";
+  const LEVEL_APP_BUILD = "v114-20260914-public-no-keepsake";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 
