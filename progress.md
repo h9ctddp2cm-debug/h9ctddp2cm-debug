@@ -1702,6 +1702,14 @@ Original prompt: Fix Level 6–7 interactions: make light clothes-peg press dete
 - Validation：四組測試 590 個（113+171+135+171）587 pass / 3 skip / 0 fail（首次跑 group 3 因 dist 未 rebuild 有 1 個 dist-gated 子測試預期性 fail，rebuild 後重跑 `tests/v114-public-no-keepsake.test.mjs` 5/5 同全組 135/135 皆過）；`tools/checkjs.sh` 11 OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 199 files（同 v114 一致，純文字改動冇影響檔案數）；`rg -c "__qa" dist/public/index.html` → 0；dist 內三個版本標記／`留念`／`寫名、簽名`／`名字只保留在此頁` 全部確認正確（前者 3 處存在，後三者 0 個殘留）；Playwright 三個尺寸（筆電 1413×653、iPad 橫向 1180×820、iPad 直向 820×1180）載入公開版首頁，零 page error（`console.error` 同 `pageerror` 皆空）——因涉及文字本身係死碼，冇可達 UI 路徑可截圖顯示呢組文字，故 QA 重點放喺「頁面正常載入、冇 JS 錯誤」而非畫面文字截圖；`ych_rehab_qa_artifacts/v114b/v114b-qa-contact-sheet.png`（首頁三尺寸存底）。
 - Residual notes：`ADV_RULES` 入面其他主題（`cooking`/`mahjong`/`cards`/`laundry`）嘅 `lines[1]`/`tail`/`tts` 同樣係死碼（同一個讀取模式，只用 `lines[0]`），呢次冇一併清理，維持原文，因為稽核只針對插花一句；如日後同類稽核再揪出其他主題嘅殘留描述文字，可用同一手法直接改字（不涉及功能判斷）。
 
+## 2026-11-18 v122 — 校準頁清晰窗口放大（見到拇指／食指／中指）
+
+- Therapist（18 Nov 晚，Comet／Mac）：校準頁個清晰窗口（遮面模式下唯一清晰嘅部分）得一粒指尖咁細，想放大到見到頭三隻手指同衣夾。截圖入面手部模型將 21 點擠入咗一粒指尖（手太近、手腕出鏡、手喺面前面），窗口＝21 點外框＋餘裕，所以細到只見一隻手指。
+- 改動（只係 `drawPrivacySharpWindow` 兩個常數，校準／遊戲邏輯不變）：`PRIVACY_WINDOW_PAD` 0.28 → **0.50**（外框每邊加 50% 餘裕）、`PRIVACY_WINDOW_MIN` 0.18 → **0.45**（最小邊長＝畫布短邊 45%）。以截圖尺寸 845×632 計：細簇 21 點嘅窗口由 113×113 → 285×285 px；正常大小嘅手（佔畫面 30%）窗口闊度約 ×1.35。遮面仍然係全畫面模糊，只係窗口大咗；如果手放喺面前面，窗口會露出面部一部分 — 床邊指引：手唔好放喺面前。
+- `__qa.privacySharpWindow(points)` 改為回傳窗口矩形（`{x0,y0,w,h,canvasW,canvasH}`）方便測試；dist 一樣冇 `__qa`。
+- Tests：新增 `tests/v122-privacy-window-larger.test.mjs`（3：版本標記、常數＋幾何公式、Playwright 用 canvas captureStream 餵 `calibVideo`，細簇 21 點 → 窗口 ≥ 45% 短邊，正常手窗口更大）。Markers `v122-20261118-privacy-window` ×3、`perf v122`、11 個 marker 測試 sed bump。
+- Validation：四組 609 個測試 0 fail（123+199+171+116，3 skip）；`tools/checkjs.sh` OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 199 files；`__qa` 0；Playwright dist 假鏡頭 L6 衣夾 筆電：`perf v122`、重新校準掣、遮面、零錯誤。前後對照（用治療師截圖計）：`ych_rehab_qa_artifacts/v122/v122-privacy-window-before-after.png`。
+
 ## 2026-11-18 v121 — 校準頁「重新校準」掣 ＋ live v115–v120 改動 backport 返原始碼
 
 - Therapist（18 Nov）：示範畀病人睇嘅時候，追蹤器成日鎖咗治療師自己隻手／手指做校準；之前要「← 設定」再返入校準頁先可以重做。新增 `#btnRecalibrate`（「重新校準」，`data-testid="button-recalibrate"`，放喺「開始遊戲」正下方），留喺校準頁即時重做：`recalibrateFromCalibrationScreen()` → `resetNormalCalibration()`（研究模式則 `resetResearchCalibration()`）、`resetToolPinchAdapt()`、`resetHandAdmissionAndLock()`（清除 v99 手部鎖定，等患手可以重新被認入）、重設手勢穩定器／綠點 EMA／`calibDetectedOnce`、`calibEnteredAt=now`（10 秒「直接開始」後備重新計時）、`resetCalibStall()`、「開始遊戲」disabled、狀態「已重設 · 請患手再次入鏡」、`updateCalibrationCopy()`。鏡頭唔會重開。

@@ -29,10 +29,10 @@ function functionSource(name){
 /* ---------- release markers ---------- */
 
 test('v121 release markers', () => {
-  assert.match(html, /const LEVEL_APP_BUILD = "v121-20261118-recalibrate";/);
-  assert.match(html, /perf v121/);
-  assert.match(sw, /^const CACHE_VERSION = "fthue-rehab-v121-20261118-recalibrate";/);
-  assert.match(manifest, /v121-20261118-recalibrate/);
+  assert.match(html, /const LEVEL_APP_BUILD = "v122-20261118-privacy-window";/);
+  assert.match(html, /perf v122/);
+  assert.match(sw, /^const CACHE_VERSION = "fthue-rehab-v122-20261118-privacy-window";/);
+  assert.match(manifest, /v122-20261118-privacy-window/);
 });
 
 /* ---------- 重新校準 button ---------- */

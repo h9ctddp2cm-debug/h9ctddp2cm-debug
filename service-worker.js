@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v121-20261118-recalibrate";
+const CACHE_VERSION = "fthue-rehab-v122-20261118-privacy-window";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

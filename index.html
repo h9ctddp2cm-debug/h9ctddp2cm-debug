@@ -8656,8 +8656,12 @@ applyMirrorMode();
    影片本身照樣播放供偵測使用，只係畫面唔顯示。 */
 const PRIVACY_BLUR_SMALL_W = 40;      // 第一級縮小寬度（像素）
 const PRIVACY_BLUR_MID_W = 160;      // 第二級（令模糊更柔和）
-const PRIVACY_WINDOW_PAD = 0.28;      // 清晰窗口在手部外框之外的餘裕（相對外框尺寸）
-const PRIVACY_WINDOW_MIN = 0.18;      // 清晰窗口最小邊長（相對畫布短邊）
+// v122: therapist asked for a larger sharp window so the thumb/index/middle
+// fingers (and the peg) are visible even when the hand model fits the 21 points
+// to a small part of the hand. Padding is relative to the landmark box; the
+// minimum side is relative to the canvas short side.
+const PRIVACY_WINDOW_PAD = 0.50;      // 清晰窗口在手部外框之外的餘裕（相對外框尺寸；v99 0.28）
+const PRIVACY_WINDOW_MIN = 0.45;      // 清晰窗口最小邊長（相對畫布短邊；v99 0.18）
 let privacyBlurSmall = null, privacyBlurMid = null;
 function privacyBlurEnabled(){ return state.privacyBlur !== false; }
 /* v118 遮面 (face-hide): the live camera is never shown sharply — the whole
@@ -12456,7 +12460,7 @@ function updateFramePerfOverlay(now){
     framePerf.overlayEl = el;
   }
   const p = framePerfSnapshot();
-  el.textContent = `perf v121  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
+  el.textContent = `perf v122  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
     + `鏡頭 ${p.video[0]}×${p.video[1]}  畫布 ${p.canvas[0]}×${p.canvas[1]}  dpr ${p.dpr}  手模型 ${p.handDelegate || '-'}\n`
     + `手 ${p.hand.hands} 隻  標籤 ${p.hand.label || '-'} ${p.hand.score}  接納 ${p.hand.path || '-'}  嚴格 ${p.hand.strict} 連續 ${p.hand.continuity} 單手 ${p.hand.lone} 拒絕 ${p.hand.rejected}\n`
     + `左右手檢查 ${p.hand.check === 'off' ? '關' : '開'}  鎖定手形 ${p.hand.lockSize || '-'}  大小拒絕 ${p.hand.sizeRejected}  遠處拒絕 ${p.hand.farRejected}`
@@ -20387,8 +20391,8 @@ window.__qa = {
   privacySharpWindow(points){
     const video = document.getElementById('calibVideo');
     if(!privacyBlurEnabled() || !Array.isArray(points)) return false;
-    drawPrivacySharpWindow(calibCanvas.getContext('2d'), video, calibCanvas.width, calibCanvas.height, points);
-    return true;
+    const rect = drawPrivacySharpWindow(calibCanvas.getContext('2d'), video, calibCanvas.width, calibCanvas.height, points);
+    return rect ? { ...rect, canvasW:calibCanvas.width, canvasH:calibCanvas.height } : true;
   },
   snapCursor(){ dotEmaX = -1; dotEmaY = -1; posHistory = []; trackingPointHistory = []; return true; },
   trackingProbe(nx, ny, samples, sourceSize){
@@ -21517,7 +21521,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v121-20261118-recalibrate";
+  const LEVEL_APP_BUILD = "v122-20261118-privacy-window";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 
