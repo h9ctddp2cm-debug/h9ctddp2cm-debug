@@ -9,10 +9,13 @@ const html=readFileSync(path.join(root,'index.html'),'utf8');
 
 test('camera permission is requested at most once while an active session stream is reusable',()=>{
   assert.match(html,/function reusableCameraStream\(\)/);
-  assert.match(html,/if\(reusable\)\{[\s\S]*videoEl\.srcObject!==reusable[\s\S]*return true;/);
+  assert.match(html,/if\(reusable && !options\.forceReacquire\)\{[\s\S]*videoEl\.srcObject!==reusable[\s\S]*return true;/);   // v117
   assert.match(html,/let cameraRequestPromise=null/);
   assert.match(html,/let cameraRequestAttempted=false/);
-  assert.match(html,/if\(cameraRequestAttempted\)\{[\s\S]*return false;/);
+  // v117: a second request is only refused when no stream ever existed; a dead
+  // stream may be re-acquired a bounded number of times.
+  assert.match(html,/if\(cameraRequestAttempted && !hadStream\)\{[\s\S]*return false;/);
+  assert.match(html,/cameraReacquireCount >= CAMERA_REACQUIRE_MAX/);
   assert.match(html,/if\(!cameraRequestPromise\)\{[\s\S]*navigator\.mediaDevices\.getUserMedia/);
   assert.match(html,/cameraRequestAttempted=true/);
   assert.match(html,/cameraRequestPromise=navigator\.mediaDevices\.getUserMedia/);

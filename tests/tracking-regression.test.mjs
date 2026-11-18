@@ -40,7 +40,7 @@ test("portrait phones keep the camera inline in a compact preview instead of ful
   assert.match(publicSource, /height:min\(25dvh,210px\)/);
   assert.ok(publicSource.includes("videoEl.setAttribute('webkit-playsinline', '')"));
   assert.ok(publicSource.includes("videoEl.controls = false"));
-  assert.match(serviceWorkerSource, /fthue-rehab-v119-20261118-peg-release-35/);
+  assert.match(serviceWorkerSource, /fthue-rehab-v121-20261118-recalibrate/);
 });
 
 test("Levels 3 and 4 can use Pose when tabletop hands occlude the finger model", () => {
@@ -184,9 +184,9 @@ test("all items stay clear of targets and can be parked in blank space", () => {
 test("offline worker forces the current build instead of serving the stale game", () => {
   const manifest = JSON.parse(readFileSync(path.join(root, "manifest.webmanifest"), "utf8"));
   assert.ok(publicSource.includes('updateViaCache:"none"'));
-  assert.match(serviceWorkerSource, /fthue-rehab-v119-20261118-peg-release-35/);
-  assert.ok(publicSource.includes('const LEVEL_APP_BUILD = "v119-20261118-peg-release-35"'));
-  assert.equal(manifest.start_url, "./index.html?build=v119-20261118-peg-release-35");
+  assert.match(serviceWorkerSource, /fthue-rehab-v121-20261118-recalibrate/);
+  assert.ok(publicSource.includes('const LEVEL_APP_BUILD = "v121-20261118-recalibrate"'));
+  assert.equal(manifest.start_url, "./index.html?build=v121-20261118-recalibrate");
   assert.ok(publicSource.includes('const levelAppHadController = Boolean(navigator.serviceWorker.controller)'));
   assert.ok(publicSource.includes('if (!levelAppHadController || levelAppReloading) return'));
   assert.ok(publicSource.includes('navigator.serviceWorker.addEventListener("controllerchange"'));
@@ -287,7 +287,8 @@ test("normal Level 6 games use tripod pinch except simplified index-dwell chopst
   assert.match(publicSource, /const asymmetricLightClose = nearRatio <= enter \* 0\.82/);
   assert.match(publicSource, /farRatio <= Math\.max\(exit, enter \* 1\.28\)/);
   assert.match(publicSource, /const pinchHeld = stabiliseDetectedGesture\(pinch\.isPinching, 'pinch'\)/);
-  assert.match(publicSource, /isOpenPrep:!pinchHeld && \(!research\.active && isLevel6\(\)[\s\S]{0,160}isLevel6RealToolTask\(\)[\s\S]{0,80}\? pinch\.valid && pinch\.isSeparated/);
+  // v115 (backported): a sustained released pinch while a garment is held also arms the drop.
+  assert.match(publicSource, /isOpenPrep:!pinchHeld && \(!research\.active && isLevel6\(\)[\s\S]{0,160}isLevel6RealToolTask\(\)[\s\S]{0,80}\? pinch\.valid && \(pinch\.isSeparated \|\| pegUnpinchedSustained\)/);
   assert.match(publicSource, /const GESTURE_CONFIRM_MS = 60/);
   assert.match(publicSource, /function computePegPressState\(lm, isPressingPrev\)/);
   assert.match(publicSource, /source:'peg-aperture'/);

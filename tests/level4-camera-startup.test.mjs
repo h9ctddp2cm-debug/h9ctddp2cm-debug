@@ -31,7 +31,7 @@ function extractFunction(source, signature) {
   throw new Error(`could not close ${signature}`);
 }
 
-const startCameraSource = extractFunction(html, 'async function startCamera(videoElId)');
+const startCameraSource = extractFunction(html, 'async function startCamera(videoElId, opts)');
 const reusableCameraSource = extractFunction(html, 'function reusableCameraStream()');
 
 function makeHarness() {

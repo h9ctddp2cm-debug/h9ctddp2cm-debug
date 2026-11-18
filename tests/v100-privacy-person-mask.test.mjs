@@ -54,7 +54,7 @@ test('v100 calibration loop draws blur, then the participant layer, then the han
   const iLayer = loop.indexOf('drawPrivacyPersonLayer(ctx, video, rectW, rectH);');
   const iWin = loop.indexOf('drawPrivacySharpWindow(ctx, video, rectW, rectH, privacyWindowPts);');
   assert.ok(iBlur >= 0 && iSeg > iBlur && iLayer > iSeg && iWin > iLayer, 'draw order blur -> person -> hand window');
-  assert.match(loop, /if\(privacyBlurEnabled\(\)\) ensurePrivacySegmenter\(\);/);
+  assert.match(loop, /if\(privacyBlurEnabled\(\) && !faceHideEnabled\(\)\) ensurePrivacySegmenter\(\);/);   // v118
   assert.match(loop, /resetPrivacySegmentation\(\);/);
   assert.match(functionSource('stopCamera'), /resetPrivacySegmentation\(\);/);
   // Seed is the wrist: hand landmark 0, or the affected wrist (last of the three pose points).
@@ -153,7 +153,7 @@ test('v100 privacy toggle still works and the person layer draws onto the calibr
     await page.evaluate(() => { window.__qa.selectLevel('5'); window.__qa.selectActivity('dimsum'); });
     await page.click('[data-testid="button-affected-left"]');
     const label = await page.textContent('#btnPrivacyBlur');
-    assert.equal(label, '背景模糊：開');
+    assert.equal(label, '遮面：開（只見手）');   // v120: face-hide always on
     // Without a camera the layer cannot draw (no video frame) but must not throw.
     const drew = await page.evaluate(() => window.__qa.setPrivacyPersonMask(new Uint8Array(12).fill(255), 4, 3));
     assert.equal(typeof drew, 'boolean');

@@ -39,7 +39,7 @@ test('v99 hand lock constants and public-only scope', () => {
   assert.match(html, /\n  handednessCheck: true,/);
   // Camera start/stop clears the lock; a new round keeps it.
   assert.match(functionSource('waitForLiveCameraFrame'), /resetHandAdmissionAndLock\(\);/);
-  assert.match(functionSource('startCamera'), /waitForLiveCameraFrame\(videoEl\)/);
+  assert.match(functionSource('startCamera'), /waitForLiveCameraFrame\(videoEl, waitMs\)/);   // v117: bounded wait
   assert.match(functionSource('stopCamera'), /resetHandAdmissionAndLock\(\);/);
   assert.match(functionSource('initGame'), /resetHandFrameAdmission\(\);/);
   assert.doesNotMatch(functionSource('initGame'), /resetHandAdmissionAndLock\(\);/);
@@ -68,7 +68,9 @@ test('v99 calibration privacy blur is canvas-based and default on', () => {
   assert.match(loop, /if\(privacyOn\) drawPrivacyBlurredVideo\(ctx, video, rectW, rectH\);/);
   assert.match(loop, /drawPrivacySharpWindow\(ctx, video, rectW, rectH, privacyWindowPts\);/);
   // Pose levels use only the affected shoulder/elbow/wrist as the hand window / seed.
-  assert.match(loop, /privacyWindowPts = \[res\.lm\[left \? 11 : 12\], res\.lm\[left \? 13 : 14\], res\.lm\[left \? 15 : 16\]\];/);
+  // v118 face-hide drops the shoulder point (near the face) from the sharp window.
+  assert.match(loop, /: \[res\.lm\[left \? 11 : 12\], res\.lm\[left \? 13 : 14\], res\.lm\[left \? 15 : 16\]\];/);
+  assert.match(loop, /\? \[res\.lm\[left \? 13 : 14\], res\.lm\[left \? 15 : 16\]\]/);
   // v100: person segmentation keeps the participant sharp; see tests/v100-privacy-person-mask.test.mjs.
   assert.match(loop, /drawPrivacyPersonLayer\(ctx, video, rectW, rectH\);/);
 });
@@ -363,8 +365,10 @@ test('v99 privacy blur toggle is exposed on the calibration screen and through Q
       out.qaClass = wrap.classList.contains('privacy-blur');
       return out;
     });
+    // v118/v120: face-hide is the (only) mode; the toggle is hidden but still cycles
+    // 遮面 → 關 → 背景模糊 → 遮面 if driven programmatically.
     assert.equal(r.defaultOn, true);
-    assert.equal(r.defaultLabel, '背景模糊：開');
+    assert.equal(r.defaultLabel, '遮面：開（只見手）');
     assert.equal(r.afterClickOn, false);
     assert.equal(r.afterClickLabel, '背景模糊：關');
     assert.equal(r.qaOn, true);
