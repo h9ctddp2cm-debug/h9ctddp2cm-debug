@@ -17,7 +17,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const publicSource = readFileSync(path.join(root, 'index.html'), 'utf8');
 
 test('v110 constants, gate function and calibration wiring exist', () => {
-  assert.match(publicSource, /const PUBLIC_PEG_ENTER_RATIO = 0\.40;/);
+  assert.match(publicSource, /const PUBLIC_PEG_ENTER_RATIO = 0\.25;/);
   assert.match(publicSource, /const PUBLIC_PEG_HYSTERESIS_RATIO = 0\.10;/);
   assert.match(publicSource, /function publicPegReleaseGate\(t\)\{/);
   assert.match(publicSource, /return t\.enter \+ t\.comboRange \* PUBLIC_PEG_HYSTERESIS_RATIO;/);

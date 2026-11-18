@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const loc = fs.readFileSync(path.join(root, 'localization.js'), 'utf8');
-const BUILD = 'v114-20260914-public-no-keepsake-b';
+const BUILD = 'v119-20261118-peg-release-35';
 
 test('v102+ build markers are aligned across index, service worker and manifest', () => {
   const sw = fs.readFileSync(path.join(root, 'service-worker.js'), 'utf8');
@@ -16,7 +16,7 @@ test('v102+ build markers are aligned across index, service worker and manifest'
   assert.match(html, new RegExp(`LEVEL_APP_BUILD\\s*=\\s*['"]${BUILD}['"]`));
   assert.match(sw, new RegExp(`CACHE_VERSION\\s*=\\s*"fthue-rehab-${BUILD}"`));
   assert.match(manifest, new RegExp(`start_url[^\\n]*${BUILD}`));
-  assert.match(html, /perf v114 {2}/);
+  assert.match(html, /perf v119 {2}/);
 });
 
 test('landing title block: service title above and larger than the kung-fu brand line', () => {

@@ -28,10 +28,10 @@ const publicSource = readFileSync(path.join(root, 'index.html'), 'utf8');
 /* ---------------- Source contracts ---------------- */
 
 test('v108 public peg constants and gate exist', () => {
-  assert.match(publicSource, /const PUBLIC_PEG_RELEASE_RATIO = 0\.50;/);
-  assert.match(publicSource, /const PUBLIC_PEG_REARM_RATIO = 0\.62;/);
-  assert.match(publicSource, /const PUBLIC_PEG_DECISIVE_OTHER_RATIO = 0\.30;/);
-  assert.match(publicSource, /const PUBLIC_PEG_ADAPT_FLOOR_RATIO = 0\.25;/);
+  assert.match(publicSource, /const PUBLIC_PEG_RELEASE_RATIO = 0\.35;/);
+  assert.match(publicSource, /const PUBLIC_PEG_REARM_RATIO = 0\.47;/);
+  assert.match(publicSource, /const PUBLIC_PEG_DECISIVE_OTHER_RATIO = 0\.22;/);
+  assert.match(publicSource, /const PUBLIC_PEG_ADAPT_FLOOR_RATIO = 0\.20;/);
   assert.match(publicSource, /const PUBLIC_PEG_PAIR_MARGIN_RATIO = 0\.12;/);
   assert.match(publicSource, /function publicPegNearFloor\(nearClosed, nearRange, farClosed\)/);
   assert.match(publicSource,
@@ -134,8 +134,8 @@ const CAL = {
   comboClosed: 0.26, comboRange: 0.20,
 };
 // A grip whose closed baselines sit far apart (near 0.25, far 0.35): the pair
-// floor (0.374) equals the v70 62% point, so no relaxation applies to the near
-// digit and v107 behaviour is preserved.
+// floor equals the public re-arm point (v119: 0.25 + 0.47·0.20 = 0.344), so the
+// near digit must genuinely reopen before any single-digit decisive release.
 const CAL_WIDE = {
   enter: 0.362,
   nearExit: 0.374, farExit: 0.45, nearOpen: 0.374, farOpen: 0.474, scoreOpen: 0.5,
@@ -143,11 +143,11 @@ const CAL_WIDE = {
   comboClosed: 0.282, comboRange: 0.20,
 };
 
-test('publicPegNearFloor caps at the 62% point and rises with the far baseline', () => {
+test('publicPegNearFloor caps at the public re-arm point (v119: 47%) and rises with the far baseline', () => {
   const {publicPegNearFloor} = extractPeg();
   assert.ok(Math.abs(publicPegNearFloor(0.25, 0.20, 0.28) - 0.304) < 1e-9);
-  assert.ok(Math.abs(publicPegNearFloor(0.25, 0.20, 0.35) - 0.374) < 1e-9, 'never above 62%');
-  assert.ok(Math.abs(publicPegNearFloor(0.25, 0.20, 0.50) - 0.374) < 1e-9);
+  assert.ok(Math.abs(publicPegNearFloor(0.25, 0.20, 0.35) - 0.344) < 1e-9, 'never above the 47% re-arm point');
+  assert.ok(Math.abs(publicPegNearFloor(0.25, 0.20, 0.50) - 0.344) < 1e-9);
   assert.equal(publicPegNearFloor(NaN, 0.20, 0.28), -Infinity, 'legacy calibration → no floor');
 });
 
@@ -191,12 +191,16 @@ test('a single drifting digit still never releases (other digit static)', () => 
 
 test('wide closed baselines: pair floor keeps v107 behaviour, no single-digit release', () => {
   const {computeToolPinchState} = extractPeg({personal: CAL_WIDE});
-  // far digit static at its closed baseline 0.35 while the other digit flies open
-  const a = computeToolPinchState(syntheticHand(gap(0.35), gap(0.90)), true);
-  assert.equal(a.isPinching, true, 'static far digit can never release');
-  // decisive path floor = 0.374: near 0.36 is not enough even with far wide open
-  const b = computeToolPinchState(syntheticHand(gap(0.36), gap(0.90)), true);
-  assert.equal(b.isPinching, true, 'near below the 62% floor holds');
+  // one digit barely moved (0.30 = 25% of the near range) while the other
+  // digit flies open: still held (v119 floor 0.344)
+  const a = computeToolPinchState(syntheticHand(gap(0.30), gap(0.90)), true);
+  assert.equal(a.isPinching, true, 'a digit that barely moved can never release');
+  // decisive path floor = 0.344 (v119: 47% re-arm point): near 0.33 is not
+  // enough even with far wide open; near 0.36 (55% of its range) releases
+  const b = computeToolPinchState(syntheticHand(gap(0.33), gap(0.90)), true);
+  assert.equal(b.isPinching, true, 'near below the 47% floor holds');
+  const b2 = computeToolPinchState(syntheticHand(gap(0.36), gap(0.90)), true);
+  assert.equal(b2.isPinching, false, 'near past the floor with far wide open releases (decisive path)');
   // genuine reopen of both digits still releases
   const c = computeToolPinchState(syntheticHand(gap(0.38), gap(0.46)), true);
   assert.equal(c.isPinching, false, 'both digits past their points release');
@@ -218,12 +222,12 @@ test('publicPegEffectiveThresholds lowers release/re-arm only, floored, entry un
   // no adaptive data → calibrated object returned unchanged
   assert.equal(publicPegEffectiveThresholds(CAL, null), CAL);
   // adaptive lower than calibrated: near requested 0.29 → floored at the pair
-  // floor 0.304 (25% floor would be 0.30); far requested 0.30 → floored at
-  // farClosed+25% = 0.33
+  // floor 0.304 (v119 20% floor would be 0.29); far requested 0.30 → floored at
+  // farClosed+20% = 0.32
   const t = publicPegEffectiveThresholds(CAL,
     {enter: 0.90, nearExit: 0.29, nearOpen: 0.30, farExit: 0.30, farOpen: 0.31});
   assert.ok(Math.abs(t.nearExit - 0.304) < 1e-9, 'near release floored at pair floor');
-  assert.ok(Math.abs(t.farExit - 0.33) < 1e-9, 'far release floored at 25% of range');
+  assert.ok(Math.abs(t.farExit - 0.32) < 1e-9, 'far release floored at 20% of range');
   assert.ok(t.nearOpen >= t.nearExit && t.farOpen >= t.farExit, 're-arm never below release');
   assert.equal(t.enter, CAL.enter, 'entry threshold never changed by the adaptive path');
   assert.equal(t.adaptiveLowered, true);

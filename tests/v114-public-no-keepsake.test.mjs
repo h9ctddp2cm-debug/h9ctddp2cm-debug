@@ -74,5 +74,5 @@ test('public build: no keepsake DOM/functions, no img/cert assets, cache bumped 
   const offlineAssets = fs.readFileSync(path.join(distDir, 'offline-assets.js'), 'utf8');
   assert.doesNotMatch(offlineAssets, /img\/cert/);
   const sw = fs.readFileSync(path.join(distDir, 'service-worker.js'), 'utf8');
-  assert.match(sw, /v114-20260914-public-no-keepsake-b/);
+  assert.match(sw, /v119-20261118-peg-release-35/);
 });
