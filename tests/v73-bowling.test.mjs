@@ -41,7 +41,7 @@ test('bowling scene assets are preloaded and shipped', () => {
 
 test('bowlinglane theme is registered and offered first on Levels 3/4', () => {
   assert.match(publicSource, /id:'bowlinglane',title:'荃灣保齡球場'/);
-  assert.match(publicSource, /return \['bowlinglane','basketball','tsuenwan','dimsum','laundry','cards','mahjong'\];/);
+  assert.match(publicSource, /return \['bowlinglane','basketball','supermarket','tsuenwan','dimsum','laundry','cards','mahjong'\];/);
   assert.match(publicSource, /if\(themeId === 'bowlinglane'\) return level === '3' \|\| level === '4';/);
 });
 
@@ -61,7 +61,7 @@ test('bowlinglane gating: Levels 3/4 only (functional)', () => {
 test('bowlinglane variant drives the item visuals; pins are scene-drawn (no generic target)', () => {
   assert.match(publicSource, /bowlinglane:\[\s*\{ type:'bowlingball', itemLabel:'保齡球'/);
   // v74 widened this branch to also cover the teahouse dim sum mode
-  assert.match(publicSource, /if\(state\.theme==='bowlinglane'\|\|state\.theme==='basketball'\|\|isTeahouseDimsumMode\(\)\)\{\s*\/\/ v73[^]{0,120}\s*targets=\[\];\s*return;/);
+  assert.match(publicSource, /if\(state\.theme==='bowlinglane'\|\|state\.theme==='basketball'\|\|state\.theme==='supermarket'\|\|isTeahouseDimsumMode\(\)\)\{\s*\/\/ v73[^]{0,120}\s*targets=\[\];\s*return;/);
   assert.match(publicSource, /if\(state\.theme==='bowlinglane'\)\{ drawBowlingAlleyScene\(ctx,cw,ch\); return; \}/);
 });
 
@@ -78,7 +78,7 @@ test('scene block admits no hand-contact/grip/release signal', () => {
 });
 
 test('strike starts only from the existing targetReady award point', () => {
-  assert.match(publicSource, /shoulderFlexionCycleAwarded=true;\s*startShoulderRewardCycle\(\);\s*triggerFeedback\(true\);\s*if\(state\.theme==='bowlinglane'\)startBowlingStrike\(\);/);
+  assert.match(publicSource, /shoulderFlexionCycleAwarded=true;\s*(?:if\(isSupermarketTheme\(\)\)startSupermarketAction\(\);[^\n]*\s*)?startShoulderRewardCycle\(\);\s*triggerFeedback\(true\);\s*if\(state\.theme==='bowlinglane'\)startBowlingStrike\(\);/);
   // Pins reset only through the shared reward-cycle completion path.
   assert.match(publicSource, /function finishShoulderRewardCycle\(\)[\s\S]*advanceLevel3RoundVariant\(\);\s*resetBowlingStrike\(\);/);
 });

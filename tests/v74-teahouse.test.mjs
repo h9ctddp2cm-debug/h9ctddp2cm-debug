@@ -71,7 +71,7 @@ test('isTeahouseDimsumMode gating (functional): L3/L4 + dimsum + teahouse + not 
 
 test('teahouse scene replaces guide + generic targets, and only there', () => {
   assert.match(publicSource, /if\(isTeahouseDimsumMode\(\)\)\{ drawTeahouseScene\(ctx,cw,ch\); return; \}/);
-  assert.match(publicSource, /if\(state\.theme==='bowlinglane'\|\|state\.theme==='basketball'\|\|isTeahouseDimsumMode\(\)\)\{\s*\/\/ v73[^]{0,120}\s*targets=\[\];\s*return;/);
+  assert.match(publicSource, /if\(state\.theme==='bowlinglane'\|\|state\.theme==='basketball'\|\|state\.theme==='supermarket'\|\|isTeahouseDimsumMode\(\)\)\{\s*\/\/ v73[^]{0,120}\s*targets=\[\];\s*return;/);
 });
 
 /* ---------------- Safety invariants ---------------- */

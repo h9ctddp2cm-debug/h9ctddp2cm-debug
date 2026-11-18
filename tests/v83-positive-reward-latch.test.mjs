@@ -8,7 +8,7 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const html=readFileSync(path.join(root,'index.html'),'utf8');
 
 test('v83 marker and shared Level 3–4 reward latch are present',()=>{
-  assert.match(html,/v124-20261118-laundry-rack-ladder/);
+  assert.match(html,/v125-20261118-supermarket-story/);
   assert.match(html,/const SHOULDER_REWARD_MIN_MS = 2600/);
   assert.match(html,/const SHOULDER_PHOTO_REWARD_MS = 3200/);
   assert.match(html,/const shoulderRewardCycle = \{/);
@@ -16,7 +16,7 @@ test('v83 marker and shared Level 3–4 reward latch are present',()=>{
 });
 
 test('every Level 3–4 theme is covered by the shared latched update path',()=>{
-  assert.match(html,/return \['bowlinglane','basketball','tsuenwan','dimsum','laundry','cards','mahjong'\];/);
+  assert.match(html,/return \['bowlinglane','basketball','supermarket','tsuenwan','dimsum','laundry','cards','mahjong'\];/);
   assert.match(html,/function updateShoulderFlexionGame\(\)\{/);
   assert.match(html,/startShoulderRewardCycle\(\)/);
   assert.match(html,/finishShoulderRewardCycle\(\)/);

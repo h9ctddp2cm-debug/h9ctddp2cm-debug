@@ -40,7 +40,7 @@ test("portrait phones keep the camera inline in a compact preview instead of ful
   assert.match(publicSource, /height:min\(25dvh,210px\)/);
   assert.ok(publicSource.includes("videoEl.setAttribute('webkit-playsinline', '')"));
   assert.ok(publicSource.includes("videoEl.controls = false"));
-  assert.match(serviceWorkerSource, /fthue-rehab-v124-20261118-laundry-rack-ladder/);
+  assert.match(serviceWorkerSource, /fthue-rehab-v125-20261118-supermarket-story/);
 });
 
 test("Levels 3 and 4 can use Pose when tabletop hands occlude the finger model", () => {
@@ -56,7 +56,7 @@ test("Levels 2–4 open the shared activity library with Level 2 fail-closed to 
   assert.match(publicSource, /'3':\s*\{\s*id:'3'/);
   assert.match(publicSource, /beginSessionMode\('3',\s*'training'\)/);
   assert.doesNotMatch(publicSource, /window\.location\.href\s*=\s*'sandbox\/level3-bilateral/);
-  assert.match(publicSource, /const THEME_ORDER = \['wipewindow','bowling','mahjongwash','buspay','bowlinglane','basketball','flowers','dimsum','laundry','fridge','cards','mahjong','cooking'\]/);
+  assert.match(publicSource, /const THEME_ORDER = \['wipewindow','bowling','mahjongwash','buspay','bowlinglane','basketball','supermarket','flowers','dimsum','laundry','fridge','cards','mahjong','cooking'\]/);
   assert.match(publicSource, /if\(level === '2'\) return themeId === 'bilateral'/);
   assert.match(publicSource, /return \['bilateral'\]/);
 });
@@ -184,9 +184,9 @@ test("all items stay clear of targets and can be parked in blank space", () => {
 test("offline worker forces the current build instead of serving the stale game", () => {
   const manifest = JSON.parse(readFileSync(path.join(root, "manifest.webmanifest"), "utf8"));
   assert.ok(publicSource.includes('updateViaCache:"none"'));
-  assert.match(serviceWorkerSource, /fthue-rehab-v124-20261118-laundry-rack-ladder/);
-  assert.ok(publicSource.includes('const LEVEL_APP_BUILD = "v124-20261118-laundry-rack-ladder"'));
-  assert.equal(manifest.start_url, "./index.html?build=v124-20261118-laundry-rack-ladder");
+  assert.match(serviceWorkerSource, /fthue-rehab-v125-20261118-supermarket-story/);
+  assert.ok(publicSource.includes('const LEVEL_APP_BUILD = "v125-20261118-supermarket-story"'));
+  assert.equal(manifest.start_url, "./index.html?build=v125-20261118-supermarket-story");
   assert.ok(publicSource.includes('const levelAppHadController = Boolean(navigator.serviceWorker.controller)'));
   assert.ok(publicSource.includes('if (!levelAppHadController || levelAppReloading) return'));
   assert.ok(publicSource.includes('navigator.serviceWorker.addEventListener("controllerchange"'));
