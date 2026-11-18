@@ -1845,16 +1845,24 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
       <div class="card-body">
         <div class="option-row" id="laundryDifficultyOptions">
           <button class="option-btn selected" type="button" data-laundry-difficulty="basic">
-            基本
+            基本：一架
             <small>任何衣物可放到晾衫架任何位置</small>
           </button>
+          <button class="option-btn" type="button" data-laundry-difficulty="zones2">
+            着燈兩架
+            <small>進階一：左右兩個架，夾到閃燈嗰個架先算啱</small>
+          </button>
           <button class="option-btn" type="button" data-laundry-difficulty="zones">
-            進階：着燈四架
-            <small>四個晾衫架，夾到閃燈嗰個架先算啱</small>
+            着燈四架
+            <small>進階二：四個架（2×2），夾到閃燈嗰個架先算啱</small>
+          </button>
+          <button class="option-btn" type="button" data-laundry-difficulty="sort2">
+            分類兩架
+            <small>進階三：上身（恤衫、底衫）／下身（褲、裙、孖煙通、襪）</small>
           </button>
           <button class="option-btn" type="button" data-laundry-difficulty="sort">
-            進階：分類四架
-            <small>上衣、褲、裙、內衣襪各一個架</small>
+            分類四架
+            <small>進階四：上衣、褲、裙、內衣襪各一個架</small>
           </button>
         </div>
       </div>
@@ -2673,7 +2681,7 @@ const state = {
   level: '4',
   shoulderTargetDeg: 60,
   shoulderExerciseMode: 'active', // Levels 3–4: active | assisted-stick
-  laundryDifficulty: 'basic', // Level 6 peg laundry: basic | zones | sort (v123; legacy 'complex' → zones)
+  laundryDifficulty: 'basic', // Level 6 peg laundry ladder: basic | zones2 | zones | sort2 | sort (v123; legacy 'complex' → zones)
   fridgeDifficulty: 'basic',  // v101 Level 5 fridge: basic（任何位置）| zones（着燈六格）
   dimsumDifficulty: 'basic', // Level 6 chopsticks dim sum: basic | complex order
   theme: 'dimsum',      // 活動 id
@@ -5440,11 +5448,10 @@ function renderLaundryDifficultySettings(){
   const enabled=isLaundryRackGame();
   card.hidden=!enabled;
   if(!enabled)return;
-  const mode=laundryDifficultyMode();
-  document.getElementById('preview-laundry-difficulty').textContent=
-    mode==='zones'?'進階：着燈四架':(mode==='sort'?'進階：分類四架':'基本');
+  const key=laundryDifficultyKey();
+  document.getElementById('preview-laundry-difficulty').textContent=LAUNDRY_DIFFICULTY_LABELS[key]||'基本：一架';
   document.querySelectorAll('#laundryDifficultyOptions [data-laundry-difficulty]').forEach(button=>{
-    const selected=button.dataset.laundryDifficulty===mode;
+    const selected=button.dataset.laundryDifficulty===key;
     button.classList.toggle('selected',selected);
     button.setAttribute('aria-pressed',selected?'true':'false');
   });
@@ -6012,7 +6019,7 @@ document.getElementById('laundryDifficultyOptions').addEventListener('click',e=>
   const button=e.target.closest('[data-laundry-difficulty]');
   if(!button||!isLaundryRackGame())return;
   const pick=button.dataset.laundryDifficulty;
-  state.laundryDifficulty=(pick==='zones'||pick==='sort')?pick:'basic';
+  state.laundryDifficulty=LAUNDRY_DIFFICULTY_KEYS.includes(pick)?pick:'basic';
   renderLaundryDifficultySettings();
 });
 document.getElementById('fridgeDifficultyOptions').addEventListener('click',e=>{
@@ -10502,33 +10509,61 @@ let laundryOrderTimerId = null;
 let laundryRackClearTimerId = null;
 let laundryBatchesCompleted = 0;
 let laundryOrderBannerRect = null;
-/* ---- v123 四架晾衫（進階）----
-   「較複雜（晾衫單）」改為兩個選擇性注意訓練版本（參考 Level 5 雪櫃「着燈六格」）：
-   zones  着燈四架：上方 2×2 四個晾衫架（只顯示架頂橫桿部分，架可以畫大啲），
+/* ---- v123 多架晾衫（進階難度階梯）----
+   「較複雜（晾衫單）」改為選擇性注意訓練階梯（參考 Level 5 雪櫃「着燈六格」），
+   由一個架逐步加到兩個、四個架：
+   basic  基本：一架 — 任何衣物任何位置（不變）。
+   zones2 着燈兩架：畫面左右各一個架，隨機一個閃燈，夾去閃燈嗰個架。
+   zones  着燈四架：上方 2×2 四個架（只顯示架頂橫桿部分，架可以畫大啲），
           每次隨機一個架閃黃燈＋燈膽圖示，架上有該件衫嘅淡影。廣東話指令：
           「請將半截裙夾到閃燈嗰個晾衫架」。夾錯架 → 唔扣分、唔計錯，衫返落籃再試。
+   sort2  分類兩架：「上身（恤衫、底衫）／下身（褲、裙、孖煙通、襪）」。
    sort   分類四架：四個架分別標示「上衣／褲／裙／內衣襪」，病人要揀啱類別嘅架。
-   兩個版本都係每次畫面只出一件衫；四個架合共晾滿六件 → 拍手、清架、再嚟。
+   所有進階版本都係每次畫面只出一件衫；各架合共晾滿六件 → 拍手、清架、再嚟。
    舊設定值 'complex' 自動當作 'zones'。研究模式（pilot）唔行呢個玩法。 */
+const LAUNDRY_DIFFICULTY_KEYS = ['basic', 'zones2', 'zones', 'sort2', 'sort'];
+const LAUNDRY_DIFFICULTY_LABELS = {
+  basic:'基本：一架', zones2:'進階一：着燈兩架', zones:'進階二：着燈四架',
+  sort2:'進階三：分類兩架', sort:'進階四：分類四架',
+};
 const LAUNDRY_FOUR_RACK_CAPACITY = 6;
-// 每個架三個掛衫位（相對架闊度）；偏右，留空架左端畀燈膽圖示／分類標籤。
+// 每個架嘅掛衫位（相對架闊度）；偏右，留空架左端畀燈膽圖示／分類標籤。
+// 四架：每架三個位；兩架（架闊好多）：每架五個位，令同一個架連收幾件都唔會疊。
 const LAUNDRY_FOUR_RACK_SLOTS = [-0.06, 0.16, 0.38];
-// 只畫晾衫架相片嘅頂部（橫桿），橫向切 44%（779×453 → 779×199），直向保留多啲腳（62%）。
-const LAUNDRY_RACK_RAIL_FRAC = { landscape:0.44, portrait:0.62 };
+const LAUNDRY_TWO_RACK_SLOTS = [-0.17, -0.02, 0.13, 0.28, 0.43];
+// 只畫晾衫架相片嘅頂部（橫桿），四架橫向切 44%（779×453 → 779×199）；兩架（受闊度限制）同直向保留多啲腳（62%），令架高啲易夾。
+const LAUNDRY_RACK_RAIL_FRAC = { landscape:0.44, landscape2:0.62, portrait:0.62 };
 const LAUNDRY_SORT_RACKS = [
   { key:'tops',      label:'上衣',   types:['laundry_shirt'] },
   { key:'trousers',  label:'褲',     types:['laundry_jeans'] },
   { key:'skirt',     label:'裙',     types:['laundry_skirt'] },
   { key:'underwear', label:'內衣襪', types:['laundry_vest','laundry_boxers','laundry_socks'] },
 ];
+const LAUNDRY_SORT_RACKS_2 = [
+  { key:'upper', label:'上身', types:['laundry_shirt','laundry_vest'] },
+  { key:'lower', label:'下身', types:['laundry_jeans','laundry_skirt','laundry_boxers','laundry_socks'] },
+];
 let laundryLitRack = -1;          // zones 模式：而家閃燈嘅架（0..3）
 let laundryWrongRack = -1;        // 最近一次夾錯嘅架（短暫紅框）
 let laundryWrongUntil = 0;
 let laundryWrongSpokenAt = -Infinity;
-function laundryDifficultyMode(){
+// 設定值正規化：'complex'（舊）→ 'zones'；其他唔識嘅值 → 'basic'。
+function laundryDifficultyKey(){
   const d = state.laundryDifficulty;
-  if(d === 'complex' || d === 'zones') return 'zones';
-  if(d === 'sort') return 'sort';
+  if(d === 'complex') return 'zones';
+  return LAUNDRY_DIFFICULTY_KEYS.includes(d) ? d : 'basic';
+}
+// 架數：basic 1；zones2／sort2 2；zones／sort 4。
+function laundryRackCount(){
+  const k = laundryDifficultyKey();
+  if(k === 'zones2' || k === 'sort2') return 2;
+  if(k === 'zones' || k === 'sort') return 4;
+  return 1;
+}
+function laundryDifficultyMode(){
+  const d = laundryDifficultyKey();
+  if(d === 'complex' || d === 'zones' || d === 'zones2') return 'zones';
+  if(d === 'sort' || d === 'sort2') return 'sort';
   return 'basic';
 }
 function isLaundryRackGame(){
@@ -10550,11 +10585,21 @@ function isLaundryFourRackGame(){
 function isLaundryOrderGame(){
   return isLaundryZoneGame();
 }
+function laundrySortRacks(){
+  return laundryRackCount() === 2 ? LAUNDRY_SORT_RACKS_2 : LAUNDRY_SORT_RACKS;
+}
 function laundrySortRackFor(type){
-  return LAUNDRY_SORT_RACKS.findIndex(r=>r.types.includes(type));
+  return laundrySortRacks().findIndex(r=>r.types.includes(type));
+}
+function laundryRackSlots(){
+  return laundryRackCount() === 2 ? LAUNDRY_TWO_RACK_SLOTS : LAUNDRY_FOUR_RACK_SLOTS;
+}
+function laundryRackRailFracFor(portrait, count){
+  if(portrait) return LAUNDRY_RACK_RAIL_FRAC.portrait;
+  return count === 2 ? LAUNDRY_RACK_RAIL_FRAC.landscape2 : LAUNDRY_RACK_RAIL_FRAC.landscape;
 }
 function laundryRackRailFrac(){
-  return isPortrait() ? LAUNDRY_RACK_RAIL_FRAC.portrait : LAUNDRY_RACK_RAIL_FRAC.landscape;
+  return laundryRackRailFracFor(isPortrait(), laundryRackCount());
 }
 function resetLaundryOrderGame(){
   laundryOrderBannerRect = null;
@@ -10579,7 +10624,13 @@ function laundryOrderText(){
   return '請將' + laundryOrder.lines.map(l=>l.need + l.unit + l.label).join('、') + '放上晾衫架。';
 }
 function laundryPickLitRack(){
-  const choices = [0,1,2,3].filter(i=>i !== laundryLitRack);
+  const count = laundryRackCount();
+  const slots = laundryRackSlots().length;
+  const all = Array.from({length:count}, (_, i)=>i);
+  // 唔揀已經掛滿位嘅架；有得揀就唔連續同一個架。
+  const free = all.filter(i=>laundryRackContents.filter(c=>c.rack === i).length < slots);
+  const pool = free.length ? free : all;
+  const choices = pool.length > 1 ? pool.filter(i=>i !== laundryLitRack) : pool;
   return choices[Math.floor(Math.random() * choices.length)];
 }
 function newLaundryOrder(){
@@ -10626,8 +10677,9 @@ function laundryFourRackHang(item, rackIndex){
     laundryRackContents = [];
     laundryOrderCelebrateUntil = 0;
   }
+  const slots = laundryRackSlots();
   const onThisRack = laundryRackContents.filter(c=>c.rack === rackIndex).length;
-  const fx = LAUNDRY_FOUR_RACK_SLOTS[onThisRack % LAUNDRY_FOUR_RACK_SLOTS.length];
+  const fx = slots[onThisRack % slots.length];
   laundryRackContents.push({ img:(item && item.img) || null, fx, rack:rackIndex });
   laundryWrongRack = -1; laundryWrongUntil = 0;
   if(laundryRackContents.length >= LAUNDRY_FOUR_RACK_CAPACITY){
@@ -10705,8 +10757,9 @@ function laundryRackAccepts(item, rack){
     const want = laundrySortRackFor(item.targetType);
     if(want < 0) return false;
     if(idx !== want){
-      laundryNoteWrongRack(idx, (item.label || '呢件') + '係' + LAUNDRY_SORT_RACKS[want].label +
-        '，要夾喺「' + LAUNDRY_SORT_RACKS[want].label + '」嗰個架呀。');
+      const racks = laundrySortRacks();
+      laundryNoteWrongRack(idx, (item.label || '呢件') + '係' + racks[want].label +
+        '，要夾喺「' + racks[want].label + '」嗰個架呀。');
       return false;
     }
     return true;
@@ -11831,7 +11884,7 @@ function setupTargets(){
   }
   if(isLaundryFourRackGame()){
     // v123 四架晾衫：上方 2×2 四個架（只顯示架頂橫桿部分），下方係衣物籃位。
-    targets = laundryFourRackTargets(cw, ch, portrait);
+    targets = laundryMultiRackTargets(cw, ch, portrait, laundryRackCount());
     return;
   }
   if(isLaundryRackGame()){
@@ -12583,7 +12636,7 @@ function updateFramePerfOverlay(now){
     framePerf.overlayEl = el;
   }
   const p = framePerfSnapshot();
-  el.textContent = `perf v123  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
+  el.textContent = `perf v124  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
     + `鏡頭 ${p.video[0]}×${p.video[1]}  畫布 ${p.canvas[0]}×${p.canvas[1]}  dpr ${p.dpr}  手模型 ${p.handDelegate || '-'}\n`
     + `手 ${p.hand.hands} 隻  標籤 ${p.hand.label || '-'} ${p.hand.score}  接納 ${p.hand.path || '-'}  嚴格 ${p.hand.strict} 連續 ${p.hand.continuity} 單手 ${p.hand.lone} 拒絕 ${p.hand.rejected}\n`
     + `左右手檢查 ${p.hand.check === 'off' ? '關' : '開'}  鎖定手形 ${p.hand.lockSize || '-'}  大小拒絕 ${p.hand.sizeRejected}  遠處拒絕 ${p.hand.farRejected}`
@@ -14967,8 +15020,11 @@ function drawDimsumOrderBanner(ctx, cw, ch){
 // v123 四架晾衫目標位置（獨立函數方便測試）。
 // 架嘅高度由「HUD 按鈕列之下」到「衣物生成帶之上」嘅空間決定，兩行各佔一半；
 // 架闊度上限 46% 畫面闊（兩個架並排中間留空）。rackIndex：0 左上、1 右上、2 左下、3 右下。
-function laundryFourRackTargets(cw, ch, portrait){
-  const frac = portrait ? LAUNDRY_RACK_RAIL_FRAC.portrait : LAUNDRY_RACK_RAIL_FRAC.landscape;
+// 兩架：一行左右各一；四架：2×2。全部放喺單件衫上方、HUD 下方。
+function laundryMultiRackTargets(cw, ch, portrait, count){
+  const racks = count === 2 ? 2 : 4;
+  const rows = racks === 2 ? 1 : 2;
+  const frac = laundryRackRailFracFor(portrait, racks);
   const natW = imgLaundryRack.naturalWidth > 0 ? imgLaundryRack.naturalWidth : 779;
   const natH = imgLaundryRack.naturalHeight > 0 ? imgLaundryRack.naturalHeight : 453;
   const railRatio = natW / (natH * frac);
@@ -14979,18 +15035,19 @@ function laundryFourRackTargets(cw, ch, portrait){
   const bottomLimit = garmentTop - 16;
   const rowGap = 14, colGap = Math.max(16, cw * 0.03);
   const available = Math.max(120, bottomLimit - hudTop);
-  let th = (available - rowGap) / 2;
+  let th = (available - rowGap * (rows - 1)) / rows;
   let tw = th * railRatio;
   const maxW = Math.min(cw * 0.46, (cw - colGap) / 2 - 8);
   if(tw > maxW){ tw = maxW; th = tw / railRatio; }
-  const extra = available - (2 * th + rowGap);
+  const extra = available - (rows * th + rowGap * (rows - 1));
   const y0 = hudTop + extra / 2 + th / 2;
   const xs = [cw / 2 - colGap / 2 - tw / 2, cw / 2 + colGap / 2 + tw / 2];
   const ys = [y0, y0 + th + rowGap];
   const sortMode = isLaundrySortGame();
+  const sortRacks = racks === 2 ? LAUNDRY_SORT_RACKS_2 : LAUNDRY_SORT_RACKS;
   const out = [];
-  for(let i = 0; i < 4; i++){
-    const sortRack = sortMode ? LAUNDRY_SORT_RACKS[i] : null;
+  for(let i = 0; i < racks; i++){
+    const sortRack = sortMode ? sortRacks[i] : null;
     out.push({ type:'laundry_rack', label: sortRack ? sortRack.label + '架' : '晾衫架' + (i + 1),
       img:imgLaundryRack, drawIcon:null, style:'rack', rackIndex:i,
       sortKey: sortRack ? sortRack.key : null, sortLabel: sortRack ? sortRack.label : '',
@@ -15071,7 +15128,7 @@ function drawLaundryFourRackTarget(ctx, t){
     if(c.img && c.img.complete && c.img.naturalWidth > 0){
       const iw = c.img.naturalWidth, ih = c.img.naturalHeight;
       let dh = Math.min(rh * 0.95, ch * 0.16), dw = dh * iw / ih;
-      const maxW = rw * 0.21;
+      const maxW = rw * (laundryRackCount() === 2 ? 0.14 : 0.21);
       if(dw > maxW){ dw = maxW; dh = dw * ih / iw; }
       drawImageScaled(ctx, c.img, t.x + c.fx * rw - dw / 2, railY, dw, dh);
     }
@@ -20249,7 +20306,7 @@ window.__qa = {
     }
     if(opts.dimsumSceneMode==='teahouse'||opts.dimsumSceneMode==='camera') state.dimsumSceneMode=opts.dimsumSceneMode;
     if(opts.fridgeDifficulty==='zones'||opts.fridgeDifficulty==='basic') state.fridgeDifficulty=opts.fridgeDifficulty;
-    if(['basic','zones','sort','complex'].includes(opts.laundryDifficulty)) state.laundryDifficulty=opts.laundryDifficulty;
+    if([...LAUNDRY_DIFFICULTY_KEYS,'complex'].includes(opts.laundryDifficulty)) state.laundryDifficulty=opts.laundryDifficulty;
     if(state.level==='2' && !themeAvailableForLevel(state.theme,'2')) state.theme='bilateral';
     if(state.level==='67'){
       if(!assertLevel6ActivityLock()) lockLevel6Activity(LEVEL6_TASKS.chopsticks.theme);
@@ -21881,7 +21938,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v123-20261118-laundry-four-racks";
+  const LEVEL_APP_BUILD = "v124-20261118-laundry-rack-ladder";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

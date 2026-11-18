@@ -105,7 +105,8 @@ function makeOrderModule(opts = {}){
 return {isLaundryOrderGame, isLaundryBasicGame, isLaundryZoneGame, isLaundrySortGame, laundryDifficultyMode,
   resetLaundryOrderGame, newLaundryOrder, laundryOrderText, laundrySortRackFor,
   laundryOrderAccepts, laundryOrderPlace, laundryOrderLineFor, laundryBasicPlace, laundryRackPlace,
-  laundryRackAccepts, laundryRackRejectedWithoutPenalty,
+  laundryRackAccepts, laundryRackRejectedWithoutPenalty, laundryRackCount,
+  laundryRackPlaceDirect(rackIndex){ laundryFourRackHang({targetType:'laundry_shirt'}, rackIndex); },
   LAUNDRY_RACK_CAPACITY, LAUNDRY_RACK_SLOTS, LAUNDRY_RACK_CLEAR_DELAY_MS,
   get litRack(){ return laundryLitRack; },
   get wrongRack(){ return laundryWrongRack; },
@@ -250,6 +251,37 @@ test('v123 zones: six garments across the four racks applaud, praise and clear',
   clear.cb();
   assert.equal(mod.rack.length, 0, 'the racks are cleared after the celebration');
   assert.equal(calls.speak[calls.speak.length - 1], '又有新衫要晾喇！');
+});
+
+test('v123 two-rack ladder: zones2 lights one of two racks and sort2 uses 上身／下身', () => {
+  const z = makeOrderModule({state: {laundryDifficulty: 'zones2'}});
+  assert.equal(z.mod.laundryRackCount(), 2);
+  assert.equal(z.mod.isLaundryZoneGame(), true);
+  for(let n = 0; n < 6; n++){
+    const order = z.mod.newLaundryOrder();
+    assert.ok(z.mod.litRack === 0 || z.mod.litRack === 1, `lit rack ${z.mod.litRack}`);
+    z.mod.laundryOrderPlace({targetType: order.lines[0].type}, {rackIndex: z.mod.litRack});
+  }
+  assert.equal(z.mod.rack.length, 6);
+  assert.equal(z.calls.applause, 1, 'six garments across two racks still celebrate');
+  const s = makeOrderModule({state: {laundryDifficulty: 'sort2'}});
+  assert.equal(s.mod.laundryRackCount(), 2);
+  assert.equal(s.mod.isLaundrySortGame(), true);
+  const expect = {laundry_shirt: 0, laundry_vest: 0, laundry_jeans: 1, laundry_skirt: 1, laundry_boxers: 1, laundry_socks: 1};
+  for(const [type, idx] of Object.entries(expect)){
+    assert.equal(s.mod.laundrySortRackFor(type), idx, type);
+    assert.equal(s.mod.laundryRackAccepts({targetType: type}, {rackIndex: idx}), true);
+    assert.equal(s.mod.laundryRackAccepts({targetType: type, label: 'X'}, {rackIndex: 1 - idx}), false);
+  }
+  assert.match(s.calls.speak[s.calls.speak.length - 1], /要夾喺「(上身|下身)」嗰個架呀。$/);
+});
+
+test('v123 zones: the lit rack skips racks whose hanging slots are already full', () => {
+  const {mod} = makeOrderModule({state: {laundryDifficulty: 'zones2'}, random: () => 0});
+  // Fill rack 0 completely (five two-rack slots) via sort-style direct hangs.
+  for(let i = 0; i < 5; i++) mod.laundryRackPlaceDirect(0);
+  mod.newLaundryOrder();
+  assert.equal(mod.litRack, 1, 'only rack 1 still has room');
 });
 
 test('v123 sort: garments go to the category rack (上衣／褲／裙／內衣襪)', () => {

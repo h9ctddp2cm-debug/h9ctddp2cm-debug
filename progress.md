@@ -1702,6 +1702,17 @@ Original prompt: Fix Level 6–7 interactions: make light clothes-peg press dete
 - Validation：四組測試 590 個（113+171+135+171）587 pass / 3 skip / 0 fail（首次跑 group 3 因 dist 未 rebuild 有 1 個 dist-gated 子測試預期性 fail，rebuild 後重跑 `tests/v114-public-no-keepsake.test.mjs` 5/5 同全組 135/135 皆過）；`tools/checkjs.sh` 11 OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 199 files（同 v114 一致，純文字改動冇影響檔案數）；`rg -c "__qa" dist/public/index.html` → 0；dist 內三個版本標記／`留念`／`寫名、簽名`／`名字只保留在此頁` 全部確認正確（前者 3 處存在，後三者 0 個殘留）；Playwright 三個尺寸（筆電 1413×653、iPad 橫向 1180×820、iPad 直向 820×1180）載入公開版首頁，零 page error（`console.error` 同 `pageerror` 皆空）——因涉及文字本身係死碼，冇可達 UI 路徑可截圖顯示呢組文字，故 QA 重點放喺「頁面正常載入、冇 JS 錯誤」而非畫面文字截圖；`ych_rehab_qa_artifacts/v114b/v114b-qa-contact-sheet.png`（首頁三尺寸存底）。
 - Residual notes：`ADV_RULES` 入面其他主題（`cooking`/`mahjong`/`cards`/`laundry`）嘅 `lines[1]`/`tail`/`tts` 同樣係死碼（同一個讀取模式，只用 `lines[0]`），呢次冇一併清理，維持原文，因為稽核只針對插花一句；如日後同類稽核再揪出其他主題嘅殘留描述文字，可用同一手法直接改字（不涉及功能判斷）。
 
+## 2026-11-18 v124 — 晾衫架難度階梯（一架 → 着燈兩架 → 着燈四架 → 分類兩架 → 分類四架）
+
+- Therapist（18 Nov 晚）：確認「內衣襪」命名；再要求難度可以逐級加 —— 先全部放落一個架，再升級到左右兩個架（各佔半邊畫面），再四個架。
+- 晾衫難度由三級改為五級 `LAUNDRY_DIFFICULTY_KEYS = ['basic','zones2','zones','sort2','sort']`（`LAUNDRY_DIFFICULTY_LABELS`：基本：一架／進階一：着燈兩架／進階二：着燈四架／進階三：分類兩架／進階四：分類四架）。`laundryDifficultyMode()` 將 zones2→zones、sort2→sort（遊戲規則同 v123 一樣），`laundryRackCount()` 回傳 1／2／4，舊 `'complex'` 仍然當 `'zones'`。只影響公開版 `isLaundryRackGame()`，研究模式不變。
+- 兩架幾何：`laundryFourRackTargets` 改名 `laundryMultiRackTargets(cw,ch,portrait,count)`，count=2 時一行左右兩架；`LAUNDRY_RACK_RAIL_FRAC` 新增 `landscape2:0.62`（兩架時架畫高啲），`LAUNDRY_TWO_RACK_SLOTS` 五個掛位，掛起嘅衫 maxW 由 0.21 改 0.14（兩架時）免同標籤重疊。筆電 1413×653 每架約 650×234；iPad 1180×820 約 543×196；直向 1024×1366 約 471×170（直向同四架一樣 62% 橫桿，所以同高）。
+- 分類兩架 `LAUNDRY_SORT_RACKS_2`：「上身」（恤衫、底衫）／「下身」（牛仔褲、半截裙、孖煙通、襪）；錯架提示同 v123 一樣用 `laundrySortRacks()[want].label`。
+- 着燈模式 `laundryPickLitRack()` 會跳過已滿嘅架（兩架各三個位、四架各兩個位），仍然盡量唔連續同一個架。設定卡五個按鈕（短標題＋`<small>進階一：…</small>`），`renderLaundryDifficultySettings` 用 key／label 表；`__qa.startGame` 接受五個 key。
+- Tests：`tests/v123-laundry-four-racks-flowers-cards.test.mjs` 加兩架幾何／上身下身／階梯次序（16）；`tests/v71-laundry-order.test.mjs` 加兩架階梯、着燈跳過滿架（26）；v81 改用新 key 函數＋zones2／sort2 按鈕。Markers `v124-20261118-laundry-rack-ladder` ×3、`perf v124`、15 個 marker 測試 sed bump。
+- Validation：四組 **627** 個測試 0 fail（123+202+186+116）；`tools/checkjs.sh` OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 199 files；`__qa` 0；dist `index.html` 無 research／pilot。Playwright 9 張截圖零頁面錯誤，兩架／四架着燈模式連掛六件後清架（`/tmp/v124chk.js`），對照表 `ych_rehab_qa_artifacts/v124/v124-qa-contact-sheet.png`。
+- 待治療師確認：階梯次序係 着燈兩架 → 着燈四架 → 分類兩架 → 分類四架；如想分類兩架排喺着燈四架之前，只需改 `LAUNDRY_DIFFICULTY_KEYS` 同設定卡按鈕次序。
+
 ## 2026-11-18 v123 — 晾衫四架（選擇性注意）／插花放大／L6 麻雀啤牌同 L5 介面／碟上點心放大
 
 - Therapist（18 Nov 晚）四個要求：(1) Level 6 晾衫「較複雜」唔難，應該似雪櫃「着燈六格」咁練選擇性注意——四個架（切走架腳，架可以大啲）、指令叫病人夾去閃燈嗰個架；另一版本每個架一類衫。(2) 插花啲花要大啲，長者容易抓。(3) Level 6 麻雀／啤牌要同 Level 5 同一個遊戲介面。(4) Level 6 點心放上碟之後太細，長者睇唔到。

@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v123-20261118-laundry-four-racks";
+const CACHE_VERSION = "fthue-rehab-v124-20261118-laundry-rack-ladder";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

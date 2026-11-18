@@ -37,7 +37,9 @@ test('laundry offers basic and two four-rack modes with tremor-tolerant pickup',
   assert.match(source, /data-laundry-difficulty="sort"[\s\S]{0,180}分類四架/);
   assert.doesNotMatch(source, /data-laundry-difficulty="complex"/);
   assert.match(source, /laundryDifficulty: 'basic'/);
-  assert.match(source, /if\(d === 'complex' \|\| d === 'zones'\) return 'zones';/);
+  assert.match(source, /if\(d === 'complex' \|\| d === 'zones' \|\| d === 'zones2'\) return 'zones';/);
+  assert.match(source, /data-laundry-difficulty="zones2"[\s\S]{0,180}着燈兩架/);
+  assert.match(source, /data-laundry-difficulty="sort2"[\s\S]{0,180}分類兩架/);
   assert.match(source, /return isLaundryRackGame\(\) && laundryDifficultyMode\(\) === 'basic';/);
   assert.match(source, /return isLaundryRackGame\(\) && laundryDifficultyMode\(\) === 'zones';/);
   assert.match(source, /return isLaundryRackGame\(\) && laundryDifficultyMode\(\) === 'sort';/);

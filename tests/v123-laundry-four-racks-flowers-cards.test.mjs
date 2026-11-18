@@ -45,17 +45,58 @@ function constSource(name){
 
 /* ---------------- 1. Laundry: settings card ---------------- */
 
-test('v123 laundry difficulty card offers basic + zones + sort and no complex mode', () => {
-  assert.match(html, /data-laundry-difficulty="basic"[\s\S]{0,180}基本/);
-  assert.match(html, /data-laundry-difficulty="zones"[\s\S]{0,180}進階：着燈四架/);
-  assert.match(html, /data-laundry-difficulty="sort"[\s\S]{0,180}進階：分類四架/);
+test('v123 laundry difficulty card offers a 1 → 2 → 4 rack ladder and no complex mode', () => {
+  assert.match(html, /data-laundry-difficulty="basic"[\s\S]{0,180}基本：一架/);
+  assert.match(html, /data-laundry-difficulty="zones2"[\s\S]{0,180}着燈兩架/);
+  assert.match(html, /data-laundry-difficulty="zones"[\s\S]{0,180}着燈四架/);
+  assert.match(html, /data-laundry-difficulty="sort2"[\s\S]{0,180}分類兩架/);
+  assert.match(html, /data-laundry-difficulty="sort"[\s\S]{0,180}分類四架/);
+  // Buttons appear in ladder order: 1 rack → 2 lit → 4 lit → 2 sort → 4 sort.
+  const order = [...laundryCardHtml().matchAll(/data-laundry-difficulty="([a-z0-9]+)"/g)].map(m => m[1]);
+  assert.deepEqual(order, ['basic', 'zones2', 'zones', 'sort2', 'sort']);
+  assert.match(constSource('LAUNDRY_DIFFICULTY_KEYS'), /\['basic', 'zones2', 'zones', 'sort2', 'sort'\]/);
   assert.doesNotMatch(html, /data-laundry-difficulty="complex"/);
   assert.doesNotMatch(laundryCardHtml(), /較複雜/, 'laundry card no longer offers 較複雜');
   const mode = functionSource('laundryDifficultyMode');
-  assert.match(mode, /if\(d === 'complex' \|\| d === 'zones'\) return 'zones';/);
-  assert.match(mode, /if\(d === 'sort'\) return 'sort';/);
+  assert.match(mode, /if\(d === 'complex' \|\| d === 'zones' \|\| d === 'zones2'\) return 'zones';/);
+  assert.match(mode, /if\(d === 'sort' \|\| d === 'sort2'\) return 'sort';/);
+  const count = functionSource('laundryRackCount');
+  assert.match(count, /if\(k === 'zones2' \|\| k === 'sort2'\) return 2;/);
+  assert.match(count, /if\(k === 'zones' \|\| k === 'sort'\) return 4;/);
+  assert.match(count, /return 1;/);
+  assert.match(functionSource('laundryDifficultyKey'), /if\(d === 'complex'\) return 'zones';/);
   assert.match(functionSource('isLaundryFourRackGame'), /isLaundryZoneGame\(\) \|\| isLaundrySortGame\(\)/);
   assert.match(functionSource('isLaundryOrderGame'), /return isLaundryZoneGame\(\);/);
+});
+
+test('v123 two-rack sort splits 上身 (shirt, vest) from 下身 (jeans, skirt, boxers, socks)', () => {
+  const racks = constSource('LAUNDRY_SORT_RACKS_2');
+  const types = [...racks.matchAll(/laundry_[a-z]+/g)].map(m => m[0]);
+  assert.deepEqual([...types].sort(), ['laundry_boxers', 'laundry_jeans', 'laundry_shirt',
+    'laundry_skirt', 'laundry_socks', 'laundry_vest']);
+  assert.match(racks, /label:'上身', types:\['laundry_shirt','laundry_vest'\]/);
+  assert.match(racks, /label:'下身', types:\['laundry_jeans','laundry_skirt','laundry_boxers','laundry_socks'\]/);
+  assert.match(functionSource('laundrySortRacks'), /laundryRackCount\(\) === 2 \? LAUNDRY_SORT_RACKS_2 : LAUNDRY_SORT_RACKS/);
+});
+
+test('v123 two racks sit side by side (left / right half) above the garment on laptop, iPad and portrait', () => {
+  for(const [cw, ch] of [[1413, 653], [1180, 820], [1024, 1366]]){
+    const portrait = ch > cw;
+    const racks = multiRackTargets(cw, ch, portrait, false, 2);
+    assert.equal(racks.length, 2);
+    assert.deepEqual(racks.map(r => r.rackIndex), [0, 1]);
+    assert.equal(racks[0].y, racks[1].y, 'one row');
+    assert.ok(racks[0].x + racks[0].w / 2 < cw / 2 && racks[1].x - racks[1].w / 2 > cw / 2, 'left and right halves');
+    assert.ok(racks[0].x - racks[0].w / 2 >= 0 && racks[1].x + racks[1].w / 2 <= cw);
+    const garmentR = portrait ? Math.min(cw * 0.17, ch * 0.13) : Math.min(cw * 0.12, ch * 0.18);
+    const garmentTop = ch * (portrait ? 0.80 : 0.78) - garmentR;
+    for(const r of racks) assert.ok(r.y + r.h / 2 <= garmentTop && r.y - r.h / 2 >= (portrait ? 150 : 72) - 1);
+    // Two racks are never smaller than the four-rack version (landscape: taller).
+    const four = multiRackTargets(cw, ch, portrait, false, 4);
+    assert.ok(racks[0].h >= four[0].h && racks[0].w >= four[0].w);
+  }
+  const sorted = multiRackTargets(1413, 653, false, true, 2);
+  assert.deepEqual(sorted.map(r => r.sortLabel), ['上身', '下身']);
 });
 
 test('v123 sort categories cover all six garment types exactly once (內衣襪 groups vest/boxers/socks)', () => {
@@ -71,12 +112,14 @@ test('v123 sort categories cover all six garment types exactly once (內衣襪 g
 
 /* ---------------- 1. Laundry: four-rack geometry ---------------- */
 
-function fourRackTargets(cw, ch, portrait, sortMode){
+function multiRackTargets(cw, ch, portrait, sortMode, count = 4){
   const code = constSource('LAUNDRY_RACK_RAIL_FRAC') + '\n' + constSource('LAUNDRY_SORT_RACKS') + '\n' +
-    functionSource('laundryFourRackTargets') + '\nreturn laundryFourRackTargets(cw, ch, portrait);';
-  const fn = new Function('cw', 'ch', 'portrait', 'imgLaundryRack', 'isLaundrySortGame', code);
-  return fn(cw, ch, portrait, {naturalWidth: 779, naturalHeight: 453}, () => !!sortMode);
+    constSource('LAUNDRY_SORT_RACKS_2') + '\n' + functionSource('laundryRackRailFracFor') + '\n' +
+    functionSource('laundryMultiRackTargets') + '\nreturn laundryMultiRackTargets(cw, ch, portrait, count);';
+  const fn = new Function('cw', 'ch', 'portrait', 'count', 'imgLaundryRack', 'isLaundrySortGame', code);
+  return fn(cw, ch, portrait, count, {naturalWidth: 779, naturalHeight: 453}, () => !!sortMode);
 }
+const fourRackTargets = (cw, ch, portrait, sortMode) => multiRackTargets(cw, ch, portrait, sortMode, 4);
 
 test('v123 four racks form a 2×2 grid above the single garment lane on laptop, iPad landscape and portrait', () => {
   for(const [cw, ch] of [[1413, 653], [1180, 820], [820, 1180]]){
@@ -126,7 +169,7 @@ test('v123 racks draw only the rail part of the photo, flash the lit rack and fr
   assert.match(draw, /Math\.sin\(now ?\/ ?175\)/, 'same yellow pulse rhythm as the fridge zones');
   assert.match(draw, /laundryWrongRack/);
   assert.match(functionSource('drawLaundryRackTarget'), /typeof t\.rackIndex === 'number'[\s\S]{0,80}drawLaundryFourRackTarget\(ctx, t\)/);
-  assert.match(html, /if\(isLaundryFourRackGame\(\)\)\{[\s\S]{0,200}laundryFourRackTargets\(cw, ch, portrait\)/);
+  assert.match(html, /if\(isLaundryFourRackGame\(\)\)\{[\s\S]{0,200}laundryMultiRackTargets\(cw, ch, portrait, laundryRackCount\(\)\)/);
 });
 
 /* ---------------- 1. Laundry: no-penalty rejection ---------------- */
