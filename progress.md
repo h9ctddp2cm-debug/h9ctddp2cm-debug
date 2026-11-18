@@ -1702,6 +1702,17 @@ Original prompt: Fix Level 6–7 interactions: make light clothes-peg press dete
 - Validation：四組測試 590 個（113+171+135+171）587 pass / 3 skip / 0 fail（首次跑 group 3 因 dist 未 rebuild 有 1 個 dist-gated 子測試預期性 fail，rebuild 後重跑 `tests/v114-public-no-keepsake.test.mjs` 5/5 同全組 135/135 皆過）；`tools/checkjs.sh` 11 OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 199 files（同 v114 一致，純文字改動冇影響檔案數）；`rg -c "__qa" dist/public/index.html` → 0；dist 內三個版本標記／`留念`／`寫名、簽名`／`名字只保留在此頁` 全部確認正確（前者 3 處存在，後三者 0 個殘留）；Playwright 三個尺寸（筆電 1413×653、iPad 橫向 1180×820、iPad 直向 820×1180）載入公開版首頁，零 page error（`console.error` 同 `pageerror` 皆空）——因涉及文字本身係死碼，冇可達 UI 路徑可截圖顯示呢組文字，故 QA 重點放喺「頁面正常載入、冇 JS 錯誤」而非畫面文字截圖；`ych_rehab_qa_artifacts/v114b/v114b-qa-contact-sheet.png`（首頁三尺寸存底）。
 - Residual notes：`ADV_RULES` 入面其他主題（`cooking`/`mahjong`/`cards`/`laundry`）嘅 `lines[1]`/`tail`/`tts` 同樣係死碼（同一個讀取模式，只用 `lines[0]`），呢次冇一併清理，維持原文，因為稽核只針對插花一句；如日後同類稽核再揪出其他主題嘅殘留描述文字，可用同一手法直接改字（不涉及功能判斷）。
 
+## 2026-11-18 v123 — 晾衫四架（選擇性注意）／插花放大／L6 麻雀啤牌同 L5 介面／碟上點心放大
+
+- Therapist（18 Nov 晚）四個要求：(1) Level 6 晾衫「較複雜」唔難，應該似雪櫃「着燈六格」咁練選擇性注意——四個架（切走架腳，架可以大啲）、指令叫病人夾去閃燈嗰個架；另一版本每個架一類衫。(2) 插花啲花要大啲，長者容易抓。(3) Level 6 麻雀／啤牌要同 Level 5 同一個遊戲介面。(4) Level 6 點心放上碟之後太細，長者睇唔到。
+- 晾衫（只影響公開版 `isLaundryRackGame()`，研究模式不變）：「較複雜」改為兩個進階模式 —— `zones` 着燈四架：上方 2×2 四個架（只畫 `img/laundry_rack.png` 頂部橫桿，橫向切 44%／直向 62%），每張單一件衫，隨機一個架閃黃燈＋燈膽（`Math.sin(now/175)` 同雪櫃一樣）＋架上淡影，廣東話「請將X夾到閃燈嗰個晾衫架。」，連續唔會同一個架；`sort` 分類四架：架上標籤「上衣／褲／裙／內衣襪」（`LAUNDRY_SORT_RACKS`：恤衫→上衣；牛仔褲→褲；半截裙→裙；底衫＋孖煙通＋襪→內衣襪）。夾錯架 → 紅框 1.6 秒＋語音提示（1.5 秒冷卻），**唔扣分唔計錯**（`laundryRackRejectedWithoutPenalty()`，兩條 drop 路徑新增 `drop_laundry_rack_reject` 分支，同雪櫃一樣），衫返籃再試。兩個模式四架合共六件 → 拍手「好叻呀！晾好晒喇！」→ 1.8 秒後清架「又有新衫要晾喇！」。舊設定 `'complex'` 自動當 `'zones'`。幾何：`laundryFourRackTargets(cw,ch,portrait)`，筆電 1413×653 每架約 566×145。基本模式不變。
+- 插花：新 `flowersPaletteLayout(cw,ch,portrait,patientLarge)`。病人版（`isPatientVisualCueMode()`）橫向一行 8 格上限 180px（筆電約 161px；iPad 1180×820 放唔落 8 格 ≥150px 就改 6 格約 177px，只顯示頭 6 款），直向改兩行各 4 格（約 147px）；左邊留 165px 畀時間掣。研究／Level 3–4 版面不變（`gap*0.94`）。
+- L6 麻雀／啤牌：`LEVEL6_SHARED_LEVEL5_THEMES = ['flowers','cards','mahjong']`，`usesAdvancedThemeModule()` 喺 Level 6 都行 Level 5 模組（手牌→患側放牌區；指定花色→患側收牌區），只係手勢仍然係 Level 6 三指捏。舊「紅心牌堆／黑桃牌堆」雙堆引擎只留畀研究模式（`drawLevel6CardsChip` 先檢查模組）。Level 6 picker 模組改為每次成功夾起計 `grabCount`（同 L6 插花一致），Level 5 照舊計放置。`__qa.level67Layout()` 新增 cards／mahjong 分支，`level6ToolState().advancedPlaced`。
+- 點心：`DIMSUM_PLATE_ITEM_R_FRAC` 0.135 → **0.21**，`DIMSUM_PLATE_SLOTS` 重排十個位，碟上點心大約 1.55 倍。
+- Tests：新增 `tests/v123-laundry-four-racks-flowers-cards.test.mjs`（14）；更新 v71（四架語意：單件單、着燈架、錯架無罰、六件清架、分類）、v72（reject 分支 regex）、v76（花材 layout 函數）、v81（zones/sort 按鈕）、v101（L6 啤牌文字）、tracking-regression、level67-interactions（cards／mahjong 用 `advancedPlaced`）。Markers `v123-20261118-laundry-four-racks` ×3、`perf v123`、12 個 marker 測試 sed bump。
+- Validation：四組 **623** 個測試 0 fail（123+202+182+116，3 skip）；`tools/checkjs.sh` OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 199 files；`__qa` 0；dist `index.html` 無 research／pilot。Playwright 17 張截圖零頁面錯誤，對照表 `ych_rehab_qa_artifacts/v123/v123-qa-contact-sheet.png`。
+- 待治療師確認嘅兩個假設：① 「較複雜」直接被取代（唔保留做第四個選項）；② 第四個分類架叫「內衣襪」（底衫＋孖煙通＋襪），而唔係只有內衣。
+
 ## 2026-11-18 v122 — 校準頁清晰窗口放大（見到拇指／食指／中指）
 
 - Therapist（18 Nov 晚，Comet／Mac）：校準頁個清晰窗口（遮面模式下唯一清晰嘅部分）得一粒指尖咁細，想放大到見到頭三隻手指同衣夾。截圖入面手部模型將 21 點擠入咗一粒指尖（手太近、手腕出鏡、手喺面前面），窗口＝21 點外框＋餘裕，所以細到只見一隻手指。

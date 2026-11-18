@@ -127,9 +127,14 @@ test('v101 cards instruction chip is 3x (78px) in patient mode and sits between 
 
 test('v101 L6 card sorting shows a big two-pile chip and a matching instruction text', () => {
   const l6 = functionSource('drawLevel6CardsChip');
+  // v123: the public Level 6 cards game now runs the Level 5 module (which
+  // draws its own suit chip); the generic two-pile chip only remains for the
+  // research track, so the module check comes first.
+  assert.match(l6, /if\(usesAdvancedThemeModule\(\)\) return;/);
   assert.match(l6, /state\.level !== '67' \|\| state\.theme !== 'cards' \|\| !isPatientVisualCueMode\(\)/);
   assert.match(l6, /'♥ 放紅心牌堆　♠ 放黑桃牌堆'/);
   assert.match(html, /drawFridgeOrderBanner\(ctx, cw, ch\);\s*drawLevel6CardsChip\(ctx, cw, ch\);/);
   const text = functionSource('level5PatientInstructionText');
-  assert.match(text, /if\(state\.level === '67'\) return '拿起啤牌，放到相同花色牌堆。';/);
+  assert.doesNotMatch(text, /拿起啤牌，放到相同花色牌堆/);
+  assert.match(text, /return '拿起' \+ suit \+ '牌，放到' \+ side \+ '收牌區。';/);
 });

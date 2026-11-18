@@ -1848,9 +1848,13 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
             基本
             <small>任何衣物可放到晾衫架任何位置</small>
           </button>
-          <button class="option-btn" type="button" data-laundry-difficulty="complex">
-            較複雜
-            <small>依照晾衫單的衣物及數量</small>
+          <button class="option-btn" type="button" data-laundry-difficulty="zones">
+            進階：着燈四架
+            <small>四個晾衫架，夾到閃燈嗰個架先算啱</small>
+          </button>
+          <button class="option-btn" type="button" data-laundry-difficulty="sort">
+            進階：分類四架
+            <small>上衣、褲、裙、內衣襪各一個架</small>
           </button>
         </div>
       </div>
@@ -2669,7 +2673,7 @@ const state = {
   level: '4',
   shoulderTargetDeg: 60,
   shoulderExerciseMode: 'active', // Levels 3–4: active | assisted-stick
-  laundryDifficulty: 'basic', // Level 6 peg laundry: basic | complex
+  laundryDifficulty: 'basic', // Level 6 peg laundry: basic | zones | sort (v123; legacy 'complex' → zones)
   fridgeDifficulty: 'basic',  // v101 Level 5 fridge: basic（任何位置）| zones（着燈六格）
   dimsumDifficulty: 'basic', // Level 6 chopsticks dim sum: basic | complex order
   theme: 'dimsum',      // 活動 id
@@ -3019,8 +3023,7 @@ function level5PatientInstructionText(){
   if(state.theme === 'dimsum') return '拿起點心，放到上方同款蒸籠。';
   if(state.theme === 'flowers') return '拿起花朵，放到上方花盆。';
   if(state.theme === 'cards'){
-    // v101：Level 6「啤牌分類」係將全部牌放到同花色牌堆，唔係收集單一花色。
-    if(state.level === '67') return '拿起啤牌，放到相同花色牌堆。';
+    // v123：Level 6 啤牌改用 Level 5 同一介面（收集指定花色到患側收牌區）。
     const suit = (typeof cards !== 'undefined' && cards.suit) ? CARD_SUIT_NAME[cards.suit] : '';
     if(isSideCardGame){
       const side = activeAffectedSide() === 'right' ? '右邊' : '左邊';
@@ -5310,14 +5313,14 @@ const LEVEL6_TASKS = {
     id:'cards', theme:'cards',
     gameType:'pinch',
     label:'啤牌', labelEn:'Playing Cards',
-    hint:'患手三指張開，輕捏拿起啤牌，移到相同花色，再張開放下',
+    hint:'患手三指張開，輕捏拿起指定花色嘅啤牌，移到患側收牌區，再張開放下',
     actionCue:'三指張開 → 輕捏拿起 → 移動 → 張開放下',
   },
   mahjong:{
     id:'mahjong', theme:'mahjong',
     gameType:'pinch',
     label:'麻雀', labelEn:'Mahjong',
-    hint:'患手三指張開，輕捏拿起麻雀，移到相同圖案，再張開放下',
+    hint:'患手三指張開，輕捏拿起一組麻雀，移到患側放牌區，再張開放下',
     actionCue:'三指張開 → 輕捏拿起 → 移動 → 張開放下',
   },
   cooking:{
@@ -5437,10 +5440,11 @@ function renderLaundryDifficultySettings(){
   const enabled=isLaundryRackGame();
   card.hidden=!enabled;
   if(!enabled)return;
-  const basic=state.laundryDifficulty!=='complex';
-  document.getElementById('preview-laundry-difficulty').textContent=basic?'基本':'較複雜';
+  const mode=laundryDifficultyMode();
+  document.getElementById('preview-laundry-difficulty').textContent=
+    mode==='zones'?'進階：着燈四架':(mode==='sort'?'進階：分類四架':'基本');
   document.querySelectorAll('#laundryDifficultyOptions [data-laundry-difficulty]').forEach(button=>{
-    const selected=button.dataset.laundryDifficulty===state.laundryDifficulty;
+    const selected=button.dataset.laundryDifficulty===mode;
     button.classList.toggle('selected',selected);
     button.setAttribute('aria-pressed',selected?'true':'false');
   });
@@ -6007,7 +6011,8 @@ document.getElementById('shoulderExerciseModeOptions').addEventListener('click',
 document.getElementById('laundryDifficultyOptions').addEventListener('click',e=>{
   const button=e.target.closest('[data-laundry-difficulty]');
   if(!button||!isLaundryRackGame())return;
-  state.laundryDifficulty=button.dataset.laundryDifficulty==='complex'?'complex':'basic';
+  const pick=button.dataset.laundryDifficulty;
+  state.laundryDifficulty=(pick==='zones'||pick==='sort')?pick:'basic';
   renderLaundryDifficultySettings();
 });
 document.getElementById('fridgeDifficultyOptions').addEventListener('click',e=>{
@@ -10364,10 +10369,12 @@ const DIMSUM_ORDER_MENU = [
   { type:'chop_siumai',  label:'燒賣',   img:()=>imgSiumai },
 ];
 // 碟上擺位（相對碟中心嘅比例座標），輪流使用避免重疊
+// v123：點心放大後（半徑 = 碟短邊 21%），擺位向碟邊散開，六件以內唔會完全疊埋。
+const DIMSUM_PLATE_ITEM_R_FRAC = 0.21;
 const DIMSUM_PLATE_SLOTS = [
-  {fx:-0.16,fy:-0.05},{fx:0.11,fy:-0.09},{fx:0.24,fy:0.05},
-  {fx:-0.28,fy:0.07},{fx:-0.03,fy:0.09},{fx:0.14,fy:0.19},
-  {fx:-0.18,fy:0.20},{fx:0.02,fy:-0.20},{fx:0.28,fy:0.19},{fx:-0.30,fy:-0.14},
+  {fx:-0.22,fy:-0.12},{fx:0.20,fy:-0.14},{fx:0.30,fy:0.14},
+  {fx:-0.30,fy:0.16},{fx:0.00,fy:0.24},{fx:0.00,fy:-0.26},
+  {fx:-0.12,fy:0.04},{fx:0.14,fy:0.02},{fx:0.30,fy:-0.02},{fx:-0.30,fy:-0.02},
 ];
 let dimsumOrder = null;          // {lines:[{type,label,need,placed}], done}
 let dimsumPlateContents = [];    // [{img, fx, fy}]
@@ -10495,14 +10502,59 @@ let laundryOrderTimerId = null;
 let laundryRackClearTimerId = null;
 let laundryBatchesCompleted = 0;
 let laundryOrderBannerRect = null;
-function isLaundryOrderGame(){
-  return isLaundryRackGame() && state.laundryDifficulty === 'complex';
+/* ---- v123 四架晾衫（進階）----
+   「較複雜（晾衫單）」改為兩個選擇性注意訓練版本（參考 Level 5 雪櫃「着燈六格」）：
+   zones  着燈四架：上方 2×2 四個晾衫架（只顯示架頂橫桿部分，架可以畫大啲），
+          每次隨機一個架閃黃燈＋燈膽圖示，架上有該件衫嘅淡影。廣東話指令：
+          「請將半截裙夾到閃燈嗰個晾衫架」。夾錯架 → 唔扣分、唔計錯，衫返落籃再試。
+   sort   分類四架：四個架分別標示「上衣／褲／裙／內衣襪」，病人要揀啱類別嘅架。
+   兩個版本都係每次畫面只出一件衫；四個架合共晾滿六件 → 拍手、清架、再嚟。
+   舊設定值 'complex' 自動當作 'zones'。研究模式（pilot）唔行呢個玩法。 */
+const LAUNDRY_FOUR_RACK_CAPACITY = 6;
+// 每個架三個掛衫位（相對架闊度）；偏右，留空架左端畀燈膽圖示／分類標籤。
+const LAUNDRY_FOUR_RACK_SLOTS = [-0.06, 0.16, 0.38];
+// 只畫晾衫架相片嘅頂部（橫桿），橫向切 44%（779×453 → 779×199），直向保留多啲腳（62%）。
+const LAUNDRY_RACK_RAIL_FRAC = { landscape:0.44, portrait:0.62 };
+const LAUNDRY_SORT_RACKS = [
+  { key:'tops',      label:'上衣',   types:['laundry_shirt'] },
+  { key:'trousers',  label:'褲',     types:['laundry_jeans'] },
+  { key:'skirt',     label:'裙',     types:['laundry_skirt'] },
+  { key:'underwear', label:'內衣襪', types:['laundry_vest','laundry_boxers','laundry_socks'] },
+];
+let laundryLitRack = -1;          // zones 模式：而家閃燈嘅架（0..3）
+let laundryWrongRack = -1;        // 最近一次夾錯嘅架（短暫紅框）
+let laundryWrongUntil = 0;
+let laundryWrongSpokenAt = -Infinity;
+function laundryDifficultyMode(){
+  const d = state.laundryDifficulty;
+  if(d === 'complex' || d === 'zones') return 'zones';
+  if(d === 'sort') return 'sort';
+  return 'basic';
 }
 function isLaundryRackGame(){
   return state.level === '67' && state.theme === 'peg_laundry' && !research.active;
 }
 function isLaundryBasicGame(){
-  return isLaundryRackGame() && state.laundryDifficulty !== 'complex';
+  return isLaundryRackGame() && laundryDifficultyMode() === 'basic';
+}
+function isLaundryZoneGame(){
+  return isLaundryRackGame() && laundryDifficultyMode() === 'zones';
+}
+function isLaundrySortGame(){
+  return isLaundryRackGame() && laundryDifficultyMode() === 'sort';
+}
+function isLaundryFourRackGame(){
+  return isLaundryZoneGame() || isLaundrySortGame();
+}
+// 着燈四架沿用「晾衫單」機制（每張單只有一件衫、數量 1），令畫面上嗰件衫一定係指令嗰件。
+function isLaundryOrderGame(){
+  return isLaundryZoneGame();
+}
+function laundrySortRackFor(type){
+  return LAUNDRY_SORT_RACKS.findIndex(r=>r.types.includes(type));
+}
+function laundryRackRailFrac(){
+  return isPortrait() ? LAUNDRY_RACK_RAIL_FRAC.portrait : LAUNDRY_RACK_RAIL_FRAC.landscape;
 }
 function resetLaundryOrderGame(){
   laundryOrderBannerRect = null;
@@ -10511,12 +10563,24 @@ function resetLaundryOrderGame(){
   laundryOrdersCompleted = 0;
   laundryBatchesCompleted = 0;
   laundryOrderCelebrateUntil = 0;
+  laundryLitRack = -1;
+  laundryWrongRack = -1;
+  laundryWrongUntil = 0;
+  laundryWrongSpokenAt = -Infinity;
   if(laundryOrderTimerId){ clearTimeout(laundryOrderTimerId); laundryOrderTimerId = null; }
   if(laundryRackClearTimerId){ clearTimeout(laundryRackClearTimerId); laundryRackClearTimerId = null; }
 }
 function laundryOrderText(){
   if(!laundryOrder) return '';
+  if(isLaundryZoneGame()){
+    const line = laundryOrder.lines[0];
+    return '請將' + (line ? line.label : '衣物') + '夾到閃燈嗰個晾衫架。';
+  }
   return '請將' + laundryOrder.lines.map(l=>l.need + l.unit + l.label).join('、') + '放上晾衫架。';
+}
+function laundryPickLitRack(){
+  const choices = [0,1,2,3].filter(i=>i !== laundryLitRack);
+  return choices[Math.floor(Math.random() * choices.length)];
 }
 function newLaundryOrder(){
   const pool = LAUNDRY_ORDER_MENU.slice();
@@ -10524,24 +10588,14 @@ function newLaundryOrder(){
     const j = Math.floor(Math.random() * (i + 1));
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
-  // 第一張單只晾一款衣物（簡單啲）；之後每張單 2–3 款、每款 1–3 件，
-  // 總件數上限唔會超過六個掛衫位（v101）。
-  const lineCount = laundryOrdersCompleted === 0 ? 1 : 2 + Math.floor(Math.random() * 2);
-  const lines = pool.slice(0, lineCount).map(m=>({
-    type:m.type, label:m.label, unit:m.unit,
-    need: lineCount === 1 ? 3 : 1 + Math.floor(Math.random() * 3), placed:0,
-  }));
-  let guard = 0;
-  while(lines.reduce((sum, l)=>sum + l.need, 0) > LAUNDRY_RACK_CAPACITY && guard++ < 20){
-    const biggest = lines.reduce((a, b)=>(b.need > a.need ? b : a), lines[0]);
-    biggest.need = Math.max(1, biggest.need - 1);
-  }
-  laundryOrder = { lines, done: false };
-  laundryRackContents = [];
+  // v123 着燈四架：每張單一件衫（數量 1）＋ 隨機換一個架着燈（唔會連續同一個架）。
+  const m = pool[0];
+  const lines = [{ type:m.type, label:m.label, unit:m.unit, need:1, placed:0 }];
+  laundryOrder = { lines, done:false };
+  laundryLitRack = laundryPickLitRack();
   laundryOrderCelebrateUntil = 0;
-  const intro = laundryOrdersCompleted > 0 ? LAUNDRY_NEW_BATCH_TEXT : '';
-  try{ speakCantonese(intro + laundryOrderText(), {rate:.82}); }catch(e){}
-  // 換新單後，畫面上可能仍是舊單嘅衣物：確保至少有一件係新單需要嘅
+  try{ speakCantonese(laundryOrderText(), {rate:.82}); }catch(e){}
+  // 換新單後，畫面上可能仍是舊單嘅衣物：確保係新單需要嗰件
   if(foods.length) ensureFoodCount();
   return laundryOrder;
 }
@@ -10553,23 +10607,60 @@ function laundryOrderAccepts(item){
   const line = laundryOrderLineFor(item && item.targetType);
   return !!line && line.placed < line.need;
 }
-function laundryOrderPlace(item){
+function laundryRackIndexOf(rack){
+  return (rack && typeof rack.rackIndex === 'number') ? rack.rackIndex : -1;
+}
+function laundryNoteWrongRack(rackIndex, msg){
+  const now = nowMs();
+  laundryWrongRack = rackIndex;
+  laundryWrongUntil = now + 1600;
+  if(now - laundryWrongSpokenAt >= 1500){
+    laundryWrongSpokenAt = now;
+    try{ speakCantonese(msg, {rate:.9}); }catch(e){}
+  }
+}
+// 四架模式：掛上第 rackIndex 個架；合共滿六件 → 拍手、短暫展示、清空再嚟。
+function laundryFourRackHang(item, rackIndex){
+  if(laundryRackClearTimerId){
+    clearTimeout(laundryRackClearTimerId); laundryRackClearTimerId = null;
+    laundryRackContents = [];
+    laundryOrderCelebrateUntil = 0;
+  }
+  const onThisRack = laundryRackContents.filter(c=>c.rack === rackIndex).length;
+  const fx = LAUNDRY_FOUR_RACK_SLOTS[onThisRack % LAUNDRY_FOUR_RACK_SLOTS.length];
+  laundryRackContents.push({ img:(item && item.img) || null, fx, rack:rackIndex });
+  laundryWrongRack = -1; laundryWrongUntil = 0;
+  if(laundryRackContents.length >= LAUNDRY_FOUR_RACK_CAPACITY){
+    laundryBatchesCompleted++;
+    laundryOrderCelebrateUntil = nowMs() + LAUNDRY_RACK_CLEAR_DELAY_MS;
+    try{ playApplauseSound(); }catch(e){}
+    try{ speakCantonese('好叻呀！晾好晒喇！', {rate:.85}); }catch(e){}
+    laundryRackClearTimerId = setTimeout(()=>{
+      laundryRackClearTimerId = null;
+      if(!isLaundryFourRackGame() || !state.running) return;
+      laundryRackContents = [];
+      laundryOrderCelebrateUntil = 0;
+      try{ speakCantonese(LAUNDRY_NEW_BATCH_TEXT, {rate:.85}); }catch(e){}
+    }, LAUNDRY_RACK_CLEAR_DELAY_MS);
+    return true;
+  }
+  return false;
+}
+function laundryOrderPlace(item, rack){
   const line = laundryOrderLineFor(item && item.targetType);
   if(!line) return;
   line.placed++;
-  const fx = LAUNDRY_RACK_SLOTS[laundryRackContents.length % LAUNDRY_RACK_SLOTS.length];
-  laundryRackContents.push({ img: (item && item.img) || null, fx });
+  const batchFull = laundryFourRackHang(item, laundryRackIndexOf(rack));
   if(laundryOrder.lines.every(l=>l.placed >= l.need)){
     laundryOrder.done = true;
     laundryOrdersCompleted++;
-    laundryOrderCelebrateUntil = nowMs() + 2600;
-    try{ playApplauseSound(); }catch(e){}
-    try{ speakCantonese('好叻呀！晾好晒喇！', {rate:.85}); }catch(e){}
+    // 下一張單：滿六件慶祝時等清架先出；否則即刻出（唔重複「好叻呀」，免得每件都講）。
     if(laundryOrderTimerId) clearTimeout(laundryOrderTimerId);
+    const delay = batchFull ? LAUNDRY_RACK_CLEAR_DELAY_MS + 200 : 450;
     laundryOrderTimerId = setTimeout(()=>{
       laundryOrderTimerId = null;
       if(isLaundryOrderGame() && state.running) newLaundryOrder();
-    }, 2600);
+    }, delay);
   }
 }
 function laundryBasicPlace(item){
@@ -10597,12 +10688,39 @@ function laundryBasicPlace(item){
     }, LAUNDRY_RACK_CLEAR_DELAY_MS);
   }
 }
-function laundryRackAccepts(item){
-  return isLaundryBasicGame() ? !!item : laundryOrderAccepts(item);
+// 放手喺某個架：係咪接受。四架模式夾錯架 → 回傳 false，並記低「錯架」（唔扣分，見 drop 邏輯）。
+function laundryRackAccepts(item, rack){
+  if(!item) return false;
+  if(isLaundryBasicGame()) return true;
+  const idx = laundryRackIndexOf(rack);
+  if(isLaundryZoneGame()){
+    if(!laundryOrderAccepts(item)) return false;
+    if(idx !== laundryLitRack){
+      laundryNoteWrongRack(idx, '要夾喺閃燈嗰個架呀。');
+      return false;
+    }
+    return true;
+  }
+  if(isLaundrySortGame()){
+    const want = laundrySortRackFor(item.targetType);
+    if(want < 0) return false;
+    if(idx !== want){
+      laundryNoteWrongRack(idx, (item.label || '呢件') + '係' + LAUNDRY_SORT_RACKS[want].label +
+        '，要夾喺「' + LAUNDRY_SORT_RACKS[want].label + '」嗰個架呀。');
+      return false;
+    }
+    return true;
+  }
+  return laundryOrderAccepts(item);
 }
-function laundryRackPlace(item){
+function laundryRackPlace(item, rack){
   if(isLaundryBasicGame()) laundryBasicPlace(item);
-  else laundryOrderPlace(item);
+  else if(isLaundrySortGame()) laundryFourRackHang(item, laundryRackIndexOf(rack));
+  else laundryOrderPlace(item, rack);
+}
+// 四架模式夾錯架：唔扣分、唔計錯（選擇性注意係訓練一部分），衫返籃再試。
+function laundryRackRejectedWithoutPenalty(){
+  return isLaundryFourRackGame();
 }
 /* ---- Level 5 雪櫃收納遊戲（v72）----
    情境：買完餸返屋企，將購物袋入面嘅食物逐樣放入雪櫃。
@@ -11711,6 +11829,11 @@ function setupTargets(){
       style:'bigplate',x:cw/2,y:ch-th/2-14,w:tw,h:th,color:'#2E6DA4' }];
     return;
   }
+  if(isLaundryFourRackGame()){
+    // v123 四架晾衫：上方 2×2 四個架（只顯示架頂橫桿部分），下方係衣物籃位。
+    targets = laundryFourRackTargets(cw, ch, portrait);
+    return;
+  }
   if(isLaundryRackGame()){
     // v77 晾衫單模式：晾衫架固定在上半屏，來源衣物固定在下半屏。
     // 右側保留大型直向手勢提示的淨空區。
@@ -12460,7 +12583,7 @@ function updateFramePerfOverlay(now){
     framePerf.overlayEl = el;
   }
   const p = framePerfSnapshot();
-  el.textContent = `perf v122  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
+  el.textContent = `perf v123  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
     + `鏡頭 ${p.video[0]}×${p.video[1]}  畫布 ${p.canvas[0]}×${p.canvas[1]}  dpr ${p.dpr}  手模型 ${p.handDelegate || '-'}\n`
     + `手 ${p.hand.hands} 隻  標籤 ${p.hand.label || '-'} ${p.hand.score}  接納 ${p.hand.path || '-'}  嚴格 ${p.hand.strict} 連續 ${p.hand.continuity} 單手 ${p.hand.lone} 拒絕 ${p.hand.rejected}\n`
     + `左右手檢查 ${p.hand.check === 'off' ? '關' : '開'}  鎖定手形 ${p.hand.lockSize || '-'}  大小拒絕 ${p.hand.sizeRejected}  遠處拒絕 ${p.hand.farRejected}`
@@ -13885,13 +14008,13 @@ function updateGameLogic(){
           const dwellDropMatched = dwellDimsumOrderDrop
             ? dimsumBowlAccepts(heldItem)
             : (dwellLaundryOrderDrop
-              ? laundryRackAccepts(heldItem)
+              ? laundryRackAccepts(heldItem, onPlate)
               : (dwellFridgeDrop
                 ? fridgeTryPlace(heldItem, heldPoint.x, heldPoint.y, onPlate)
                 : onPlate.type === heldItem.targetType));
           if(dwellDropMatched){
             if(dwellDimsumOrderDrop) dimsumBowlPlace(heldItem);
-            else if(dwellLaundryOrderDrop) laundryRackPlace(heldItem);
+            else if(dwellLaundryOrderDrop) laundryRackPlace(heldItem, onPlate);
             score += 10; correctCount++;
             wrongStreak = 0;
             triggerFeedback(true);
@@ -13905,6 +14028,10 @@ function updateGameLogic(){
             // v72 相撞／出界：唔扣分、唔計錯（規劃擺位係訓練一部分），食物返購物袋再試
             triggerFeedback(false);
             researchLog('drop_fridge_reject', {item:heldItem.label});
+          } else if(dwellLaundryOrderDrop && laundryRackRejectedWithoutPenalty()){
+            // v123 四架晾衫夾錯架：唔扣分、唔計錯，衫返籃再試
+            triggerFeedback(false);
+            researchLog('drop_laundry_rack_reject', {item:heldItem.label});
           } else {
             score = Math.max(0, score - 3);
             wrongStreak++; totalWrong++;
@@ -14164,6 +14291,8 @@ function publicPatientVoiceTarget(item,zones){
   const itemType=item?.targetType||item?.type||'';
   return list.find(z=>z.type===itemType)
     || (isDimsumOrderGame()?list.find(z=>z.type==='dimsum_plate'):null)
+    || (isLaundryZoneGame()?list.find(z=>z.type==='laundry_rack'&&z.rackIndex===laundryLitRack):null)
+    || (isLaundrySortGame()?list.find(z=>z.type==='laundry_rack'&&z.rackIndex===laundrySortRackFor(itemType)):null)
     || (isLaundryRackGame()?list.find(z=>z.type==='laundry_rack'):null)
     || null;
 }
@@ -14536,13 +14665,13 @@ function updateGraspLogic(){
           const dropMatched = dimsumOrderDrop
             ? dimsumBowlAccepts(heldItem)
             : (laundryOrderDrop
-              ? laundryRackAccepts(heldItem)
+              ? laundryRackAccepts(heldItem, onPlate)
               : (fridgeDrop
                 ? fridgeTryPlace(heldItem, cursorX, cursorY, onPlate)
                 : heldItem.targetType === onPlate.type));
           if(dropMatched){
             if(dimsumOrderDrop) dimsumBowlPlace(heldItem);
-            else if(laundryOrderDrop) laundryRackPlace(heldItem);
+            else if(laundryOrderDrop) laundryRackPlace(heldItem, onPlate);
             score += 10; correctCount++;
             pilotBump('correct');
             wrongStreak = 0;
@@ -14558,6 +14687,10 @@ function updateGraspLogic(){
             // v72 相撞／出界：唔扣分、唔計錯（規劃擺位係訓練一部分），食物返購物袋再試
             triggerFeedback(false);
             researchLog('drop_fridge_reject', {item:heldItem.label});
+          } else if(laundryOrderDrop && laundryRackRejectedWithoutPenalty()){
+            // v123 四架晾衫夾錯架：同雪櫃一樣唔扣分、唔計錯，衫返籃再試
+            triggerFeedback(false);
+            researchLog('drop_laundry_rack_reject', {item:heldItem.label});
           } else {
             score = Math.max(0, score - 3);
             wrongStreak++; totalWrong++;
@@ -14729,7 +14862,8 @@ function drawBigPlateTarget(ctx, t){
     drawRiceBowl(ctx, t.x, t.y, Math.min(t.w, t.h) * 0.45);
   }
   // 已放好嘅點心（等病人知道自己上咗幾多件）
-  const itemR = Math.min(plateW, plateH) * 0.135;
+  // v123：由碟短邊 13.5% 放大到 21%（直徑約為碟嘅 42%），長者先睇得清碟上嘅點心。
+  const itemR = Math.min(plateW, plateH) * DIMSUM_PLATE_ITEM_R_FRAC;
   for(const p of dimsumPlateContents){
     const px = t.x + p.fx * plateW, py = t.y + p.fy * plateH;
     if(p.img && p.img.complete && p.img.naturalWidth > 0){
@@ -14830,7 +14964,128 @@ function drawDimsumOrderBanner(ctx, cw, ch){
 }
 
 // v71 晾衫單：大型白色晾衫架（真實相片）＋已晾好嘅衣物逐件累積掛喺架頂橫桿
+// v123 四架晾衫目標位置（獨立函數方便測試）。
+// 架嘅高度由「HUD 按鈕列之下」到「衣物生成帶之上」嘅空間決定，兩行各佔一半；
+// 架闊度上限 46% 畫面闊（兩個架並排中間留空）。rackIndex：0 左上、1 右上、2 左下、3 右下。
+function laundryFourRackTargets(cw, ch, portrait){
+  const frac = portrait ? LAUNDRY_RACK_RAIL_FRAC.portrait : LAUNDRY_RACK_RAIL_FRAC.landscape;
+  const natW = imgLaundryRack.naturalWidth > 0 ? imgLaundryRack.naturalWidth : 779;
+  const natH = imgLaundryRack.naturalHeight > 0 ? imgLaundryRack.naturalHeight : 453;
+  const railRatio = natW / (natH * frac);
+  const hudTop = portrait ? Math.max(ch * 0.13, 150) : Math.max(ch * 0.10, 72);
+  // 單件衫擺喺 ch*0.80（直向）／0.78（橫向），半徑上限同 makeFoodAt 嘅 laundryMaxR 一致。
+  const garmentR = portrait ? Math.min(cw * 0.17, ch * 0.13) : Math.min(cw * 0.12, ch * 0.18);
+  const garmentTop = ch * (portrait ? 0.80 : 0.78) - garmentR;
+  const bottomLimit = garmentTop - 16;
+  const rowGap = 14, colGap = Math.max(16, cw * 0.03);
+  const available = Math.max(120, bottomLimit - hudTop);
+  let th = (available - rowGap) / 2;
+  let tw = th * railRatio;
+  const maxW = Math.min(cw * 0.46, (cw - colGap) / 2 - 8);
+  if(tw > maxW){ tw = maxW; th = tw / railRatio; }
+  const extra = available - (2 * th + rowGap);
+  const y0 = hudTop + extra / 2 + th / 2;
+  const xs = [cw / 2 - colGap / 2 - tw / 2, cw / 2 + colGap / 2 + tw / 2];
+  const ys = [y0, y0 + th + rowGap];
+  const sortMode = isLaundrySortGame();
+  const out = [];
+  for(let i = 0; i < 4; i++){
+    const sortRack = sortMode ? LAUNDRY_SORT_RACKS[i] : null;
+    out.push({ type:'laundry_rack', label: sortRack ? sortRack.label + '架' : '晾衫架' + (i + 1),
+      img:imgLaundryRack, drawIcon:null, style:'rack', rackIndex:i,
+      sortKey: sortRack ? sortRack.key : null, sortLabel: sortRack ? sortRack.label : '',
+      x:xs[i % 2], y:ys[Math.floor(i / 2)], w:tw, h:th, color:'#2E6DA4' });
+  }
+  return out;
+}
+// 四架模式其中一個架（只畫相片頂部橫桿；着燈／錯架／分類標籤／已晾衣物／衫影）
+function drawLaundryFourRackTarget(ctx, t){
+  const cw = gameCanvas.width, ch = gameCanvas.height;
+  const img = t.img;
+  const hasImg = img && img.complete && img.naturalWidth > 0;
+  const frac = laundryRackRailFrac();
+  const rw = t.w, rh = t.h;
+  const x0 = t.x - rw / 2, y0 = t.y - rh / 2;
+  const now = nowMs();
+  const lit = isLaundryZoneGame() && t.rackIndex === laundryLitRack;
+  const wrong = t.rackIndex === laundryWrongRack && now < laundryWrongUntil;
+  ctx.save();
+  // 底色：平時淺藍灰；着燈時黃色脈動（同雪櫃着燈格一致）；夾錯時紅框。
+  const pulse = 0.5 + 0.5 * Math.sin(now / 175);
+  ctx.fillStyle = lit
+    ? `rgba(255, 214, 0, ${(0.30 + 0.30 * pulse).toFixed(3)})`
+    : 'rgba(218,232,238,0.88)';
+  ctx.strokeStyle = wrong ? 'rgba(214,40,40,0.95)'
+    : (lit ? `rgba(255, 160, 0, ${(0.60 + 0.40 * pulse).toFixed(3)})` : 'rgba(46,109,164,0.48)');
+  ctx.lineWidth = (lit || wrong) ? 10 : Math.max(3, Math.min(rw, rh) * 0.02);
+  rrPath(ctx, x0 - 12, y0 - 12, rw + 24, rh + 24, 22);
+  ctx.fill();
+  ctx.stroke();
+  if(hasImg){
+    const sh = img.naturalHeight * frac;
+    ctx.drawImage(img, 0, 0, img.naturalWidth, sh, x0, y0, rw, rh);
+  } else {
+    drawDryingPole(ctx, t.x, t.y, Math.min(rw, rh) * 0.45);
+  }
+  // 着燈：左上角燈膽圖示
+  if(lit){
+    const bulbR = Math.max(16, Math.min(rw, rh) * 0.14);
+    const bx = x0 + bulbR * 1.4, by = y0 + bulbR * 1.3;
+    ctx.fillStyle = `rgba(255, 244, 150, ${(0.75 + 0.25 * pulse).toFixed(3)})`;
+    ctx.beginPath(); ctx.arc(bx, by, bulbR, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#B8860B'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(bx, by, bulbR, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = '#8B6508';
+    ctx.fillRect(bx - bulbR * 0.4, by + bulbR, bulbR * 0.8, bulbR * 0.55);
+  }
+  // 分類標籤（架左端入面嘅大字牌；唔放架頂，免得右上角 HUD 按鈕遮住）
+  if(isLaundrySortGame() && t.sortLabel){
+    const fs = Math.max(22, Math.round(Math.min(rw * 0.075, rh * 0.34)));
+    ctx.font = 'bold ' + fs + 'px "PingFang TC","Noto Sans TC",sans-serif';
+    const tw = ctx.measureText(t.sortLabel).width + fs * 1.0;
+    const tagH = fs * 1.5, tagX = x0 + rw * 0.02, tagY = t.y - tagH / 2;
+    ctx.fillStyle = 'rgba(255,255,255,0.97)';
+    ctx.strokeStyle = wrong ? 'rgba(214,40,40,0.95)' : '#2E6DA4';
+    ctx.lineWidth = 4;
+    rrPath(ctx, tagX, tagY, tw, tagH, tagH / 2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#1a3a5c';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(t.sortLabel, tagX + tw / 2, tagY + tagH / 2 + 1);
+  }
+  // 着燈架上該件衫嘅淡影（提示要夾咩、夾去邊）
+  if(lit && laundryOrder && !laundryOrder.done && laundryOrder.lines[0]){
+    const def = LAUNDRY_ORDER_DEFS.find(d=>d.type === laundryOrder.lines[0].type);
+    const gi = def ? def.img() : null;
+    if(gi && gi.complete && gi.naturalWidth > 0){
+      let dh = Math.min(rh * 0.95, ch * 0.16), dw = dh * gi.naturalWidth / gi.naturalHeight;
+      if(dw > rw * 0.30){ dw = rw * 0.30; dh = dw * gi.naturalHeight / gi.naturalWidth; }
+      ctx.globalAlpha = 0.38;
+      drawImageScaled(ctx, gi, t.x - dw / 2, y0 + rh * 0.08, dw, dh);
+      ctx.globalAlpha = 1;
+    }
+  }
+  // 已晾好嘅衣物：由橫桿掛落嚟
+  const railY = y0 + rh * 0.08;
+  for(const c of laundryRackContents){
+    if(c.rack !== t.rackIndex) continue;
+    if(c.img && c.img.complete && c.img.naturalWidth > 0){
+      const iw = c.img.naturalWidth, ih = c.img.naturalHeight;
+      let dh = Math.min(rh * 0.95, ch * 0.16), dw = dh * iw / ih;
+      const maxW = rw * 0.21;
+      if(dw > maxW){ dw = maxW; dh = dw * ih / iw; }
+      drawImageScaled(ctx, c.img, t.x + c.fx * rw - dw / 2, railY, dw, dh);
+    }
+  }
+  if(t._hover){
+    ctx.strokeStyle = t.color || '#2E6DA4';
+    ctx.lineWidth = 8;
+    rrPath(ctx, x0 - 10, y0 - 10, rw + 20, rh + 20, 22);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
 function drawLaundryRackTarget(ctx, t){
+  if(typeof t.rackIndex === 'number'){ drawLaundryFourRackTarget(ctx, t); return; }
   ctx.save();
   let rw = t.w, rh = t.h;
   if(t.img && t.img.complete && t.img.naturalWidth > 0){
@@ -15688,6 +15943,7 @@ function endGame(endReason){
 
 const ADV_THEMES = ['mahjong','cards','cooking','flowers','laundry'];
 function isAdvTheme(id){ return ADV_THEMES.indexOf(id || state.theme) >= 0; }
+const LEVEL6_SHARED_LEVEL5_THEMES = ['flowers','cards','mahjong'];
 function usesAdvancedThemeModule(id){
   // Level 3 must preserve one standardised movement for every visual theme:
   // centre pickup, affected-side lateral slide, destination dwell. The original
@@ -15696,7 +15952,10 @@ function usesAdvancedThemeModule(id){
   const theme=id||state.theme;
   // Level 6 Flowers intentionally reuses the public Level 5 arrangement layout;
   // its state.gameType remains the Level 6 selected-hand tripod pinch.
-  if(isLevel6() && theme==='flowers') return true;
+  // v123: Level 6 Mahjong and Playing Cards also reuse the Level 5 modules
+  // (hand of tiles → side 放牌區; suit chip → side 收牌區) so both levels show
+  // the same game interface. Only the gesture differs (Level 6 tripod pinch).
+  if(isLevel6() && LEVEL6_SHARED_LEVEL5_THEMES.includes(theme)) return true;
   return !isGrossTabletop() && isAdvTheme(theme);
 }
 /* 窄螢幕（手機直度）：引導面板較高，遊戲元素要向下讓位 */
@@ -16452,6 +16711,9 @@ const picker = {
       if(now - this.graspStart >= holdMs){
         this.heldId = best.id; this.armed = false; this.relStart = 0;
         this.relPauseAt = 0; this.relLastOpenAt = 0; this.pct = 0;
+        // v123: Level 6 mahjong/cards count each confirmed pick-up (same as
+        // Level 6 flowers); Level 5 keeps counting placements instead.
+        if(isLevel6()) grabCount++;
         updatePublicPatientVoiceGuide({
           phase:'pickup',item:best,zones:releaseZone?[releaseZone]:[],
         });
@@ -17661,7 +17923,7 @@ function mjPanel(){
     goal: mj.msg || (isLevel4Tabletop()
       ? '在牌上停住，沿中線向前滑，再在放牌區停住。'
       : (state.level === '67'
-        ? level67ToolProfile().actionCue + ' · 移到患側外方放牌區'
+        ? activeLevel67ToolProfile().actionCue + ' · 移到患側外方放牌區'
         : '從中間握住牌，移到患側外方放牌區，再張開手。')),
     metric: nextTierFan ? '下一個目標：累積 ' + nextTierFan + ' 番' : '已達上限級別',
     pct: 1 - mjNeed() / Math.max(1, (14 - mj.def.base.length)),
@@ -17754,7 +18016,8 @@ function mjWinRound(res){
   mj.fanTotal += res.fan;
   mj.bestTier = tier.label;
   score += res.fan * 10;
-  correctCount++; grabCount++;
+  correctCount++;
+  if(!isLevel6()) grabCount++;
   updateHUD();
 
   const routes = mjOtherRoutes(res);
@@ -18118,7 +18381,7 @@ function cardsPanel(){
     goal: cards.msg || (isLevel4Tabletop()
       ? '在牌上停住，沿中線向前滑，再在放牌區停住。'
       : (state.level === '67'
-        ? level67ToolProfile().actionCue + ' · 移到患側外方放牌區'
+        ? activeLevel67ToolProfile().actionCue + ' · 移到患側外方放牌區'
         : '從中間拿牌，移到患側外方放牌區，再張開手。')),
     metric:'下一階段：完成 ' + Math.max(0, (cardsTierFor(cards.rounds) === 3 ? 0 :
       [2,4,6][cardsTierFor(cards.rounds)] - cards.rounds)) + ' 輪後升級',
@@ -18153,7 +18416,8 @@ function cardsUpdate(){
     cards.got++; cards.combo++;
     if(cards.combo > cards.bestCombo) cards.bestCombo = cards.combo;
     const pts = cfg2.bonus ? 20 : 10;
-    score += pts; correctCount++; grabCount++;
+    score += pts; correctCount++;
+    if(!isLevel6()) grabCount++;
     updateHUD();
     // One card placed on the affected-side pile = one completed task cycle.
     adaptiveNoteTrial('cards_place', 'success');
@@ -18247,6 +18511,9 @@ function drawCardsBigChip(ctx, text, color, chipY){
 }
 // Level 6 啤牌分類：頂部中央顯示「♥→紅心牌堆　♠→黑桃牌堆」大字指示。
 function drawLevel6CardsChip(ctx, cw, ch){
+  // v123: Level 6 cards now run the Level 5 cards module (cardsRender draws its
+  // own suit chip); this generic-engine chip is only kept for the research track.
+  if(usesAdvancedThemeModule()) return;
   if(state.level !== '67' || state.theme !== 'cards' || !isPatientVisualCueMode()) return;
   drawCardsBigChip(ctx, '♥ 放紅心牌堆　♠ 放黑桃牌堆', '#2C3E50', cardsBigChipY(cw, ch));
 }
@@ -18686,6 +18953,38 @@ const flowers = {
     this.movingId = ''; this.moveOrigin = null;
   },
 };
+// v123 花材盤排版（獨立出嚟方便測試）。
+//   研究版／舊版：一行 8 格，上限 120px（直向 92px）——不變。
+//   病人版橫向：一行 8 格，格距 cw*0.118、花材上限 180px（舊 132px）。
+//   病人版直向：兩行各 4 格，格距 cw*0.23、花材上限 180px（舊 102px）。
+//   病人版橫向如果 8 格排唔到最少 150px（例如 iPad 1180 闊），就只排 6 格更大嘅花材。
+//   所有病人版排法都令最左一格嘅花名避開左下角計時器（最左格中心 ≥ 150px）。
+const FLOWERS_PATIENT_MAX_SIZE = 180;
+const FLOWERS_PATIENT_MIN_SIZE_FOR_8 = 150;
+const FLOWERS_PATIENT_LEFT_CLEAR_PX = 165;
+function flowersPaletteLayout(cw, ch, portrait, patientLarge){
+  if(!patientLarge){
+    const gap = Math.min(cw*0.118, portrait ? 96 : 140);
+    const size = Math.min(gap*0.94, portrait ? 92 : 120);
+    return { gap, size, perRow:FLOWERS_PER_PAGE, rowStep:size*1.22 };
+  }
+  const gapForRow = (perRow, gapCap)=>Math.min(gapCap,
+    (cw/2 - FLOWERS_PATIENT_LEFT_CLEAR_PX) / ((perRow - 1) / 2));
+  if(portrait){
+    const gap = gapForRow(4, Math.min(cw*0.23, 240));
+    const size = Math.min(gap*0.90, FLOWERS_PATIENT_MAX_SIZE);
+    return { gap, size, perRow:4, rowStep:size*1.22 };
+  }
+  let perRow = FLOWERS_PER_PAGE;
+  let gap = gapForRow(perRow, Math.min(cw*0.118, 190));
+  let size = Math.min(gap*1.04, FLOWERS_PATIENT_MAX_SIZE);
+  if(size < FLOWERS_PATIENT_MIN_SIZE_FOR_8){
+    perRow = 6;
+    gap = gapForRow(perRow, Math.min(cw*0.157, 220));
+    size = Math.min(gap*1.04, FLOWERS_PATIENT_MAX_SIZE);
+  }
+  return { gap, size, perRow, rowStep:size*1.22 };
+}
 function flowersSetup(){
   // v75 按用戶設計重排：花瓶置中，花材一行 8 格排喺畫面底部（似一盤花材），
   // 鏡頭畫面保留喺背後（病人要見到自己隻手先可以安全對準抓握）。
@@ -18693,19 +18992,25 @@ function flowersSetup(){
   const portrait = ch > cw;
   const batch = FLOWER_KINDS.slice(flowers.palettePage*FLOWERS_PER_PAGE,
     flowers.palettePage*FLOWERS_PER_PAGE + FLOWERS_PER_PAGE);
-  const gap = Math.min(cw*0.118, portrait ? 96 : 140);
   const patientLarge = isPatientVisualCueMode();
-  const size = patientLarge
-    ? Math.min(gap*1.04, portrait ? 102 : 132)
-    : Math.min(gap*0.94, portrait ? 92 : 120);
-  const rowY = ch - size*0.62 - 8;
-  const trayTop = rowY - size*0.62;
-  flowers.palette = batch.map((k, i)=>({
-    id:'pal' + (flowers.palettePage*FLOWERS_PER_PAGE+i), kind:k.key, name:k.name,
-    x: cw/2 + (i - (FLOWERS_PER_PAGE-1)/2) * gap,
-    y: rowY,
-    r: size*0.50, size,
-  }));
+  // v123：病人版花材放大，方便長者對準抓握。橫向仍然一行 8 格，但上限由 132px
+  // 提升到 180px；直向改為兩行各 4 格（每格最大 180px），唔再逼 8 格迫入一行細圖。
+  const layout = flowersPaletteLayout(cw, ch, portrait, patientLarge);
+  const { gap, size, perRow, rowStep } = layout;
+  // 病人版橫向 6 格時只顯示本頁頭 6 款（公開版冇換頁掣，固定顯示第一頁花材）。
+  const shown = perRow < FLOWERS_PER_PAGE && !portrait ? batch.slice(0, perRow) : batch;
+  const rows = Math.ceil(shown.length / perRow);
+  const lastRowY = ch - size*0.62 - 8;
+  const trayTop = lastRowY - (rows - 1) * rowStep - size*0.62;
+  flowers.palette = shown.map((k, i)=>{
+    const row = Math.floor(i / perRow), col = i % perRow;
+    return {
+      id:'pal' + (flowers.palettePage*FLOWERS_PER_PAGE+i), kind:k.key, name:k.name,
+      x: cw/2 + (col - (perRow-1)/2) * gap,
+      y: lastRowY - (rows - 1 - row) * rowStep,
+      r: size*0.50, size,
+    };
+  });
   const vaseH = patientLarge
     ? ch*0.25
     : Math.min(ch*(portrait ? 0.34 : 0.42), 400);
@@ -19944,6 +20249,7 @@ window.__qa = {
     }
     if(opts.dimsumSceneMode==='teahouse'||opts.dimsumSceneMode==='camera') state.dimsumSceneMode=opts.dimsumSceneMode;
     if(opts.fridgeDifficulty==='zones'||opts.fridgeDifficulty==='basic') state.fridgeDifficulty=opts.fridgeDifficulty;
+    if(['basic','zones','sort','complex'].includes(opts.laundryDifficulty)) state.laundryDifficulty=opts.laundryDifficulty;
     if(state.level==='2' && !themeAvailableForLevel(state.theme,'2')) state.theme='bilateral';
     if(state.level==='67'){
       if(!assertLevel6ActivityLock()) lockLevel6Activity(LEVEL6_TASKS.chopsticks.theme);
@@ -20191,7 +20497,7 @@ window.__qa = {
     return document.getElementById('framePerfOverlay')?.textContent || '';
   },
   level6ToolState(){
-    const advancedHeldId=usesAdvancedThemeModule()?carrier.heldId:null;
+    const advancedHeldId=usesAdvancedThemeModule()?(carrier.heldId||picker.heldId):null;
     return {
       level6Task:state.level6Task,gameType:state.gameType,
       affectedSide:activeAffectedSide(),handDetected,isGrasping,handOpenPrep,
@@ -20202,6 +20508,8 @@ window.__qa = {
       heldPosition:heldItem?{x:heldItem.x,y:heldItem.y}:
         (advancedHeldId?{x:cursorX,y:cursorY}:null),
       score,correctCount,grabCount,
+      // v123: Level 6 mahjong/cards share the Level 5 picker modules.
+      advancedPlaced:advCurrent==='cards'?cards.got:(advCurrent==='mahjong'?mj.taken.length:null),
       carrier:{heldId:carrier.heldId,hoverId:carrier.hoverId,armed:carrier.armed,
         openStart:carrier.openStart,graspStart:carrier.graspStart,graspId:carrier.graspId},
       basic:{armed:basicGraspArmed,openStart:basicOpenStart,
@@ -20507,6 +20815,23 @@ window.__qa = {
         targetsDoNotOverlap:true,
       };
     }
+    if((advCurrent==='cards' && cards.active) || (advCurrent==='mahjong' && mj.active)){
+      // v123: Level 6 mahjong/cards use the Level 5 modules; expose the live
+      // tiles/cards and the affected-side release zone in the same shape.
+      const z=affectedSelectionZone();
+      const items=advCurrent==='cards'
+        ? cards.field.filter(c=>!c.gone).map(c=>({type:c.suit===cards.suit?'card':'card_other',x:c.x,y:c.y,r:c.r}))
+        : ((mj.layout||mjLayout()).groups||[]).filter(g=>!g.ref.gone).map(g=>({type:'mahjong_group',x:g.x,y:g.y,r:Math.max(g.w,g.h)*0.5}));
+      return {
+        level:state.level,theme:state.theme,advancedModule:advCurrent,
+        canvas:{width:gameCanvas.width,height:gameCanvas.height},
+        targets:[{type:advCurrent==='cards'?'card':'mahjong_group',x:z.x,y:z.y,w:z.w,h:z.h}],
+        items,
+        dimsumOrder:null,laundryOrder:null,fridgeGame:null,
+        insideCanvas:items.every(p=>p.x-p.r>=0&&p.x+p.r<=gameCanvas.width&&p.y-p.r>=0&&p.y+p.r<=gameCanvas.height),
+        targetsDoNotOverlap:true,
+      };
+    }
     const activeFoods = foods.filter(f=>!f.removed);
     const targetsDoNotOverlap = targets.every((target, index)=>targets.slice(index + 1).every(other=>(
       target.x-target.w/2 >= other.x+other.w/2 ||
@@ -20529,8 +20854,16 @@ window.__qa = {
         ordersCompleted: dimsumOrdersCompleted,
       } : null,
       laundryRack: isLaundryRackGame() ? {
+        mode: laundryDifficultyMode(),
         count: laundryRackContents.length,
-        capacity: LAUNDRY_RACK_CAPACITY,
+        capacity: isLaundryFourRackGame() ? LAUNDRY_FOUR_RACK_CAPACITY : LAUNDRY_RACK_CAPACITY,
+        litRack: laundryLitRack,
+        wrongRack: (nowMs() < laundryWrongUntil) ? laundryWrongRack : -1,
+        racks: targets.filter(t=>t.type==='laundry_rack').map(t=>({
+          rackIndex: typeof t.rackIndex==='number' ? t.rackIndex : null, sortKey: t.sortKey||null,
+          x:Math.round(t.x), y:Math.round(t.y), w:Math.round(t.w), h:Math.round(t.h),
+          hung: laundryRackContents.filter(c=>c.rack===t.rackIndex).length,
+        })),
         batches: laundryBatchesCompleted,
         clearPending: !!laundryRackClearTimerId,
         garmentsOnScreen: foods.filter(f=>!f.removed).length,
@@ -20854,12 +21187,39 @@ window.__qa = {
       return window.__qa.cards.state();
     },
   },
+  dimsumPlate:{
+    // v123 QA：直接將 n 件點心放上 Level 6 公雞碟（跳過手勢），回傳碟上數量
+    place(n){
+      const types=['chop_beefball','chop_hargau','chop_siumai'];
+      for(let i=0;i<(n||1);i++) dimsumBowlPlace({ targetType:types[i%types.length], label:'點心' });
+      return dimsumPlateContents.length;
+    },
+  },
   laundryRack:{
     // v101 QA：直接掛 n 件衫上 Level 6 晾衫架（跳過手勢），回傳架上狀態
-    hang(n){
+    hang(n, rackIndex){
       const imgs=[imgLaundryShirt1,imgLaundryJeans,imgLaundrySkirt,imgLaundryVest,imgLaundrySocks,imgLaundryBoxers];
-      for(let i=0;i<(n||1);i++) laundryRackPlace({ targetType:'laundry_shirt', img:imgs[i%imgs.length] });
+      // v123 四架模式：預設掛上着燈架（zones）或「上衣」架（sort）；可指定 rackIndex。
+      const racks=targets.filter(t=>t.type==='laundry_rack');
+      const idx=typeof rackIndex==='number' ? rackIndex : (isLaundryZoneGame() ? laundryLitRack : 0);
+      const rack=racks.find(t=>t.rackIndex===idx)||racks[0]||null;
+      for(let i=0;i<(n||1);i++){
+        const item={ targetType:'laundry_shirt', label:'恤衫', img:imgs[i%imgs.length] };
+        if(isLaundryZoneGame() && laundryOrder && laundryOrder.lines[0]){
+          item.targetType=laundryOrder.lines[0].type; item.label=laundryOrder.lines[0].label;
+        }
+        if(laundryRackAccepts(item, rack)) laundryRackPlace(item, rack);
+      }
       return window.__qa.level67Layout().laundryRack;
+    },
+    // v123 QA：模擬放手喺第 rackIndex 個架（回傳係咪接受；錯架唔扣分）
+    tryRack(rackIndex){
+      const rack=targets.find(t=>t.type==='laundry_rack'&&t.rackIndex===rackIndex)||null;
+      const garment=foods.find(f=>!f.removed)||null;
+      const ok=laundryRackAccepts(garment, rack);
+      if(ok) laundryRackPlace(garment, rack);
+      return { accepted:ok, garment:garment?garment.targetType:null, litRack:laundryLitRack,
+        wrongRack:(nowMs()<laundryWrongUntil)?laundryWrongRack:-1, count:laundryRackContents.length };
     },
   },
   laundry:{
@@ -21521,7 +21881,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v122-20261118-privacy-window";
+  const LEVEL_APP_BUILD = "v123-20261118-laundry-four-racks";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

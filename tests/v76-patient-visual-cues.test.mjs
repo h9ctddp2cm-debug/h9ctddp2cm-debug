@@ -10,7 +10,7 @@ const html = readFileSync(path.join(root, 'index.html'), 'utf8');
 test('current build markers stay aligned', () => {
   const manifest = readFileSync(path.join(root, 'manifest.webmanifest'), 'utf8');
   const worker = readFileSync(path.join(root, 'service-worker.js'), 'utf8');
-  const version = 'v122-20261118-privacy-window';
+  const version = 'v123-20261118-laundry-four-racks';
   assert.match(html, new RegExp(version));
   assert.match(manifest, new RegExp(version));
   assert.match(worker, new RegExp(version));
@@ -61,7 +61,10 @@ test('large canvas cues and advanced enlargements are public-only', () => {
   assert.match(html, /const patientLarge = isPatientVisualCueMode\(\);[\s\S]*?patientLarge \? 0\.19 : 0\.16/);
   assert.match(html, /wok:[\s\S]*?patientLarge \? 0\.33 : 0\.34[\s\S]*?plate:[\s\S]*?patientLarge \? 0\.72 : 0\.70/);
   assert.match(html, /const tileMin = patientLarge \? \(narrow \? 72 : 82\) : \(narrow \? 56 : 64\)/);
-  assert.match(html, /const size = patientLarge[\s\S]*?gap\*1\.04[\s\S]*?gap\*0\.94/);
+  // v123: the flower palette sizing moved into flowersPaletteLayout(); the
+  // research/non-patient branch keeps the pre-v123 gap*0.94 cap and the patient
+  // branch keeps the gap*1.04 enlargement (now capped at 180px).
+  assert.match(html, /function flowersPaletteLayout\(cw, ch, portrait, patientLarge\)\{\s*if\(!patientLarge\)\{[\s\S]*?gap\*0\.94[\s\S]*?\}[\s\S]*?gap\*1\.04, FLOWERS_PATIENT_MAX_SIZE/);
 });
 
 test('advanced Level 6 activities receive phase-specific grasp and release cues', () => {

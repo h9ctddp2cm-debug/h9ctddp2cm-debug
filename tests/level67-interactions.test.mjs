@@ -340,6 +340,10 @@ for (const { task } of LEVEL6_GESTURE_TASKS) {
     if (!browser) return t.skip('playwright unavailable');
     await withPage({ width: 1180, height: 820 }, async page => {
       const result = await runToolGestureFlow(page, task);
+      // v123: Level 6 mahjong/cards share the Level 5 picker modules, where a
+      // single placement advances the module counter (one card to the pile,
+      // one tile group to the hand) instead of correctCount on every drop.
+      const pickerModule = task === 'cards' || task === 'mahjong';
       assert.equal(result.prepared.handOpenPrep, true, 'positive open preparation is observed');
       assert.equal(result.pickedUp.grabCount, 1, 'confirmed closure picks up exactly once');
       assert.ok(result.pickedUp.held, 'an item is held after closure');
@@ -350,7 +354,11 @@ for (const { task } of LEVEL6_GESTURE_TASKS) {
       assert.equal(result.transported.shoulder.gameReady, false,
         'missing shoulder/elbow/wrist pose cannot block selected-hand transport');
       assert.equal(result.released.held, null, 'confirmed reopening releases the item');
-      assert.equal(result.released.correctCount, 1, 'valid target release scores once');
+      if (pickerModule) {
+        assert.equal(result.released.advancedPlaced, 1, 'valid release places exactly one card/tile group');
+      } else {
+        assert.equal(result.released.correctCount, 1, 'valid target release scores once');
+      }
     });
   });
 

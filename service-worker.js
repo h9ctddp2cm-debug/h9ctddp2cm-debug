@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v122-20261118-privacy-window";
+const CACHE_VERSION = "fthue-rehab-v123-20261118-laundry-four-racks";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

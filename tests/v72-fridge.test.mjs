@@ -81,10 +81,14 @@ test('both drop paths route fridge drops through fridgeTryPlace', () => {
 });
 
 test('a crash/out-of-bounds rejection never deducts score or feeds wrongStreak', () => {
-  for(const branch of [/else if\(fridgeDrop\)\{[\s\S]{0,300}?\} else \{/, /else if\(dwellFridgeDrop\)\{[\s\S]{0,300}?\} else \{/]){
+  // v123: the four-rack laundry reject branch (same no-penalty rule) sits
+  // between the fridge reject branch and the score-penalty else.
+  for(const branch of [/else if\(fridgeDrop\)\{[\s\S]{0,600}?\} else \{/, /else if\(dwellFridgeDrop\)\{[\s\S]{0,600}?\} else \{/]){
     const m = publicSource.match(branch);
     assert.ok(m, 'fridge reject branch exists before the score-penalty else');
-    assert.doesNotMatch(m[0].split('} else {')[0], /score -=|wrongStreak\+\+|adaptiveNoteTrial/);
+    const beforePenalty = m[0].split('} else {')[0];
+    assert.doesNotMatch(beforePenalty, /score -=|wrongStreak\+\+|adaptiveNoteTrial/);
+    assert.match(beforePenalty, /laundryRackRejectedWithoutPenalty\(\)/);
   }
 });
 

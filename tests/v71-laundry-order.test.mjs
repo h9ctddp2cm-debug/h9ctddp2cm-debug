@@ -48,13 +48,15 @@ test('both laundry modes use a single central large rack instead of two boxes', 
 
 /* ---------------- Source contract: order-driven matching ---------------- */
 
-test('both drop paths route through basic-or-complex rack matching', () => {
-  const graspPath = /const laundryOrderDrop = isLaundryRackGame\(\) && onPlate\.type === 'laundry_rack';[\s\S]{0,300}laundryRackAccepts\(heldItem\)/;
-  const dwellPath = /const dwellLaundryOrderDrop = isLaundryRackGame\(\) && onPlate\.type === 'laundry_rack';[\s\S]{0,300}laundryRackAccepts\(heldItem\)/;
+test('both drop paths route through basic-or-four-rack rack matching', () => {
+  // v123: the rack the garment was dropped on (onPlate) is passed through so the
+  // four-rack modes can check the lit / category rack.
+  const graspPath = /const laundryOrderDrop = isLaundryRackGame\(\) && onPlate\.type === 'laundry_rack';[\s\S]{0,300}laundryRackAccepts\(heldItem, onPlate\)/;
+  const dwellPath = /const dwellLaundryOrderDrop = isLaundryRackGame\(\) && onPlate\.type === 'laundry_rack';[\s\S]{0,300}laundryRackAccepts\(heldItem, onPlate\)/;
   assert.match(publicSource, graspPath);
   assert.match(publicSource, dwellPath);
-  assert.match(publicSource, /else if\(laundryOrderDrop\) laundryRackPlace\(heldItem\);/);
-  assert.match(publicSource, /else if\(dwellLaundryOrderDrop\) laundryRackPlace\(heldItem\);/);
+  assert.match(publicSource, /else if\(laundryOrderDrop\) laundryRackPlace\(heldItem, onPlate\);/);
+  assert.match(publicSource, /else if\(dwellLaundryOrderDrop\) laundryRackPlace\(heldItem, onPlate\);/);
 });
 
 test('order mode is fail-safe against spawn deadlocks', () => {
@@ -97,12 +99,16 @@ function makeOrderModule(opts = {}){
     'imgLaundryJeans', 'imgLaundrySkirt', 'imgLaundryVest', 'imgLaundrySocks'];
   const fn = new Function(
     'state', 'research', 'foods', 'ensureFoodCount', 'speakCantonese',
-    'playApplauseSound', 'nowMs', 'setTimeout', 'clearTimeout', 'Math',
+    'playApplauseSound', 'nowMs', 'setTimeout', 'clearTimeout', 'Math', 'isPortrait',
     ...imgNames,
     code + `
-return {isLaundryOrderGame, isLaundryBasicGame, resetLaundryOrderGame, newLaundryOrder, laundryOrderText,
+return {isLaundryOrderGame, isLaundryBasicGame, isLaundryZoneGame, isLaundrySortGame, laundryDifficultyMode,
+  resetLaundryOrderGame, newLaundryOrder, laundryOrderText, laundrySortRackFor,
   laundryOrderAccepts, laundryOrderPlace, laundryOrderLineFor, laundryBasicPlace, laundryRackPlace,
+  laundryRackAccepts, laundryRackRejectedWithoutPenalty,
   LAUNDRY_RACK_CAPACITY, LAUNDRY_RACK_SLOTS, LAUNDRY_RACK_CLEAR_DELAY_MS,
+  get litRack(){ return laundryLitRack; },
+  get wrongRack(){ return laundryWrongRack; },
   get order(){ return laundryOrder; },
   get rack(){ return laundryRackContents; },
   get completed(){ return laundryOrdersCompleted; },
@@ -118,6 +124,7 @@ return {isLaundryOrderGame, isLaundryBasicGame, resetLaundryOrderGame, newLaundr
     (cb, ms) => { calls.timeouts.push({cb, ms}); return calls.timeouts.length; },
     () => {},
     fakeMath,
+    () => false,
     ...imgNames.map(id => ({id})),
   );
   return {mod, calls, state, research};
@@ -130,37 +137,30 @@ test('gate: order mode only for public level 67 peg laundry theme', () => {
   assert.equal(makeOrderModule({state: {theme: 'chopstick_dimsum'}}).mod.isLaundryOrderGame(), false);
 });
 
-test('the first order asks for exactly one clothes type, three pieces', () => {
+test('v123 zones: every order asks for exactly one garment and lights one of the four racks', () => {
   for(const r of [0.0, 0.31, 0.62, 0.99]){
     const {mod, calls} = makeOrderModule({random: () => r});
     const order = mod.newLaundryOrder();
-    assert.equal(order.lines.length, 1, 'first order keeps it simple: one type only');
-    assert.equal(order.lines[0].need, 3);
+    assert.equal(order.lines.length, 1, 'selective attention: one garment per instruction');
+    assert.equal(order.lines[0].need, 1);
     assert.equal(order.lines[0].placed, 0);
-    // The order is spoken aloud in Cantonese and shown via laundryOrderText.
+    assert.ok(mod.litRack >= 0 && mod.litRack <= 3, `lit rack index: ${mod.litRack}`);
+    // The instruction is spoken aloud in Cantonese and shown via laundryOrderText.
     assert.equal(calls.speak.length, 1);
-    assert.match(calls.speak[0], /^請將3[件條對][^。]+放上晾衫架。$/);
+    assert.match(calls.speak[0], /^請將[^。]+夾到閃燈嗰個晾衫架。$/);
     assert.equal(calls.speak[0], mod.laundryOrderText());
   }
 });
 
-test('later orders mix 2-3 distinct types, 1-3 pieces each, within the six rack slots', () => {
+test('v123 zones: the lit rack changes between consecutive orders', () => {
   for(const r of [0.0, 0.31, 0.62, 0.99]){
     const {mod} = makeOrderModule({random: () => r});
-    // Complete the first (single-line) order to unlock mixed orders.
-    const first = mod.newLaundryOrder();
-    for(let i = 0; i < first.lines[0].need; i++) mod.laundryOrderPlace({targetType: first.lines[0].type});
-    const order = mod.newLaundryOrder();
-    assert.ok(order.lines.length >= 2 && order.lines.length <= 3, `line count: ${order.lines.length}`);
-    const types = order.lines.map(l => l.type);
-    assert.equal(new Set(types).size, types.length, 'no duplicate types in one order');
-    let total = 0;
-    for(const line of order.lines){
-      assert.ok(line.need >= 1 && line.need <= 3, `need out of range: ${line.need}`);
-      total += line.need;
+    let previous = -1;
+    for(let n = 0; n < 6; n++){
+      mod.newLaundryOrder();
+      assert.notEqual(mod.litRack, previous, 'the same rack never lights twice in a row');
+      previous = mod.litRack;
     }
-    assert.ok(total <= 6, 'v101: total pieces never exceed the six rack hanging slots');
-    assert.match(mod.laundryOrderText(), /^請將\d[件條對].+放上晾衫架。$/);
   }
 });
 
@@ -203,23 +203,70 @@ test('excess pieces of a completed line are rejected (cognitive counting)', () =
   assert.equal(mod.laundryOrderAccepts({targetType: line.type}), false);
 });
 
-test('completing the order applauds, praises 好叻呀 and schedules the next order', () => {
+test('v123 zones: hanging the garment on the lit rack completes the order and schedules the next one quickly', () => {
   const {mod, calls} = makeOrderModule();
   const order = mod.newLaundryOrder();
-  for(const line of order.lines){
-    for(let i = 0; i < line.need; i++) mod.laundryOrderPlace({targetType: line.type});
-  }
+  const rack = {rackIndex: mod.litRack};
+  assert.equal(mod.laundryRackAccepts({targetType: order.lines[0].type}, rack), true);
+  mod.laundryOrderPlace({targetType: order.lines[0].type}, rack);
   assert.equal(mod.order.done, true);
   assert.equal(mod.completed, 1);
-  assert.equal(calls.applause, 1);
-  assert.ok(mod.celebrateUntil > 100000);
-  assert.ok(calls.speak.some(t => t.includes('好叻呀')));
+  assert.equal(mod.rack.length, 1);
+  assert.equal(mod.rack[0].rack, mod.litRack, 'the garment hangs on the rack it was clipped to');
+  // No applause for a single garment; the celebration waits for six on the racks.
+  assert.equal(calls.applause, 0);
   assert.equal(calls.timeouts.length, 1);
-  assert.equal(calls.timeouts[0].ms, 2600);
-  // The scheduled callback starts a fresh order while the game is running...
+  assert.equal(calls.timeouts[0].ms, 450);
   calls.timeouts[0].cb();
+  assert.equal(mod.order.done, false, 'a fresh order starts while the game is running');
+  assert.equal(mod.rack.length, 1, 'hung garments stay on the racks between orders');
+});
+
+test('v123 zones: clipping to a non-lit rack is rejected and remembered without penalty', () => {
+  const {mod, calls} = makeOrderModule();
+  const order = mod.newLaundryOrder();
+  const wrong = [0,1,2,3].find(i => i !== mod.litRack);
+  assert.equal(mod.laundryRackAccepts({targetType: order.lines[0].type}, {rackIndex: wrong}), false);
+  assert.equal(mod.wrongRack, wrong);
+  assert.equal(calls.speak[calls.speak.length - 1], '要夾喺閃燈嗰個架呀。');
   assert.equal(mod.order.done, false);
-  assert.equal(mod.rack.length, 0, 'the rack is cleared for the next order');
+  assert.equal(mod.rack.length, 0);
+  assert.equal(mod.laundryRackRejectedWithoutPenalty(), true);
+});
+
+test('v123 zones: six garments across the four racks applaud, praise and clear', () => {
+  const {mod, calls} = makeOrderModule();
+  for(let n = 0; n < 6; n++){
+    const order = mod.newLaundryOrder();
+    mod.laundryOrderPlace({targetType: order.lines[0].type}, {rackIndex: mod.litRack});
+  }
+  assert.equal(mod.rack.length, 6);
+  assert.equal(calls.applause, 1);
+  assert.equal(mod.batches, 1);
+  assert.ok(calls.speak.some(t => t.includes('好叻呀')));
+  assert.ok(mod.celebrateUntil > 100000);
+  const clear = calls.timeouts.find(t => t.ms === mod.LAUNDRY_RACK_CLEAR_DELAY_MS);
+  assert.ok(clear, 'one clear timer is scheduled');
+  clear.cb();
+  assert.equal(mod.rack.length, 0, 'the racks are cleared after the celebration');
+  assert.equal(calls.speak[calls.speak.length - 1], '又有新衫要晾喇！');
+});
+
+test('v123 sort: garments go to the category rack (上衣／褲／裙／內衣襪)', () => {
+  const {mod, calls} = makeOrderModule({state: {laundryDifficulty: 'sort'}});
+  assert.equal(mod.isLaundrySortGame(), true);
+  const expect = {laundry_shirt: 0, laundry_jeans: 1, laundry_skirt: 2,
+    laundry_vest: 3, laundry_boxers: 3, laundry_socks: 3};
+  for(const [type, idx] of Object.entries(expect)){
+    assert.equal(mod.laundrySortRackFor(type), idx, type);
+    assert.equal(mod.laundryRackAccepts({targetType: type}, {rackIndex: idx}), true);
+    const wrong = (idx + 1) % 4;
+    assert.equal(mod.laundryRackAccepts({targetType: type, label: 'X'}, {rackIndex: wrong}), false);
+  }
+  assert.match(calls.speak[calls.speak.length - 1], /要夾喺「[^」]+」嗰個架呀。$/);
+  mod.laundryRackPlace({targetType: 'laundry_jeans'}, {rackIndex: 1});
+  assert.equal(mod.rack.length, 1);
+  assert.equal(mod.rack[0].rack, 1);
 });
 
 test('the scheduled next order does not fire after the session stops', () => {
@@ -253,7 +300,7 @@ test('v101 source: Level 6 laundry shows one garment at a time from a centred lo
   assert.match(publicSource, /const LAUNDRY_RACK_SLOTS = \[-0\.375, -0\.225, -0\.075, 0\.075, 0\.225, 0\.375\];/);
   assert.match(publicSource, /const LAUNDRY_RACK_CAPACITY = 6;/);
   assert.match(publicSource, /const railW = Math\.min\(rw, cw \* 0\.96\);[\s\S]{0,200}const railY = Math\.max\(t\.y - rh \* 0\.42, hudSafeTop\);[\s\S]{0,400}const maxW = railW \* 0\.13;/);
-  assert.match(publicSource, /laundryRack: isLaundryRackGame\(\) \? \{[\s\S]{0,200}capacity: LAUNDRY_RACK_CAPACITY/);
+  assert.match(publicSource, /laundryRack: isLaundryRackGame\(\) \? \{[\s\S]{0,260}capacity: isLaundryFourRackGame\(\) \? LAUNDRY_FOUR_RACK_CAPACITY : LAUNDRY_RACK_CAPACITY/);
 });
 
 test('v101 basic mode: the sixth garment fills the rack, then one light timer clears it and announces new laundry', () => {
@@ -301,16 +348,16 @@ test('v101 basic mode: hanging a seventh garment before the timer fires clears t
   assert.equal(calls.applause, 1);
 });
 
-test('v101 complex mode: orders after the first are announced with 又有新衫要晾喇 and never exceed six pieces', () => {
+test('v123: the legacy complex setting maps to the zones mode and never exceeds six garments on the racks', () => {
   for(const r of [0.0, 0.5, 0.99]){
-    const {mod, calls} = makeOrderModule({random: () => r});
-    const first = mod.newLaundryOrder();
-    assert.doesNotMatch(calls.speak[0], /又有新衫要晾喇/);
-    for(let i = 0; i < first.lines[0].need; i++) mod.laundryOrderPlace({targetType: first.lines[0].type});
-    const second = mod.newLaundryOrder();
-    assert.match(calls.speak[calls.speak.length - 1], /^又有新衫要晾喇！請將/);
-    assert.ok(second.lines.reduce((sum, l) => sum + l.need, 0) <= 6);
-    assert.ok(second.lines.every(l => l.need >= 1));
+    const {mod} = makeOrderModule({random: () => r, state: {laundryDifficulty: 'complex'}});
+    assert.equal(mod.laundryDifficultyMode(), 'zones');
+    assert.equal(mod.isLaundryZoneGame(), true);
+    for(let n = 0; n < 7; n++){
+      const order = mod.newLaundryOrder();
+      mod.laundryOrderPlace({targetType: order.lines[0].type}, {rackIndex: mod.litRack});
+      assert.ok(mod.rack.length <= 6, 'never more than six garments hang at once');
+    }
   }
 });
 

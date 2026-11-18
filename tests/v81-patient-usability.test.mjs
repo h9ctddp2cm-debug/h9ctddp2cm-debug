@@ -28,13 +28,19 @@ test('fridge is full width with enlarged visuals and automatic clear arrangement
   assert.match(source, /fridgePlacedFoods\.push\([\s\S]{0,180}fridgeArrangePlacedFoods\(rect\)/);
 });
 
-test('laundry offers basic and complex modes with tremor-tolerant pickup', () => {
+test('laundry offers basic and two four-rack modes with tremor-tolerant pickup', () => {
+  // v123: 較複雜 was replaced by two selective-attention four-rack modes
+  // (着燈四架 / 分類四架); the old 'complex' value still maps to 'zones'.
   assert.match(source, /id="laundryDifficultyCard"/);
   assert.match(source, /data-laundry-difficulty="basic"[\s\S]{0,180}基本/);
-  assert.match(source, /data-laundry-difficulty="complex"[\s\S]{0,180}較複雜/);
+  assert.match(source, /data-laundry-difficulty="zones"[\s\S]{0,180}着燈四架/);
+  assert.match(source, /data-laundry-difficulty="sort"[\s\S]{0,180}分類四架/);
+  assert.doesNotMatch(source, /data-laundry-difficulty="complex"/);
   assert.match(source, /laundryDifficulty: 'basic'/);
-  assert.match(source, /return isLaundryRackGame\(\) && state\.laundryDifficulty === 'complex';/);
-  assert.match(source, /return isLaundryRackGame\(\) && state\.laundryDifficulty !== 'complex';/);
+  assert.match(source, /if\(d === 'complex' \|\| d === 'zones'\) return 'zones';/);
+  assert.match(source, /return isLaundryRackGame\(\) && laundryDifficultyMode\(\) === 'basic';/);
+  assert.match(source, /return isLaundryRackGame\(\) && laundryDifficultyMode\(\) === 'zones';/);
+  assert.match(source, /return isLaundryRackGame\(\) && laundryDifficultyMode\(\) === 'sort';/);
   assert.match(source, /rw \*= 1\.60;\s*rh \*= 1\.60;/);
   assert.match(source, /const pickupMargin = isLaundryRackGame\(\) \? 220[\s\S]{0,100}isFridgeGame\(\) \? 210 : \(isPublicLevel5DimsumLayout\(\) \? 150 : 100\)/);
 });
