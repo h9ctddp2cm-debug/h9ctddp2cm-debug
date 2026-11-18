@@ -2685,7 +2685,7 @@ const state = {
   fridgeDifficulty: 'basic',  // v101 Level 5 fridge: basic（任何位置）| zones（着燈六格）
   dimsumDifficulty: 'basic', // Level 6 chopsticks dim sum: basic | complex order
   theme: 'dimsum',      // 活動 id
-  shopListSize: 'short',  // v125 Level 3/4 超市購物單長度：short（2 樣）| medium（4 樣）| long（6 樣）
+  shopListSize: 'medium', // v125 Level 3/4 超市購物單長度：short（2 樣）| medium（4 樣）| long（6 樣）；v126 預設中單
   dimsumSceneMode: 'teahouse', // Level 3/4 點心顯示模式：teahouse（模擬茶樓）| camera（看到自己＝原有鏡頭畫面）
   mode: 'single',       // single | dual
   duration: 300,        // total seconds
@@ -3694,15 +3694,15 @@ const SHOP_LIST_POOL = ['apple','soysauce','orange','milk','choysum','eggs'];
 const SHOP_ACTION_MS = 850;      // 抬手達標後，件貨飛入車／飛上櫃嘅動畫
 const SHOP_SCENE_PAD_MS = 450;   // 動畫完結後停一停先去下一步
 const shopStory = {
-  active:false, steps:[], idx:0, stepStartedMs:0, listSize:'short',
+  active:false, steps:[], idx:0, stepStartedMs:0, listSize:'medium',
   list:[], cart:[], counter:[], bagged:[], shelved:[],
   anim:{ phase:'idle', startedMs:0, step:null },
   rewardMs:2600, spokenIdx:-1, ended:false,
 };
 function isSupermarketTheme(){ return isShoulderFlexionLevel() && state.theme==='supermarket'; }
-function shopListSizeKey(){ return SHOP_LIST_SIZES[state.shopListSize] ? state.shopListSize : 'short'; }
+function shopListSizeKey(){ return SHOP_LIST_SIZES[state.shopListSize] ? state.shopListSize : 'medium'; }
 function buildShopList(sizeKey){
-  const n=SHOP_LIST_SIZES[sizeKey]||2;
+  const n=SHOP_LIST_SIZES[sizeKey]||4;
   return SHOP_LIST_POOL.slice(0,n).map(id=>({ id, need:(id==='apple'||id==='orange')?2:1, got:0 }));
 }
 // 故事劇本：scene 步驟自動播放（唔使抬手）；rep 步驟要抬臂達標一次。
@@ -3894,6 +3894,36 @@ function shopGeometry(cw,ch){
     fridgeX:cw*(portrait?0.74:0.78), fridgeY:Math.max(ch*(portrait?0.42:0.44),contentTop+itemSize*0.8), fridgeW:cw*(portrait?0.36:0.24),
   };
 }
+// v126 貨架陳列：生果（cold 且 unit 係「個」）砌成一堆放喺木箱；其他貨一排企喺架上。
+// 回傳 items（由後到前／由底到頂；最後一個係病人要攞嗰件）同 crate 矩形。
+function shopShelfLayout(g,itemId,remaining){
+  const it=SHOP_ITEMS[itemId]||{};
+  const cx=g.laneX;
+  const isPile=it.unit==='個';
+  if(isPile){
+    const s=g.itemSize*0.66;                 // 堆入面每個生果細啲，先似一堆
+    const n=Math.min(9,5+Math.max(0,remaining)); // 永遠有 5 個陪襯，堆唔會空
+    const off=[[-1.5,0],[-0.5,0],[0.5,0],[1.5,0],[-1,-0.72],[0,-0.72],[1,-0.72],[-0.5,-1.42],[0.5,-1.42]];
+    const baseY=g.shelfItemY+g.itemSize*0.2;
+    const items=[];
+    for(let i=0;i<n;i++){ items.push({ x:cx+off[i][0]*s*0.78, y:baseY+off[i][1]*s*0.78, s }); }
+    return { items, crate:{ x:cx-s*2.05, y:baseY-s*0.55, w:s*4.1, h:s*1.25 } };
+  }
+  const s=g.itemSize*0.9;
+  const n=Math.min(6,3+Math.max(0,remaining));
+  const gap=s*0.58;
+  const items=[];
+  for(let i=0;i<n;i++){ items.push({ x:cx+(n-1-i)*gap-((n-1)*gap)/2, y:g.shelfItemY-i*s*0.03, s }); }
+  return { items, crate:null };
+}
+function drawShopCrate(ctx,c){
+  ctx.save();
+  ctx.fillStyle='rgba(0,0,0,0.16)';ctx.fillRect(c.x+6,c.y+c.h+2,c.w,8);
+  ctx.fillStyle='#b98a4f';rrPath(ctx,c.x,c.y,c.w,c.h,8);ctx.fill();
+  ctx.fillStyle='#8d6333';ctx.fillRect(c.x,c.y+c.h*0.42,c.w,c.h*0.12);ctx.fillRect(c.x,c.y+c.h-c.h*0.18,c.w,c.h*0.18);
+  ctx.strokeStyle='#6d4a24';ctx.lineWidth=3;rrPath(ctx,c.x,c.y,c.w,c.h,8);ctx.stroke();
+  ctx.restore();
+}
 function drawShopBanner(ctx,cw,g,text,sub){
   const font=g.bannerFont;
   ctx.save();
@@ -3916,7 +3946,7 @@ function drawShopBanner(ctx,cw,g,text,sub){
   return by+bh;
 }
 function drawShopArmMarker(ctx,g,targetX,targetY,progress){
-  // 抬手進度：由畫面底部升上目標貨品嘅「手」標記（純提示，唔係追蹤點）
+  // 抬手進度：由畫面底部升上目標貨品嘅手掌標記（純提示，唔係追蹤點）。v126 改用真手掌圖。
   const p=clamp01(progress);
   const x0=g.laneX,y0=g.laneBottom;
   const x=x0+(targetX-x0)*p,y=y0+(targetY-y0)*p;
@@ -3924,12 +3954,17 @@ function drawShopArmMarker(ctx,g,targetX,targetY,progress){
   ctx.setLineDash([12,10]);ctx.lineWidth=5;ctx.strokeStyle='rgba(26,107,90,0.45)';
   ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(targetX,targetY);ctx.stroke();
   ctx.setLineDash([]);
-  ctx.lineWidth=Math.max(14,g.itemSize*0.18);ctx.lineCap='round';ctx.strokeStyle='rgba(240,140,0,0.78)';
-  ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x,y);ctx.stroke();
-  const r=Math.max(22,g.itemSize*0.24);
-  ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fillStyle='#F6B04E';ctx.fill();ctx.lineWidth=4;ctx.strokeStyle='#8a4b00';ctx.stroke();
-  ctx.fillStyle='#4a2a00';ctx.font='800 '+Math.round(r*1.05)+'px "PingFang TC","Noto Sans TC",sans-serif';
-  ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('手',x,y+1);
+  // 手臂（衫袖色，同手掌圖嘅袖口一樣）
+  ctx.lineWidth=Math.max(16,g.itemSize*0.22);ctx.lineCap='round';ctx.strokeStyle='rgba(88,184,176,0.92)';
+  ctx.beginPath();ctx.moveTo(x0,y0+g.itemSize*0.3);ctx.lineTo(x,y+g.itemSize*0.28);ctx.stroke();
+  const hh=Math.max(80,g.itemSize*1.15);
+  if(imgShopHand&&imgShopHand.complete&&imgShopHand.naturalWidth){
+    const hw=hh*imgShopHand.naturalWidth/imgShopHand.naturalHeight;
+    ctx.drawImage(imgShopHand,x-hw/2,y-hh*0.5,hw,hh);
+  }else{
+    const r=Math.max(22,g.itemSize*0.24);
+    ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fillStyle='#F6B04E';ctx.fill();
+  }
   ctx.restore();
 }
 function drawShopGlow(ctx,x,y,r){
@@ -4010,29 +4045,26 @@ function drawSupermarketScene(ctx,cw,ch){
     const sx=cw/2-g.shelfW/2,sy=g.shelfY;
     ctx.save();ctx.fillStyle='rgba(0,0,0,0.18)';ctx.fillRect(sx+6,sy+g.shelfH+4,g.shelfW,10);
     ctx.fillStyle='#c9a46a';ctx.fillRect(sx,sy,g.shelfW,g.shelfH);ctx.fillStyle='#8d6a3a';ctx.fillRect(sx,sy+g.shelfH-4,g.shelfW,4);ctx.restore();
-    const slots=Math.max(1,(line?line.need:1)+1);
-    const slotW=g.shelfW/(slots+1);
-    const shelfItems=[];
-    for(let i=0;i<slots;i++){ shelfItems.push({ x:sx+slotW*(i+1), y:g.shelfItemY }); }
-    // 顯示：仲未攞嘅貨（remaining 件）＋多一件陪襯，令架唔會空
-    const showN=Math.min(slots,remaining+1);
-    for(let i=0;i<showN;i++) drawShopImgFit(ctx,shopItemImg(itemId),shelfItems[i].x,shelfItems[i].y,g.itemSize,g.itemSize);
-    const targetSlot=shelfItems[Math.max(0,showN-1)];
+    // v126 真超市陳列：生果一堆堆放喺箱入面（由堆頂攞一個）；樽裝／包裝貨一排排企喺架上（攞最前嗰件）
+    const layout=shopShelfLayout(g,itemId,remaining);
+    layout.crate&&drawShopCrate(ctx,layout.crate);
+    for(let i=0;i<layout.items.length-1;i++){ const q=layout.items[i]; drawShopImgFit(ctx,shopItemImg(itemId),q.x,q.y,q.s,q.s); }
+    const targetSlot=layout.items[layout.items.length-1];
+    const drawTop=()=>drawShopImgFit(ctx,shopItemImg(itemId),targetSlot.x,targetSlot.y,targetSlot.s,targetSlot.s);
     if(step.walk){
+      drawTop();
       drawShopBanner(ctx,cw,g,step.text);
     }else{
       drawShopBanner(ctx,cw,g,step.text,line?('已攞 '+line.got+'／'+line.need):'');
-      if(anim.phase!=='fly'&&remaining>0){
-        drawShopGlow(ctx,targetSlot.x,targetSlot.y,g.itemSize*0.62);
-        drawShopImgFit(ctx,shopItemImg(itemId),targetSlot.x,targetSlot.y,g.itemSize,g.itemSize);
-        drawShopArmMarker(ctx,g,targetSlot.x,targetSlot.y+g.itemSize*0.55,progress);
-      }
+      if(anim.phase!=='fly'&&remaining>0) drawShopGlow(ctx,targetSlot.x,targetSlot.y,targetSlot.s*0.72);
+      drawTop(); // 飛緊嗰件已經由 remaining 扣走，堆／排只會少一件
+      if(anim.phase!=='fly'&&remaining>0) drawShopArmMarker(ctx,g,targetSlot.x,targetSlot.y+targetSlot.s*0.55,progress);
     }
     drawShopCartWithItems(ctx,g,shopStory.cart);
     if(anim.phase==='fly'&&anim.step.action==='take'){
       const from={x:targetSlot.x,y:targetSlot.y},to={x:g.cartX-g.cartW*0.05,y:g.cartY-g.cartW*0.25};
       const p=shopFlyPos(from,to,animP);
-      drawShopImgFit(ctx,shopItemImg(itemId),p.x,p.y,g.itemSize*(1-0.35*animP),g.itemSize*(1-0.35*animP));
+      drawShopImgFit(ctx,shopItemImg(itemId),p.x,p.y,targetSlot.s*(1-0.25*animP),targetSlot.s*(1-0.25*animP));
     }
   }else if(scene==='walk_cashier'){
     drawShopBanner(ctx,cw,g,step.text);
@@ -10065,6 +10097,7 @@ const imgShopEcobag = new Image(); imgShopEcobag.src = 'img/shop_ecobag.png';
 const imgShopRice = new Image(); imgShopRice.src = 'img/shop_rice.png';
 const imgShopToiletpaper = new Image(); imgShopToiletpaper.src = 'img/shop_toiletpaper.png';
 const imgShopEggs = new Image(); imgShopEggs.src = 'img/advanced/eggs.png';
+const imgShopHand = new Image(); imgShopHand.src = 'img/shop_hand.png'; // v126 抬手標記用嘅手掌
 const imgSteamerEmpty = new Image(); imgSteamerEmpty.src = 'img/steamer_empty.png';
 const imgThPlate = new Image(); imgThPlate.src = 'img/th_plate.png';
 const imgThTray = new Image(); imgThTray.src = 'img/th_tray.png';
@@ -13146,7 +13179,7 @@ function updateFramePerfOverlay(now){
     framePerf.overlayEl = el;
   }
   const p = framePerfSnapshot();
-  el.textContent = `perf v125  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
+  el.textContent = `perf v126  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
     + `鏡頭 ${p.video[0]}×${p.video[1]}  畫布 ${p.canvas[0]}×${p.canvas[1]}  dpr ${p.dpr}  手模型 ${p.handDelegate || '-'}\n`
     + `手 ${p.hand.hands} 隻  標籤 ${p.hand.label || '-'} ${p.hand.score}  接納 ${p.hand.path || '-'}  嚴格 ${p.hand.strict} 連續 ${p.hand.continuity} 單手 ${p.hand.lone} 拒絕 ${p.hand.rejected}\n`
     + `左右手檢查 ${p.hand.check === 'off' ? '關' : '開'}  鎖定手形 ${p.hand.lockSize || '-'}  大小拒絕 ${p.hand.sizeRejected}  遠處拒絕 ${p.hand.farRejected}`
@@ -22473,7 +22506,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v125-20261118-supermarket-story";
+  const LEVEL_APP_BUILD = "v126-20261119-shelf-heap-hand";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

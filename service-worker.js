@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v125-20261118-supermarket-story";
+const CACHE_VERSION = "fthue-rehab-v126-20261119-shelf-heap-hand";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

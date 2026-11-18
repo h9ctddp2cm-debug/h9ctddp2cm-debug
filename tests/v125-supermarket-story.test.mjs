@@ -172,8 +172,8 @@ test('v125 library shows a shopping-list length bar with approximate rep counts'
   assert.match(html, /bar\.dataset\.shopListBar='1'/);
   assert.match(html, /data-shop-list="'\+k\+'"/);
   assert.match(html, /約 ?'\+[^<]*次抬手|約 \d+ 次抬手|'約 '\+/);
-  assert.match(html, /shopListSize:\s*'short'/);
-  assert.match(functionSource('shopListSizeKey'), /SHOP_LIST_SIZES\[state\.shopListSize\] \? state\.shopListSize : 'short'/);
+  assert.match(html, /shopListSize:\s*'medium'/); // v126: default 中單
+  assert.match(functionSource('shopListSizeKey'), /SHOP_LIST_SIZES\[state\.shopListSize\] \? state\.shopListSize : 'medium'/);
 });
 
 test('v125 __qa.startGame accepts shopListSize and exposes story hooks', () => {

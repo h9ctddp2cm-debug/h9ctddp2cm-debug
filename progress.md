@@ -1702,6 +1702,16 @@ Original prompt: Fix Level 6–7 interactions: make light clothes-peg press dete
 - Validation：四組測試 590 個（113+171+135+171）587 pass / 3 skip / 0 fail（首次跑 group 3 因 dist 未 rebuild 有 1 個 dist-gated 子測試預期性 fail，rebuild 後重跑 `tests/v114-public-no-keepsake.test.mjs` 5/5 同全組 135/135 皆過）；`tools/checkjs.sh` 11 OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 199 files（同 v114 一致，純文字改動冇影響檔案數）；`rg -c "__qa" dist/public/index.html` → 0；dist 內三個版本標記／`留念`／`寫名、簽名`／`名字只保留在此頁` 全部確認正確（前者 3 處存在，後三者 0 個殘留）；Playwright 三個尺寸（筆電 1413×653、iPad 橫向 1180×820、iPad 直向 820×1180）載入公開版首頁，零 page error（`console.error` 同 `pageerror` 皆空）——因涉及文字本身係死碼，冇可達 UI 路徑可截圖顯示呢組文字，故 QA 重點放喺「頁面正常載入、冇 JS 錯誤」而非畫面文字截圖；`ych_rehab_qa_artifacts/v114b/v114b-qa-contact-sheet.png`（首頁三尺寸存底）。
 - Residual notes：`ADV_RULES` 入面其他主題（`cooking`/`mahjong`/`cards`/`laundry`）嘅 `lines[1]`/`tail`/`tts` 同樣係死碼（同一個讀取模式，只用 `lines[0]`），呢次冇一併清理，維持原文，因為稽核只針對插花一句；如日後同類稽核再揪出其他主題嘅殘留描述文字，可用同一手法直接改字（不涉及功能判斷）。
 
+## 2026-11-19 v126 — 超市貨架似真超市（生果一堆／樽裝一排）＋ 真手掌標記 ＋ 預設中單
+
+- Therapist（19 Nov 凌晨，睇完 v125 預覽）三個要求：(1) 預設購物單長度改做中單（4 樣）；(2) 「超市係咁嘅咩？」—— 貨架唔似真超市，應該真係喺蘋果嗰堆度攞一個；(3) 「手就真係整手掌」—— 抬手標記唔要橙色「手」字圓圈，要真手掌。
+- 預設：`state.shopListSize:'medium'`、`shopListSizeKey()` 後備 `'medium'`、`buildShopList` 後備 4；`shopStory.listSize` 初值 medium。短／長單照舊可揀（13／28 次）。
+- 貨架陳列 `shopShelfLayout(g,itemId,remaining)`：`unit==='個'` 嘅生果（蘋果、橙）砌成一堆放喺木箱（`drawShopCrate`），底四中三頂二最多 9 個，永遠有 5 個陪襯，要攞嗰個係堆頂；其他貨（豉油、牛奶、雞蛋、米、廁紙、菜心）一排企喺架上（3 件陪襯＋剩餘件數），攞最前嗰件。飛行動畫由攞嗰格起飛，大小同堆入面一樣（`targetSlot.s`），飛緊嗰件已由 `remaining` 扣走，所以堆／排只會少一件。舊「一塊木板三個蘋果」陳列移除。
+- 手掌標記：新 `img/shop_hand.png`（AI 生成、手背向鏡頭、指尖向上、淺青袖口，218×360 透明底）；`drawShopArmMarker` 畫衫袖色臂線＋手掌圖（高度 `max(80, itemSize×1.15)`），圖未載入先用圓圈後備；唔再有「手」字。收銀／屋企場景同一個標記。
+- 無改動：角度控制器、達標、獎勵週期、劇本步驟同 rep 數；Level 5／6、研究模式不變。
+- Tests：新增 `tests/v126-supermarket-shelf-hand.test.mjs`（5：預設中單、生果堆 7/6/5 件＋重疊＋堆頂、一排 4/3 件、aisle 用 layout／起飛點、手掌圖無「手」字）；v125 測試預設改 medium。Markers `v126-20261119-shelf-heap-hand` ×3、`perf v126`、15 個 marker 測試 sed bump。
+- Validation：四組 **642** 個測試 0 fail（125+203+188+126）；`tools/checkjs.sh` OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 210 files（`shop_hand.png` 入 `offline-assets.js`）；`__qa` 0；dist `index.html` 無 research／pilot。Playwright 三個 viewport 行晒中單 22 次抬手 → 自動「訓練完成」，零頁面錯誤，對照表 `ych_rehab_qa_artifacts/v126/v126-qa-contact-sheet.png`。
+
 ## 2026-11-18 v125 — Level 3/4 新主題「去超市買餸」故事（抬臂一次＝做一個動作）＋返屋企放雪櫃／廚櫃
 
 - Therapist（18 Nov 晚）：Level 3/4 想加一個超市買餸嘅故事遊戲 —— 行入超市 → 睇購物單 → 抬手攞購物車 → 去貨架攞蘋果（要 2 個就抬 2 次）→ 再睇購物單 → 行去豉油嗰邊高架攞豉油 → … 買齊 → 推車去收銀 → 逐件由車攞出放上收銀枱 → 八達通拍卡 → 遞環保袋畀收銀員 → 收銀員入袋 → 接返環保袋 → 離開 → 返屋企逐件放上廚櫃／入雪櫃（「基本上舉到手就已經可以放到啱嘅位置」，唔使揀）；購物單「可以多啲物件」。
