@@ -29,10 +29,10 @@ function functionSource(name){
 /* ---------- release markers ---------- */
 
 test('v121 release markers', () => {
-  assert.match(html, /const LEVEL_APP_BUILD = "v132-20261119-digiflex-lenient";/);
-  assert.match(html, /perf v132/);
-  assert.match(sw, /^const CACHE_VERSION = "fthue-rehab-v132-20261119-digiflex-lenient";/);
-  assert.match(manifest, /v132-20261119-digiflex-lenient/);
+  assert.match(html, /const LEVEL_APP_BUILD = "v133-20261119-wok-on-stove";/);
+  assert.match(html, /perf v133/);
+  assert.match(sw, /^const CACHE_VERSION = "fthue-rehab-v133-20261119-wok-on-stove";/);
+  assert.match(manifest, /v133-20261119-wok-on-stove/);
 });
 
 /* ---------- 重新校準 button ---------- */

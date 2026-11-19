@@ -13440,7 +13440,7 @@ function updateFramePerfOverlay(now){
     framePerf.overlayEl = el;
   }
   const p = framePerfSnapshot();
-  el.textContent = `perf v132  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
+  el.textContent = `perf v133  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
     + `鏡頭 ${p.video[0]}×${p.video[1]}  畫布 ${p.canvas[0]}×${p.canvas[1]}  dpr ${p.dpr}  手模型 ${p.handDelegate || '-'}\n`
     + `手 ${p.hand.hands} 隻  標籤 ${p.hand.label || '-'} ${p.hand.score}  接納 ${p.hand.path || '-'}  嚴格 ${p.hand.strict} 連續 ${p.hand.continuity} 單手 ${p.hand.lone} 拒絕 ${p.hand.rejected}\n`
     + `左右手檢查 ${p.hand.check === 'off' ? '關' : '開'}  鎖定手形 ${p.hand.lockSize || '-'}  大小拒絕 ${p.hand.sizeRejected}  遠處拒絕 ${p.hand.farRejected}`
@@ -18846,19 +18846,29 @@ function drawCookSliced(ctx, img, cx, cy, size, n, gap){
     x += w + gap;
   }
 }
-function drawCookFlames(ctx, cx, cy, w, count, alpha, now){
+function drawCookFlames(ctx, cx, cy, w, count, alpha, now, flameH, layer){
+  // 火舌沿鑊底弧線排開（中間低、兩邊高），三層色：橙外、黃中、藍底；高度隨時間閃動
   if(count <= 0 || alpha <= 0) return;
   ctx.save(); ctx.globalAlpha = alpha;
   for(let i=0;i<count;i++){
-    const fx = cx - w/2 + w * (i + 0.5) / count;
-    const h = w * 0.16 * (0.8 + 0.35 * Math.sin(now/90 + i*1.7));
-    ctx.beginPath(); ctx.moveTo(fx - w*0.035, cy); ctx.quadraticCurveTo(fx, cy - h*1.5, fx + w*0.035, cy);
-    ctx.fillStyle = '#ff9f1a'; ctx.fill();
-    ctx.beginPath(); ctx.moveTo(fx - w*0.018, cy); ctx.quadraticCurveTo(fx, cy - h*0.9, fx + w*0.018, cy);
-    ctx.fillStyle = '#4aa3ff'; ctx.fill();
+    const k = (i + 0.5) / count * 2 - 1;                 // -1..1
+    const fx = cx + k * w / 2;
+    const fy = cy - k * k * w * 0.10;
+    const flick = 0.75 + 0.35 * Math.sin(now/85 + i*1.9) + 0.1 * Math.sin(now/37 + i*3.1);
+    const h = flameH * flick * (layer === 'back' ? (0.7 + 0.5 * Math.abs(k)) : 1);
+    const hw = w / count * 0.42;
+    const tongue = (hh, ww, col) => { ctx.beginPath(); ctx.moveTo(fx - ww, fy); ctx.bezierCurveTo(fx - ww, fy - hh*0.5, fx - ww*0.15, fy - hh*0.85, fx + ww*0.05, fy - hh); ctx.bezierCurveTo(fx + ww*0.3, fy - hh*0.75, fx + ww, fy - hh*0.4, fx + ww, fy); ctx.closePath(); ctx.fillStyle = col; ctx.fill(); };
+    tongue(h, hw, '#ff7a1a');
+    tongue(h*0.68, hw*0.68, '#ffb52e');
+    tongue(h*0.38, hw*0.45, '#fff0a0');
+    tongue(h*0.18, hw*0.5, '#4aa3ff');
   }
   ctx.restore();
 }
+/* 背景廚房圖入面煤氣爐嘅位置（圖片比例座標）：爐架中心、爐掣 */
+const COOK_BG_BURNER = { u:0.156, v:0.660 };
+const COOK_BG_KNOB = { u:0.125, v:0.722 };
+const imgCookRice = new Image(); imgCookRice.src = 'img/cook_rice_only.png';
 function cookRenderDigiflex(ctx){
   const cw = gameCanvas.width, ch = gameCanvas.height;
   const g = cookDigiflexGeometry(cw, ch);
@@ -18870,13 +18880,19 @@ function cookRenderDigiflex(ctx){
   const s = g.s, cx = g.cx, cy = g.cy;
 
   // 底：AI 生成屋企廚房（cover）
+  // bgRect：背景實際畫到邊（cover）。橫向照舊置中；直向會向左移，令畫好嘅煤氣爐入鏡。
+  let bgRect = { x:0, y:0, w:cw, h:ch };
   if(imgCookKitchenBg.complete && imgCookKitchenBg.naturalWidth){
     const iw = imgCookKitchenBg.naturalWidth, ih = imgCookKitchenBg.naturalHeight;
     const sc = Math.max(cw / iw, ch / ih);
     const dw = iw * sc, dh = ih * sc;
-    ctx.drawImage(imgCookKitchenBg, (cw - dw)/2, (ch - dh) * 0.7, dw, dh);
+    const ox = Math.max(cw - dw, Math.min(0, cw * 0.36 - COOK_BG_BURNER.u * dw));
+    const oy = (ch - dh) * 0.7;
+    ctx.drawImage(imgCookKitchenBg, ox, oy, dw, dh);
+    bgRect = { x:ox, y:oy, w:dw, h:dh };
   }else{
     ctx.fillStyle = '#f1e6d2'; ctx.fillRect(0, 0, cw, ch);
+    bgRect = { x:0, y:0, w:cw, h:cw * 720 / 1280 };
   }
   // 枱面半透明托底，令道具同文字清楚
   ctx.save();
@@ -18885,7 +18901,7 @@ function cookRenderDigiflex(ctx){
   ctx.fillStyle = sh; ctx.fillRect(0, ch*0.42, cw, ch*0.58);
   ctx.restore();
 
-  const wokImg = advImg('wok'), riceImg = advImg('friedrice');
+  const wokImg = advImg('wok');
   const wokOnStove = ['heat','oil','pour','salt','onion','off','plate'].includes(st.id);
   switch(st.id){
     case 'loosen': {
@@ -18955,86 +18971,101 @@ function cookRenderDigiflex(ctx){
       break;
     }
     case 'heat': case 'oil': case 'pour': case 'salt': case 'onion': case 'off': case 'plate': {
-      const wokX = st.id === 'plate' ? cx - s*0.42 : cx;
-      const wokY = cy + s*0.05;
-      const wokS = st.id === 'plate' ? s*0.95 : s*1.15;
-      const flameCount = st.id === 'heat' ? Math.min(cook.reps, 6) : (st.id === 'off' ? 6 : 5);
-      const flameAlpha = st.id === 'off' ? Math.max(0, 1 - frac) : (st.id === 'plate' ? 0 : 0.9);
+      // v133：鑊放喺背景畫好嘅煤氣爐上面（bgRect 由背景繪製計出），火喺鑊底清楚見到；
+      // 油樽／飯碗／鹽／蔥花都相對鑊嘅位置擺，碟放喺鑊右邊枱面。
+      const burnerX = bgRect.x + COOK_BG_BURNER.u * bgRect.w;
+      const burnerY = bgRect.y + COOK_BG_BURNER.v * bgRect.h;
+      const wokS = Math.min(bgRect.w * 0.28, cw * 0.6);
+      const panCX = burnerX;                       // 鑊身中心（圖中鑊身偏左，柄向右）
+      const wokX = panCX + wokS * 0.14;            // 圖片中心
+      const panBottom = burnerY + wokS * 0.05;     // 鑊底邊（3/4 視角）略低過爐架中心
+      const wokY = panBottom - wokS * 0.32;        // 圖片中心（鑊底喺圖中心下 0.32×寬）
+      const lit = st.id === 'heat' ? cook.reps > 0 : !['plate'].includes(st.id);
+      const flameAlpha = !lit ? 0 : (st.id === 'off' ? Math.max(0, 1 - frac) : 1);
+      const flameScale = st.id === 'heat' ? (0.6 + 0.4 * frac) : 1;
       const bob = (st.id === 'plate' || st.id === 'off') ? 0 : a.sign * a.pulse * s * 0.04;
-      // 爐頭光暈（有火時）
-      if(flameAlpha > 0 && flameCount > 0){
-        ctx.save(); ctx.globalAlpha = 0.45 * flameAlpha;
-        const glow = ctx.createRadialGradient(wokX, wokY + wokS*0.36, wokS*0.05, wokX, wokY + wokS*0.36, wokS*0.45);
-        glow.addColorStop(0, '#ff9f1a'); glow.addColorStop(1, 'rgba(255,159,26,0)');
-        ctx.fillStyle = glow; ctx.beginPath(); ctx.ellipse(wokX, wokY + wokS*0.36, wokS*0.5, wokS*0.14, 0, 0, Math.PI*2); ctx.fill(); ctx.restore();
+      // 火（後排大火舌：鑊兩側見到火尖）
+      if(flameAlpha > 0){
+        ctx.save(); ctx.globalAlpha = 0.5 * flameAlpha;
+        const glow = ctx.createRadialGradient(panCX, panBottom, wokS*0.05, panCX, panBottom, wokS*0.5);
+        glow.addColorStop(0, '#ffb13b'); glow.addColorStop(1, 'rgba(255,159,26,0)');
+        ctx.fillStyle = glow; ctx.beginPath(); ctx.ellipse(panCX, panBottom, wokS*0.55, wokS*0.2, 0, 0, Math.PI*2); ctx.fill(); ctx.restore();
+        drawCookFlames(ctx, panCX, panBottom - wokS*0.02, wokS*0.78, 7, flameAlpha, now, wokS*0.30*flameScale, 'back');
       }
       drawSprite(ctx, wokImg, wokX + bob, wokY, wokS, { shadow:true, rot: a.sign * a.pulse * 0.04 });
-      // 火舌舔住鑊底邊（畫喺鑊前面先睇得到）
-      drawCookFlames(ctx, wokX, wokY + wokS*0.40, wokS*0.5, flameCount, flameAlpha, now);
+      // 火（前排細火舌舔住鑊底邊）
+      if(flameAlpha > 0) drawCookFlames(ctx, panCX, panBottom, wokS*0.62, 6, flameAlpha, now, wokS*0.16*flameScale, 'front');
       // 鑊入面
+      const innerY = wokY + wokS*0.02;
       if(st.id === 'oil'){
         ctx.save(); ctx.globalAlpha = 0.9;
-        const rx = wokS*0.14 + wokS*0.2*frac, ry = wokS*0.05 + wokS*0.07*frac;
-        const og = ctx.createRadialGradient(wokX - rx*0.3, wokY - wokS*0.02 - ry*0.3, 1, wokX, wokY - wokS*0.02, rx);
+        const rx = wokS*0.12 + wokS*0.18*frac, ry = wokS*0.04 + wokS*0.06*frac;
+        const og = ctx.createRadialGradient(panCX - rx*0.3, innerY - ry*0.3, 1, panCX, innerY, rx);
         og.addColorStop(0, '#ffe08a'); og.addColorStop(1, '#e0a92a');
         ctx.fillStyle = og;
-        ctx.beginPath(); ctx.ellipse(wokX, wokY - wokS*0.02, rx, ry, 0, 0, Math.PI*2); ctx.fill(); ctx.restore();
+        ctx.beginPath(); ctx.ellipse(panCX, innerY, rx, ry, 0, 0, Math.PI*2); ctx.fill(); ctx.restore();
       }
       if(['pour','salt','onion','off','plate'].includes(st.id)){
+        // 淨飯（冇碟）喺鑊入面
         const riceAlpha = st.id === 'pour' ? Math.max(0.25, frac) : (st.id === 'plate' ? Math.max(0.15, 1 - frac) : 1);
-        drawSprite(ctx, riceImg, wokX + bob, wokY - wokS*0.07, wokS*0.56 * (st.id === 'plate' ? (1 - frac*0.5) : 1), { alpha: riceAlpha });
+        drawSprite(ctx, imgCookRice, panCX + bob, innerY - wokS*0.03, wokS*0.46 * (st.id === 'plate' ? (1 - frac*0.5) : 1), { alpha: riceAlpha });
       }
-      if(['onion','off','plate'].includes(st.id) || (st.id === 'onion')){
+      if(['onion','off','plate'].includes(st.id)){
         const bits = st.id === 'onion' ? cook.reps * 5 : 20;
-        ctx.save(); ctx.fillStyle = '#5bb134';
+        ctx.save(); ctx.fillStyle = '#5bb134'; ctx.globalAlpha = st.id === 'plate' ? Math.max(0.15, 1 - frac) : 1;
         for(let i=0;i<bits;i++){
-          const px = wokX + bob + (cookSeeded(i,8) - 0.5) * wokS * 0.42, py = wokY - wokS*0.12 + (cookSeeded(i,9) - 0.5) * wokS * 0.12;
+          const px = panCX + bob + (cookSeeded(i,8) - 0.5) * wokS * 0.36, py = innerY - wokS*0.07 + (cookSeeded(i,9) - 0.5) * wokS * 0.1;
           ctx.beginPath(); ctx.ellipse(px, py, wokS*0.012, wokS*0.008, cookSeeded(i,10)*3, 0, Math.PI*2); ctx.fill();
         }
         ctx.restore();
       }
-      // 每步嘅手上器具
+      // 每步嘅手上器具（相對鑊）
+      const propS = wokS * 0.5;
+      const propX = wokX + wokS * 0.5, propY = Math.max(wokY - wokS * 0.25, propS * 0.5 + 12 * g.cssScale);
       if(st.id === 'heat' && a.active){
         ctx.save(); ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 3;
-        for(let i=0;i<3;i++){ const x = wokX - wokS*0.2 + i*wokS*0.2, y0 = wokY - wokS*0.35 - a.p*wokS*0.25;
+        for(let i=0;i<3;i++){ const x = panCX - wokS*0.2 + i*wokS*0.2, y0 = wokY - wokS*0.3 - a.p*wokS*0.25;
           ctx.beginPath(); ctx.moveTo(x, y0); ctx.quadraticCurveTo(x + 10, y0 - 18, x, y0 - 36); ctx.stroke(); }
         ctx.restore();
       }
       if(st.id === 'oil'){
         if(a.pulse > 0.3){ ctx.save(); ctx.strokeStyle = '#f2c14e'; ctx.lineWidth = Math.max(4, s*0.022); ctx.lineCap='round';
-          ctx.beginPath(); ctx.moveTo(cx + s*0.36, cy - s*0.38); ctx.lineTo(wokX + s*0.05, wokY - s*0.08); ctx.stroke(); ctx.restore(); }
-        drawSprite(ctx, advImg('oil_bottle'), cx + s*0.5, cy - s*0.5, s*0.6, { shadow:true, rot: -1.1 * a.pulse });
+          ctx.beginPath(); ctx.moveTo(propX - propS*0.25, propY + propS*0.1); ctx.lineTo(panCX + wokS*0.05, innerY - wokS*0.04); ctx.stroke(); ctx.restore(); }
+        drawSprite(ctx, advImg('oil_bottle'), propX, propY, propS, { shadow:true, rot: -1.1 * a.pulse });
       }
       if(st.id === 'pour'){
         if(a.pulse > 0.3){ ctx.save(); ctx.fillStyle = 'rgba(250,240,200,0.9)';
-          for(let i=0;i<8;i++){ const t=(cookSeeded(i,11)+a.p)%1; ctx.beginPath(); ctx.arc(cx - s*0.36 + t*s*0.3, cy - s*0.36 + t*s*0.3, s*0.016, 0, Math.PI*2); ctx.fill(); }
+          for(let i=0;i<8;i++){ const t=(cookSeeded(i,11)+a.p)%1; ctx.beginPath(); ctx.arc(propX - propS*0.3 - t*(propX - propS*0.3 - panCX), propY + propS*0.1 + t*(innerY - propY - propS*0.1), s*0.016, 0, Math.PI*2); ctx.fill(); }
           ctx.restore(); }
-        drawSprite(ctx, advImg('rice_bowl'), cx - s*0.5, cy - s*0.5, s*0.62, { shadow:true, rot: 1.0 * a.pulse });
+        drawSprite(ctx, advImg('rice_bowl'), propX, propY, propS, { shadow:true, rot: -1.0 * a.pulse });
       }
       if(st.id === 'salt'){
-        const sx = cx + s*0.46 + a.sign * a.pulse * s * 0.06;
+        const sx = propX + a.sign * a.pulse * s * 0.06;
         if(a.active){ ctx.save(); ctx.fillStyle = '#fff';
-          for(let i=0;i<10;i++){ const t=(cookSeeded(i,12)+a.p)%1; ctx.beginPath(); ctx.arc(sx - s*0.2 + (cookSeeded(i,13)-0.5)*s*0.2, cy - s*0.3 + t*s*0.3, s*0.009, 0, Math.PI*2); ctx.fill(); }
+          for(let i=0;i<10;i++){ const t=(cookSeeded(i,12)+a.p)%1; ctx.beginPath(); ctx.arc(sx - propS*0.4 + (cookSeeded(i,13)-0.5)*propS*0.3, propY + propS*0.1 + t*(innerY - propY), s*0.009, 0, Math.PI*2); ctx.fill(); }
           ctx.restore(); }
-        drawSprite(ctx, advImg('salt_dish'), sx, cy - s*0.48, s*0.42, { shadow:true, rot: a.sign * a.pulse * 0.25 });
+        drawSprite(ctx, advImg('salt_dish'), sx, propY, propS*0.8, { shadow:true, rot: a.sign * a.pulse * 0.25 });
       }
       if(st.id === 'onion'){
-        const ox = cx + s*0.46;
         if(a.active){ ctx.save(); ctx.fillStyle = '#5bb134';
-          for(let i=0;i<10;i++){ const t=(cookSeeded(i,14)+a.p)%1; ctx.beginPath(); ctx.arc(ox - s*0.2 + (cookSeeded(i,15)-0.5)*s*0.2, cy - s*0.3 + t*s*0.3, s*0.012, 0, Math.PI*2); ctx.fill(); }
+          for(let i=0;i<10;i++){ const t=(cookSeeded(i,14)+a.p)%1; ctx.beginPath(); ctx.arc(propX - propS*0.4 + (cookSeeded(i,15)-0.5)*propS*0.3, propY + propS*0.1 + t*(innerY - propY), s*0.012, 0, Math.PI*2); ctx.fill(); }
           ctx.restore(); }
-        drawSprite(ctx, advImg('onion_chopped'), ox, cy - s*0.48, s*0.42, { shadow:true, rot: -a.pulse * 0.5 });
+        drawSprite(ctx, advImg('onion_chopped'), propX, propY, propS*0.8, { shadow:true, rot: -a.pulse * 0.5 });
       }
       if(st.id === 'off'){
-        drawSprite(ctx, advImg('stove_knob'), cx - s*0.62, cy + s*0.22, s*0.32, { shadow:true, rot: frac * Math.PI / 2 });
+        // 爐掣：畫喺背景爐嘅掣位，熄火時轉
+        const knobX = bgRect.x + COOK_BG_KNOB.u * bgRect.w, knobY = bgRect.y + COOK_BG_KNOB.v * bgRect.h;
+        drawSprite(ctx, advImg('stove_knob'), knobX, knobY, wokS*0.2, { shadow:true, rot: frac * Math.PI / 2 });
       }
       if(st.id === 'plate'){
-        const plateX = cx + s*0.5, plateY = cy + s*0.12;
-        drawSprite(ctx, advImg('plate_empty'), plateX, plateY, s*0.85, { shadow:true });
-        if(frac > 0) drawSprite(ctx, riceImg, plateX, plateY - s*0.04, s*0.62 * (0.35 + 0.65*frac));
+        // 碟放喺鑊右邊枱面，飯（冇碟嗰張）逐下疊上碟
+        const plateS = Math.min(s*0.85, wokS*0.9);
+        const plateX = Math.min(wokX + wokS*0.72, cw - plateS*0.55 - 10 * g.cssScale), plateY = burnerY + wokS*0.08;
+        drawSprite(ctx, advImg('plate_empty'), plateX, plateY, plateS, { shadow:true });
+        if(frac > 0) drawSprite(ctx, imgCookRice, plateX, plateY - plateS*0.08, plateS*0.62 * (0.35 + 0.65*frac));
         // 鑊鏟由鑊去碟
         const t = a.active ? a.pulse : 0;
-        const spX = wokX + (plateX - wokX) * t, spY = cy - s*0.35 - t * (1 - t) * s * 0.3;
+        const spX = panCX + (plateX - panCX) * t, spY = wokY - wokS*0.3 - t * (1 - t) * s * 0.3;
         drawSprite(ctx, imgCookSpatula, spX, spY, s*0.6, { shadow:true, rot: -0.6 + t*0.9 });
       }
       break;
@@ -23431,7 +23462,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v132-20261119-digiflex-lenient";
+  const LEVEL_APP_BUILD = "v133-20261119-wok-on-stove";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 
