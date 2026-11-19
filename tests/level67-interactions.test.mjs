@@ -53,9 +53,11 @@ const LEVEL6_TASKS = [
   { task: 'peg', theme: 'peg_laundry', name: 'Cloth-Peg Laundry', gameType: 'pinch' },
   { task: 'cards', theme: 'cards', name: 'Playing Cards', gameType: 'pinch' },
   { task: 'mahjong', theme: 'mahjong', name: 'Mahjong', gameType: 'pinch' },
-  { task: 'cooking', theme: 'cooking', name: 'Cook Egg Fried Rice', gameType: 'pinch' },
+  { task: 'cooking', theme: 'cooking', name: 'Cook Egg Fried Rice', gameType: 'grasp' },
 ];
-const LEVEL6_GESTURE_TASKS = LEVEL6_TASKS.filter(({ task }) => task !== 'chopsticks');
+// v131: cooking is a Digi-Flex whole-hand squeeze counter (no pick/place), covered by
+// tests/v131-digiflex-cooking.test.mjs.
+const LEVEL6_GESTURE_TASKS = LEVEL6_TASKS.filter(({ task }) => task !== 'chopsticks' && task !== 'cooking');
 
 for (const { task, theme, name, gameType } of LEVEL6_TASKS) {
   test(`Level 6 ${name} task starts on the correct theme and interaction type`, async t => {

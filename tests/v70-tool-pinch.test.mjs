@@ -29,7 +29,8 @@ test('gameplay pinch branch routes tool tasks through the tool interpreter', () 
 
 test('calibration open gate is range-based for tool tasks, unchanged for bare hand', () => {
   assert.match(publicSource,
-    /isLevel6RealToolTask\(\)\s*\?\s*toolCalibOpenQualifies\(c\.toolVals, value\)\s*:\s*\(Number\.isFinite\(value\) && calibLooksOpen\(res\)\)/);
+    // v131: a Digi-Flex (Level 6 cooking) branch sits between the tool and bare-hand branches
+    /isLevel6RealToolTask\(\)\s*\?\s*toolCalibOpenQualifies\(c\.toolVals, value\)\s*:\s*isLevel6DigiflexTask\(\)\s*\?\s*digiflexCalibRelaxedQualifies\(c\.toolVals, value\)\s*:\s*\(Number\.isFinite\(value\) && calibLooksOpen\(res\)\)/);
   // v68 bare-hand contract must survive verbatim.
   assert.match(publicSource, /Number\.isFinite\(value\)\s*&&\s*calibLooksOpen\(res\)/);
 });

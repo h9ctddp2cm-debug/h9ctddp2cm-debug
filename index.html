@@ -1883,6 +1883,26 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
         </div>
       </div>
     </div>
+    <div class="card collapsible" id="cookSqueezeCard" data-accordion="cook-squeeze" hidden>
+      <h2><span>煮飯：握力器揸幾多下</span>
+        <span class="selected-preview" id="preview-cook-squeeze">中（44 下）</span></h2>
+      <div class="card-body">
+        <div class="option-row" id="cookSqueezeOptions">
+          <button class="option-btn" type="button" data-cook-squeeze="less">
+            少（25 下）
+            <small>每步次數約減半（最少 1 下），適合手較易攰嘅病人</small>
+          </button>
+          <button class="option-btn selected" type="button" data-cook-squeeze="normal">
+            中（44 下）
+            <small>抓鬆飯 3 → 打蛋 4 → 拌蛋 4 → 洗蔥 3 → 切蔥 5 → 熱鍋 2 → 落油 2 → 倒飯 3 → 落鹽 4 → 落蔥花 5 → 熄火 1 → 上碟 8</small>
+          </button>
+          <button class="option-btn" type="button" data-cook-squeeze="more">
+            多（69 下）
+            <small>每步次數約 ×1.5</small>
+          </button>
+        </div>
+      </div>
+    </div>
     <div class="card collapsible" id="dimsumDifficultyCard" data-accordion="dimsum-difficulty" hidden>
       <h2><span>筷子點心難度</span>
         <span class="selected-preview" id="preview-dimsum-difficulty">基本</span></h2>
@@ -2683,6 +2703,7 @@ const state = {
   shoulderExerciseMode: 'active', // Levels 3–4: active | assisted-stick
   laundryDifficulty: 'basic', // Level 6 peg laundry ladder: basic | zones2 | zones | sort2 | sort (v123; legacy 'complex' → zones)
   fridgeDifficulty: 'basic',  // v101 Level 5 fridge: basic（任何位置）| zones（着燈六格）
+  cookSqueezeAmount: 'normal', // v131 Level 6 Digi-Flex cooking: less | normal | more
   dimsumDifficulty: 'basic', // Level 6 chopsticks dim sum: basic | complex order
   theme: 'dimsum',      // 活動 id
   shopListSize: 'medium', // v125 Level 3/4 超市購物單長度：short（2 樣）| medium（4 樣）| long（6 樣）；v126 預設中單
@@ -2957,6 +2978,12 @@ function isLevel6ToolGestureTask(){ return isLevel6() && !isLevel6Chopsticks(); 
    flow only: the research track keeps its own predates-v70 tool modes. */
 function isLevel6RealToolTask(){
   return isLevel6() && state.level6Task === 'peg';
+}
+/* v131: public Level 6 cooking is played holding a hand-grip exerciser
+   (Digi-Flex style). The camera sees whole-hand finger curl only; it does not
+   identify the device or measure force. */
+function isLevel6DigiflexTask(){
+  return isLevel6() && state.level6Task === 'cooking';
 }
 function level6ToolWords(){
   return state.level6Task === 'peg'
@@ -4925,10 +4952,10 @@ const CALIB_LEVEL_BRIEF = {
      + '<b>5 秒</b> 系統會自動暫停，提示放下物件、張開手、放鬆。<br>'
      + '預設使用<b>較大物件及較短距離</b>；如連續放手困難，系統會提示重新評估。',
   '67': '<b>Level 6 患手三點捏握功能任務</b><br>'
-     + '六款活動都用已選患手：先張開三指，輕捏拿起，用手的位置移動，再張開放下。<br>'
-     + '<span lang="en">All six activities use the selected affected hand: open three fingers, lightly pinch to pick up, move with the hand, then reopen to release.</span><br>'
-     + '可選插花、筷子點心、衣夾晾衫、啤牌、麻雀或煮蛋炒飯。六款活動都偵測已選患手三點捏握：先張開、輕捏拿起、用手的位置移動，再張開放下。網頁不識別實體工具，亦不量度握力或捏力。<br>'
-     + '筷子點心及衣夾晾衫由患手揸住真筷子／衣夾玩：校準同遊戲全程揸住工具，系統會對照參加者自己揸住工具時嘅開合幅度嚟判斷夾起與放開。<br>'
+     + '六款活動都用已選患手：插花、筷子點心、衣夾晾衫、啤牌、麻雀用三點捏握（先張開三指，輕捏拿起，用手的位置移動，再張開放下）；煮蛋炒飯則揸住握力器（Digi-Flex）成隻手揸實再放鬆計一下。<br>'
+     + '<span lang="en">All six activities use the selected affected hand: five tasks use a tripod pinch (open three fingers, lightly pinch to pick up, move with the hand, then reopen to release); egg fried rice uses a whole-hand squeeze on a hand exerciser (squeeze, then relax = one count).</span><br>'
+     + '網頁不識別實體工具，亦不量度握力或捏力。<br>'
+     + '筷子點心、衣夾晾衫及煮蛋炒飯由患手揸住真筷子／衣夾／握力器玩：校準同遊戲全程揸住工具，系統會對照參加者自己揸住工具時嘅開合幅度嚟判斷夾起、放開或揸實、放鬆。<br>'
      + '<span style="color:#7d1a12;">注意：相機追蹤只控制遊戲，亦不作診斷或自動 FTHUE 分級。</span>',
 };
 function renderCalibLevelBrief(){
@@ -5836,10 +5863,10 @@ const LEVEL6_TASKS = {
   },
   cooking:{
     id:'cooking', theme:'cooking',
-    gameType:'pinch',
+    gameType:'grasp',
     label:'煮蛋炒飯', labelEn:'Cook Egg Fried Rice',
-    hint:'患手三指張開，輕捏拿起食材，移到目標，再張開放下',
-    actionCue:'三指張開 → 輕捏拿起 → 移動 → 張開放下',
+    hint:'患手揸住握力器（Digi-Flex），成隻手揸實再放鬆計一下；每一步揸夠次數就煮到',
+    actionCue:'揸實握力器 → 放鬆 ＝ 1 下',
   },
 };
 function level6TaskProfile(){
@@ -5955,6 +5982,20 @@ function renderLaundryDifficultySettings(){
   document.getElementById('preview-laundry-difficulty').textContent=LAUNDRY_DIFFICULTY_LABELS[key]||'基本：一架';
   document.querySelectorAll('#laundryDifficultyOptions [data-laundry-difficulty]').forEach(button=>{
     const selected=button.dataset.laundryDifficulty===key;
+    button.classList.toggle('selected',selected);
+    button.setAttribute('aria-pressed',selected?'true':'false');
+  });
+}
+function renderCookSqueezeSettings(){
+  const card=document.getElementById('cookSqueezeCard');
+  if(!card)return;
+  const enabled=state.level==='67' && state.level6Task==='cooking' && !research.active;
+  card.hidden=!enabled;
+  if(!enabled)return;
+  const key=cookSqueezeAmountKey();
+  document.getElementById('preview-cook-squeeze').textContent=COOK_SQUEEZE_LABELS[key];
+  document.querySelectorAll('#cookSqueezeOptions [data-cook-squeeze]').forEach(button=>{
+    const selected=button.dataset.cookSqueeze===key;
     button.classList.toggle('selected',selected);
     button.setAttribute('aria-pressed',selected?'true':'false');
   });
@@ -6358,6 +6399,7 @@ function selectActivity(themeId){
   renderShoulderTargetSettings();
   renderLaundryDifficultySettings();
   renderFridgeDifficultySettings();
+  renderCookSqueezeSettings();
   renderDimsumDifficultySettings();
   renderTimingSettings();
   const go=document.getElementById('btnGoCalib');
@@ -6544,6 +6586,13 @@ document.getElementById('laundryDifficultyOptions').addEventListener('click',e=>
   state.laundryDifficulty=LAUNDRY_DIFFICULTY_KEYS.includes(pick)?pick:'basic';
   renderLaundryDifficultySettings();
 });
+document.getElementById('cookSqueezeOptions').addEventListener('click',e=>{
+  const button=e.target.closest('[data-cook-squeeze]');
+  if(!button||state.level!=='67'||state.level6Task!=='cooking')return;
+  const pick=button.dataset.cookSqueeze;
+  state.cookSqueezeAmount=COOK_SQUEEZE_AMOUNTS[pick]?pick:'normal';
+  renderCookSqueezeSettings();
+});
 document.getElementById('fridgeDifficultyOptions').addEventListener('click',e=>{
   const button=e.target.closest('[data-fridge-difficulty]');
   if(!button||!isFridgeGame())return;
@@ -6637,7 +6686,7 @@ async function enterCalibrationFlow(){
       await ensureHandLandmarker();
       trackingModelReady = true;
     }catch(err){}
-    if(state.theme === 'cooking'){
+    if(state.theme === 'cooking' && !isLevel6DigiflexTask()){
       const pose = await ensurePoseLandmarker().catch(()=>null);
       trackingModelReady = trackingModelReady || Boolean(pose);
     }
@@ -6702,6 +6751,15 @@ const ADV_RULES = {
     ],
     tail:'手腕／前臂旋轉為螢幕估算回饋，並非醫學量度。',
     tts:'煮飯。跟住指示，一步一步煮一碟蛋炒飯，總共十二步。每一步做夠動作就會自動去下一步。',
+  },
+  cooking_digiflex:{
+    lines:[
+      '揸住握力器，每一步揸實再放鬆，揸夠次數就煮到（共 12 步）',
+      '每揸一下，畫面即時有動作：切蔥、落油、兜炒',
+      '如有需要，可以按「跳過這一步」',
+    ],
+    tail:'網頁只睇手指開合，唔識別器材，亦唔量度握力。',
+    tts:'煮飯。揸住握力器，每一步揸實再放鬆，揸夠次數就煮到。總共十二步。',
   },
   mahjong:{
     lines:[
@@ -6780,7 +6838,7 @@ function updateRulesForActivity(){
     return;
   }
   if(usesAdvancedThemeModule()){
-    const r = ADV_RULES[state.theme];
+    const r = (state.theme === 'cooking' && isLevel6DigiflexTask()) ? ADV_RULES.cooking_digiflex : ADV_RULES[state.theme];
     const rulesEl0 = document.getElementById('rulesContent');
     if(rulesEl0){
       rulesEl0.innerHTML =
@@ -8620,6 +8678,14 @@ function computeGraspScore(lm, isGraspingPrev){
       ? (!visibleRelease && score >= graspThresholds.personalGraspExit)
       : (visibleGrasp || score >= graspThresholds.personalGraspEnter);
   }
+  if(isLevel6DigiflexTask()){
+    // v131: fingers wrapped round a hand-grip exerciser always look "curled",
+    // so the visible two-finger rules cannot separate squeeze from rest. Use
+    // the calibrated score alone with hysteresis (relaxed-hold vs squeeze).
+    const enter = Number.isFinite(state.personalGraspEnter) ? state.personalGraspEnter : 0.56;
+    const exit = Number.isFinite(state.personalGraspExit) ? state.personalGraspExit : 0.50;
+    isGrasping = isGraspingPrev ? score >= exit : score >= enter;
+  }
   return { isGrasping, score, curledCount, openCount, valid:true };
 }
 
@@ -9655,6 +9721,11 @@ function updateCalibrationCopy(){
     hint.textContent = '患手揸住' + w.noun + '入鏡。慢慢' + w.open + '、' + w.close + '幾次。';
     openCheck.textContent = '○ ' + w.open + w.noun;
     closeCheck.textContent = '○ ' + w.close + w.noun;
+  }else if(isLevel6DigiflexTask()){
+    // v131: hand-grip exerciser in hand; judge against the participant's own range.
+    hint.textContent = '患手揸住握力器入鏡（手指向鏡頭）。先放鬆，再揸實，重複幾次。';
+    openCheck.textContent = '○ 放鬆揸住握力器';
+    closeCheck.textContent = '○ 揸實握力器';
   }else if(isChopsticksMode()){
     // v117: Level 6 chopsticks is a dwell task; say exactly what to show the camera.
     hint.textContent = '患手揸住筷子入鏡（手背向鏡頭）；見綠點即可按「開始遊戲」。';
@@ -9714,11 +9785,22 @@ function calibLooksOpen(res){
   }
   return res.isOpenPrep === true;
 }
+/* v131: Digi-Flex calibration. A hand wrapped round the exerciser never
+   satisfies the bare-hand open gate, so "relaxed" is the low end of the
+   participant's own observed curl range (mirror of toolCalibOpenQualifies). */
+const DIGIFLEX_CALIB_MIN_RANGE = 0.02;
+function digiflexCalibRelaxedQualifies(vals, value){
+  if(!Number.isFinite(value)) return false;
+  const range = toolCalibRange(vals);
+  if(!range || range.span < DIGIFLEX_CALIB_MIN_RANGE) return false;
+  return value <= range.lo + range.span * 0.35;
+}
 function calibOpenStageHint(){
   if(isLevel6RealToolTask()){
     const w = level6ToolWords();
     return '請慢慢' + w.open + '同' + w.close + w.noun + '幾次。';
   }
+  if(isLevel6DigiflexTask()) return '請揸住握力器，放鬆、揸實幾次。';
   if(isPegMode()) return '請先放鬆打開。';
   return isPinchMode() ? '請先張開手指。' : '請先張開手。';
 }
@@ -9834,8 +9916,9 @@ function startCalibLoop(){
             // this stage or pollutes openScores.
             const previousOpenTick = c.openTickAt;
             c.openTickAt = now;
-            if(isLevel6RealToolTask() && Number.isFinite(value)){
+            if((isLevel6RealToolTask() || isLevel6DigiflexTask()) && Number.isFinite(value)){
               // v70: record the tool-constrained aperture range for this hand.
+              // v131: the Digi-Flex task records whole-hand curl the same way.
               c.toolVals = c.toolVals || [];
               c.toolVals.push(value);
               if(c.toolVals.length > 240) c.toolVals.shift();
@@ -9849,7 +9932,9 @@ function startCalibLoop(){
             }
             const openQualifies = isLevel6RealToolTask()
               ? toolCalibOpenQualifies(c.toolVals, value)
-              : (Number.isFinite(value) && calibLooksOpen(res));
+              : isLevel6DigiflexTask()
+                ? digiflexCalibRelaxedQualifies(c.toolVals, value)
+                : (Number.isFinite(value) && calibLooksOpen(res));
             if(openQualifies){
               c.openScores.push(value);
               if(isLevel6RealToolTask() && Number.isFinite(res.pinchIndexRatio) && Number.isFinite(res.pinchMiddleRatio)){
@@ -9871,6 +9956,7 @@ function startCalibLoop(){
                 c.moreOpenMs = 0;
                 hint.textContent = isLevel6RealToolTask()
                   ? ('而家' + level6ToolWords().close + level6ToolWords().noun + '。')
+                  : isLevel6DigiflexTask() ? '而家揸實握力器。'
                   : (isPinchMode() ? '而家輕捏。' : '而家輕合手。');
               }
             }
@@ -11811,6 +11897,7 @@ let cursorX = -1, cursorY = -1;
 let dotEmaX = -1, dotEmaY = -1;
 let handDetected = false;
 let lastHandLm = null;   // 最近一次手部 21 點（供煮飯動作估算 / QA 模擬）
+let lastGraspScore = NaN; // v131：最近一幀整隻手屈曲分數（Digi-Flex 煮飯計數用）
 let gripActive = false;
 let isGrasping = false; // 握放／夾仔：手部合上；空手 pinch：三指 aperture 收窄
 let handOpenPrep = false; // fingers open / separated: valid preparation before a new grasp or pinch
@@ -13353,7 +13440,7 @@ function updateFramePerfOverlay(now){
     framePerf.overlayEl = el;
   }
   const p = framePerfSnapshot();
-  el.textContent = `perf v130  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
+  el.textContent = `perf v131  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
     + `鏡頭 ${p.video[0]}×${p.video[1]}  畫布 ${p.canvas[0]}×${p.canvas[1]}  dpr ${p.dpr}  手模型 ${p.handDelegate || '-'}\n`
     + `手 ${p.hand.hands} 隻  標籤 ${p.hand.label || '-'} ${p.hand.score}  接納 ${p.hand.path || '-'}  嚴格 ${p.hand.strict} 連續 ${p.hand.continuity} 單手 ${p.hand.lone} 拒絕 ${p.hand.rejected}\n`
     + `左右手檢查 ${p.hand.check === 'off' ? '關' : '開'}  鎖定手形 ${p.hand.lockSize || '-'}  大小拒絕 ${p.hand.sizeRejected}  遠處拒絕 ${p.hand.farRejected}`
@@ -13523,10 +13610,22 @@ let qaHand = null;   // { nx, ny, isGrasping }
 // deliberately exercise duplicate RAF handling.
 let qaFrameGeneration = 0;
 let lastAcceptedToolHandGeneration = -1;
-function qaToolHandResults(kind, gesture, side, missing, apertures, handednessConfidence, flexExtensions){
+function qaToolHandResults(kind, gesture, side, missing, apertures, handednessConfidence, flexExtensions, curl){
   const lm=Array.from({length:21},()=>({x:.5,y:.5,z:0}));
   lm[0]={x:.42,y:.72,z:0};lm[5]={x:.43,y:.55,z:0};lm[9]={x:.52,y:.53,z:0};lm[17]={x:.62,y:.58,z:0};
-  if(kind==='chopsticks' && research.active){
+  if(kind==='digiflex'){
+    // v131 QA: whole-hand curl 0 (fingers straight) … 1 (tips at the palm
+    // centre). computeGraspScore ≈ 1.57 × curl for this synthetic hand, so a
+    // relaxed hold on the exerciser is ~0.2 and a squeeze ~0.45.
+    const c=Number.isFinite(Number(curl))?Math.max(0,Math.min(1,Number(curl))):(gesture==='closed'?.45:.2);
+    lm[13]={x:.58,y:.55,z:0};lm[2]={x:.38,y:.63,z:0};
+    const pc={x:(lm[0].x+lm[5].x+lm[9].x+lm[13].x+lm[17].x)/5,y:(lm[0].y+lm[5].y+lm[9].y+lm[13].y+lm[17].y)/5};
+    for(const [m,t] of [[5,8],[9,12],[13,16],[17,20]]){
+      const dx=lm[m].x-lm[0].x, dy=lm[m].y-lm[0].y, n=Math.hypot(dx,dy)||1;
+      lm[t]={x:lm[m].x+dx/n*.30*(1-c)+(pc.x-lm[m].x)*c*.7, y:lm[m].y+dy/n*.30*(1-c)+(pc.y-lm[m].y)*c*.7, z:0};
+    }
+    lm[4]={x:lm[2].x-.06*(1-c)+(pc.x-lm[2].x)*c*.6, y:lm[2].y-.08*(1-c)+(pc.y-lm[2].y)*c*.6, z:0};
+  }else if(kind==='chopsticks' && research.active){
     const ratio=gesture==='closed'?1.34:1.82;
     const place=(mcp,tip,dx)=>{
       const base=lm[mcp];
@@ -13582,6 +13681,7 @@ function readHand(frame){
       return interpreted;
     }
     return { detected:true, nx:qaHand.nx, ny:qaHand.ny, isGrasping:!!qaHand.isGrasping,
+      graspScore: Number.isFinite(qaHand.graspScore) ? qaHand.graspScore : (qaHand.isGrasping ? 0.9 : 0.2),
       isOpenPrep: qaHand.isOpenPrep === undefined ? !qaHand.isGrasping : !!qaHand.isOpenPrep };
   }
   return detectWrist(gameVideo,frame);
@@ -14501,6 +14601,7 @@ function updateTracking(frameOverride){
     }
     lastPathX = cursorX; lastPathY = cursorY;
     handOpenPrep = res.isOpenPrep === undefined ? !res.isGrasping : !!res.isOpenPrep;
+    if(Number.isFinite(res.graspScore)) lastGraspScore = res.graspScore;
     if(isGraspStyleMode()){
       isGrasping = res.isGrasping || false;
     } else if(usesAdvancedThemeModule() && res.isGrasping !== undefined){
@@ -16764,6 +16865,10 @@ function usesAdvancedThemeModule(id){
   // (hand of tiles → side 放牌區; suit chip → side 收牌區) so both levels show
   // the same game interface. Only the gesture differs (Level 6 tripod pinch).
   if(isLevel6() && LEVEL6_SHARED_LEVEL5_THEMES.includes(theme)) return true;
+  // v131: public Level 6 cooking runs the 12-step egg-fried-rice module as a
+  // Digi-Flex squeeze counter (previously it fell back to the generic
+  // vegetable/noodle pick-and-place engine).
+  if(theme === 'cooking' && isLevel6DigiflexTask()) return true;
   return !isGrossTabletop() && isAdvTheme(theme);
 }
 /* 窄螢幕（手機直度）：引導面板較高，遊戲元素要向下讓位 */
@@ -17902,6 +18007,39 @@ const COOK_TH = {
 };
 function cookTh(){ return COOK_TH[state.level] || COOK_TH['4']; }
 
+/* ---- v131：Level 6 握力器（Digi-Flex）版 —— 每一步「揸實→放鬆」計一下 ----
+   次數由少到多遞增；治療師可揀 少／中／多（×0.5／×1／×1.5）。 */
+const COOK_DIGIFLEX_NEED = [3,4,4,3,5,2,2,3,4,5,1,8];
+const COOK_SQUEEZE_AMOUNTS = { less:0.5, normal:1, more:1.5 };
+const COOK_SQUEEZE_LABELS = { less:'少（25 下）', normal:'中（44 下）', more:'多（69 下）' };
+function cookSqueezeAmountKey(){
+  return COOK_SQUEEZE_AMOUNTS[state.cookSqueezeAmount] ? state.cookSqueezeAmount : 'normal';
+}
+function cookDigiflexNeed(idx){
+  const base = COOK_DIGIFLEX_NEED[Math.max(0, Math.min(COOK_DIGIFLEX_NEED.length - 1, idx))] || 1;
+  return Math.max(1, Math.round(base * COOK_SQUEEZE_AMOUNTS[cookSqueezeAmountKey()]));
+}
+function cookDigiflexTotal(key){
+  const m = COOK_SQUEEZE_AMOUNTS[key] || 1;
+  return COOK_DIGIFLEX_NEED.reduce((sum, n)=> sum + Math.max(1, Math.round(n * m)), 0);
+}
+function cookStepNeed(st){
+  return isLevel6DigiflexTask() ? cookDigiflexNeed(cook.idx) : st.need;
+}
+function cookStepGoal(st){
+  return isLevel6DigiflexTask() ? ('揸實握力器再放鬆，' + cookStepNeed(st) + ' 下') : st.goal;
+}
+function cookStepTts(st){
+  if(!isLevel6DigiflexTask()) return st.tts;
+  return st.text + '。揸實握力器，再放鬆，做' + cookStepNeed(st) + '下。';
+}
+/* 相對判斷：同今次自己嘅放鬆位比較，升幅 ≥ 校準範圍 35%（下限 0.015）就算揸實；
+   跌返一半就算放鬆。病人揸攰、幅度變細都數到。 */
+const DIGIFLEX_RELATIVE_RISE = 0.35;
+const DIGIFLEX_MIN_RISE = 0.03;      // 分數最少要升幾多先算開始揸（防鏡頭雜訊）
+const DIGIFLEX_MIN_SQUEEZE_MS = 100;
+const DIGIFLEX_ANIM_MS = 520;
+
 const cook = {
   idx:0, reps:0, holdStart:0, done:false, active:false,
   msg:'', metric:'', poseOn:false, lastAdvance:0,
@@ -17913,6 +18051,9 @@ const cook = {
   chopPhase:0, chopAnchor:0, shakeDir:0, shakeAnchor:0, shakeCount:0,
   elbowPhase:0, tiltPhase:0, pinchPrev:false, scoopZone:'', scoopCount:0,
   layout:null,
+  // v131 Digi-Flex squeeze tracker
+  digi:{ hist:[], baseline:null, peak:0, squeezing:false, since:0, animAt:0, animSign:1, lastScore:NaN },
+  introUntil:0,
   reset(){
     this.idx = 0; this.reps = 0; this.holdStart = 0; this.done = false;
     this.msg = ''; this.metric = ''; this.ring = []; this.angAccum = 0;
@@ -17924,6 +18065,8 @@ const cook = {
     this.phaseSince = 0; this.neutralSince = 0;
     this.rollPhase = 0; this.rollExtremeSign = 0; this.rollLastSign = 0;
     this.outcomeIdx = -1; this.outcomeUntil = 0; this.announceAt = 0;
+    this.digi = { hist:[], baseline:null, peak:0, squeezing:false, since:0, animAt:0, animSign:1, lastScore:NaN };
+    this.introUntil = 0;
   },
   step(){ return COOK_STEPS[Math.min(this.idx, COOK_STEPS.length - 1)]; },
 };
@@ -18006,14 +18149,22 @@ function cookDetect(){
     if(now - cook.lastRepAt < th.repCooldown) return false;
     cook.lastRepAt = now;
     cook.reps++;
-    if(cook.reps < st.need){
+    if(isLevel6DigiflexTask()){ cook.digi.animAt = now; cook.digi.animSign = -cook.digi.animSign; }
+    if(cook.reps < cookStepNeed(st)){
       playCorrectSound();
-      rewardSmall({ achievement:'第 ' + (cook.idx+1) + ' 步 · ' + cook.reps + '/' + st.need,
-        detail: st.goal, x: cursorX > 0 ? cursorX : gameCanvas.width/2,
+      rewardSmall({ achievement:'第 ' + (cook.idx+1) + ' 步 · ' + cook.reps + '/' + cookStepNeed(st),
+        detail: cookStepGoal(st), x: cursorX > 0 ? cursorX : gameCanvas.width/2,
         y: cursorY > 0 ? cursorY : gameCanvas.height/2, silent:true, tts:false });
     }
     return true;
   };
+
+  if(isLevel6DigiflexTask()){
+    cookDigiflexDetect(st, now, bumpRep);
+    cookLiveFeedback();
+    if(cook.reps >= cookStepNeed(st)){ cookAdvance(true); }
+    return;
+  }
 
   switch(st.kind){
     case 'grasp': {
@@ -18253,6 +18404,47 @@ function cookDetect(){
   if(cook.reps >= st.need){ cookAdvance(true); }
 }
 
+/* v131：握力器「揸實→放鬆」計數。只用整隻手屈曲分數（computeGraspScore），
+   絕對門檻（校準）或相對升幅（同今次放鬆位比）任一達到就算揸實；
+   由今次高峰跌返一半就算放鬆，放鬆嗰刻計一下。 */
+function cookDigiflexDetect(st, now, bumpRep){
+  const d = cook.digi;
+  if(!handDetected || !Number.isFinite(lastGraspScore)){
+    cook.metric = '未偵測到患手，請將揸住握力器嘅手放入鏡頭。';
+    setActionPrompt('等待偵測手部', '');
+    return;
+  }
+  d.hist.push(lastGraspScore);
+  if(d.hist.length > 5) d.hist.shift();
+  const sc = medianValue(d.hist);
+  d.lastScore = sc;
+  const enter = Number.isFinite(state.personalGraspEnter) ? state.personalGraspEnter : 0.56;
+  const exit = Number.isFinite(state.personalGraspExit) ? state.personalGraspExit : 0.50;
+  // 校準：enter = 放鬆 + 0.45×範圍，exit = 放鬆 + 0.20×範圍 → 範圍 = (enter − exit) / 0.25
+  const gap = Math.max(0.03, (enter - exit) / 0.25);
+  const rise = Math.max(DIGIFLEX_MIN_RISE, gap * DIGIFLEX_RELATIVE_RISE);
+  if(!d.squeezing){
+    if(d.baseline == null || sc < d.baseline) d.baseline = sc;
+    // 放鬆位慢慢跟手（揸攰咗放鬆得少都得）；但病人慢慢揸緊緊時基線唔好跟上去
+    else d.baseline += (sc - d.baseline) * (sc < d.baseline + rise * 0.5 ? 0.03 : 0.005);
+    const on = isGrasping || sc >= enter || sc >= d.baseline + rise;
+    if(on){ d.squeezing = true; d.since = now; d.peak = sc; }
+  }else{
+    if(sc > d.peak) d.peak = sc;
+    // 放鬆 = 分數回落到「基線→峰值」一半以下（相對規則，細力揸都計到）
+    const riseNow = Math.max(0.012, d.peak - (d.baseline == null ? exit : d.baseline));
+    const off = sc <= d.peak - riseNow * 0.5;
+    if(off){
+      d.squeezing = false;
+      const held = now - d.since;
+      d.baseline = sc;
+      if(held >= DIGIFLEX_MIN_SQUEEZE_MS) bumpRep();
+    }
+  }
+  cook.metric = d.squeezing ? '揸實中 ✊ — 而家放鬆' : '放鬆 🖐 — 而家揸實握力器';
+  setActionPrompt(d.squeezing ? '放鬆' : '揸實', '');
+}
+
 /* 即時動作回饋：只更新面板內的文字／進度，避免每幀重建 DOM */
 let cookFeedbackFrame = 0;
 function cookLiveFeedback(){
@@ -18263,10 +18455,11 @@ function cookLiveFeedback(){
   if(mEl) mEl.innerHTML = cook.metric +
     (cook.poseOn ? '' : '<br>姿勢追蹤（肩／肘）未啟用：以手部動作估算，追蹤有限。');
   const gEl = document.getElementById('advStepGoal');
-  if(gEl) gEl.textContent = '目標動作：' + st.goal + '　（' + cook.reps + ' / ' + st.need + '）';
+  const need = cookStepNeed(st);
+  if(gEl) gEl.textContent = '目標動作：' + cookStepGoal(st) + '　（' + cook.reps + ' / ' + need + '）';
   const bar = document.getElementById('advStepBar');
   if(bar) bar.style.width =
-    Math.round(((cook.idx + Math.min(1, cook.reps / st.need)) / total) * 100) + '%';
+    Math.round(((cook.idx + Math.min(1, cook.reps / need)) / total) * 100) + '%';
 }
 
 const COOK_OUTCOME_LABELS = [
@@ -18323,6 +18516,8 @@ function cookAdvance(earned){
   cook.shakeDir = 0; cook.shakeAnchor = 0; cook.elbowPhase = 0;
   cook.tiltPhase = 0; cook.pinchPrev = false; cook.scoopZone = '';
   cook.rollPhase = 0; cook.rollExtremeSign = 0; cook.neutralSince = 0;
+  // v131: a squeeze still in progress at step change must not count for the next step
+  cook.digi.squeezing = false; cook.digi.hist = []; cook.digi.peak = 0; cook.digi.animAt = 0;
   cook.phaseSince = 0; cook.readyAt = Math.max(nowMs() + 1400, cook.outcomeUntil + 900);
   cook.lastRepAt = 0;
   cookRenderPanel();
@@ -18348,29 +18543,32 @@ function cookAdvance(earned){
 function cookAnnounce(){
   const st = cook.step();
   cookRenderPanel();
-  speakCantonese(st.tts);
+  speakCantonese(cookStepTts(st));
 }
 
 function cookRenderPanel(){
   const st = cook.step();
   const motionGuide = document.getElementById('cookMotionGuide');
   const motionGif = document.getElementById('cookMotionGif');
+  const digiflex = isLevel6DigiflexTask();
   if(motionGuide && motionGif){
-    motionGif.src = st.motionGif;
-    motionGif.alt = st.goal;
+    // v131: the Digi-Flex version shows one picture for every step (squeeze → relax).
+    motionGif.src = digiflex ? 'img/cook_digiflex_relax.png' : st.motionGif;
+    motionGif.alt = cookStepGoal(st);
     motionGuide.classList.add('show');
     motionGuide.setAttribute('aria-hidden', 'false');
   }
   const total = COOK_STEPS.length;
+  const need = cookStepNeed(st);
   const stepGoal = isLevel4Tabletop() && st.kind === 'pinchDrop'
     ? '沿中線向前滑，在鍋上停住'
-    : st.goal;
+    : cookStepGoal(st);
   advSetPanel({
     stepNo:'步驟 ' + (cook.idx + 1) + ' / ' + total + (cook.done ? ' · 已完成' : ''),
     text: st.text,
-    goal:'目標動作：' + stepGoal + '　（' + cook.reps + ' / ' + st.need + '）',
-    metric: cook.metric + (cook.poseOn ? '' : '<br>姿勢追蹤（肩／肘）未啟用：以手部動作估算，追蹤有限。'),
-    pct: (cook.idx + Math.min(1, cook.reps / st.need)) / total,
+    goal:'目標動作：' + stepGoal + '　（' + cook.reps + ' / ' + need + '）',
+    metric: cook.metric + (cook.poseOn || digiflex ? '' : '<br>姿勢追蹤（肩／肘）未啟用：以手部動作估算，追蹤有限。'),
+    pct: (cook.idx + Math.min(1, cook.reps / need)) / total,
     buttons:[
       { label:'跳過這一步', warn:true, onClick:()=>{
           advSetNote('已跳過步驟 ' + (cook.idx+1) + '。');
@@ -18453,6 +18651,7 @@ function drawCookOutcomeVisual(ctx, idx, cx, cy, size, withCard){
 }
 
 function cookRender(ctx){
+  if(isLevel6DigiflexTask()){ cookRenderDigiflex(ctx); return; }
   const cw = gameCanvas.width, ch = gameCanvas.height;
   const L = cook.layout = cookLayout();
   const st = cook.step();
@@ -18530,6 +18729,377 @@ function cookRender(ctx){
   drawPoseMini(ctx, 12, 96, 120, 96);
 
   advDrawCursor(ctx, 0);
+}
+
+
+/* ==================================================================
+   v131 Level 6 握力器（Digi-Flex）煮飯畫面 —— 超市故事延續版
+   AI 生成嘅屋企廚房做底，每揸一下畫布即時郁相應嘅器具（刀落、鑊兜、蛋液轉）。
+   只係視覺層；計數喺 cookDigiflexDetect。
+   ================================================================== */
+const imgCookKitchenBg = new Image(); imgCookKitchenBg.src = 'img/cook_kitchen_bg.jpg';
+const imgCookDigiflex = new Image(); imgCookDigiflex.src = 'img/cook_digiflex_relax.png';
+const imgCookSpatula = new Image(); imgCookSpatula.src = 'img/cook_spatula.png';
+function cookDigiflexGeometry(cw, ch){
+  const portrait = ch > cw;
+  const cssScale = cw / Math.max(1, gameCanvas.clientWidth || cw);
+  const base = Math.min(cw, ch);
+  return {
+    portrait, cssScale,
+    cx: cw * 0.5, cy: ch * (portrait ? 0.50 : 0.55),
+    s: base * (portrait ? 0.42 : 0.46),             // 主道具尺寸
+    bannerY: (portrait ? 150 : 96) * cssScale,
+    bannerFont: Math.round(base * (portrait ? 0.046 : 0.05)),
+    titleFont: Math.round(base * (portrait ? 0.034 : 0.04)),
+    countY: ch * (portrait ? 0.80 : 0.84),
+    dotsY: ch - 34 * cssScale,
+    // 握力器圖＋「揸實／放鬆」字牌放右下角，整個牌要喺畫面入面
+    badgeS: base * 0.24,
+    badgeX: cw - base * 0.12 - 18 * cssScale,
+    badgeY: ch - 14 * cssScale - base * 0.24 * 0.17 * 1.6 - 8 * cssScale - base * 0.12,
+  };
+}
+const COOK_DIGIFLEX_TITLES = { loosen:'抓鬆冷飯', beat:'打蛋', mix:'蛋液拌飯', wash:'洗蔥', chop:'切蔥花', heat:'開火熱鑊',
+  oil:'落油', pour:'倒飯落鑊', salt:'落鹽', onion:'落蔥花', off:'熄火', plate:'上碟' };
+function cookDigiflexAnim(now){
+  const d = cook.digi;
+  const p = d.animAt ? clamp01((now - d.animAt) / DIGIFLEX_ANIM_MS) : 1;
+  return { p, pulse: Math.sin(p * Math.PI), sign: d.animSign, active: p < 1 };
+}
+/* 細粒子位置：以 i 為種子，唔會每幀跳 */
+function cookSeeded(i, k){ const x = Math.sin(i * 12.9898 + k * 78.233) * 43758.5453; return x - Math.floor(x); }
+function drawCookCleaver(ctx, x, y, s){
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.shadowColor = 'rgba(0,0,0,0.25)'; ctx.shadowBlur = 10; ctx.shadowOffsetY = 4;
+  // 刀身（菜刀：刀背直、刀鋒微彎）
+  const g = ctx.createLinearGradient(0, -s*0.26, 0, s*0.05);
+  g.addColorStop(0, '#e6eaee'); g.addColorStop(0.7, '#b9c1c8'); g.addColorStop(1, '#f4f6f8');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.moveTo(-s*0.42, -s*0.26); ctx.lineTo(s*0.20, -s*0.26); ctx.lineTo(s*0.20, s*0.02);
+  ctx.quadraticCurveTo(-s*0.10, s*0.08, -s*0.40, s*0.03); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = 'rgba(70,80,90,0.5)'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.shadowColor = 'transparent';
+  ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.fillRect(-s*0.38, -s*0.22, s*0.5, s*0.03);
+  // 刀柄
+  ctx.fillStyle = '#5a3a24';
+  rrPath(ctx, s*0.20, -s*0.19, s*0.36, s*0.13, s*0.06); ctx.fill();
+  ctx.fillStyle = '#8a5a2b'; rrPath(ctx, s*0.23, -s*0.17, s*0.30, s*0.04, s*0.02); ctx.fill();
+  ctx.fillStyle = '#c9c9c9'; ctx.beginPath(); ctx.arc(s*0.30, -s*0.125, s*0.012, 0, Math.PI*2); ctx.arc(s*0.46, -s*0.125, s*0.012, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+function drawCookBoard(ctx, cx, cy, w, h){
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.25)'; ctx.shadowBlur = 12; ctx.shadowOffsetY = 6;
+  ctx.fillStyle = '#c99a5b';
+  rrPath(ctx, cx - w/2, cy - h/2, w, h, h*0.12); ctx.fill();
+  ctx.shadowColor = 'transparent';
+  ctx.strokeStyle = 'rgba(120,75,30,0.35)'; ctx.lineWidth = 2;
+  for(let i=1;i<5;i++){ ctx.beginPath(); ctx.moveTo(cx - w/2 + 8, cy - h/2 + h*i/5); ctx.lineTo(cx + w/2 - 8, cy - h/2 + h*i/5 + 3); ctx.stroke(); }
+  ctx.restore();
+}
+/* 將一張圖橫向切成 n 段，段與段之間拉開 gap（切蔥用） */
+function drawCookSliced(ctx, img, cx, cy, size, n, gap){
+  if(!img || !img.complete || !img.naturalWidth) return;
+  const iw = img.naturalWidth, ih = img.naturalHeight;
+  const dw = size, dh = size * ih / iw;
+  const total = dw + gap * (n - 1);
+  let x = cx - total / 2;
+  for(let i=0;i<n;i++){
+    const sx0 = Math.floor(iw * i / n), sx1 = Math.floor(iw * (i+1) / n);
+    const w = dw * (sx1 - sx0) / iw;
+    ctx.drawImage(img, sx0, 0, sx1 - sx0, ih, x, cy - dh/2 + (i % 2 ? gap*0.35 : 0), w, dh);
+    x += w + gap;
+  }
+}
+function drawCookFlames(ctx, cx, cy, w, count, alpha, now){
+  if(count <= 0 || alpha <= 0) return;
+  ctx.save(); ctx.globalAlpha = alpha;
+  for(let i=0;i<count;i++){
+    const fx = cx - w/2 + w * (i + 0.5) / count;
+    const h = w * 0.16 * (0.8 + 0.35 * Math.sin(now/90 + i*1.7));
+    ctx.beginPath(); ctx.moveTo(fx - w*0.035, cy); ctx.quadraticCurveTo(fx, cy - h*1.5, fx + w*0.035, cy);
+    ctx.fillStyle = '#ff9f1a'; ctx.fill();
+    ctx.beginPath(); ctx.moveTo(fx - w*0.018, cy); ctx.quadraticCurveTo(fx, cy - h*0.9, fx + w*0.018, cy);
+    ctx.fillStyle = '#4aa3ff'; ctx.fill();
+  }
+  ctx.restore();
+}
+function cookRenderDigiflex(ctx){
+  const cw = gameCanvas.width, ch = gameCanvas.height;
+  const g = cookDigiflexGeometry(cw, ch);
+  const st = cook.step();
+  const now = nowMs();
+  const need = cookStepNeed(st);
+  const frac = clamp01(cook.reps / Math.max(1, need));
+  const a = cookDigiflexAnim(now);
+  const s = g.s, cx = g.cx, cy = g.cy;
+
+  // 底：AI 生成屋企廚房（cover）
+  if(imgCookKitchenBg.complete && imgCookKitchenBg.naturalWidth){
+    const iw = imgCookKitchenBg.naturalWidth, ih = imgCookKitchenBg.naturalHeight;
+    const sc = Math.max(cw / iw, ch / ih);
+    const dw = iw * sc, dh = ih * sc;
+    ctx.drawImage(imgCookKitchenBg, (cw - dw)/2, (ch - dh) * 0.7, dw, dh);
+  }else{
+    ctx.fillStyle = '#f1e6d2'; ctx.fillRect(0, 0, cw, ch);
+  }
+  // 枱面半透明托底，令道具同文字清楚
+  ctx.save();
+  const sh = ctx.createLinearGradient(0, ch*0.42, 0, ch);
+  sh.addColorStop(0, 'rgba(255,255,255,0)'); sh.addColorStop(1, 'rgba(255,255,255,0.35)');
+  ctx.fillStyle = sh; ctx.fillRect(0, ch*0.42, cw, ch*0.58);
+  ctx.restore();
+
+  const wokImg = advImg('wok'), riceImg = advImg('friedrice');
+  const wokOnStove = ['heat','oil','pour','salt','onion','off','plate'].includes(st.id);
+  switch(st.id){
+    case 'loosen': {
+      const dx = a.sign * a.pulse * s * 0.07, rot = a.sign * a.pulse * 0.08;
+      drawSprite(ctx, advImg('rice_bowl'), cx + dx, cy, s, { shadow:true, rot });
+      ctx.save(); ctx.fillStyle = '#fff6e0';
+      for(let i=0;i<cook.reps*4;i++){
+        const px = cx + (cookSeeded(i,1) - 0.5) * s * 0.9, py = cy - s*0.32 - cookSeeded(i,2) * s * 0.18;
+        ctx.beginPath(); ctx.ellipse(px, py, s*0.018, s*0.011, cookSeeded(i,3)*3, 0, Math.PI*2); ctx.fill();
+      }
+      ctx.restore();
+      break;
+    }
+    case 'beat': {
+      const bowl = cook.reps >= 1 ? advImg('egg_beaten') : advImg('eggs');
+      drawSprite(ctx, bowl, cx, cy, s, { shadow:true });
+      // 筷子繞碗轉
+      const ang = (cook.reps + a.p) * Math.PI * 2 * 0.5;
+      const r = s * 0.22;
+      ctx.save(); ctx.strokeStyle = '#8a5a2b'; ctx.lineWidth = Math.max(4, s*0.018); ctx.lineCap = 'round';
+      for(let k=0;k<2;k++){
+        const ox = cx + Math.cos(ang + k*0.12) * r, oy = cy - s*0.12 + Math.sin(ang + k*0.12) * r * 0.45;
+        ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ox + s*0.18, oy - s*0.46); ctx.stroke();
+      }
+      ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.lineWidth = Math.max(2, s*0.01);
+      for(let i=0;i<Math.min(cook.reps,6);i++){
+        ctx.beginPath(); ctx.ellipse(cx, cy - s*0.12, r*(0.35 + i*0.1), r*(0.16 + i*0.045), 0, 0, Math.PI*2); ctx.stroke();
+      }
+      ctx.restore();
+      break;
+    }
+    case 'mix': {
+      drawSprite(ctx, advImg('rice_bowl'), cx - s*0.08, cy + s*0.05, s, { shadow:true });
+      const tilt = -0.9 * a.pulse;
+      if(a.pulse > 0.25){
+        ctx.save(); ctx.strokeStyle = '#f5b800'; ctx.lineWidth = Math.max(5, s*0.03); ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(cx + s*0.32, cy - s*0.36); ctx.quadraticCurveTo(cx + s*0.2, cy - s*0.2, cx + s*0.05, cy - s*0.12); ctx.stroke(); ctx.restore();
+      }
+      drawSprite(ctx, advImg('egg_beaten'), cx + s*0.46, cy - s*0.42, s*0.52, { shadow:true, rot:tilt });
+      ctx.save(); ctx.globalAlpha = 0.35 * frac; ctx.fillStyle = '#f7c531';
+      ctx.beginPath(); ctx.ellipse(cx - s*0.08, cy - s*0.19, s*0.33, s*0.11, 0, 0, Math.PI*2); ctx.fill(); ctx.restore();
+      break;
+    }
+    case 'wash': {
+      drawSprite(ctx, advImg('spring_onion'), cx, cy, s, { shadow:true });
+      ctx.save(); ctx.fillStyle = 'rgba(90,170,255,0.75)';
+      for(let i=0;i<10;i++){
+        const px = cx + (cookSeeded(i,4) - 0.5) * s * 0.8;
+        const py = cy - s*0.55 + ((cookSeeded(i,5) + a.p) % 1) * s * 0.9;
+        ctx.beginPath(); ctx.ellipse(px, py, s*0.012, s*0.02, 0, 0, Math.PI*2); ctx.fill();
+      }
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      for(let i=0;i<cook.reps*2;i++){
+        const px = cx + (cookSeeded(i,6) - 0.5) * s * 0.9, py = cy + (cookSeeded(i,7) - 0.5) * s * 0.5;
+        ctx.font = 'bold ' + Math.round(s*0.06) + 'px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText('✦', px, py);
+      }
+      ctx.restore();
+      break;
+    }
+    case 'chop': {
+      drawCookBoard(ctx, cx, cy + s*0.1, s*1.25, s*0.58);
+      const pieces = Math.min(need, cook.reps) + 1;
+      drawCookSliced(ctx, advImg('spring_onion'), cx, cy, s*0.92, pieces, s*0.03);
+      const kY = cy - s*0.38 * (1 - a.pulse);
+      drawCookCleaver(ctx, cx + s*0.1, kY - s*0.12, s*0.9);
+      break;
+    }
+    case 'heat': case 'oil': case 'pour': case 'salt': case 'onion': case 'off': case 'plate': {
+      const wokX = st.id === 'plate' ? cx - s*0.42 : cx;
+      const wokY = cy + s*0.05;
+      const wokS = st.id === 'plate' ? s*0.95 : s*1.15;
+      const flameCount = st.id === 'heat' ? Math.min(cook.reps, 6) : (st.id === 'off' ? 6 : 5);
+      const flameAlpha = st.id === 'off' ? Math.max(0, 1 - frac) : (st.id === 'plate' ? 0 : 0.9);
+      const bob = (st.id === 'plate' || st.id === 'off') ? 0 : a.sign * a.pulse * s * 0.04;
+      // 爐頭光暈（有火時）
+      if(flameAlpha > 0 && flameCount > 0){
+        ctx.save(); ctx.globalAlpha = 0.45 * flameAlpha;
+        const glow = ctx.createRadialGradient(wokX, wokY + wokS*0.36, wokS*0.05, wokX, wokY + wokS*0.36, wokS*0.45);
+        glow.addColorStop(0, '#ff9f1a'); glow.addColorStop(1, 'rgba(255,159,26,0)');
+        ctx.fillStyle = glow; ctx.beginPath(); ctx.ellipse(wokX, wokY + wokS*0.36, wokS*0.5, wokS*0.14, 0, 0, Math.PI*2); ctx.fill(); ctx.restore();
+      }
+      drawSprite(ctx, wokImg, wokX + bob, wokY, wokS, { shadow:true, rot: a.sign * a.pulse * 0.04 });
+      // 火舌舔住鑊底邊（畫喺鑊前面先睇得到）
+      drawCookFlames(ctx, wokX, wokY + wokS*0.40, wokS*0.5, flameCount, flameAlpha, now);
+      // 鑊入面
+      if(st.id === 'oil'){
+        ctx.save(); ctx.globalAlpha = 0.9;
+        const rx = wokS*0.14 + wokS*0.2*frac, ry = wokS*0.05 + wokS*0.07*frac;
+        const og = ctx.createRadialGradient(wokX - rx*0.3, wokY - wokS*0.02 - ry*0.3, 1, wokX, wokY - wokS*0.02, rx);
+        og.addColorStop(0, '#ffe08a'); og.addColorStop(1, '#e0a92a');
+        ctx.fillStyle = og;
+        ctx.beginPath(); ctx.ellipse(wokX, wokY - wokS*0.02, rx, ry, 0, 0, Math.PI*2); ctx.fill(); ctx.restore();
+      }
+      if(['pour','salt','onion','off','plate'].includes(st.id)){
+        const riceAlpha = st.id === 'pour' ? Math.max(0.25, frac) : (st.id === 'plate' ? Math.max(0.15, 1 - frac) : 1);
+        drawSprite(ctx, riceImg, wokX + bob, wokY - wokS*0.07, wokS*0.56 * (st.id === 'plate' ? (1 - frac*0.5) : 1), { alpha: riceAlpha });
+      }
+      if(['onion','off','plate'].includes(st.id) || (st.id === 'onion')){
+        const bits = st.id === 'onion' ? cook.reps * 5 : 20;
+        ctx.save(); ctx.fillStyle = '#5bb134';
+        for(let i=0;i<bits;i++){
+          const px = wokX + bob + (cookSeeded(i,8) - 0.5) * wokS * 0.42, py = wokY - wokS*0.12 + (cookSeeded(i,9) - 0.5) * wokS * 0.12;
+          ctx.beginPath(); ctx.ellipse(px, py, wokS*0.012, wokS*0.008, cookSeeded(i,10)*3, 0, Math.PI*2); ctx.fill();
+        }
+        ctx.restore();
+      }
+      // 每步嘅手上器具
+      if(st.id === 'heat' && a.active){
+        ctx.save(); ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 3;
+        for(let i=0;i<3;i++){ const x = wokX - wokS*0.2 + i*wokS*0.2, y0 = wokY - wokS*0.35 - a.p*wokS*0.25;
+          ctx.beginPath(); ctx.moveTo(x, y0); ctx.quadraticCurveTo(x + 10, y0 - 18, x, y0 - 36); ctx.stroke(); }
+        ctx.restore();
+      }
+      if(st.id === 'oil'){
+        if(a.pulse > 0.3){ ctx.save(); ctx.strokeStyle = '#f2c14e'; ctx.lineWidth = Math.max(4, s*0.022); ctx.lineCap='round';
+          ctx.beginPath(); ctx.moveTo(cx + s*0.36, cy - s*0.38); ctx.lineTo(wokX + s*0.05, wokY - s*0.08); ctx.stroke(); ctx.restore(); }
+        drawSprite(ctx, advImg('oil_bottle'), cx + s*0.5, cy - s*0.5, s*0.6, { shadow:true, rot: -1.1 * a.pulse });
+      }
+      if(st.id === 'pour'){
+        if(a.pulse > 0.3){ ctx.save(); ctx.fillStyle = 'rgba(250,240,200,0.9)';
+          for(let i=0;i<8;i++){ const t=(cookSeeded(i,11)+a.p)%1; ctx.beginPath(); ctx.arc(cx - s*0.36 + t*s*0.3, cy - s*0.36 + t*s*0.3, s*0.016, 0, Math.PI*2); ctx.fill(); }
+          ctx.restore(); }
+        drawSprite(ctx, advImg('rice_bowl'), cx - s*0.5, cy - s*0.5, s*0.62, { shadow:true, rot: 1.0 * a.pulse });
+      }
+      if(st.id === 'salt'){
+        const sx = cx + s*0.46 + a.sign * a.pulse * s * 0.06;
+        if(a.active){ ctx.save(); ctx.fillStyle = '#fff';
+          for(let i=0;i<10;i++){ const t=(cookSeeded(i,12)+a.p)%1; ctx.beginPath(); ctx.arc(sx - s*0.2 + (cookSeeded(i,13)-0.5)*s*0.2, cy - s*0.3 + t*s*0.3, s*0.009, 0, Math.PI*2); ctx.fill(); }
+          ctx.restore(); }
+        drawSprite(ctx, advImg('salt_dish'), sx, cy - s*0.48, s*0.42, { shadow:true, rot: a.sign * a.pulse * 0.25 });
+      }
+      if(st.id === 'onion'){
+        const ox = cx + s*0.46;
+        if(a.active){ ctx.save(); ctx.fillStyle = '#5bb134';
+          for(let i=0;i<10;i++){ const t=(cookSeeded(i,14)+a.p)%1; ctx.beginPath(); ctx.arc(ox - s*0.2 + (cookSeeded(i,15)-0.5)*s*0.2, cy - s*0.3 + t*s*0.3, s*0.012, 0, Math.PI*2); ctx.fill(); }
+          ctx.restore(); }
+        drawSprite(ctx, advImg('onion_chopped'), ox, cy - s*0.48, s*0.42, { shadow:true, rot: -a.pulse * 0.5 });
+      }
+      if(st.id === 'off'){
+        drawSprite(ctx, advImg('stove_knob'), cx - s*0.62, cy + s*0.22, s*0.32, { shadow:true, rot: frac * Math.PI / 2 });
+      }
+      if(st.id === 'plate'){
+        const plateX = cx + s*0.5, plateY = cy + s*0.12;
+        drawSprite(ctx, advImg('plate_empty'), plateX, plateY, s*0.85, { shadow:true });
+        if(frac > 0) drawSprite(ctx, riceImg, plateX, plateY - s*0.04, s*0.62 * (0.35 + 0.65*frac));
+        // 鑊鏟由鑊去碟
+        const t = a.active ? a.pulse : 0;
+        const spX = wokX + (plateX - wokX) * t, spY = cy - s*0.35 - t * (1 - t) * s * 0.3;
+        drawSprite(ctx, imgCookSpatula, spX, spY, s*0.6, { shadow:true, rot: -0.6 + t*0.9 });
+      }
+      break;
+    }
+    default:
+      drawSprite(ctx, advImg(st.prop), cx, cy, s, { shadow:true });
+  }
+
+  // 開場橫額（超市延續）
+  if(now < cook.introUntil){
+    drawCookDigiflexBanner(ctx, cw, g, '買完餸返到屋企，而家煮蛋炒飯！', '揸住握力器：揸實 → 放鬆 ＝ 1 下');
+  }
+  // 左上：而家做緊邊一步
+  {
+    const f = g.titleFont;
+    ctx.save();
+    ctx.font = '900 ' + f + 'px "PingFang TC","Noto Sans TC",sans-serif';
+    const t1 = '第 ' + (cook.idx + 1) + ' 步／' + COOK_STEPS.length + '：' + (COOK_DIGIFLEX_TITLES[st.id] || st.text);
+    const tw = ctx.measureText(t1).width;
+    const pw = tw + f*1.3, ph = f*1.7, px = 14 * g.cssScale, py = 14 * g.cssScale;
+    rrPath(ctx, px, py, pw, ph, ph/2);
+    ctx.fillStyle = 'rgba(255,255,255,0.94)'; ctx.fill();
+    ctx.lineWidth = 3; ctx.strokeStyle = '#1A6B5A'; ctx.stroke();
+    ctx.fillStyle = '#17463d'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText(t1, px + f*0.65, py + ph/2 + f*0.04);
+    ctx.restore();
+  }
+
+  // 次數圓牌
+  ctx.save();
+  const pillFont = Math.round(Math.min(cw, ch) * 0.055);
+  ctx.font = '900 ' + pillFont + 'px "PingFang TC","Noto Sans TC",sans-serif';
+  const label = '已揸 ' + cook.reps + ' / ' + need + ' 下';
+  const tw = ctx.measureText(label).width;
+  const pw = tw + pillFont * 1.6, ph = pillFont * 1.7;
+  rrPath(ctx, cx - pw/2, g.countY - ph/2, pw, ph, ph/2);
+  ctx.fillStyle = 'rgba(255,255,255,0.94)'; ctx.fill();
+  ctx.lineWidth = 4; ctx.strokeStyle = cook.digi.squeezing ? '#E07B39' : '#1A6B5A'; ctx.stroke();
+  ctx.fillStyle = '#17463d'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(label, cx, g.countY + pillFont*0.04);
+  ctx.restore();
+
+  // 每完成一步先展示成果卡（同原版）
+  if(cook.outcomeIdx >= 0 && now < cook.outcomeUntil){
+    drawCookOutcomeVisual(ctx, cook.outcomeIdx, cw*0.5, ch*0.40, Math.min(cw, ch) * 0.22, true);
+  }
+
+  // 進度圓點（12 步）
+  ctx.save();
+  const dotR = Math.max(6, Math.min(cw, ch) * 0.009), gap = dotR * 3.2;
+  const startX = cw/2 - (COOK_STEPS.length - 1) * gap / 2;
+  for(let i=0;i<COOK_STEPS.length;i++){
+    ctx.beginPath(); ctx.arc(startX + i*gap, g.dotsY, dotR, 0, Math.PI*2);
+    ctx.fillStyle = i < cook.idx ? '#1A6B5A' : (i === cook.idx ? '#E07B39' : 'rgba(255,255,255,0.75)');
+    ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.stroke();
+  }
+  ctx.restore();
+
+  // 握力器狀態牌（右下）：揸實時縮細＋橙光；放鬆時原大
+  drawCookDigiflexBadge(ctx, g, now);
+}
+function drawCookDigiflexBanner(ctx, cw, g, text, sub){
+  const font = g.bannerFont;
+  ctx.save();
+  ctx.font = '800 ' + font + 'px "PingFang TC","Noto Sans TC",sans-serif';
+  const maxW = cw - 28;
+  let tw = ctx.measureText(text).width;
+  if(tw + font*1.2 > maxW){ const f2 = Math.max(18, Math.floor(font*(maxW-font*1.2)/tw)); ctx.font = '800 ' + f2 + 'px "PingFang TC","Noto Sans TC",sans-serif'; tw = ctx.measureText(text).width; }
+  const bw = Math.min(maxW, tw + font*1.6), bh = font*(sub ? 2.55 : 1.75);
+  const bx = cw/2 - bw/2, by = g.bannerY;
+  rrPath(ctx, bx, by, bw, bh, 18);
+  ctx.fillStyle = 'rgba(255,255,255,0.94)'; ctx.fill();
+  ctx.lineWidth = 4; ctx.strokeStyle = '#1A6B5A'; ctx.stroke();
+  ctx.fillStyle = '#17463d'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(text, cw/2, by + font*0.95);
+  if(sub){ ctx.font = '700 ' + Math.round(font*0.62) + 'px "PingFang TC","Noto Sans TC",sans-serif'; ctx.fillStyle = '#8a5a12'; ctx.fillText(sub, cw/2, by + font*1.95); }
+  ctx.restore();
+}
+function drawCookDigiflexBadge(ctx, g, now){
+  // 握力器相：揸實時縮細少少＋橙色光暈，放鬆時原大；冇手時半透明。
+  // 字牌：揸實 ✊／放鬆 🖐／請將手入鏡（公開版狀態列喺病人模式係空嘅）。
+  const sq = cook.digi.squeezing;
+  const sz = g.badgeS * (sq ? 0.9 : 1);
+  ctx.save();
+  if(sq){ ctx.shadowColor = 'rgba(224,123,57,0.9)'; ctx.shadowBlur = 28; }
+  drawSprite(ctx, imgCookDigiflex, g.badgeX, g.badgeY, sz, { alpha: handDetected ? 1 : 0.35 });
+  ctx.shadowColor = 'transparent';
+  const f = Math.round(g.badgeS * 0.17);
+  ctx.font = '900 ' + f + 'px "PingFang TC","Noto Sans TC",sans-serif';
+  const txt = !handDetected ? '請將手入鏡' : (sq ? '揸實 ✊' : '放鬆 🖐');
+  const tw = ctx.measureText(txt).width;
+  const pw = tw + f*1.2, ph = f*1.6, px = g.badgeX, py = g.badgeY + g.badgeS*0.5 + 8 * g.cssScale + ph/2;
+  rrPath(ctx, px - pw/2, py - ph/2, pw, ph, ph/2);
+  ctx.fillStyle = sq ? '#E07B39' : 'rgba(255,255,255,0.94)'; ctx.fill();
+  ctx.lineWidth = 2; ctx.strokeStyle = sq ? '#E07B39' : '#1A6B5A'; ctx.stroke();
+  ctx.fillStyle = sq ? '#fff' : '#17463d'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(txt, px, py + f*0.05);
+  ctx.restore();
 }
 
 /* 小骨架：右上角顯示肩／肘／腕 */
@@ -20406,6 +20976,16 @@ function advInit(){
     cook.active = true; cook.reset();
     cook.layout = cookLayout();
     cook.poseOn = false;
+    if(isLevel6DigiflexTask()){
+      // v131: whole-hand squeeze only; no pose model, no estimated-rotation note.
+      cook.introUntil = nowMs() + 3200;
+      cook.readyAt = cook.introUntil + 400;
+      advSetNote('');
+      cookRenderPanel();
+      speakCantonese('買完餸返到屋企，而家煮蛋炒飯。');
+      cook.announceAt = cook.introUntil - 400;
+      setActionPrompt('揸實', '');
+    } else {
     advSetNote(poseFailed
       ? '姿勢追蹤（肩／肘）未能載入，已轉為手部動作練習：追蹤有限，可用「跳過此步」繼續。'
       : '正在載入姿勢追蹤（肩／肘）…期間可先用手部動作練習。前臂旋前／旋後為螢幕估算回饋，並非醫學量度。');
@@ -20421,6 +21001,7 @@ function advInit(){
       });
     }
     cookAnnounce();
+    }
   } else if(advCurrent === 'mahjong'){
     mj.active = true; mj.reset(); mjStartRound(0);
   } else if(advCurrent === 'cards'){
@@ -20461,7 +21042,12 @@ function advResizeCheck(){
 
 function advUpdate(){
   advResizeCheck();
-  if(!handDetected){
+  if(isLevel6DigiflexTask()){
+    // v131: squeeze/relax prompts come from cookDigiflexDetect; between steps
+    // (outcome card / ready pause) ask the patient to relax the exerciser.
+    if(!handDetected) setActionPrompt('患手入鏡', '');
+    else if(nowMs() < cook.outcomeUntil || nowMs() < cook.readyAt) setActionPrompt('放鬆', '');
+  }else if(!handDetected){
     setActionPrompt('患手入鏡', '');
   }else{
     const advancedHeld = !!(carrier.heldId || picker.heldId);
@@ -20513,7 +21099,7 @@ function advTextState(){
   if(advCurrent === 'cooking'){
     const st = cook.step();
     lines.push('cookStep=' + (cook.idx+1) + '/' + COOK_STEPS.length + ' id=' + st.id +
-      ' kind=' + st.kind + ' reps=' + cook.reps + '/' + st.need + ' done=' + cook.done);
+      ' kind=' + st.kind + ' reps=' + cook.reps + '/' + cookStepNeed(st) + ' done=' + cook.done);
     lines.push('cookText=' + st.text);
     lines.push('cookMetric=' + cook.metric);
     lines.push('poseOn=' + cook.poseOn + ' poseFailed=' + poseFailed);
@@ -21115,6 +21701,7 @@ window.__qa = {
     if(opts.dimsumSceneMode==='teahouse'||opts.dimsumSceneMode==='camera') state.dimsumSceneMode=opts.dimsumSceneMode;
     if(SHOP_LIST_SIZES[opts.shopListSize]) state.shopListSize=opts.shopListSize; // v125
     if(opts.fridgeDifficulty==='zones'||opts.fridgeDifficulty==='basic') state.fridgeDifficulty=opts.fridgeDifficulty;
+    if(COOK_SQUEEZE_AMOUNTS[opts.cookSqueezeAmount]) state.cookSqueezeAmount=opts.cookSqueezeAmount; // v131
     if([...LAUNDRY_DIFFICULTY_KEYS,'complex'].includes(opts.laundryDifficulty)) state.laundryDifficulty=opts.laundryDifficulty;
     if(state.level==='2' && !themeAvailableForLevel(state.theme,'2')) state.theme='bilateral';
     if(state.level==='67'){
@@ -21333,13 +21920,14 @@ window.__qa = {
       ny:Number.isFinite(Number(spec.ny))?Number(spec.ny):.72,
       frameGeneration:generation,
       results:qaToolHandResults(
-        isLevel6Chopsticks()?'chopsticks':'peg',
+        isLevel6Chopsticks()?'chopsticks':(isLevel6DigiflexTask()?'digiflex':'peg'),
         spec.gesture==='closed'?'closed':'open',
         spec.handSide||activeAffectedSide(),
         spec.missingHand,
         spec.apertures,
         Number(spec.handednessConfidence),
-        spec.flexExtensions
+        spec.flexExtensions,
+        spec.curl
       ),
     };
     if(spec.noHand) qaHand.results={landmarks:[],handednesses:[]};
@@ -21931,8 +22519,31 @@ window.__qa = {
   },
   cook:{
     step(){ const s = cook.step(); return { idx:cook.idx, id:s.id, kind:s.kind,
-      text:s.text, need:s.need, reps:cook.reps, done:cook.done, metric:cook.metric,
-      poseOn:cook.poseOn, poseFailed:poseFailed }; },
+      text:s.text, need:cookStepNeed(s), reps:cook.reps, done:cook.done, metric:cook.metric,
+      poseOn:cook.poseOn, poseFailed:poseFailed,
+      digiflex:isLevel6DigiflexTask(), squeezing:cook.digi.squeezing, baseline:cook.digi.baseline,
+      prompt:document.getElementById('statusBar')?.dataset.actionRenderKey || '' }; },
+    /* v131：合成握力器「揸實→放鬆」一下（graspScore 高→低），回傳步驟／次數 */
+    squeeze(opts){
+      // hi / lo are synthetic whole-hand curl values (see qaToolHandResults
+      // 'digiflex'); frames go through the real Level 6 fail-closed hand path.
+      const o = opts || {};
+      const hi = Number.isFinite(o.hi) ? o.hi : 0.45, lo = Number.isFinite(o.lo) ? o.lo : 0.20;
+      const holdMs = Number.isFinite(o.holdMs) ? o.holdMs : 360, relaxMs = Number.isFinite(o.relaxMs) ? o.relaxMs : 480;
+      const stepMs = 60;
+      const run = (curl, ms)=>{ for(let t=0;t<ms;t+=stepMs) window.__qa.setLevel6ToolFrame({ curl, stepMs, nx:.5, ny:.55 }); };
+      if(nowMs() < cook.outcomeUntil) window.advanceTime(cook.outcomeUntil - nowMs() + 1000);
+      if(nowMs() < cook.readyAt) window.advanceTime(cook.readyAt - nowMs() + 120);
+      run(lo, 240);
+      run(hi, holdMs);
+      run(lo, relaxMs);
+      return this.step();
+    },
+    debug(){ return { running:state.running, paused:state.paused, screen:currentScreen, advCurrent, handDetected, lastGraspScore, isGrasping,
+      now:nowMs(), readyAt:cook.readyAt, introUntil:cook.introUntil, outcomeUntil:cook.outcomeUntil, done:cook.done,
+      reward:rewardIsOpen(), keep:!!(advDom && advDom.keep && advDom.keep.classList.contains('show')), digi:{...cook.digi, hist:cook.digi.hist.slice()} }; },
+    totals(){ return { less:cookDigiflexTotal('less'), normal:cookDigiflexTotal('normal'), more:cookDigiflexTotal('more'),
+      need:COOK_DIGIFLEX_NEED.slice(), amount:cookSqueezeAmountKey() }; },
     // 以合成手部／姿勢資料真實觸發動作偵測（無相機模擬）
     simulate(){ return cookSimulateStep(); },
     probePronateCycle(){
@@ -21944,7 +22555,7 @@ window.__qa = {
       qaSyntheticHand(0);  window.advanceTime(520);
       return { beforeReturn, afterReturn:cook.reps, phase:cook.rollPhase };
     },
-    completeStep(){ cook.reps = cook.step().need; cookAdvance(true); return cook.idx; },
+    completeStep(){ cook.reps = cookStepNeed(cook.step()); cookAdvance(true); return cook.idx; },
     skip(){ cookAdvance(false); return cook.idx; },
     runAll(useSim){
       const log = [];
@@ -21952,7 +22563,7 @@ window.__qa = {
         const before = cook.idx;
         const st = cook.step();
         let ok = useSim ? cookSimulateStep() : false;
-        if(!ok && !cook.done && cook.idx === before){ cook.reps = st.need; cookAdvance(true); }
+        if(!ok && !cook.done && cook.idx === before){ cook.reps = cookStepNeed(st); cookAdvance(true); }
         log.push((before+1) + ':' + st.id + (ok ? ' sim' : ' forced'));
         if(cook.done) break;
       }
@@ -22768,7 +23379,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v130-20261119-bare-reopen-after-place";
+  const LEVEL_APP_BUILD = "v131-20261119-digiflex-cooking";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

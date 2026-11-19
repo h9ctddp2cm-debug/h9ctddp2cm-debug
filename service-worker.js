@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v130-20261119-bare-reopen-after-place";
+const CACHE_VERSION = "fthue-rehab-v131-20261119-digiflex-cooking";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");
