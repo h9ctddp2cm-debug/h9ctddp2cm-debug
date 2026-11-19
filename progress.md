@@ -1702,6 +1702,21 @@ Original prompt: Fix Level 6–7 interactions: make light clothes-peg press dete
 - Validation：四組測試 590 個（113+171+135+171）587 pass / 3 skip / 0 fail（首次跑 group 3 因 dist 未 rebuild 有 1 個 dist-gated 子測試預期性 fail，rebuild 後重跑 `tests/v114-public-no-keepsake.test.mjs` 5/5 同全組 135/135 皆過）；`tools/checkjs.sh` 11 OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 199 files（同 v114 一致，純文字改動冇影響檔案數）；`rg -c "__qa" dist/public/index.html` → 0；dist 內三個版本標記／`留念`／`寫名、簽名`／`名字只保留在此頁` 全部確認正確（前者 3 處存在，後三者 0 個殘留）；Playwright 三個尺寸（筆電 1413×653、iPad 橫向 1180×820、iPad 直向 820×1180）載入公開版首頁，零 page error（`console.error` 同 `pageerror` 皆空）——因涉及文字本身係死碼，冇可達 UI 路徑可截圖顯示呢組文字，故 QA 重點放喺「頁面正常載入、冇 JS 錯誤」而非畫面文字截圖；`ych_rehab_qa_artifacts/v114b/v114b-qa-contact-sheet.png`（首頁三尺寸存底）。
 - Residual notes：`ADV_RULES` 入面其他主題（`cooking`/`mahjong`/`cards`/`laundry`）嘅 `lines[1]`/`tail`/`tts` 同樣係死碼（同一個讀取模式，只用 `lines[0]`），呢次冇一併清理，維持原文，因為稽核只針對插花一句；如日後同類稽核再揪出其他主題嘅殘留描述文字，可用同一手法直接改字（不涉及功能判斷）。
 
+## 2026-11-19 v128 — 晾衫衣夾「相對放手」：同今次揸住嘅最細指距比較 (therapist bedside report)
+
+- Therapist（19 Nov，v119 之後再試真衣夾）：「still fail to release the clip」、「There is delay in release hand」— Level 6 晾衫放鬆手之後件衫遲遲唔落，或者完全唔落。校準有揸住衣夾做。
+- 核對：正式網站 v127 嘅確有 v119 放手邏輯（常數 .35／.47／.25、`releasing = !isGrasping`），所以唔係舊版問題。
+- 分析：v108／v110／v115／v119 四次都係同「校準姿勢」比較絕對門檻。校準時隻手放喺胸前正對鏡頭；玩嘅時候手舉高到衣架、手掌轉角度，鏡頭見到嘅拇指—指尖距離會縮短（foreshortening），放鬆咗嘅數值可以仲低過校準「揸實」，35% 門檻永遠過唔到；數值喺門檻附近徘徊時，180 ms 確認窗口不斷重置，就係「有 delay」。真衣夾鬆開同揸實指尖只差約 1–1.5 cm，數值本身好細。
+- 改動（只限公開版衣夾任務 `publicPegReleaseRelaxationEnabled()`；研究模式、Level 5、筷子 dwell、其他任務不變）：
+  - 新增「相對放手」路徑：`pegRelativeSample`（`computeToolPinchState` 內每幀記錄 近指／遠指／合併，5 幀中位數平滑）、`pegRelativeHoldTrack`（夾起後記住今次揸住嘅最細平滑指距作基線，隨手部移動而下降）、`pegRelativeReleaseOpen`（基線之上 ≥ 校準範圍 30%，下限 0.010，近指、遠指、合併三者都要過；揸住未夠 300 ms 唔計）。持物 `releasing = !isGrasping || pegRelativeOpen`，之後照舊要 `DROP_DWELL_MS` 220 ms 先真正放低。
+  - 絕對路徑（35% 放手點、decisive digit、合併閘）全部保留；下一次夾起仍要 `handOpenPrep`（47% 再武裝或鬆開 400 ms），所以放低後同一個放鬆姿勢唔會即刻再夾起。兩隻手指都要郁，單一漂移 landmark 放唔到；靜止姿勢嘅差值係 0，永遠唔會放。
+  - 基線喺夾起（`heldItem = nearest`）同每次放低後重置；`resetToolPinchAdapt()` 連歷史一齊清零。
+  - `?perf=1` HUD 新增一行 `衣夾 相對 基線 近／遠／合併 相對放手 開／-`，治療師床邊可以即場睇。
+- Tests：新增 `tests/v128-peg-relative-release.test.mjs`（6）：原始碼接線；差值 30%／下限 0.010；床邊缺陷重現（衣架處縮短：揸實 0.20／0.23，放鬆 0.27／0.30 仍低過絕對門檻 0.32／0.35 → 相對路徑放手）；輕鬆 20%／單指漂移／三個靜止姿勢各 5 秒都唔放；300 ms 最短揸住、中位數濾走單幀尖峰、重置語意；Playwright 晾衫整頁流程（接近→揸實夾起→衣架縮短揸實 1.5 s→鬆 15% 1 s 仍揸住→放鬆 1 s 落架 `correctCount` 1→同姿勢返衫上唔再夾）零 page error。`v119` `releasing` regex 更新。
+- Markers `v128-20261119-peg-relative-release` ×3、`perf v128`、15 個 marker 測試 sed bump。
+- Validation：四組 **652** 個測試 0 fail（125+203+198+126，3 skip）；`tools/checkjs.sh` OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 210 files；`__qa` 0；dist 無 research／pilot；dist 內有 `.3` 常數同 `pegRelativeOpen`。Playwright `?perf=1` 三個 viewport 五步截圖（基線 0.260 → 0.200，放鬆 0.27 → 衫上架）— `ych_rehab_qa_artifacts/v128/v128-qa-contact-sheet.png`。
+- Residual：如果床邊仍然放唔到，下一步用 `?perf=1` 影低 近指／遠指／合併／基線 四個數值再調 30%；後備「停喺衣架 3 秒提示、5 秒自動放低」暫未加（治療師未揀）。
+
 ## 2026-11-19 v127 — 收銀員白色背景、枱面貨品放大、讀卡器有支架
 
 - Therapist（19 Nov 朝早，睇完 v126）：(1) 「啲物件喺收銀員嗰度太細」；(2) 「收銀員背景太雜亂，可以變成白色背景」。

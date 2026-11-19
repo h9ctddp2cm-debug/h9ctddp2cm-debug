@@ -34,13 +34,13 @@ test('v119 public peg constants and calibration wiring', () => {
   assert.match(publicSource, /publicPegReleaseRelaxationEnabled\(\) \? PUBLIC_PEG_ENTER_RATIO : 0\.56;/);
   // the drop follows the stabilised pinch release for the public peg task only
   assert.match(publicSource,
-    /const releasing = isLevel6ToolGestureTask\(\)\n\s*\? \(publicPegReleaseRelaxationEnabled\(\) \? !isGrasping : handOpenPrep\)/);
+    /const releasing = isLevel6ToolGestureTask\(\)\n\s*\? \(publicPegReleaseRelaxationEnabled\(\) \? \(!isGrasping \|\| pegRelativeOpen\) : handOpenPrep\)/);
   // the NEXT pick-up still needs a positively separated hand
   assert.match(publicSource, /const openPrep = isLevel6ToolGestureTask\(\) \? handOpenPrep/);
   // build / cache identifiers bumped
-  assert.match(publicSource, /const LEVEL_APP_BUILD = "v127-20261119-cashier-white-bigger";/);
+  assert.match(publicSource, /const LEVEL_APP_BUILD = "v128-20261119-peg-relative-release";/);
   const sw = readFileSync(path.join(root, 'service-worker.js'), 'utf8');
-  assert.match(sw, /const CACHE_VERSION = "fthue-rehab-v127-20261119-cashier-white-bigger";/);
+  assert.match(sw, /const CACHE_VERSION = "fthue-rehab-v128-20261119-peg-relative-release";/);
 });
 
 /* ---------------- Behavioural harness (as tests/v108, v110) ---------------- */
