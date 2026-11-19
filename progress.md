@@ -1702,6 +1702,13 @@ Original prompt: Fix Level 6–7 interactions: make light clothes-peg press dete
 - Validation：四組測試 590 個（113+171+135+171）587 pass / 3 skip / 0 fail（首次跑 group 3 因 dist 未 rebuild 有 1 個 dist-gated 子測試預期性 fail，rebuild 後重跑 `tests/v114-public-no-keepsake.test.mjs` 5/5 同全組 135/135 皆過）；`tools/checkjs.sh` 11 OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 199 files（同 v114 一致，純文字改動冇影響檔案數）；`rg -c "__qa" dist/public/index.html` → 0；dist 內三個版本標記／`留念`／`寫名、簽名`／`名字只保留在此頁` 全部確認正確（前者 3 處存在，後三者 0 個殘留）；Playwright 三個尺寸（筆電 1413×653、iPad 橫向 1180×820、iPad 直向 820×1180）載入公開版首頁，零 page error（`console.error` 同 `pageerror` 皆空）——因涉及文字本身係死碼，冇可達 UI 路徑可截圖顯示呢組文字，故 QA 重點放喺「頁面正常載入、冇 JS 錯誤」而非畫面文字截圖；`ych_rehab_qa_artifacts/v114b/v114b-qa-contact-sheet.png`（首頁三尺寸存底）。
 - Residual notes：`ADV_RULES` 入面其他主題（`cooking`/`mahjong`/`cards`/`laundry`）嘅 `lines[1]`/`tail`/`tts` 同樣係死碼（同一個讀取模式，只用 `lines[0]`），呢次冇一併清理，維持原文，因為稽核只針對插花一句；如日後同類稽核再揪出其他主題嘅殘留描述文字，可用同一手法直接改字（不涉及功能判斷）。
 
+## 2026-11-19 v134 — Level 6 煮蛋炒飯：去星盆洗蔥，水龍頭出水
+- 治療師：「also should go to sink to wash the veggies right? there should be water coming out from the water tap」。純畫面修正，握力器偵測（v132 規則）不變。
+- 新切圖 `img/cook_sink.png`（900×530，AI 生成不銹鋼單盆星盆＋鵝頸水龍頭，透明底，以廚房背景做光線／角度參考）作 `imgCookSink`；出水口／盆底位置用圖片比例常數 `COOK_SINK_SPOUT = {u:0.423, v:0.228}`、`COOK_SINK_BASIN_V = 0.72`、`COOK_SINK_ASPECT = 530/900`。
+- 「洗蔥」步驟：星盆放喺枱面，盆底貼住「已揸」牌上方（`sinkBottom = countY − 12`），闊度 = min(畫面 40%（直向 62%），上面留三成畫面畀題目牌)；橫向略向左 12% 避開畫面正中嘅獎勵圈，直向置中。`drawCookTapWater()` 成個步驟畫住流緊嘅水柱（藍色半透明＋白色水芯＋每 600 ms 向下流嘅水紋＋盆底水點同漣漪）；青蔥喺水柱正下面、盆入面，每揸一下向下搓一下再返上嚟，`drawCookTapSplash()` 喺蔥上面畫水花；洗乾淨閃光照舊每下多兩粒。
+- 直向鏡頭：之前所有步驟都將背景移去煤氣爐，星盆會同爐頭重疊；而家只有爐頭七步（`stoveView`）先移去爐，其他步驟（抓飯／打蛋／拌蛋／洗蔥／切蔥）背景置中——似超市故事咁「行去星盆、再行去爐頭」。橫向因為成幅背景都入鏡，不受影響。
+- 新測試 `tests/v134-sink-wash.test.mjs`（原始碼接線＋筆電／直向 Playwright：第 4 步係 wash、揸一下計一下、12 步走完無錯誤）；v133 測試改為核對新嘅 `anchor` 寫法。Markers：`v134-20261119-sink-wash`、`perf v134`。安全審閱 `security-reviews/v134-security-review.md`。QA 對照表 `ych_rehab_qa_artifacts/v134/v134-qa-contact-sheet.png`。
+
 ## 2026-11-19 v133 — Level 6 煮蛋炒飯畫面：鑊放喺煤氣爐上、火清楚見到、飯（冇碟）上碟
 - 治療師回報 v132 畫面：「no fire, and the wok should be on top of gas stove, also the rice should be placed on the plate (not putting the whole rice and plate on top of the big plate!!)」。純畫面修正，握力器偵測（v132 規則）一字不改——治療師明言唔想再收緊，怕病人氣餒。
 - 鑊位：背景廚房圖 `img/cook_kitchen_bg.jpg` 嘅爐架／爐掣位置用圖片比例常數 `COOK_BG_BURNER = {u:0.156, v:0.660}`、`COOK_BG_KNOB = {u:0.125, v:0.722}` 記低；背景繪製時記錄 `bgRect`，水平錨點 `ox = max(cw − dw, min(0, cw×0.36 − u×dw))`，直向（iPad 直向）會向左移令煤氣爐入鏡。鑊身中心 `panCX = burnerX`，鑊底邊 `panBottom = burnerY + 0.05×wokS`，圖片中心 `wokY = panBottom − 0.32×wokS`，`wokS = min(0.28×bgRect.w, 0.6×cw)`；油樽／飯碗／鹽／蔥花、碟、鑊鏟全部相對鑊位擺。

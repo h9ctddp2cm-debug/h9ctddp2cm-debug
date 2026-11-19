@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v133-20261119-wok-on-stove";
+const CACHE_VERSION = "fthue-rehab-v134-20261119-sink-wash";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

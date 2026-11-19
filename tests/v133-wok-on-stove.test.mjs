@@ -21,7 +21,9 @@ test('v133 source wiring: burner/knob anchors, rice cutout, flame layers, backgr
   assert.match(src, /const imgCookRice = new Image\(\); imgCookRice\.src = 'img\/cook_rice_only\.png';/);
   assert.ok(existsSync(path.join(root, 'img', 'cook_rice_only.png')), 'rice cutout asset present');
   // background keeps the stove visible (anchor horizontally on the burner, never leaving a gap)
-  assert.match(src, /const ox = Math\.max\(cw - dw, Math\.min\(0, cw \* 0\.36 - COOK_BG_BURNER\.u \* dw\)\);/);
+  // (v134: the burner anchor is used for the stove steps; other steps centre the background)
+  assert.match(src, /const anchor = stoveView \? cw \* 0\.36 - COOK_BG_BURNER\.u \* dw : \(cw - dw\) \* 0\.5;/);
+  assert.match(src, /const ox = Math\.max\(cw - dw, Math\.min\(0, anchor\)\);/);
   assert.match(src, /bgRect = \{ x:ox, y:oy, w:dw, h:dh \};/);
   // wok anchored to the painted burner
   assert.match(src, /const burnerX = bgRect\.x \+ COOK_BG_BURNER\.u \* bgRect\.w;/);

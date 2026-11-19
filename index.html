@@ -13440,7 +13440,7 @@ function updateFramePerfOverlay(now){
     framePerf.overlayEl = el;
   }
   const p = framePerfSnapshot();
-  el.textContent = `perf v133  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
+  el.textContent = `perf v134  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
     + `鏡頭 ${p.video[0]}×${p.video[1]}  畫布 ${p.canvas[0]}×${p.canvas[1]}  dpr ${p.dpr}  手模型 ${p.handDelegate || '-'}\n`
     + `手 ${p.hand.hands} 隻  標籤 ${p.hand.label || '-'} ${p.hand.score}  接納 ${p.hand.path || '-'}  嚴格 ${p.hand.strict} 連續 ${p.hand.continuity} 單手 ${p.hand.lone} 拒絕 ${p.hand.rejected}\n`
     + `左右手檢查 ${p.hand.check === 'off' ? '關' : '開'}  鎖定手形 ${p.hand.lockSize || '-'}  大小拒絕 ${p.hand.sizeRejected}  遠處拒絕 ${p.hand.farRejected}`
@@ -18869,6 +18869,55 @@ function drawCookFlames(ctx, cx, cy, w, count, alpha, now, flameH, layer){
 const COOK_BG_BURNER = { u:0.156, v:0.660 };
 const COOK_BG_KNOB = { u:0.125, v:0.722 };
 const imgCookRice = new Image(); imgCookRice.src = 'img/cook_rice_only.png';
+/* v134：星盆切圖（900×530）嘅水龍頭出水口／盆底位置（圖片比例），同星盆喺背景入面嘅高度 */
+const COOK_SINK_SPOUT = { u:0.423, v:0.228 };
+const COOK_SINK_BASIN_V = 0.72;
+const COOK_SINK_ASPECT = 530 / 900;
+const imgCookSink = new Image(); imgCookSink.src = 'img/cook_sink.png';
+/* 水柱打落青蔥上面嘅水花（畫喺蔥之上） */
+function drawCookTapSplash(ctx, x, y, sinkS, now){
+  ctx.save(); ctx.fillStyle = 'rgba(225,242,255,0.95)';
+  for(let i=0;i<10;i++){
+    const t = ((now / 450) + cookSeeded(i,31)) % 1;
+    const dx = (cookSeeded(i,32) - 0.5) * sinkS * 0.22 * (0.2 + t), dy = -Math.sin(t * Math.PI) * sinkS * 0.07 + t * sinkS * 0.02;
+    ctx.beginPath(); ctx.arc(x + dx, y + dy, sinkS * 0.007 * (1 - t * 0.6), 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+}
+/* 水龍頭出水：半透明水柱（上窄下闊）＋ 向下流動嘅白色水紋 ＋ 盆底水花同漣漪 */
+function drawCookTapWater(ctx, x, top, bottom, sinkS, now){
+  const h = Math.max(1, bottom - top), w0 = sinkS * 0.018, w1 = sinkS * 0.036;
+  ctx.save();
+  // 水柱（藍色半透明）＋ 白色水芯
+  const grad = ctx.createLinearGradient(0, top, 0, bottom);
+  grad.addColorStop(0, 'rgba(140,200,255,0.8)'); grad.addColorStop(1, 'rgba(110,180,245,0.9)');
+  ctx.fillStyle = grad;
+  ctx.beginPath(); ctx.moveTo(x - w0, top); ctx.lineTo(x + w0, top); ctx.lineTo(x + w1, bottom); ctx.lineTo(x - w1, bottom); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  ctx.beginPath(); ctx.moveTo(x - w0*0.35, top); ctx.lineTo(x + w0*0.35, top); ctx.lineTo(x + w1*0.3, bottom); ctx.lineTo(x - w1*0.3, bottom); ctx.closePath(); ctx.fill();
+  // 流動水紋（每 600 ms 由上流到下）
+  ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = Math.max(1.5, sinkS * 0.005); ctx.lineCap = 'round';
+  for(let i=0;i<6;i++){
+    const t = ((now / 600) + i / 6) % 1;
+    const y = top + t * h, w = w0 + (w1 - w0) * t;
+    ctx.beginPath(); ctx.moveTo(x - w * 0.6, y); ctx.lineTo(x - w * 0.6, Math.min(bottom, y + h * 0.07)); ctx.stroke();
+  }
+  // 盆底水花：細水點彈起
+  ctx.fillStyle = 'rgba(200,230,255,0.9)';
+  for(let i=0;i<8;i++){
+    const t = ((now / 500) + cookSeeded(i,21)) % 1;
+    const dx = (cookSeeded(i,22) - 0.5) * sinkS * 0.16 * (0.3 + t), dy = -Math.sin(t * Math.PI) * sinkS * 0.05;
+    ctx.beginPath(); ctx.arc(x + dx, bottom + dy, sinkS * 0.005 * (1 - t * 0.5), 0, Math.PI * 2); ctx.fill();
+  }
+  // 漣漪
+  ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.lineWidth = Math.max(1, sinkS * 0.003);
+  for(let i=0;i<3;i++){
+    const t = ((now / 900) + i / 3) % 1;
+    ctx.globalAlpha = 1 - t;
+    ctx.beginPath(); ctx.ellipse(x, bottom, sinkS * (0.02 + 0.10 * t), sinkS * (0.006 + 0.03 * t), 0, 0, Math.PI * 2); ctx.stroke();
+  }
+  ctx.restore();
+}
 function cookRenderDigiflex(ctx){
   const cw = gameCanvas.width, ch = gameCanvas.height;
   const g = cookDigiflexGeometry(cw, ch);
@@ -18881,12 +18930,16 @@ function cookRenderDigiflex(ctx){
 
   // 底：AI 生成屋企廚房（cover）
   // bgRect：背景實際畫到邊（cover）。橫向照舊置中；直向會向左移，令畫好嘅煤氣爐入鏡。
+  // v134：直向時只有爐頭步驟先將鏡頭移去煤氣爐；其他步驟（抓飯／打蛋／拌蛋／洗蔥／切蔥）鏡頭置中，
+  // 星盆同道具先唔會同爐頭重疊。
+  const stoveView = ['heat','oil','pour','salt','onion','off','plate'].includes(st.id);
   let bgRect = { x:0, y:0, w:cw, h:ch };
   if(imgCookKitchenBg.complete && imgCookKitchenBg.naturalWidth){
     const iw = imgCookKitchenBg.naturalWidth, ih = imgCookKitchenBg.naturalHeight;
     const sc = Math.max(cw / iw, ch / ih);
     const dw = iw * sc, dh = ih * sc;
-    const ox = Math.max(cw - dw, Math.min(0, cw * 0.36 - COOK_BG_BURNER.u * dw));
+    const anchor = stoveView ? cw * 0.36 - COOK_BG_BURNER.u * dw : (cw - dw) * 0.5;
+    const ox = Math.max(cw - dw, Math.min(0, anchor));
     const oy = (ch - dh) * 0.7;
     ctx.drawImage(imgCookKitchenBg, ox, oy, dw, dh);
     bgRect = { x:ox, y:oy, w:dw, h:dh };
@@ -18902,7 +18955,7 @@ function cookRenderDigiflex(ctx){
   ctx.restore();
 
   const wokImg = advImg('wok');
-  const wokOnStove = ['heat','oil','pour','salt','onion','off','plate'].includes(st.id);
+  const wokOnStove = stoveView;
   switch(st.id){
     case 'loosen': {
       const dx = a.sign * a.pulse * s * 0.07, rot = a.sign * a.pulse * 0.08;
@@ -18946,16 +18999,27 @@ function cookRenderDigiflex(ctx){
       break;
     }
     case 'wash': {
-      drawSprite(ctx, advImg('spring_onion'), cx, cy, s, { shadow:true });
-      ctx.save(); ctx.fillStyle = 'rgba(90,170,255,0.75)';
-      for(let i=0;i<10;i++){
-        const px = cx + (cookSeeded(i,4) - 0.5) * s * 0.8;
-        const py = cy - s*0.55 + ((cookSeeded(i,5) + a.p) % 1) * s * 0.9;
-        ctx.beginPath(); ctx.ellipse(px, py, s*0.012, s*0.02, 0, 0, Math.PI*2); ctx.fill();
-      }
-      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      // v134：去星盆洗蔥——星盆（切圖 img/cook_sink.png）放喺枱面，水龍頭成個步驟都出緊水，
+      // 青蔥喺水柱下面，每揸一下就喺水底搓洗一下；星盆、水柱、蔥全部相對星盆圖嘅比例擺位。
+      // 星盆闊度：最多畫面四成闊，而且盆底要喺「已揸」牌上面、盆頂要留返上面三成畫面畀題目牌
+      const sinkBottom = g.countY - 12 * g.cssScale;
+      const sinkS = Math.min(cw * (g.portrait ? 0.62 : 0.40), (sinkBottom - ch * 0.30) / COOK_SINK_ASPECT);   // 圖片寬度
+      const sinkH = sinkS * COOK_SINK_ASPECT;
+      // 橫向時星盆略向左（爐同砧板之間），避開畫面正中嘅獎勵圈；直向就置中
+      const sinkX = cx - (g.portrait ? 0 : sinkS * 0.12), sinkY = sinkBottom - sinkH * 0.5;
+      drawSprite(ctx, imgCookSink, sinkX, sinkY, sinkS, { shadow:true });
+      const tapX = sinkX + (COOK_SINK_SPOUT.u - 0.5) * sinkS, tapY = sinkY + (COOK_SINK_SPOUT.v - 0.5) * sinkH;
+      const basinY = sinkY + (COOK_SINK_BASIN_V - 0.5) * sinkH;
+      drawCookTapWater(ctx, tapX, tapY, basinY, sinkS, now);
+      // 青蔥：喺水柱正下面，揸實時向下搓一下再返上嚟；水花畫喺蔥上面
+      const dip = a.pulse * sinkH * 0.06, sway = a.sign * a.pulse * 0.12;
+      const onionY = basinY - sinkH * 0.09 + dip;
+      drawSprite(ctx, advImg('spring_onion'), tapX + sinkS * 0.02, onionY, sinkS * 0.38, { shadow:true, rot: 0.35 + sway });
+      drawCookTapSplash(ctx, tapX, onionY - sinkH * 0.05, sinkS, now);
+      // 洗乾淨嘅閃光：每洗一下多兩粒
+      ctx.save(); ctx.fillStyle = 'rgba(255,255,255,0.9)';
       for(let i=0;i<cook.reps*2;i++){
-        const px = cx + (cookSeeded(i,6) - 0.5) * s * 0.9, py = cy + (cookSeeded(i,7) - 0.5) * s * 0.5;
+        const px = tapX + (cookSeeded(i,6) - 0.3) * sinkS * 0.4, py = basinY - sinkH * 0.16 + (cookSeeded(i,7) - 0.5) * sinkH * 0.3;
         ctx.font = 'bold ' + Math.round(s*0.06) + 'px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
         ctx.fillText('✦', px, py);
       }
@@ -23462,7 +23526,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v133-20261119-wok-on-stove";
+  const LEVEL_APP_BUILD = "v134-20261119-sink-wash";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 
