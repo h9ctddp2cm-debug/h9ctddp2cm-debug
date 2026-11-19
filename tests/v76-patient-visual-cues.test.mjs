@@ -10,7 +10,7 @@ const html = readFileSync(path.join(root, 'index.html'), 'utf8');
 test('current build markers stay aligned', () => {
   const manifest = readFileSync(path.join(root, 'manifest.webmanifest'), 'utf8');
   const worker = readFileSync(path.join(root, 'service-worker.js'), 'utf8');
-  const version = 'v128-20261119-peg-relative-release';
+  const version = 'v129-20261119-laundry-auto-hang';
   assert.match(html, new RegExp(version));
   assert.match(manifest, new RegExp(version));
   assert.match(worker, new RegExp(version));
@@ -69,7 +69,8 @@ test('large canvas cues and advanced enlargements are public-only', () => {
 
 test('advanced Level 6 activities receive phase-specific grasp and release cues', () => {
   assert.match(html, /const advancedHeld = !!\(carrier\.heldId \|\| picker\.heldId\);/);
-  assert.match(html, /setActionPrompt\(isGrasping \? '保持揸住' : '張開手放低', ''\)/);
+  // v129: public Level 6 flowers / cards / mahjong place themselves on the target
+  assert.match(html, /setActionPrompt\(level6AutoPlaceEnabled\(\) \? '移到目標停住' : \(isGrasping \? '保持揸住' : '張開手放低'\), ''\)/);
   assert.match(html, /setActionPrompt\(isGrasping \? '揸實' : '揸實拿起', ''\)/);
   assert.match(html, /setActionPrompt\('張開手', ''\)/);
 });

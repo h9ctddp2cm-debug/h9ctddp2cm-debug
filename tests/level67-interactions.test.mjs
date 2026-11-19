@@ -327,7 +327,10 @@ async function runToolGestureFlow(page, task) {
     const prepared = window.__qa.level6ToolState();
     frame('closed', 5, { ...at(item), apertures:{ index:.10, middle:.15 } });
     const pickedUp = window.__qa.level6ToolState();
-    frame('closed', 30, { ...at(target), apertures:{ index:.10, middle:.15 } });
+    // v129: in the public game the item places itself after 400 ms on the
+    // target, so the transport is sampled after 240 ms (two 120 ms frames) and
+    // the release then follows — reopening or auto-place, whichever is first.
+    frame('closed', 2, { ...at(target), apertures:{ index:.10, middle:.15 } });
     const transported = window.__qa.level6ToolState();
     frame('open', 8, at(target));
     const released = window.__qa.level6ToolState();
@@ -353,7 +356,7 @@ for (const { task } of LEVEL6_GESTURE_TASKS) {
       ) < 90, 'selected hand position transports the held item to the target');
       assert.equal(result.transported.shoulder.gameReady, false,
         'missing shoulder/elbow/wrist pose cannot block selected-hand transport');
-      assert.equal(result.released.held, null, 'confirmed reopening releases the item');
+      assert.equal(result.released.held, null, 'the item is released at the target (reopening or v129 auto-place)');
       if (pickerModule) {
         assert.equal(result.released.advancedPlaced, 1, 'valid release places exactly one card/tile group');
       } else {

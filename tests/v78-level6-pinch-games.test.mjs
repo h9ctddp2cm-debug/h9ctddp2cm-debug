@@ -236,8 +236,10 @@ test('audio-only patient phrase mapping follows Level 5 and each Level 6 tool re
       return {
         level5:run({level:'5',theme:'dimsum'},'打開隻手'),
         chopsticks:run({level:'67',level6Task:'chopsticks'},'打開筷子'),
-        peg:run({level:'67',level6Task:'peg'},'放手'),
-        flowers:run({level:'67',level6Task:'flowers'},'打開隻手'),
+        peg:run({level:'67',level6Task:'peg'},'停住'), // v129: the garment hangs itself at the rack
+        flowers:run({level:'67',level6Task:'flowers'},'停住'), // v129: flowers / cards / mahjong place themselves on the target
+        cards:run({level:'67',level6Task:'cards'},'停住'),
+        mahjong:run({level:'67',level6Task:'mahjong'},'停住'),
       };
     });
     assert.deepEqual(result.level5,{contact:'揸拳頭',target:'打開隻手',expectedTarget:'打開隻手'});

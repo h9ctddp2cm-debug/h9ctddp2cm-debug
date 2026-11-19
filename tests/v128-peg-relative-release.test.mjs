@@ -171,6 +171,10 @@ test('laundry rack e2e: foreshortened hand at the rack — relaxed grip below th
       const l = window.__qa.level67Layout();
       const item = l.items[0], target = l.targets.find(v => v.type === 'laundry_rack');
       const at = p => ({ nx: p.x / l.canvas.width, ny: p.y / l.canvas.height });
+      // v129: hovering on the upper half of the rack now hangs the garment by
+      // itself, so the gesture path is exercised on the rack's lower legs (still
+      // inside the padded drop box, but below the auto-hang line).
+      const rackLow = { x: target.x, y: target.y + target.h * 0.4 };
       const out = {};
       const frame = (tag, near, far, count, pos) => {
         let st;
@@ -185,11 +189,11 @@ test('laundry rack e2e: foreshortened hand at the rack — relaxed grip below th
       frame('approach', 0.45, 0.48, 10, at(item));
       frame('squeeze', 0.26, 0.29, 15, at(item));
       // raised + turned hand at the rack: the whole gap reads smaller (foreshortened)
-      frame('carryTight', 0.20, 0.23, 45, at(target));   // 1.5 s squeeze at the rack
-      frame('carryLoose', 0.23, 0.26, 30, at(target));   // 15% of range loosening, 1 s
+      frame('carryTight', 0.20, 0.23, 45, at(rackLow));   // 1.5 s squeeze at the rack
+      frame('carryLoose', 0.23, 0.26, 30, at(rackLow));   // 15% of range loosening, 1 s
       // relaxed on the opened peg: 0.27 / 0.30 — BELOW the absolute release
       // points (0.32 / 0.35) and the gate (0.33): the v119 symptom …
-      frame('relaxForeshort', 0.27, 0.30, 30, at(target)); // 1 s
+      frame('relaxForeshort', 0.27, 0.30, 30, at(rackLow)); // 1 s
       frame('stillRelaxed', 0.27, 0.30, 30, at(item));
       return out;
     }, { cal: CAL, SCALE });

@@ -95,8 +95,8 @@ test('public Level 5 requires a continuously open hand after every release befor
   assert.match(advanced, /controller\.armed = false; controller\.openStart = 0;/);
   assert.equal(
     (advanced.match(/postReleaseOpenStart = level5PostReleaseOpenMs\(\) \? now : 0;/g) || []).length,
-    2,
-    'picker and carrier both start the Level 5 open-hand lock after release',
+    4,
+    'picker and carrier both start the Level 5 open-hand lock after release (gesture release + v129 Level 6 auto-place paths)',
   );
   assert.equal(
     (advanced.match(/level5PostReleaseOpenLocked\(this, now\)/g) || []).length,

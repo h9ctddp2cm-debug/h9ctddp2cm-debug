@@ -1702,6 +1702,18 @@ Original prompt: Fix Level 6–7 interactions: make light clothes-peg press dete
 - Validation：四組測試 590 個（113+171+135+171）587 pass / 3 skip / 0 fail（首次跑 group 3 因 dist 未 rebuild 有 1 個 dist-gated 子測試預期性 fail，rebuild 後重跑 `tests/v114-public-no-keepsake.test.mjs` 5/5 同全組 135/135 皆過）；`tools/checkjs.sh` 11 OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 199 files（同 v114 一致，純文字改動冇影響檔案數）；`rg -c "__qa" dist/public/index.html` → 0；dist 內三個版本標記／`留念`／`寫名、簽名`／`名字只保留在此頁` 全部確認正確（前者 3 處存在，後三者 0 個殘留）；Playwright 三個尺寸（筆電 1413×653、iPad 橫向 1180×820、iPad 直向 820×1180）載入公開版首頁，零 page error（`console.error` 同 `pageerror` 皆空）——因涉及文字本身係死碼，冇可達 UI 路徑可截圖顯示呢組文字，故 QA 重點放喺「頁面正常載入、冇 JS 錯誤」而非畫面文字截圖；`ych_rehab_qa_artifacts/v114b/v114b-qa-contact-sheet.png`（首頁三尺寸存底）。
 - Residual notes：`ADV_RULES` 入面其他主題（`cooking`/`mahjong`/`cards`/`laundry`）嘅 `lines[1]`/`tail`/`tts` 同樣係死碼（同一個讀取模式，只用 `lines[0]`），呢次冇一併清理，維持原文，因為稽核只針對插花一句；如日後同類稽核再揪出其他主題嘅殘留描述文字，可用同一手法直接改字（不涉及功能判斷）。
 
+## 2026-11-19 v129 — Level 6 晾衫／插花／啤牌／麻雀：到目標停住自動掛上／放下（放鬆手指亦得）
+
+- Therapist（19 Nov，v128 之後）：病人夾住衣夾拿起件衫、舉到衣架之後，唔知道要「放手」，成件衫掛喺衣架上面唔落。提議：到咗衣架自動掛上。追問「放鬆手指仲要唔要都算？」→「兩樣都得」。再確認「same for the level 6 mahjong, poker card, and flower pot game」。
+- 設計（公開版 Level 6 捏／揸任務；研究模式、Level 5、煮蛋炒飯、筷子 dwell 不變；分類模式規則不變）：
+  - 晾衫 `laundryAutoHangEnabled()` = `!research.active && isLaundryRackGame()`。持物時游標入到衣架有效範圍 `laundryAutoHangOver()`（基本一架：橫向喺架內、游標要高過衣架中線——因為放落判定盒有 padding，件衫喺衫籃已經「掂到」架腳；着燈／分類二至四架：入到自己個架嘅格，上方多 0.5×衫半徑容忍）停滿 `LAUNDRY_AUTO_HANG_MS` 400 ms → `releasing` 為真，再過原有 `DROP_DWELL_MS` 220 ms 先真正掛上，約 0.6 秒。放鬆衣夾（絕對／相對路徑）照舊可以掛上，邊樣先到就邊樣。離開衣架範圍或者放低／夾起即重置計時。下一件仍要 `handOpenPrep` 先可以夾起。
+  - 插花（carrier 模組）／啤牌、麻雀（picker 模組）`level6AutoPlaceEnabled()` = `!research.active && isLevel6() && isGraspStyleMode() && !isLevel6RealToolTask() && theme ∈ {flowers,cards,mahjong}`。物件中心入到花盤／收牌區／放牌區（`heldItemTouchesZone(…, -r)` / `pointInsideZone(cursor)`）停滿 `LEVEL6_AUTO_PLACE_MS` 400 ms → 當作放低事件（同張開手放低走同一條路，計分、錯牌、和牌慶祝都一樣）。張開三指照舊放到。
+  - 提示：晾衫 揸住→「舉高去衣架」、入到衣架→「對準衣架，自動掛上」；插花／啤牌／麻雀 揸住→「移到目標停住」，牌／花旁邊小牌「已拿住 · 移到放牌區／花盤，停住自動放低」（小牌闊度上限 250→360）；語音「停住」取代「張開手」；`LEVEL6_TASKS` hint／actionCue 同步。
+- Tests：新增 `tests/v129-laundry-auto-hang.test.mjs`（8）：原始碼接線 ×2；Playwright 晾衫整頁流程（衫籃揸住 1.5 s 唔掛、掂到架腳唔掛、入架短暫 0.2 s 唔掛、停 0.6 s 掛上 `correctCount` 1、再夾起要先鬆開）；衣架放鬆手指仍可掛上；插花／啤牌／麻雀 `setLevel6ToolFrame` 停住自動放下（麻雀和牌慶祝後再夾略過）；Level 5 插花停住 1.5 s 唔會自動放下。更新：v119／v128 e2e 手勢路徑改喺架腳下半位置、v78 語音「停住」、v76 regex、v77 計數 2→4、level67-interactions 多等兩幀。
+- Markers `v129-20261119-laundry-auto-hang` ×3、`perf v129`、15 個 marker 測試 sed bump。
+- Validation：四組 **660** 個測試 0 fail（125+208+189+138，3 skip）；`tools/checkjs.sh` OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 210 files；`__qa` 0；dist 無 research／pilot。Playwright 三個 viewport（筆電 1413×653、iPad 橫向、直向）晾衫四步 ＋ 插花／啤牌／麻雀四步截圖 0 page error — `ych_rehab_qa_artifacts/v129/v129-qa-contact-sheet.png`。
+- Residual：400 ms 停住 ＋ 220 ms 確認係第一個估計；如果病人路過衣架時「誤掛」或者停住太耐先掛，調 `LAUNDRY_AUTO_HANG_MS`／`LEVEL6_AUTO_PLACE_MS`。煮蛋炒飯未加自動放下（治療師未提）。
+
 ## 2026-11-19 v128 — 晾衫衣夾「相對放手」：同今次揸住嘅最細指距比較 (therapist bedside report)
 
 - Therapist（19 Nov，v119 之後再試真衣夾）：「still fail to release the clip」、「There is delay in release hand」— Level 6 晾衫放鬆手之後件衫遲遲唔落，或者完全唔落。校準有揸住衣夾做。

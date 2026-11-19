@@ -34,13 +34,13 @@ test('v119 public peg constants and calibration wiring', () => {
   assert.match(publicSource, /publicPegReleaseRelaxationEnabled\(\) \? PUBLIC_PEG_ENTER_RATIO : 0\.56;/);
   // the drop follows the stabilised pinch release for the public peg task only
   assert.match(publicSource,
-    /const releasing = isLevel6ToolGestureTask\(\)\n\s*\? \(publicPegReleaseRelaxationEnabled\(\) \? \(!isGrasping \|\| pegRelativeOpen\) : handOpenPrep\)/);
+    /const releasing = laundryAutoHang \|\| \(isLevel6ToolGestureTask\(\)\n\s*\? \(publicPegReleaseRelaxationEnabled\(\) \? \(!isGrasping \|\| pegRelativeOpen\) : handOpenPrep\)/);
   // the NEXT pick-up still needs a positively separated hand
   assert.match(publicSource, /const openPrep = isLevel6ToolGestureTask\(\) \? handOpenPrep/);
   // build / cache identifiers bumped
-  assert.match(publicSource, /const LEVEL_APP_BUILD = "v128-20261119-peg-relative-release";/);
+  assert.match(publicSource, /const LEVEL_APP_BUILD = "v129-20261119-laundry-auto-hang";/);
   const sw = readFileSync(path.join(root, 'service-worker.js'), 'utf8');
-  assert.match(sw, /const CACHE_VERSION = "fthue-rehab-v128-20261119-peg-relative-release";/);
+  assert.match(sw, /const CACHE_VERSION = "fthue-rehab-v129-20261119-laundry-auto-hang";/);
 });
 
 /* ---------------- Behavioural harness (as tests/v108, v110) ---------------- */
@@ -179,6 +179,10 @@ test('public peg task: pick up, carry with light loosening, relax to 40% → gar
       const l = window.__qa.level67Layout();
       const item = l.items[0], target = l.targets.find(v => v.type === 'laundry_rack');
       const at = p => ({ nx: p.x / l.canvas.width, ny: p.y / l.canvas.height });
+      // v129: hovering on the upper half of the rack now hangs the garment by
+      // itself, so the gesture path is exercised on the rack's lower legs (still
+      // inside the padded drop box, but below the auto-hang line).
+      const rackLow = { x: target.x, y: target.y + target.h * 0.4 };
       const out = {};
       const frame = (tag, near, far, count, pos) => {
         let st;
@@ -191,8 +195,8 @@ test('public peg task: pick up, carry with light loosening, relax to 40% → gar
       };
       frame('approach', 0.45, 0.48, 10, at(item));
       frame('squeeze', 0.26, 0.29, 15, at(item));
-      frame('carryLoose', 0.29, 0.32, 60, at(target));   // 20% of range, 2 s
-      frame('relax40', 0.33, 0.36, 45, at(target));      // 40% of range, 1.5 s
+      frame('carryLoose', 0.29, 0.32, 60, at(rackLow));   // 20% of range, 2 s
+      frame('relax40', 0.33, 0.36, 45, at(rackLow));      // 40% of range, 1.5 s
       frame('stillRelaxed', 0.33, 0.36, 30, at(item));   // back over a garment, same posture
       return out;
     }, { cal: V115_CAL, SCALE });

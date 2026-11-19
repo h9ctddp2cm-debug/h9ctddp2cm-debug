@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v128-20261119-peg-relative-release";
+const CACHE_VERSION = "fthue-rehab-v129-20261119-laundry-auto-hang";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

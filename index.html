@@ -5803,8 +5803,8 @@ const LEVEL6_TASKS = {
     id:'flowers', theme:'flowers',
     gameType:'pinch',
     label:'插花', labelEn:'Flower Arranging',
-    hint:'患手三指張開，輕捏拿起花材，移到花瓶，再張開放下',
-    actionCue:'三指張開 → 輕捏拿起 → 移動 → 張開放下',
+    hint:'患手三指張開，輕捏拿起花材，移到花盤停住，就會自動放下（張開三指亦可放下）；返到花材處先張開三指再捏下一枝',
+    actionCue:'三指張開 → 輕捏拿起 → 移到花盤 → 停住自動放下',
   },
   chopsticks:{
     id:'chopsticks', theme:'chopstick_dimsum',
@@ -5817,22 +5817,22 @@ const LEVEL6_TASKS = {
     id:'peg', theme:'peg_laundry',
     gameType:'pinch',
     label:'衣夾晾衫', labelEn:'Cloth-Peg Laundry',
-    hint:'患手揸住真衣夾。揸實衣夾拿起衣物，移到晾衫繩，再鬆開衣夾放下',
-    actionCue:'鬆開衣夾 → 揸實拿起 → 移動 → 鬆開放下',
+    hint:'患手揸住真衣夾。揸實衣夾拿起衣物，舉高移到晾衫架停住，就會自動掛上（放鬆衣夾亦可放下）；返到衫籃先鬆開衣夾再夾下一件',
+    actionCue:'鬆開衣夾 → 揸實拿起 → 舉高到衣架 → 停住自動掛上',
   },
   cards:{
     id:'cards', theme:'cards',
     gameType:'pinch',
     label:'啤牌', labelEn:'Playing Cards',
-    hint:'患手三指張開，輕捏拿起指定花色嘅啤牌，移到患側收牌區，再張開放下',
-    actionCue:'三指張開 → 輕捏拿起 → 移動 → 張開放下',
+    hint:'患手三指張開，輕捏拿起指定花色嘅啤牌，移到患側收牌區停住，就會自動放下（張開三指亦可放下）；先張開三指再捏下一張',
+    actionCue:'三指張開 → 輕捏拿起 → 移到收牌區 → 停住自動放下',
   },
   mahjong:{
     id:'mahjong', theme:'mahjong',
     gameType:'pinch',
     label:'麻雀', labelEn:'Mahjong',
-    hint:'患手三指張開，輕捏拿起一組麻雀，移到患側放牌區，再張開放下',
-    actionCue:'三指張開 → 輕捏拿起 → 移動 → 張開放下',
+    hint:'患手三指張開，輕捏拿起一組麻雀，移到患側放牌區停住，就會自動放下（張開三指亦可放下）；先張開三指再捏下一組',
+    actionCue:'三指張開 → 輕捏拿起 → 移到放牌區 → 停住自動放下',
   },
   cooking:{
     id:'cooking', theme:'cooking',
@@ -8832,6 +8832,39 @@ const PUBLIC_PEG_RELATIVE_MIN_DELTA = 0.010;
 const PUBLIC_PEG_RELATIVE_SMOOTH_N = 5;
 const PUBLIC_PEG_RELATIVE_MIN_HOLD_MS = 300;
 let pegRelative = { hist: [], base: null, holdSince: 0, open: false };
+/* v129 (therapist request, 19 Nov): in the public 晾衫 game patients did not
+   understand that they had to release at the rack. The garment now hangs
+   itself once the cursor has stayed over a rack for LAUNDRY_AUTO_HANG_MS
+   (then the normal 220 ms drop dwell runs). Releasing the peg at the rack
+   still hangs it too — whichever comes first. The release gesture is now
+   practised at the basket: the next pick-up still needs an opened hand. */
+const LAUNDRY_AUTO_HANG_MS = 400;
+let laundryAutoHangSince = 0;
+function laundryAutoHangEnabled(){
+  return !research.active && typeof isLaundryRackGame === 'function' && isLaundryRackGame();
+}
+/* The drop target box is padded by the garment radius, so at the basket the
+   garment already "touches" the big single rack (its legs reach the basket).
+   Auto-hang therefore uses the rack's own box: the garment centre must be
+   inside it horizontally, and — for the single large rack, whose hanging
+   surface is the upper part — in its upper half. Smaller racks (two / four)
+   use their own box with a small margin above the top rail. */
+function laundryAutoHangOver(t, garmentR){
+  if(!t || t.type !== 'laundry_rack') return false;
+  if(Math.abs(cursorX - t.x) > t.w / 2) return false;
+  if(isLaundryBasicGame()) return cursorY <= t.y;
+  const margin = Math.max(0, (garmentR || 0)) * 0.5;
+  return cursorY >= t.y - t.h / 2 - margin && cursorY <= t.y + t.h / 2;
+}
+/* v129: the same "stay on the target and it places itself" rule for the
+   public Level 6 flowers / playing-cards / mahjong games (carrier module). */
+const LEVEL6_AUTO_PLACE_MS = 400;
+const LEVEL6_AUTO_PLACE_THEMES = ['flowers','cards','mahjong'];
+function level6AutoPlaceEnabled(){
+  return !research.active && typeof isLevel6 === 'function' && isLevel6()
+    && isGraspStyleMode() && !isLevel6RealToolTask()
+    && LEVEL6_AUTO_PLACE_THEMES.includes(state.theme);
+}
 function pegRelativeHoldReset(){
   pegRelative.base = null;
   pegRelative.holdSince = 0;
@@ -13264,7 +13297,7 @@ function updateFramePerfOverlay(now){
     framePerf.overlayEl = el;
   }
   const p = framePerfSnapshot();
-  el.textContent = `perf v128  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
+  el.textContent = `perf v129  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
     + `鏡頭 ${p.video[0]}×${p.video[1]}  畫布 ${p.canvas[0]}×${p.canvas[1]}  dpr ${p.dpr}  手模型 ${p.handDelegate || '-'}\n`
     + `手 ${p.hand.hands} 隻  標籤 ${p.hand.label || '-'} ${p.hand.score}  接納 ${p.hand.path || '-'}  嚴格 ${p.hand.strict} 連續 ${p.hand.continuity} 單手 ${p.hand.lone} 拒絕 ${p.hand.rejected}\n`
     + `左右手檢查 ${p.hand.check === 'off' ? '關' : '開'}  鎖定手形 ${p.hand.lockSize || '-'}  大小拒絕 ${p.hand.sizeRejected}  遠處拒絕 ${p.hand.farRejected}`
@@ -14950,7 +14983,8 @@ function publicPatientVoicePhrase(phase){
   if(phase === 'target'){
     if(state.level === '5') return '打開隻手';
     if(isLevel6Chopsticks()) return '打開筷子';
-    if(isLevel6Peg()) return '放手';
+    if(isLevel6Peg()) return laundryAutoHangEnabled() ? '停住' : '放手';
+    if(level6AutoPlaceEnabled()) return '停住';
     return '打開隻手';
   }
   return '';
@@ -15107,6 +15141,13 @@ function setActionPrompt(main, detail){
 /* Short, mode-specific prompts. Tool modes use observable hand motion only:
    the camera does not identify the physical tool or measure force. */
 function graspPrompt(key){
+  if(laundryAutoHangEnabled() && isLevel6RealToolTask()){
+    // v129: the garment hangs itself at the rack; no release instruction there.
+    if(key === 'prep') return '鬆開衣夾';
+    if(key === 'hold') return '揸實衣夾拿起';
+    if(key === 'carry') return '舉高去衣架';
+    return '對準衣架，自動掛上';
+  }
   if(isLevel6RealToolTask()){
     const w = level6ToolWords();
     if(key === 'prep') return w.open + w.noun;
@@ -15249,6 +15290,7 @@ function updateGraspLogic(){
       if(now-basicGraspStart >= GRASP_HOLD_MS){
         nearest.held = true; heldItem = nearest; grabCount++;
         pegRelativeHoldReset();
+        laundryAutoHangSince = 0;
         updatePublicPatientVoiceGuide({phase:'pickup',item:nearest,zones:targets});
         beginLevel4StandardCarry(nearest);
         noteHoldStart();
@@ -15315,9 +15357,15 @@ function updateGraspLogic(){
       ? (pegRelativeHoldTrack(nowMs()),
          pegRelativeReleaseOpen(state.personalToolPinch, nowMs()))
       : false;
-    const releasing = isLevel6ToolGestureTask()
+    // v129: public 晾衫 — hovering over a rack hangs the garment automatically.
+    const overRack = laundryAutoHangEnabled() && !!onPlate
+      && laundryAutoHangOver(onPlate, heldItem ? heldItem.r : 60);
+    if(overRack){ if(!laundryAutoHangSince) laundryAutoHangSince = nowMs(); }
+    else laundryAutoHangSince = 0;
+    const laundryAutoHang = overRack && nowMs() - laundryAutoHangSince >= LAUNDRY_AUTO_HANG_MS;
+    const releasing = laundryAutoHang || (isLevel6ToolGestureTask()
       ? (publicPegReleaseRelaxationEnabled() ? (!isGrasping || pegRelativeOpen) : handOpenPrep)
-      : (isPinchMode() ? handOpenPrep : !isGrasping);
+      : (isPinchMode() ? handOpenPrep : !isGrasping));
     updatePublicPatientVoiceGuide({
       phase:'held',item:heldItem,zones:targets,onTarget:!!voiceNearPlate,
       stillGrasped:!releasing,cursorY,
@@ -15424,6 +15472,7 @@ function updateGraspLogic(){
         releaseDwellPauseAt = 0;
         releaseDwellLastOpenAt = 0;
         pegRelativeHoldReset();
+        laundryAutoHangSince = 0;
       } else {
         // 顯示 release progress
         const pct = Math.round((elapsed / DROP_DWELL_MS) * 100);
@@ -15444,8 +15493,11 @@ function updateGraspLogic(){
         releaseDwellPauseAt = 0;
         releaseDwellLastOpenAt = 0;
       }
-      setActionPrompt(onPlate ? graspPrompt('release') : graspPrompt('carry'),
-        onPlate ? (state.level === '67' ? graspPrompt('release') : '張到今日可達幅度') : affectedDirectionLabel());
+      // v129: in the auto-hang 晾衫 game the "對準衣架" prompt only shows once the
+      // garment is actually up on the rack (not while it merely touches the legs).
+      const promptOnTarget = laundryAutoHangEnabled() ? overRack : !!onPlate;
+      setActionPrompt(promptOnTarget ? graspPrompt('release') : graspPrompt('carry'),
+        promptOnTarget ? (state.level === '67' ? graspPrompt('release') : '張到今日可達幅度') : affectedDirectionLabel());
     }
   }
 }
@@ -17227,6 +17279,11 @@ function updateHeldReleasePrompt(){
   heldPromptKey = key;
   const text = isLevel6RealToolTask()
     ? ('夾住咗。移到目標後' + level6ToolWords().open + level6ToolWords().noun + '放低。')
+    : level6AutoPlaceEnabled()
+    // v129: public Level 6 flowers / cards / mahjong place themselves on the target
+    ? ((advCurrent === 'mahjong' || advCurrent === 'cards')
+      ? '攞住咗。移到患側外方放牌區停住，就會自動放低。'
+      : '攞住咗。移到花盤停住，就會自動放低。')
     : isLevel67BareMode()
     ? '捏住咗。請張開三指放低。'
     : (isPegMode()
@@ -17241,6 +17298,10 @@ function advDrawHeldReleasePrompt(ctx, held){
   if(!isGraspStyleMode() || !held || cursorX < 0) return;
   const text = isLevel6RealToolTask()
     ? ('已夾住 · ' + level6ToolWords().open + level6ToolWords().noun + '放下')
+    : level6AutoPlaceEnabled()
+    ? ((advCurrent === 'mahjong' || advCurrent === 'cards')
+      ? '已拿住 · 移到放牌區，停住自動放低'
+      : '已拿住 · 移到花盤，停住自動放低')
     : (advCurrent === 'mahjong' || advCurrent === 'cards')
     ? '已拿住 · 移到放牌區'
     : (isLevel67BareMode()
@@ -17248,7 +17309,7 @@ function advDrawHeldReleasePrompt(ctx, held){
       : (isPegMode() ? '已夾住 · 請放鬆夾仔' : '已拿住 · 請張開手放下'));
   ctx.save();
   ctx.font = 'bold 18px "PingFang TC","Noto Sans TC",sans-serif';
-  const w = Math.min(250, ctx.measureText(text).width + 30);
+  const w = Math.min(360, ctx.measureText(text).width + 30);
   const x = Math.max(w/2 + 8, Math.min(gameCanvas.width - w/2 - 8, cursorX));
   const y = Math.max(46, cursorY - 66);
   ctx.fillStyle = 'rgba(18,86,74,0.96)';
@@ -17275,12 +17336,13 @@ const picker = {
   hoverId:null, start:0, pct:0, armed:false, lock:null, startId:null,
   openStart:0, graspStart:0, graspId:null, heldId:null, relStart:0,
   relPauseAt:0, relLastOpenAt:0,
-  contactId:null, contactUntil:0, postReleaseOpenStart:0,
+  contactId:null, contactUntil:0, postReleaseOpenStart:0, autoPlaceStart:0,
   reset(){
     this.hoverId=null; this.start=0; this.pct=0; this.armed=false; this.lock=null;
     this.startId=null; this.openStart=0; this.graspStart=0; this.graspId=null;
     this.heldId=null; this.relStart=0; this.relPauseAt=0; this.relLastOpenAt=0;
     this.contactId=null; this.contactUntil=0; this.postReleaseOpenStart=0;
+    this.autoPlaceStart=0;
   },
   poll(items, releaseZone){
     this.pct = 0;
@@ -17309,6 +17371,24 @@ const picker = {
         phase:'held',item:held,zones:releaseZone?[releaseZone]:[],
         onTarget:onReleaseZone,stillGrasped:!handReleasedOrOpen(),cursorY,
       });
+      // v129: public Level 6 playing cards / mahjong — staying with the item
+      // centre inside the 放牌區 places it by itself (LEVEL6_AUTO_PLACE_MS).
+      // Opening the hand there still works; whichever comes first.
+      if(releaseZone && level6AutoPlaceEnabled() && pointInsideZone(cursorX, cursorY, releaseZone)){
+        if(!this.autoPlaceStart) this.autoPlaceStart = now;
+        this.pct = Math.min(1, (now - this.autoPlaceStart) / LEVEL6_AUTO_PLACE_MS);
+        if(now - this.autoPlaceStart >= LEVEL6_AUTO_PLACE_MS){
+          const id = this.heldId;
+          this.heldId = null; this.relStart = 0; this.relPauseAt = 0;
+          this.relLastOpenAt = 0; this.armed = false; this.autoPlaceStart = 0;
+          this.openStart = 0; this.graspStart = 0; this.graspId = null; this.pct = 0;
+          this.postReleaseOpenStart = level5PostReleaseOpenMs() ? now : 0;
+          updatePublicPatientVoiceGuide({phase:'drop'});
+          return id;
+        }
+      } else {
+        this.autoPlaceStart = 0;
+      }
       if(handReleasedOrOpen()){
         if(!this.relStart) this.relStart = now;
         else if(this.relPauseAt){
@@ -17325,7 +17405,7 @@ const picker = {
         if(now - this.relStart >= releaseMs){
           const id = this.heldId;
           this.heldId = null; this.relStart = 0; this.relPauseAt = 0;
-          this.relLastOpenAt = 0; this.armed = false;
+          this.relLastOpenAt = 0; this.armed = false; this.autoPlaceStart = 0;
           this.openStart = 0; this.graspStart = 0; this.graspId = null; this.pct = 0;
           this.postReleaseOpenStart = level5PostReleaseOpenMs() ? now : 0;
           updatePublicPatientVoiceGuide({phase:'drop'});
@@ -17438,12 +17518,12 @@ const carrier = {
   heldId:null, hoverId:null, startId:null, start:0, pct:0, armed:false, relStart:0,
   relPauseAt:0, relLastOpenAt:0,
   openStart:0, graspStart:0, graspId:null, contactId:null, contactUntil:0,
-  postReleaseOpenStart:0,
+  postReleaseOpenStart:0, autoPlaceStart:0,
   reset(){ this.heldId=null; this.hoverId=null; this.startId=null; this.start=0;
            this.pct=0; this.armed=false; this.relStart=0; this.relPauseAt=0;
            this.relLastOpenAt=0; this.openStart=0;
            this.graspStart=0; this.graspId=null; this.contactId=null; this.contactUntil=0;
-           this.postReleaseOpenStart=0; },
+           this.postReleaseOpenStart=0; this.autoPlaceStart=0; },
   poll(items, zones){
     const ev = { grab:null, drop:null, zone:null };
     this.pct = 0;
@@ -17536,6 +17616,29 @@ const carrier = {
       stillGrasped:isGraspStyleMode()&&!handReleasedOrOpen(),cursorY,
     });
     if(isGraspStyleMode()){
+      // v129: public Level 6 flowers / cards / mahjong — staying on the target
+      // places the object by itself (LEVEL6_AUTO_PLACE_MS). Opening the hand
+      // there still works too; whichever comes first.
+      // The object centre must be inside the zone itself (the padded "touch"
+      // test used for a deliberate release is too generous for an automatic one).
+      const zAuto = (z && level6AutoPlaceEnabled()
+        && heldItemTouchesZone(carriedItem, z, -((carriedItem && carriedItem.r) || 0))) ? z : null;
+      if(zAuto){
+        if(!this.autoPlaceStart) this.autoPlaceStart = now;
+        this.pct = Math.max(this.pct, Math.min(1, (now - this.autoPlaceStart) / LEVEL6_AUTO_PLACE_MS));
+        if(now - this.autoPlaceStart >= LEVEL6_AUTO_PLACE_MS){
+          ev.drop = this.heldId; ev.zone = zAuto;
+          this.heldId = null; this.relStart = 0; this.relPauseAt = 0;
+          this.relLastOpenAt = 0; this.armed = false;
+          this.openStart = 0; this.autoPlaceStart = 0;
+          this.postReleaseOpenStart = level5PostReleaseOpenMs() ? now : 0;
+          this.pct = 0;
+          updatePublicPatientVoiceGuide({phase:'drop'});
+          return ev;
+        }
+      } else {
+        this.autoPlaceStart = 0;
+      }
       if(handReleasedOrOpen()){
         if(!this.relStart) this.relStart = now;
         else if(this.relPauseAt){
@@ -17553,7 +17656,7 @@ const carrier = {
           ev.drop = this.heldId; ev.zone = z;
           this.heldId = null; this.relStart = 0; this.relPauseAt = 0;
           this.relLastOpenAt = 0; this.armed = false;
-          this.openStart = 0;
+          this.openStart = 0; this.autoPlaceStart = 0;
           this.postReleaseOpenStart = level5PostReleaseOpenMs() ? now : 0;
           this.pct = 0;
           updatePublicPatientVoiceGuide({phase:'drop'});
@@ -20305,7 +20408,8 @@ function advUpdate(){
     const advancedHeld = !!(carrier.heldId || picker.heldId);
     const advancedHover = !!(carrier.hoverId || picker.hoverId);
     if(advancedHeld){
-      setActionPrompt(isGrasping ? '保持揸住' : '張開手放低', '');
+      // v129: public Level 6 flowers / cards / mahjong place themselves on the target
+      setActionPrompt(level6AutoPlaceEnabled() ? '移到目標停住' : (isGrasping ? '保持揸住' : '張開手放低'), '');
     }else if(advancedHover){
       setActionPrompt(isGrasping ? '揸實' : '揸實拿起', '');
     }else{
@@ -22600,7 +22704,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v128-20261119-peg-relative-release";
+  const LEVEL_APP_BUILD = "v129-20261119-laundry-auto-hang";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 
