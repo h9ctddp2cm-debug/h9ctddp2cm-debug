@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v126-20261119-shelf-heap-hand";
+const CACHE_VERSION = "fthue-rehab-v127-20261119-cashier-white-bigger";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

@@ -3861,10 +3861,17 @@ function drawShopImgFit(ctx,img,cx,cy,maxW,maxH,alpha){
   ctx.save(); if(alpha!=null) ctx.globalAlpha=alpha;
   ctx.drawImage(img,cx-w/2,cy-h/2,w,h); ctx.restore();
 }
-function drawShopBgCover(ctx,img,cw,ch,fallback){
+function drawShopBgCover(ctx,img,cw,ch,fallback,fitHeight){
   if(img&&img.complete&&img.naturalWidth>0){
-    const s=Math.max(cw/img.naturalWidth,ch/img.naturalHeight);
+    // fitHeight（v127 收銀員白底圖）：橫向畫面按高度縮放、左右補白，收銀員成個人見晒
+    const s=fitHeight&&cw>=ch?ch/img.naturalHeight:Math.max(cw/img.naturalWidth,ch/img.naturalHeight);
     const w=img.naturalWidth*s,h=img.naturalHeight*s;
+    if(fitHeight){
+      ctx.fillStyle='#fefefe'; ctx.fillRect(0,0,cw,ch);
+      // 枱面延伸到畫面兩邊（圖入面枱面頂喺 82.6% 高度）
+      const top=(ch-h)/2+h*0.826; ctx.fillStyle='#cfd2d6'; ctx.fillRect(0,top,cw,ch-top);
+      ctx.fillStyle='#e4e6e9'; ctx.fillRect(0,top,cw,Math.max(3,h*0.012));
+    }
     ctx.drawImage(img,(cw-w)/2,(ch-h)/2,w,h);
   }else{ ctx.fillStyle=fallback||'#e8e3d6'; ctx.fillRect(0,0,cw,ch); }
 }
@@ -3887,8 +3894,8 @@ function shopGeometry(cw,ch){
     itemSize,
     cartX:cw*(portrait?0.76:0.82), cartY:ch*(portrait?0.80:0.76), cartW:Math.min(cw,ch)*(portrait?0.34:0.38),
     // 收銀枱：枱面喺畫面下半；貨排喺中間偏左，環保袋放枱面右邊，讀卡器最右
-    counterX:cw*(portrait?0.44:0.46), counterY:ch*(portrait?0.66:0.74), counterW:cw*(portrait?0.56:0.36),
-    bagCounterX:cw*(portrait?0.80:0.74), readerX:cw*(portrait?0.84:0.90), readerY:ch*(portrait?0.56:0.66),
+    counterX:cw*(portrait?0.40:0.44), counterY:ch*(portrait?0.66:0.74), counterW:cw*(portrait?0.74:0.50), // v127 枱面加闊，貨放大
+    bagCounterX:cw*(portrait?0.86:0.82), readerX:cw*(portrait?0.88:0.93), readerY:ch*(portrait?0.54:0.64),
     bagX:cw*(portrait?0.30:0.30), bagY:ch*(portrait?0.84:0.84), bagW:Math.min(cw,ch)*(portrait?0.24:0.26),
     cabinetX:cw*(portrait?0.27:0.30), cabinetY:Math.max(ch*(portrait?0.30:0.34),contentTop+itemSize*0.8), cabinetW:cw*(portrait?0.42:0.30),
     fridgeX:cw*(portrait?0.74:0.78), fridgeY:Math.max(ch*(portrait?0.42:0.44),contentTop+itemSize*0.8), fridgeW:cw*(portrait?0.36:0.24),
@@ -4021,7 +4028,7 @@ function drawSupermarketScene(ctx,cw,ch){
   const progress=anim.phase==='fly'?1:clamp01(Number(shoulderFlexionState.progress)||0);
   ctx.save();ctx.rect(0,0,cw,ch);ctx.clip();
   const bg=(scene==='cashier')?imgShopCashierBg:(scene==='home'||scene==='done')?imgShopHomeBg:imgShopAisleBg;
-  drawShopBgCover(ctx,bg,cw,ch,'#e8e3d6');
+  drawShopBgCover(ctx,bg,cw,ch,'#e8e3d6',scene==='cashier');
   const isCut=step&&step.kind==='scene';
   if(scene==='entrance'||scene==='list'||scene==='walk_cashier'||scene==='leave'||scene==='done'){
     ctx.fillStyle='rgba(0,0,0,0.28)';ctx.fillRect(0,0,cw,ch);
@@ -4073,12 +4080,18 @@ function drawSupermarketScene(ctx,cw,ch){
     // 收銀枱：左下購物車（剩餘貨）、中間枱面（已攞出嘅貨）、右邊讀卡器、環保袋
     const g2=Object.assign({},g,{cartX:cw*(g.portrait?0.16:0.12),cartY:ch*(g.portrait?0.80:0.80),cartW:g.cartW*0.8});
     const counterSlots=Math.max(1,shopStory.counter.length+1);
-    const cs=Math.min(g.itemSize*0.6,g.counterW/Math.max(3,counterSlots));
+    const cs=Math.min(g.itemSize,g.counterW/Math.max(3,counterSlots)); // v127 枱面貨同貨架一樣大（多件先逐漸縮細）
     const counterPos=i=>({ x:g.counterX-g.counterW/2+cs*0.6+i*cs*0.95, y:g.counterY });
     ctx.save();ctx.fillStyle='rgba(255,255,255,0.22)';rrPath(ctx,g.counterX-g.counterW/2-10,g.counterY-cs*0.6,g.counterW+20,cs*1.2,14);ctx.fill();ctx.restore();
     shopStory.counter.forEach((id,i)=>{ const p=counterPos(i); drawShopImgFit(ctx,shopItemImg(id),p.x,p.y,cs,cs,step.packing?1-clamp01((nowMs()-shopStory.stepStartedMs)/(step.ms*0.8)):1); });
-    // 讀卡器
-    ctx.save();rrPath(ctx,g.readerX-g.itemSize*0.33,g.readerY-g.itemSize*0.22,g.itemSize*0.66,g.itemSize*0.44,10);ctx.fillStyle='#2b2f36';ctx.fill();
+    // 讀卡器（v127：有支架企喺枱面）
+    ctx.save();
+    const standTop=g.readerY+g.itemSize*0.2, standBottom=g.portrait?g.counterY-g.itemSize*0.1:ch*0.83;
+    if(standBottom>standTop){
+      ctx.fillStyle='#3a3f47';ctx.fillRect(g.readerX-g.itemSize*0.06,standTop,g.itemSize*0.12,standBottom-standTop);
+      rrPath(ctx,g.readerX-g.itemSize*0.26,standBottom-g.itemSize*0.07,g.itemSize*0.52,g.itemSize*0.1,5);ctx.fill();
+    }
+    rrPath(ctx,g.readerX-g.itemSize*0.33,g.readerY-g.itemSize*0.22,g.itemSize*0.66,g.itemSize*0.44,10);ctx.fillStyle='#2b2f36';ctx.fill();
     ctx.fillStyle='#7ad0ff';rrPath(ctx,g.readerX-g.itemSize*0.26,g.readerY-g.itemSize*0.15,g.itemSize*0.52,g.itemSize*0.2,6);ctx.fill();ctx.restore();
     // 環保袋：遞出前喺左下；遞出後喺枱面中央；接返後跟手
     const bagAtCounter=shopStory.bagGiven&&!shopStory.bagTaken;
@@ -13179,7 +13192,7 @@ function updateFramePerfOverlay(now){
     framePerf.overlayEl = el;
   }
   const p = framePerfSnapshot();
-  el.textContent = `perf v126  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
+  el.textContent = `perf v127  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
     + `鏡頭 ${p.video[0]}×${p.video[1]}  畫布 ${p.canvas[0]}×${p.canvas[1]}  dpr ${p.dpr}  手模型 ${p.handDelegate || '-'}\n`
     + `手 ${p.hand.hands} 隻  標籤 ${p.hand.label || '-'} ${p.hand.score}  接納 ${p.hand.path || '-'}  嚴格 ${p.hand.strict} 連續 ${p.hand.continuity} 單手 ${p.hand.lone} 拒絕 ${p.hand.rejected}\n`
     + `左右手檢查 ${p.hand.check === 'off' ? '關' : '開'}  鎖定手形 ${p.hand.lockSize || '-'}  大小拒絕 ${p.hand.sizeRejected}  遠處拒絕 ${p.hand.farRejected}`
@@ -22506,7 +22519,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v126-20261119-shelf-heap-hand";
+  const LEVEL_APP_BUILD = "v127-20261119-cashier-white-bigger";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

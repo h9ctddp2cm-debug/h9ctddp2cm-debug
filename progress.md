@@ -1702,6 +1702,15 @@ Original prompt: Fix Level 6–7 interactions: make light clothes-peg press dete
 - Validation：四組測試 590 個（113+171+135+171）587 pass / 3 skip / 0 fail（首次跑 group 3 因 dist 未 rebuild 有 1 個 dist-gated 子測試預期性 fail，rebuild 後重跑 `tests/v114-public-no-keepsake.test.mjs` 5/5 同全組 135/135 皆過）；`tools/checkjs.sh` 11 OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 199 files（同 v114 一致，純文字改動冇影響檔案數）；`rg -c "__qa" dist/public/index.html` → 0；dist 內三個版本標記／`留念`／`寫名、簽名`／`名字只保留在此頁` 全部確認正確（前者 3 處存在，後三者 0 個殘留）；Playwright 三個尺寸（筆電 1413×653、iPad 橫向 1180×820、iPad 直向 820×1180）載入公開版首頁，零 page error（`console.error` 同 `pageerror` 皆空）——因涉及文字本身係死碼，冇可達 UI 路徑可截圖顯示呢組文字，故 QA 重點放喺「頁面正常載入、冇 JS 錯誤」而非畫面文字截圖；`ych_rehab_qa_artifacts/v114b/v114b-qa-contact-sheet.png`（首頁三尺寸存底）。
 - Residual notes：`ADV_RULES` 入面其他主題（`cooking`/`mahjong`/`cards`/`laundry`）嘅 `lines[1]`/`tail`/`tts` 同樣係死碼（同一個讀取模式，只用 `lines[0]`），呢次冇一併清理，維持原文，因為稽核只針對插花一句；如日後同類稽核再揪出其他主題嘅殘留描述文字，可用同一手法直接改字（不涉及功能判斷）。
 
+## 2026-11-19 v127 — 收銀員白色背景、枱面貨品放大、讀卡器有支架
+
+- Therapist（19 Nov 朝早，睇完 v126）：(1) 「啲物件喺收銀員嗰度太細」；(2) 「收銀員背景太雜亂，可以變成白色背景」。
+- 枱面貨品：`cs = min(itemSize, counterW / max(3, 件數+1))`（之前 `itemSize×0.6`），即同貨架一樣大，貨多先逐漸縮細；枱面加闊 `counterW` 橫向 0.36→0.50cw、直向 0.56→0.74cw，`counterX` 左移少少，環保袋 `bagCounterX` 0.82／0.86cw，讀卡器 `readerX` 0.93／0.88cw、`readerY` 0.64／0.54ch。中單六件喺筆電約 118px（之前 82px）。
+- 收銀員圖 `img/shop_cashier_bg.jpg` 換成純白背景版（同一個收銀員、同一個枱，用 AI 由原圖改背景，再用 PIL 抹走圖入面嘅讀卡器免同畫出嚟嗰個重疊，1280×720、94 kB）。`drawShopBgCover(...,fitHeight)` 新參數：橫向畫面按高度縮放、左右補白，並由圖入面枱面頂（82.6% 高度）起畫灰色枱面橫跨成個畫面，收銀員成個人見晒唔會被裁；直向照 cover。讀卡器加支架（柱＋底座企喺枱面）。
+- 無改動：劇本、rep 數、角度控制器、貨架場景、屋企場景；Level 5／6、研究模式不變。
+- Tests：新增 `tests/v127-cashier-bigger-items-white-bg.test.mjs`（4）。Markers `v127-20261119-cashier-white-bigger` ×3、`perf v127`、15 個 marker 測試 sed bump。
+- Validation：四組 **646** 個測試 0 fail（125+203+192+126）；`tools/checkjs.sh` OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 210 files；`__qa` 0；dist `index.html` 無 research／pilot。Playwright 三個 viewport 行晒中單 22 次抬手 → 自動「訓練完成」，零頁面錯誤，對照表 `ych_rehab_qa_artifacts/v127/v127-qa-contact-sheet.png`。
+
 ## 2026-11-19 v126 — 超市貨架似真超市（生果一堆／樽裝一排）＋ 真手掌標記 ＋ 預設中單
 
 - Therapist（19 Nov 凌晨，睇完 v125 預覽）三個要求：(1) 預設購物單長度改做中單（4 樣）；(2) 「超市係咁嘅咩？」—— 貨架唔似真超市，應該真係喺蘋果嗰堆度攞一個；(3) 「手就真係整手掌」—— 抬手標記唔要橙色「手」字圓圈，要真手掌。

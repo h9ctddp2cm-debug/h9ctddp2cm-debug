@@ -74,5 +74,5 @@ test('public build: no keepsake DOM/functions, no img/cert assets, cache bumped 
   const offlineAssets = fs.readFileSync(path.join(distDir, 'offline-assets.js'), 'utf8');
   assert.doesNotMatch(offlineAssets, /img\/cert/);
   const sw = fs.readFileSync(path.join(distDir, 'service-worker.js'), 'utf8');
-  assert.match(sw, /v126-20261119-shelf-heap-hand/);
+  assert.match(sw, /v127-20261119-cashier-white-bigger/);
 });
