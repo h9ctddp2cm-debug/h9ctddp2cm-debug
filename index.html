@@ -9723,9 +9723,10 @@ function updateCalibrationCopy(){
     closeCheck.textContent = '○ ' + w.close + w.noun;
   }else if(isLevel6DigiflexTask()){
     // v131: hand-grip exerciser in hand; judge against the participant's own range.
-    hint.textContent = '患手揸住握力器入鏡（手指向鏡頭）。先放鬆，再揸實，重複幾次。';
-    openCheck.textContent = '○ 放鬆揸住握力器';
-    closeCheck.textContent = '○ 揸實握力器';
+    // v135: tracking only has to see the hand; the relax/squeeze rows are optional.
+    hint.textContent = '患手揸住握力器，成隻手入鏡。「偵測」打咗剔就可以按「開始遊戲」。想更貼合自己手力，可以先放鬆、揸實幾次（可選）。';
+    openCheck.textContent = '○ 放鬆揸住握力器（可選）';
+    closeCheck.textContent = '○ 揸實握力器（可選）';
   }else if(isChopsticksMode()){
     // v117: Level 6 chopsticks is a dwell task; say exactly what to show the camera.
     hint.textContent = '患手揸住筷子入鏡（手背向鏡頭）；見綠點即可按「開始遊戲」。';
@@ -9789,6 +9790,10 @@ function calibLooksOpen(res){
    satisfies the bare-hand open gate, so "relaxed" is the low end of the
    participant's own observed curl range (mirror of toolCalibOpenQualifies). */
 const DIGIFLEX_CALIB_MIN_RANGE = 0.02;
+/* v135: public Digi-Flex calibration is optional — counting is relative to the
+   participant's own relaxed level (v132), so the start button only needs the
+   hand to be seen. Research mode keeps the full gate. */
+function digiflexCalibOptional(){ return !research.active && isLevel6DigiflexTask(); }
 function digiflexCalibRelaxedQualifies(vals, value){
   if(!Number.isFinite(value)) return false;
   const range = toolCalibRange(vals);
@@ -10039,7 +10044,9 @@ function startCalibLoop(){
         renderCalibCheck('calibDetectCheck', c.detectedDone);
         renderCalibCheck('calibOpenCheck', c.openDone);
         renderCalibCheck('calibCloseCheck', c.closedDone);
-        c.ready = c.detectedDone && c.openDone && c.closedDone;
+        // v135：握力器任務（公開版）嘅計數規則係相對自己放鬆位（v132），唔靠校準門檻，
+        // 所以見到手就可以開始；放鬆／揸實兩格係「可選」，做齊咗先會用自己嘅範圍。
+        c.ready = c.detectedDone && ((c.openDone && c.closedDone) || digiflexCalibOptional());
         if(c.ready && state.gameType === 'grasp' && thresholds.personalGraspEnter == null &&
             c.openScores.length && c.closedScores.length){
           const openMean = medianValue(c.openScores);
@@ -13440,7 +13447,7 @@ function updateFramePerfOverlay(now){
     framePerf.overlayEl = el;
   }
   const p = framePerfSnapshot();
-  el.textContent = `perf v134  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
+  el.textContent = `perf v135  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
     + `鏡頭 ${p.video[0]}×${p.video[1]}  畫布 ${p.canvas[0]}×${p.canvas[1]}  dpr ${p.dpr}  手模型 ${p.handDelegate || '-'}\n`
     + `手 ${p.hand.hands} 隻  標籤 ${p.hand.label || '-'} ${p.hand.score}  接納 ${p.hand.path || '-'}  嚴格 ${p.hand.strict} 連續 ${p.hand.continuity} 單手 ${p.hand.lone} 拒絕 ${p.hand.rejected}\n`
     + `左右手檢查 ${p.hand.check === 'off' ? '關' : '開'}  鎖定手形 ${p.hand.lockSize || '-'}  大小拒絕 ${p.hand.sizeRejected}  遠處拒絕 ${p.hand.farRejected}`
@@ -18040,6 +18047,7 @@ function cookStepTts(st){
 const DIGIFLEX_RELATIVE_RISE = 0.25;
 const DIGIFLEX_MIN_RISE = 0.03;      // 分數最少要升幾多先算開始揸（防鏡頭雜訊）
 const DIGIFLEX_MAX_RISE = 0.08;      // 校準範圍好大都唔使揸到咁盡
+const DIGIFLEX_DEFAULT_GAP = 0.16;   // v135：未校準時當作嘅範圍（0.16 × 0.25 = 升幅 0.04）
 const DIGIFLEX_OFF_FRACTION = 0.4;   // 由峰值回落幾多（相對升幅）算放鬆
 const DIGIFLEX_OFF_FRACTION_LATE = 0.2; // 揸住超過 2 秒：回落少少都算放鬆
 const DIGIFLEX_LATE_MS = 2000;
@@ -18428,10 +18436,12 @@ function cookDigiflexDetect(st, now, bumpRep){
   if(d.hist.length > 3) d.hist.shift();
   const sc = medianValue(d.hist);
   d.lastScore = sc;
-  const enter = Number.isFinite(state.personalGraspEnter) ? state.personalGraspEnter : 0.56;
-  const exit = Number.isFinite(state.personalGraspExit) ? state.personalGraspExit : 0.50;
+  const calibrated = Number.isFinite(state.personalGraspEnter) && Number.isFinite(state.personalGraspExit);
+  const enter = calibrated ? state.personalGraspEnter : 0.56;
+  const exit = calibrated ? state.personalGraspExit : 0.50;
   // 校準：enter = 放鬆 + 0.45×範圍，exit = 放鬆 + 0.20×範圍 → 範圍 = (enter − exit) / 0.25
-  const gap = Math.max(0.03, (enter - exit) / 0.25);
+  // v135：未校準（見到手就開始）就用寬鬆預設範圍 DIGIFLEX_DEFAULT_GAP → 升幅 0.04
+  const gap = calibrated ? Math.max(0.03, (enter - exit) / 0.25) : DIGIFLEX_DEFAULT_GAP;
   const rise = Math.min(DIGIFLEX_MAX_RISE, Math.max(DIGIFLEX_MIN_RISE, gap * DIGIFLEX_RELATIVE_RISE));
   d.rise = rise;
   if(!d.squeezing){
@@ -22691,6 +22701,10 @@ window.__qa = {
       reward:rewardIsOpen(), keep:!!(advDom && advDom.keep && advDom.keep.classList.contains('show')), digi:{...cook.digi, hist:cook.digi.hist.slice()} }; },
     totals(){ return { less:cookDigiflexTotal('less'), normal:cookDigiflexTotal('normal'), more:cookDigiflexTotal('more'),
       need:COOK_DIGIFLEX_NEED.slice(), amount:cookSqueezeAmountKey() }; },
+    // v135 QA：校準頁文案同「見到手就可以開始」旗標
+    calibProbe(){ updateCalibrationCopy(); return { optional:digiflexCalibOptional(), research:research.active,
+      hint:document.getElementById('calibHint').textContent, openCheck:document.getElementById('calibOpenCheck').textContent,
+      closeCheck:document.getElementById('calibCloseCheck').textContent, personalGraspEnter:state.personalGraspEnter }; },
     // 以合成手部／姿勢資料真實觸發動作偵測（無相機模擬）
     simulate(){ return cookSimulateStep(); },
     probePronateCycle(){
@@ -23526,7 +23540,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v134-20261119-sink-wash";
+  const LEVEL_APP_BUILD = "v135-20261119-digiflex-calib-optional";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

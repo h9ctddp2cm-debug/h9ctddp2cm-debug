@@ -34,8 +34,9 @@ test('v131 source wiring: task profile, routing, constants, calibration copy', (
   assert.match(src, /const on = sc >= d\.baseline \+ rise;/);
   assert.match(src, /const off = sc <= d\.peak - riseNow \* frac \|\| sc <= d\.baseline \+ rise \* 0\.5;/);
   // calibration: relaxed hold vs squeeze on the exerciser
-  assert.match(src, /hint\.textContent = '患手揸住握力器入鏡（手指向鏡頭）。先放鬆，再揸實，重複幾次。';/);
-  assert.match(src, /openCheck\.textContent = '○ 放鬆揸住握力器';/);
+  // (v135: calibration is optional for this task; rows are labelled 可選)
+  assert.match(src, /hint\.textContent = '患手揸住握力器，成隻手入鏡。/);
+  assert.match(src, /openCheck\.textContent = '○ 放鬆揸住握力器（可選）';/);
   assert.match(src, /function digiflexCalibRelaxedQualifies\(vals, value\)/);
   // no pose model for this task, no pose note
   assert.match(src, /if\(state\.theme === 'cooking' && !isLevel6DigiflexTask\(\)\)\{\n\s*const pose = await ensurePoseLandmarker\(\)/);

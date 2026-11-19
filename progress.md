@@ -1702,6 +1702,12 @@ Original prompt: Fix Level 6–7 interactions: make light clothes-peg press dete
 - Validation：四組測試 590 個（113+171+135+171）587 pass / 3 skip / 0 fail（首次跑 group 3 因 dist 未 rebuild 有 1 個 dist-gated 子測試預期性 fail，rebuild 後重跑 `tests/v114-public-no-keepsake.test.mjs` 5/5 同全組 135/135 皆過）；`tools/checkjs.sh` 11 OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 199 files（同 v114 一致，純文字改動冇影響檔案數）；`rg -c "__qa" dist/public/index.html` → 0；dist 內三個版本標記／`留念`／`寫名、簽名`／`名字只保留在此頁` 全部確認正確（前者 3 處存在，後三者 0 個殘留）；Playwright 三個尺寸（筆電 1413×653、iPad 橫向 1180×820、iPad 直向 820×1180）載入公開版首頁，零 page error（`console.error` 同 `pageerror` 皆空）——因涉及文字本身係死碼，冇可達 UI 路徑可截圖顯示呢組文字，故 QA 重點放喺「頁面正常載入、冇 JS 錯誤」而非畫面文字截圖；`ych_rehab_qa_artifacts/v114b/v114b-qa-contact-sheet.png`（首頁三尺寸存底）。
 - Residual notes：`ADV_RULES` 入面其他主題（`cooking`/`mahjong`/`cards`/`laundry`）嘅 `lines[1]`/`tail`/`tts` 同樣係死碼（同一個讀取模式，只用 `lines[0]`），呢次冇一併清理，維持原文，因為稽核只針對插花一句；如日後同類稽核再揪出其他主題嘅殘留描述文字，可用同一手法直接改字（不涉及功能判斷）。
 
+## 2026-11-19 v135 — Level 6 煮蛋炒飯：校準頁「見到手就可以開始」，放鬆／揸實兩格改為可選
+- 治療師：「difficult to pass the tracking」。原因：校準頁要病人揸住握力器做出 ≥0.02 嘅放鬆／揸實範圍、放鬆累積 750 ms、揸實累積 450 ms 先開到「開始遊戲」；但自 v132 起計數係相對病人自己放鬆位，根本唔靠呢個門檻。
+- 新規則（只限公開版握力器任務，`digiflexCalibOptional()` = `!research.active && isLevel6DigiflexTask()`）：`c.ready = detectedDone && ((openDone && closedDone) || digiflexCalibOptional())`——「偵測」打咗剔（見到手 0.8 秒）就可以按「開始遊戲」。兩格改為「放鬆揸住握力器（可選）」「揸實握力器（可選）」，做齊咗先會用自己嘅範圍（`personalGraspEnter/Exit`）。提示改為「患手揸住握力器，成隻手入鏡。「偵測」打咗剔就可以按「開始遊戲」。想更貼合自己手力，可以先放鬆、揸實幾次（可選）。」
+- 未校準就開始時，`cookDigiflexDetect` 用預設範圍 `DIGIFLEX_DEFAULT_GAP = 0.16` → 升幅 0.04（之前預設 enter 0.56／exit 0.50 會變成 0.06）。已校準嘅計法不變；v132 偵測規則不變。衣夾／筷子／研究模式校準門檻全部照舊。
+- 新測試 `tests/v135-digiflex-calibration-optional.test.mjs`（原始碼接線＋Playwright：煮飯任務 optional=true 同文案、衣夾任務仍係完整門檻；未校準開始 rise=0.04、慢揸 .20→.40 計到一下）；v131 測試改為新文案；新 QA 鈎 `__qa.cook.calibProbe()`。Markers：`v135-20261119-digiflex-calib-optional`、`perf v135`。安全審閱 `security-reviews/v135-security-review.md`。校準頁截圖 `ych_rehab_qa_artifacts/v135/calib-{laptop,portrait}.png`。
+
 ## 2026-11-19 v134 — Level 6 煮蛋炒飯：去星盆洗蔥，水龍頭出水
 - 治療師：「also should go to sink to wash the veggies right? there should be water coming out from the water tap」。純畫面修正，握力器偵測（v132 規則）不變。
 - 新切圖 `img/cook_sink.png`（900×530，AI 生成不銹鋼單盆星盆＋鵝頸水龍頭，透明底，以廚房背景做光線／角度參考）作 `imgCookSink`；出水口／盆底位置用圖片比例常數 `COOK_SINK_SPOUT = {u:0.423, v:0.228}`、`COOK_SINK_BASIN_V = 0.72`、`COOK_SINK_ASPECT = 530/900`。
