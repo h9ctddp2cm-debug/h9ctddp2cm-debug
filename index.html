@@ -8439,6 +8439,24 @@ function interpretHandResults(results, inputMirrored=false, videoEl=null){
         : computePinchState(lm, isGrasping);
       const midX = (lm[4].x + lm[8].x + lm[12].x) / 3;
       const midY = (lm[4].y + lm[8].y + lm[12].y) / 3;
+      // v130: public bare Level 6 (flowers / cards / mahjong), nothing held —
+      // a sustained "not clearly closed" posture ends the pinch hysteresis so
+      // the next pick-up can be prepared without a 70% reopen.
+      // The patient usually holds a real clothes peg in these games too, so a
+      // "relaxed" hand reopens only a little: the idle mark is 40% of the
+      // calibrated range (not the 56% entry / 70% exit thresholds).
+      const bareReopen = level6BareReopenEnabled() && pinch.valid === true;
+      const bareIdleOpen = bareReopen && Number.isFinite(pinch.ratio)
+        && pinch.ratio >= pinch.idleReopenMark;
+      if(bareIdleOpen){
+        if(!bareUnpinchedSinceMs) bareUnpinchedSinceMs = nowMs();
+      } else {
+        bareUnpinchedSinceMs = 0;
+      }
+      if(bareReopen && pinch.isPinching && bareUnpinchedSinceMs > 0
+          && nowMs() - bareUnpinchedSinceMs >= PUBLIC_BARE_REOPEN_PREP_MS){
+        pinch.isPinching = false;
+      }
       // One stabilized state is the source of truth for both carrying and
       // releasing. A raw aperture fluctuation must not release a held pinch.
       const pinchHeld = stabiliseDetectedGesture(pinch.isPinching, 'pinch');
@@ -8702,6 +8720,13 @@ function computePinchState(lm, isPinchingPrev){
     isPinching, ratio, indexRatio, middleRatio, nearRatio, farRatio,
     isSeparated: (indexRatio > open && middleRatio > open)
       || (farRatio > open && nearRatio >= exit),
+    // v130: raw "clearly closed right now" without hysteresis, and the idle
+    // reopen mark — PUBLIC_BARE_IDLE_REOPEN_RANGE of the calibrated range above
+    // the calibrated closed posture (enter = closed + .56 gap, exit = closed +
+    // .70 gap, so the range is reconstructed from the two thresholds).
+    closedNow: bothClearlyClosed || asymmetricLightClose,
+    idleReopenMark: (enter - 0.56 * Math.max(0.025, (exit - enter) / 0.14))
+      + PUBLIC_BARE_IDLE_REOPEN_RANGE * Math.max(0.025, (exit - enter) / 0.14),
     score: Math.max(0, Math.min(1, 1 - (ratio / Math.max(open,0.001)))),
     valid:true,
   };
@@ -8865,6 +8890,23 @@ function level6AutoPlaceEnabled(){
     && isGraspStyleMode() && !isLevel6RealToolTask()
     && LEVEL6_AUTO_PLACE_THEMES.includes(state.theme);
 }
+/* v130: after an automatic placement the fingers are still in the pinched
+   posture, and the 70%-of-range reopen threshold is hard to reach with the
+   hand raised or turned. While NOTHING is held in these games, a posture that
+   is simply "not clearly closed" (above the calibrated entry threshold) for
+   PUBLIC_BARE_REOPEN_PREP_MS counts as reopened, so the next pinch can be
+   prepared. Release rules while holding are untouched. */
+const PUBLIC_BARE_REOPEN_PREP_MS = 300;
+const PUBLIC_BARE_IDLE_REOPEN_RANGE = 0.40;
+let bareUnpinchedSinceMs = 0;
+function level6AnyItemHeld(){
+  return !!(heldItem
+    || (typeof carrier !== 'undefined' && carrier && carrier.heldId)
+    || (typeof picker !== 'undefined' && picker && picker.heldId));
+}
+function level6BareReopenEnabled(){
+  return level6AutoPlaceEnabled() && !level6AnyItemHeld();
+}
 function pegRelativeHoldReset(){
   pegRelative.base = null;
   pegRelative.holdSince = 0;
@@ -8958,6 +9000,7 @@ function resetToolPinchAdapt(){
   toolPinchAdapt.counter = 0;
   toolPinchAdapt.thresholds = null;
   pegUnpinchedSinceMs = 0;
+  bareUnpinchedSinceMs = 0;
   pegRelativeReset();
   chopstickFlexAdapt.index.length = 0;
   chopstickFlexAdapt.middle.length = 0;
@@ -10230,6 +10273,10 @@ const imgLaundrySocks = new Image(); imgLaundrySocks.src = 'img/laundry_socks.pn
 // to transparent PNG). Research mode deliberately keeps its original cursor.
 const imgLevel6PinchRight = new Image(); imgLevel6PinchRight.src = 'img/level6_pinch_right.png';
 const imgLevel6PinchLeft = new Image(); imgLevel6PinchLeft.src = 'img/level6_pinch_left.png';
+// v130: relaxed (not pinching) hand cue for public Level 6 — the pinch image is
+// shown only while the hand is actually closed on the peg.
+const imgLevel6OpenRight = new Image(); imgLevel6OpenRight.src = 'img/level6_open_right.png';
+const imgLevel6OpenLeft = new Image(); imgLevel6OpenLeft.src = 'img/level6_open_left.png';
 const imgCharsiu = new Image(); imgCharsiu.src = 'img/charsiu.png';
 const imgLotusrice = new Image(); imgLotusrice.src = 'img/lotusrice.png';
 const imgSteamerSiumai = new Image(); imgSteamerSiumai.src = 'img/advanced/steamer_siumai.png';
@@ -11976,20 +12023,29 @@ function publicLevel6HeldDisplayPoint(x,y,r,held=true){
     gameCanvas.width,gameCanvas.height,radius
   );
 }
-function level6PinchHandGeometry(x,y){
+function level6PinchHandGeometry(x,y,open=false){
   const side=activeAffectedSide()==='left'?'left':'right';
   const minSide=Math.max(1,Math.min(gameCanvas.width,gameCanvas.height));
   const width=Math.max(230,Math.min(330,minSide*.35));
-  const height=width*(133/191);
-  // Pinch contact is at the outer thumb/index tips in each mirrored asset.
+  // pinch asset 191×133, relaxed asset 191×150 (v130)
+  const height=width*(open ? 150/191 : 133/191);
+  // Pinch contact is at the outer thumb/index tips in each mirrored asset; the
+  // relaxed asset puts the same point midway between the opened thumb and index.
   const anchorX=side==='right'?.035:.965;
-  const anchorY=.505;
-  return {side,width,height,x:x-width*anchorX,y:y-height*anchorY,anchorX,anchorY};
+  const anchorY=open ? .447 : .505;
+  return {side,width,height,x:x-width*anchorX,y:y-height*anchorY,anchorX,anchorY,open};
 }
 function drawPublicLevel6ClosedPinchCursor(ctx,x,y,alpha=.82){
   if(!isLevel6()) return false;
-  const geometry=level6PinchHandGeometry(x,y);
-  const image=geometry.side==='left'?imgLevel6PinchLeft:imgLevel6PinchRight;
+  // v130: therapist request — the pinch picture must mean "really squeezing
+  // the peg"; a relaxed hand shows the opened-hand picture instead, so the
+  // patient can see they are no longer holding. The shared 60/180 ms gesture
+  // stabiliser keeps the two pictures from flickering.
+  const open=!isGrasping;
+  const geometry=level6PinchHandGeometry(x,y,open);
+  const image=open
+    ? (geometry.side==='left'?imgLevel6OpenLeft:imgLevel6OpenRight)
+    : (geometry.side==='left'?imgLevel6PinchLeft:imgLevel6PinchRight);
   if(!image.complete || !image.naturalWidth) return false;
   ctx.save();
   ctx.globalAlpha=alpha;
@@ -13297,7 +13353,7 @@ function updateFramePerfOverlay(now){
     framePerf.overlayEl = el;
   }
   const p = framePerfSnapshot();
-  el.textContent = `perf v129  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
+  el.textContent = `perf v130  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
     + `鏡頭 ${p.video[0]}×${p.video[1]}  畫布 ${p.canvas[0]}×${p.canvas[1]}  dpr ${p.dpr}  手模型 ${p.handDelegate || '-'}\n`
     + `手 ${p.hand.hands} 隻  標籤 ${p.hand.label || '-'} ${p.hand.score}  接納 ${p.hand.path || '-'}  嚴格 ${p.hand.strict} 連續 ${p.hand.continuity} 單手 ${p.hand.lone} 拒絕 ${p.hand.rejected}\n`
     + `左右手檢查 ${p.hand.check === 'off' ? '關' : '開'}  鎖定手形 ${p.hand.lockSize || '-'}  大小拒絕 ${p.hand.sizeRejected}  遠處拒絕 ${p.hand.farRejected}`
@@ -14979,6 +15035,7 @@ function publicPatientVoiceEligible(){
 }
 function publicPatientVoicePhrase(phase){
   if(phase === 'contact') return state.level === '5' ? '揸拳頭' : '夾住';
+  if(phase === 'reopen') return level6AutoPlaceEnabled() ? '張開手' : '';
   if(phase === 'raise') return '舉高手';
   if(phase === 'target'){
     if(state.level === '5') return '打開隻手';
@@ -15034,8 +15091,11 @@ function updatePublicPatientVoiceGuide(spec){
   const item=s.item||null;
   const itemId=s.itemId||item?.id||item?.label||'item';
   if(s.phase==='contact'){
-    return s.touching&&s.openForPickup
-      ? publicPatientVoiceSay('contact',itemId,!!s.silent) : '';
+    if(s.touching&&s.openForPickup) return publicPatientVoiceSay('contact',itemId,!!s.silent);
+    // v130: over the next item with the hand still closed after an automatic
+    // placement — say "張開手" once per cycle (shared cooldown applies).
+    if(s.touching&&isGrasping&&level6AutoPlaceEnabled()) return publicPatientVoiceSay('reopen',itemId,!!s.silent);
+    return '';
   }
   if(s.phase==='pickup'){
     const target=publicPatientVoiceTarget(item,s.zones);
@@ -16391,10 +16451,9 @@ function renderGame(){
         const overlapsObject=foods.some(f=>!f.removed&&
           Math.hypot(cursorPoint.x-f.x,cursorPoint.y-f.y)<=f.r+handSize*.34);
         if(isLevel6()){
-          // Keep one consistent hand silhouette on screen. Only its opacity
-          // changes slightly, so noisy open/close frames cannot create a
-          // distracting full-hand ↔ pinch-image flash.
-          const alpha=isGrasping ? (overlapsObject?.76:.86) : (overlapsObject?.54:.66);
+          // v130: pinch picture while squeezing, relaxed-hand picture otherwise
+          // (chosen inside drawPublicLevel6ClosedPinchCursor from isGrasping).
+          const alpha=isGrasping ? (overlapsObject?.76:.86) : (overlapsObject?.60:.72);
           drawPublicLevel6ClosedPinchCursor(ctx,cursorPoint.x,cursorPoint.y,alpha);
         }else{
           ctx.globalAlpha=isGrasping ? (overlapsObject ? .92 : .98)
@@ -20268,9 +20327,9 @@ function advDrawCursor(ctx, pct){
         : Math.max(104,Math.min(124,Math.min(gameCanvas.width,gameCanvas.height)*.16));
       const handSize=isGrasping ? closedHandSize : closedHandSize*1.5;
       if(isLevel6()){
-        // The same image is used in both states; subtle opacity feedback is
-        // enough without repeatedly swapping two very different hand shapes.
-        drawPublicLevel6ClosedPinchCursor(ctx,cursorX,cursorY,isGrasping?.84:.66);
+        // v130: pinch picture while squeezing, relaxed-hand picture otherwise
+        // (chosen inside drawPublicLevel6ClosedPinchCursor from isGrasping).
+        drawPublicLevel6ClosedPinchCursor(ctx,cursorX,cursorY,isGrasping?.84:.72);
       }else{
         ctx.globalAlpha=isGrasping ? .98 : .88;
         ctx.font = `${Math.round(handSize)}px "Apple Color Emoji","Segoe UI Emoji",sans-serif`;
@@ -20411,7 +20470,12 @@ function advUpdate(){
       // v129: public Level 6 flowers / cards / mahjong place themselves on the target
       setActionPrompt(level6AutoPlaceEnabled() ? '移到目標停住' : (isGrasping ? '保持揸住' : '張開手放低'), '');
     }else if(advancedHover){
-      setActionPrompt(isGrasping ? '揸實' : '揸實拿起', '');
+      // v130: after an automatic placement the hand is still closed; tell the
+      // patient to open first instead of showing "揸實" over the next item.
+      const advancedArmed = !!(carrier.armed || picker.armed);
+      setActionPrompt(isGrasping
+        ? (level6AutoPlaceEnabled() && !advancedArmed ? '先張開手' : '揸實')
+        : '揸實拿起', '');
     }else{
       setActionPrompt('張開手', '');
     }
@@ -22704,7 +22768,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v129-20261119-laundry-auto-hang";
+  const LEVEL_APP_BUILD = "v130-20261119-bare-reopen-after-place";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

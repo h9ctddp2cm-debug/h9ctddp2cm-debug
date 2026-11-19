@@ -1702,6 +1702,19 @@ Original prompt: Fix Level 6–7 interactions: make light clothes-peg press dete
 - Validation：四組測試 590 個（113+171+135+171）587 pass / 3 skip / 0 fail（首次跑 group 3 因 dist 未 rebuild 有 1 個 dist-gated 子測試預期性 fail，rebuild 後重跑 `tests/v114-public-no-keepsake.test.mjs` 5/5 同全組 135/135 皆過）；`tools/checkjs.sh` 11 OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 199 files（同 v114 一致，純文字改動冇影響檔案數）；`rg -c "__qa" dist/public/index.html` → 0；dist 內三個版本標記／`留念`／`寫名、簽名`／`名字只保留在此頁` 全部確認正確（前者 3 處存在，後三者 0 個殘留）；Playwright 三個尺寸（筆電 1413×653、iPad 橫向 1180×820、iPad 直向 820×1180）載入公開版首頁，零 page error（`console.error` 同 `pageerror` 皆空）——因涉及文字本身係死碼，冇可達 UI 路徑可截圖顯示呢組文字，故 QA 重點放喺「頁面正常載入、冇 JS 錯誤」而非畫面文字截圖；`ych_rehab_qa_artifacts/v114b/v114b-qa-contact-sheet.png`（首頁三尺寸存底）。
 - Residual notes：`ADV_RULES` 入面其他主題（`cooking`/`mahjong`/`cards`/`laundry`）嘅 `lines[1]`/`tail`/`tts` 同樣係死碼（同一個讀取模式，只用 `lines[0]`），呢次冇一併清理，維持原文，因為稽核只針對插花一句；如日後同類稽核再揪出其他主題嘅殘留描述文字，可用同一手法直接改字（不涉及功能判斷）。
 
+## 2026-11-19 v130 — Level 6 插花／啤牌／麻雀：放低後鬆手即可再準備（40% 範圍、0.3 秒）＋「先張開手」提示＋捏／放鬆兩款手形
+
+- Therapist（19 Nov，v129 之後）：「Level 6: 放完啲花之後，紅圈隔好耐先出現返」。追問後補充：「可能個遊戲偵測唔到我其實隻手返返去原位嘅時候已經打開咗隻手」、病人喺插花／啤牌／麻雀都係攞住真衣夾玩，「就算放開手都唔會真係放好多個幅度」；另外要求「三隻手指🤏應該當病人真係撳夾嘅時候先顯示，放鬆手嘅時候應該係手掌」。
+- 分析：自動放低（v129）之後隻手仍然係捏住狀態；赤手捏合要張開到校準範圍 70%（exit 門檻）先會算「張開」，揸住衣夾嘅放鬆幅度去唔到；提示又寫住「揸實」，病人以為自己揸緊。紅圈（`carrier.pct` 弧）要 `handOpenPrep` 先會出現，所以「隔好耐」。
+- 改動（只限公開版 Level 6 插花／啤牌／麻雀 `level6BareReopenEnabled()` = `level6AutoPlaceEnabled() && !level6AnyItemHeld()`；研究模式、Level 5、煮蛋炒飯、筷子、晾衫玩法不變）：
+  - 新增「空手放鬆再準備」規則：手上冇物件時，捏合比例 ≥ 校準範圍 40%（`PUBLIC_BARE_IDLE_REOPEN_RANGE` 0.40，`computePinchState` 回傳 `idleReopenMark`）持續 `PUBLIC_BARE_REOPEN_PREP_MS` 300 ms → 當作已張開（`pinch.isPinching=false`），之後經原有 60 ms 穩定器、100 ms 武裝就見到紅圈。持物時嘅放低規則不變（停住自動放低 或 張開到 70%），所以攞住物件放鬆少少唔會跌。再夾起照舊要捏落到 40% 線以下再穩定 80 ms。`resetToolPinchAdapt()` 一併清零 `bareUnpinchedSinceMs`。
+  - 提示：放低後／游標喺物件上但手仍捏住而未武裝 → 「先張開手」（原本「揸實」）；語音 contact 階段改講「張開手」（`publicPatientVoicePhrase('reopen')`，只限 autoPlace 任務）。
+  - 游標圖：新增 `img/level6_open_right.png`／`level6_open_left.png`（191×150，放鬆手掌，風格跟捏合圖），`drawPublicLevel6ClosedPinchCursor` 只喺 `isGrasping` 時用捏合圖，否則用放鬆手掌圖（`level6PinchHandGeometry(x,y,open)` anchorY .447／.505）。所有公開版 Level 6 任務（包括晾衫、筷子）都係換圖而已，判定邏輯不變。
+- Tests：新增 `tests/v130-bare-reopen-after-place.test.mjs`（4）：原始碼接線；插花／啤牌 e2e（放低後仍捏住→提示「先張開手」；鬆到 50% 一秒仍算捏住；鬆到 55% 130 ms 未夠；600 ms → `isGrasping` false、`handOpenPrep` true、提示「揸實拿起」；再捏可拿起下一件）；持物放鬆 1.5 s 唔會跌，清楚張開照舊放低。更新 v128／v76 regex、v78 游標資產（捏 191×133 ＋ 放鬆 191×150）。
+- Markers `v130-20261119-bare-reopen-after-place` ×3、`perf v130`、12 個 marker 測試 sed bump。
+- Validation：四組 **664** 個測試 0 fail（127+206+193+138）；`tools/checkjs.sh` OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 212 files（多兩張放鬆手掌圖）；`__qa` 0；dist 無 research／pilot。Playwright 三個 viewport 插花五步（捏→自動放低仍捏住→返花盤「先張開手」→鬆手放鬆手形＋紅圈→再捏）＋ 啤牌五步 ＋ 晾衫放鬆／撳夾手形，0 page error — `ych_rehab_qa_artifacts/v130/v130-qa-contact-sheet.png`。
+- Residual：40%／300 ms 係第一個估計；如果病人放鬆手後仍然見唔到紅圈，調低 `PUBLIC_BARE_IDLE_REOPEN_RANGE`；如果無意中「再準備」太易，調高或加長 `PUBLIC_BARE_REOPEN_PREP_MS`。放鬆手後要多等約 0.1 秒武裝先可以再捏（e2e 觀察）。
+
 ## 2026-11-19 v129 — Level 6 晾衫／插花／啤牌／麻雀：到目標停住自動掛上／放下（放鬆手指亦得）
 
 - Therapist（19 Nov，v128 之後）：病人夾住衣夾拿起件衫、舉到衣架之後，唔知道要「放手」，成件衫掛喺衣架上面唔落。提議：到咗衣架自動掛上。追問「放鬆手指仲要唔要都算？」→「兩樣都得」。再確認「same for the level 6 mahjong, poker card, and flower pot game」。

@@ -28,21 +28,26 @@ async function withPage(viewport,fn){
   try{ await fn(page); }finally{ await context.close(); }
 }
 
-test('processed left/right Level 6 cursor assets are transparent 191x133 PNG files',()=>{
-  for(const side of ['right','left']){
-    const data=readFileSync(path.join(root,'img',`level6_pinch_${side}.png`));
-    assert.equal(data.subarray(1,4).toString(),'PNG');
-    assert.equal(data.readUInt32BE(16),191);
-    assert.equal(data.readUInt32BE(20),133);
-    assert.equal(data[25],6,'PNG uses RGBA colour type');
+test('processed left/right Level 6 cursor assets are transparent PNG files (pinch 191x133, relaxed 191x150)',()=>{
+  for(const [name,h] of [['pinch',133],['open',150]]){
+    for(const side of ['right','left']){
+      const data=readFileSync(path.join(root,'img',`level6_${name}_${side}.png`));
+      assert.equal(data.subarray(1,4).toString(),'PNG');
+      assert.equal(data.readUInt32BE(16),191);
+      assert.equal(data.readUInt32BE(20),h);
+      assert.equal(data[25],6,'PNG uses RGBA colour type');
+    }
   }
 });
 
-test('public Level 6 uses one stable affected-side image cue and reserves text for the chopstick arm gate',()=>{
+test('public Level 6 uses affected-side image cues (v130: pinch picture only while squeezing) and reserves text for the chopstick arm gate',()=>{
   assert.match(html,/imgLevel6PinchRight\.src = 'img\/level6_pinch_right\.png'/);
   assert.match(html,/imgLevel6PinchLeft\.src = 'img\/level6_pinch_left\.png'/);
+  assert.match(html,/imgLevel6OpenRight\.src = 'img\/level6_open_right\.png'/);
+  assert.match(html,/imgLevel6OpenLeft\.src = 'img\/level6_open_left\.png'/);
   assert.match(html,/function level6PinchHandGeometry[\s\S]*?activeAffectedSide\(\)==='left'/);
-  assert.match(html,/function drawPublicLevel6ClosedPinchCursor[\s\S]*?geometry\.side==='left'/);
+  assert.match(html,/const anchorY=open \? \.447 : \.505;/);
+  assert.match(html,/function drawPublicLevel6ClosedPinchCursor[\s\S]*?const open=!isGrasping;[\s\S]*?geometry\.side==='left'\?imgLevel6OpenLeft:imgLevel6OpenRight/);
   assert.match(html,/if\(isLevel6\(\)\)\{[\s\S]{0,350}drawPublicLevel6ClosedPinchCursor\(ctx,cursorPoint\.x/);
   assert.match(html,/function advDrawCursor[\s\S]*?if\(isLevel6\(\)\)\{[\s\S]{0,350}drawPublicLevel6ClosedPinchCursor\(ctx,cursorX/);
   assert.doesNotMatch(html,/if\(isLevel6\(\) && isGrasping\)\{/);

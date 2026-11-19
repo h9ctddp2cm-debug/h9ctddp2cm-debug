@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v129-20261119-laundry-auto-hang";
+const CACHE_VERSION = "fthue-rehab-v130-20261119-bare-reopen-after-place";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

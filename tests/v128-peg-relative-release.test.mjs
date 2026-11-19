@@ -33,7 +33,7 @@ test('v128 source wiring: constants, sampling, hold tracking, releasing, resets,
   // baseline reset on pick-up and after every drop; full reset with the adaptive tracker
   assert.match(src, /heldItem = nearest; grabCount\+\+;\n\s*pegRelativeHoldReset\(\);/);
   assert.equal((src.match(/releaseDwellLastOpenAt = 0;\n\s*pegRelativeHoldReset\(\);/g) || []).length, 1);
-  assert.match(src, /pegUnpinchedSinceMs = 0;\n\s*pegRelativeReset\(\);/);
+  assert.match(src, /pegUnpinchedSinceMs = 0;\n\s*bareUnpinchedSinceMs = 0;\n\s*pegRelativeReset\(\);/);  // v130 adds the bare idle timer reset
   // ?perf=1 HUD shows the relative baseline
   assert.match(src, /衣夾 相對 基線 近\$\{p\.tool\.relBaseNear\}/);
   // next pick-up still needs a positively separated hand (unchanged)
