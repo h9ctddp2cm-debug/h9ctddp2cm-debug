@@ -27,12 +27,12 @@ test('v131 source wiring: task profile, routing, constants, calibration copy', (
   assert.match(src, /cookSqueezeAmount: 'normal',/);
   assert.match(src, /id="cookSqueezeCard"/);
   assert.match(src, /data-cook-squeeze="less"[\s\S]*data-cook-squeeze="normal"[\s\S]*data-cook-squeeze="more"/);
-  // lenient relative rule + minimum squeeze duration
-  assert.match(src, /const DIGIFLEX_RELATIVE_RISE = 0\.35;/);
+  // lenient relative rule + minimum squeeze duration (values relaxed in v132, see that suite)
+  assert.match(src, /const DIGIFLEX_RELATIVE_RISE = 0\.25;/);
   assert.match(src, /const DIGIFLEX_MIN_RISE = 0\.03;/);
-  assert.match(src, /const DIGIFLEX_MIN_SQUEEZE_MS = 100;/);
-  assert.match(src, /const on = isGrasping \|\| sc >= enter \|\| sc >= d\.baseline \+ rise;/);
-  assert.match(src, /const off = sc <= d\.peak - riseNow \* 0\.5;/);
+  assert.match(src, /const DIGIFLEX_MIN_SQUEEZE_MS = 80;/);
+  assert.match(src, /const on = sc >= d\.baseline \+ rise;/);
+  assert.match(src, /const off = sc <= d\.peak - riseNow \* frac \|\| sc <= d\.baseline \+ rise \* 0\.5;/);
   // calibration: relaxed hold vs squeeze on the exerciser
   assert.match(src, /hint\.textContent = '患手揸住握力器入鏡（手指向鏡頭）。先放鬆，再揸實，重複幾次。';/);
   assert.match(src, /openCheck\.textContent = '○ 放鬆揸住握力器';/);

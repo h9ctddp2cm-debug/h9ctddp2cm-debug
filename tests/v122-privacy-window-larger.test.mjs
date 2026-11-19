@@ -14,10 +14,10 @@ const manifest = fs.readFileSync(path.join(root, 'manifest.webmanifest'), 'utf8'
 const pageUrl = pathToFileURL(path.join(root, 'index.html')).href;
 
 test('v122 release markers', () => {
-  assert.match(html, /const LEVEL_APP_BUILD = "v131-20261119-digiflex-cooking";/);
-  assert.match(html, /perf v131/);
-  assert.match(sw, /^const CACHE_VERSION = "fthue-rehab-v131-20261119-digiflex-cooking";/);
-  assert.match(manifest, /v131-20261119-digiflex-cooking/);
+  assert.match(html, /const LEVEL_APP_BUILD = "v132-20261119-digiflex-lenient";/);
+  assert.match(html, /perf v132/);
+  assert.match(sw, /^const CACHE_VERSION = "fthue-rehab-v132-20261119-digiflex-lenient";/);
+  assert.match(manifest, /v132-20261119-digiflex-lenient/);
 });
 
 test('v122 sharp window constants: 50% padding, minimum side 45% of the canvas short side', () => {

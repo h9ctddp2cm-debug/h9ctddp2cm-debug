@@ -13440,7 +13440,7 @@ function updateFramePerfOverlay(now){
     framePerf.overlayEl = el;
   }
   const p = framePerfSnapshot();
-  el.textContent = `perf v131  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
+  el.textContent = `perf v132  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
     + `鏡頭 ${p.video[0]}×${p.video[1]}  畫布 ${p.canvas[0]}×${p.canvas[1]}  dpr ${p.dpr}  手模型 ${p.handDelegate || '-'}\n`
     + `手 ${p.hand.hands} 隻  標籤 ${p.hand.label || '-'} ${p.hand.score}  接納 ${p.hand.path || '-'}  嚴格 ${p.hand.strict} 連續 ${p.hand.continuity} 單手 ${p.hand.lone} 拒絕 ${p.hand.rejected}\n`
     + `左右手檢查 ${p.hand.check === 'off' ? '關' : '開'}  鎖定手形 ${p.hand.lockSize || '-'}  大小拒絕 ${p.hand.sizeRejected}  遠處拒絕 ${p.hand.farRejected}`
@@ -18033,11 +18033,20 @@ function cookStepTts(st){
   if(!isLevel6DigiflexTask()) return st.tts;
   return st.text + '。揸實握力器，再放鬆，做' + cookStepNeed(st) + '下。';
 }
-/* 相對判斷：同今次自己嘅放鬆位比較，升幅 ≥ 校準範圍 35%（下限 0.015）就算揸實；
-   跌返一半就算放鬆。病人揸攰、幅度變細都數到。 */
-const DIGIFLEX_RELATIVE_RISE = 0.35;
+/* 相對判斷（v132 放寬）：只同病人自己嘅放鬆位比較，唔再用校準嘅絕對門檻——
+   升幅 ≥ 校準範圍 25%（下限 0.03、上限 0.08）就算揸實；由峰值跌返四成就算放鬆。
+   放鬆位 = 最近 2.5 秒（未開始揸時）嘅最低分數；慢慢揸緊時放鬆位唔會跟上去；
+   超過 3 秒無揸實就重新跟手（揸攰咗、放鬆得少都數到）。 */
+const DIGIFLEX_RELATIVE_RISE = 0.25;
 const DIGIFLEX_MIN_RISE = 0.03;      // 分數最少要升幾多先算開始揸（防鏡頭雜訊）
-const DIGIFLEX_MIN_SQUEEZE_MS = 100;
+const DIGIFLEX_MAX_RISE = 0.08;      // 校準範圍好大都唔使揸到咁盡
+const DIGIFLEX_OFF_FRACTION = 0.4;   // 由峰值回落幾多（相對升幅）算放鬆
+const DIGIFLEX_OFF_FRACTION_LATE = 0.2; // 揸住超過 2 秒：回落少少都算放鬆
+const DIGIFLEX_LATE_MS = 2000;
+const DIGIFLEX_BASELINE_WINDOW_MS = 2500;
+const DIGIFLEX_RESEED_MS = 3000;     // 幾耐無揸實就重新跟放鬆位
+const DIGIFLEX_STUCK_MS = 4000;      // 「揸實」狀態超過 4 秒無放鬆：當係新放鬆位，唔計一下
+const DIGIFLEX_MIN_SQUEEZE_MS = 80;
 const DIGIFLEX_ANIM_MS = 520;
 
 const cook = {
@@ -18052,7 +18061,7 @@ const cook = {
   elbowPhase:0, tiltPhase:0, pinchPrev:false, scoopZone:'', scoopCount:0,
   layout:null,
   // v131 Digi-Flex squeeze tracker
-  digi:{ hist:[], baseline:null, peak:0, squeezing:false, since:0, animAt:0, animSign:1, lastScore:NaN },
+  digi:{ hist:[], base:[], baseline:null, peak:0, squeezing:false, since:0, lastOnAt:0, unsettledSince:0, rise:DIGIFLEX_MIN_RISE, level:0, animAt:0, animSign:1, lastScore:NaN },
   introUntil:0,
   reset(){
     this.idx = 0; this.reps = 0; this.holdStart = 0; this.done = false;
@@ -18065,7 +18074,7 @@ const cook = {
     this.phaseSince = 0; this.neutralSince = 0;
     this.rollPhase = 0; this.rollExtremeSign = 0; this.rollLastSign = 0;
     this.outcomeIdx = -1; this.outcomeUntil = 0; this.announceAt = 0;
-    this.digi = { hist:[], baseline:null, peak:0, squeezing:false, since:0, animAt:0, animSign:1, lastScore:NaN };
+    this.digi = { hist:[], base:[], baseline:null, peak:0, squeezing:false, since:0, lastOnAt:0, unsettledSince:0, rise:DIGIFLEX_MIN_RISE, level:0, animAt:0, animSign:1, lastScore:NaN };
     this.introUntil = 0;
   },
   step(){ return COOK_STEPS[Math.min(this.idx, COOK_STEPS.length - 1)]; },
@@ -18412,33 +18421,57 @@ function cookDigiflexDetect(st, now, bumpRep){
   if(!handDetected || !Number.isFinite(lastGraspScore)){
     cook.metric = '未偵測到患手，請將揸住握力器嘅手放入鏡頭。';
     setActionPrompt('等待偵測手部', '');
+    d.level = 0;
     return;
   }
   d.hist.push(lastGraspScore);
-  if(d.hist.length > 5) d.hist.shift();
+  if(d.hist.length > 3) d.hist.shift();
   const sc = medianValue(d.hist);
   d.lastScore = sc;
   const enter = Number.isFinite(state.personalGraspEnter) ? state.personalGraspEnter : 0.56;
   const exit = Number.isFinite(state.personalGraspExit) ? state.personalGraspExit : 0.50;
   // 校準：enter = 放鬆 + 0.45×範圍，exit = 放鬆 + 0.20×範圍 → 範圍 = (enter − exit) / 0.25
   const gap = Math.max(0.03, (enter - exit) / 0.25);
-  const rise = Math.max(DIGIFLEX_MIN_RISE, gap * DIGIFLEX_RELATIVE_RISE);
+  const rise = Math.min(DIGIFLEX_MAX_RISE, Math.max(DIGIFLEX_MIN_RISE, gap * DIGIFLEX_RELATIVE_RISE));
+  d.rise = rise;
   if(!d.squeezing){
-    if(d.baseline == null || sc < d.baseline) d.baseline = sc;
-    // 放鬆位慢慢跟手（揸攰咗放鬆得少都得）；但病人慢慢揸緊緊時基線唔好跟上去
-    else d.baseline += (sc - d.baseline) * (sc < d.baseline + rise * 0.5 ? 0.03 : 0.005);
-    const on = isGrasping || sc >= enter || sc >= d.baseline + rise;
-    if(on){ d.squeezing = true; d.since = now; d.peak = sc; }
+    // 放鬆位：最近一段時間嘅最低分數。只收「未開始揸」嘅幀（低過放鬆位＋四成升幅），
+    // 所以慢慢揸緊時放鬆位唔會跟住升；太耐無揸實（例如揸攰咗放鬆唔返）就重新跟手。
+    if(!d.base) d.base = [];
+    const settled = d.baseline == null || sc < d.baseline + rise * 0.4;
+    if(settled){
+      d.unsettledSince = 0;
+      d.base.push({ t:now, v:sc });
+    }else{
+      // 分數企咗喺「半揸」位好耐（揸攰咗放鬆唔返原位）：重新以而家做放鬆位
+      if(!d.unsettledSince) d.unsettledSince = now;
+      if(now - d.unsettledSince > DIGIFLEX_RESEED_MS){
+        d.base = [{ t:now, v:sc }]; d.unsettledSince = 0;
+      }
+    }
+    while(d.base.length && now - d.base[0].t > DIGIFLEX_BASELINE_WINDOW_MS) d.base.shift();
+    if(d.base.length) d.baseline = Math.min(...d.base.map(b => b.v));
+    else if(d.baseline == null) d.baseline = sc;
+    d.level = clamp01((sc - d.baseline) / rise);
+    const on = sc >= d.baseline + rise;
+    if(on){ d.squeezing = true; d.since = now; d.peak = sc; d.lastOnAt = now; d.unsettledSince = 0; }
   }else{
     if(sc > d.peak) d.peak = sc;
-    // 放鬆 = 分數回落到「基線→峰值」一半以下（相對規則，細力揸都計到）
-    const riseNow = Math.max(0.012, d.peak - (d.baseline == null ? exit : d.baseline));
-    const off = sc <= d.peak - riseNow * 0.5;
+    // 放鬆 = 由峰值回落四成升幅（揸住超過 2 秒就回落兩成都算），細力揸都計到；
+    // 升幅上限 2×rise：就算放鬆位錯咗（例如手張開入鏡先揸器材），都唔使放返去咁遠
+    const riseNow = Math.min(rise * 2, Math.max(rise * 0.6, d.peak - (d.baseline == null ? exit : d.baseline)));
+    const frac = now - d.since > DIGIFLEX_LATE_MS ? DIGIFLEX_OFF_FRACTION_LATE : DIGIFLEX_OFF_FRACTION;
+    const off = sc <= d.peak - riseNow * frac || sc <= d.baseline + rise * 0.5;
+    d.level = clamp01((sc - d.baseline) / rise);
     if(off){
       d.squeezing = false;
       const held = now - d.since;
+      d.base = [{ t:now, v:sc }];
       d.baseline = sc;
       if(held >= DIGIFLEX_MIN_SQUEEZE_MS) bumpRep();
+    }else if(now - d.since > DIGIFLEX_STUCK_MS){
+      // 揸攰咗，放鬆唔返原位：唔好一直「揸實中」，以而家做新放鬆位（唔計一下）
+      d.squeezing = false; d.base = [{ t:now, v:sc }]; d.baseline = sc; d.unsettledSince = 0;
     }
   }
   cook.metric = d.squeezing ? '揸實中 ✊ — 而家放鬆' : '放鬆 🖐 — 而家揸實握力器';
@@ -19089,6 +19122,25 @@ function drawCookDigiflexBadge(ctx, g, now){
   if(sq){ ctx.shadowColor = 'rgba(224,123,57,0.9)'; ctx.shadowBlur = 28; }
   drawSprite(ctx, imgCookDigiflex, g.badgeX, g.badgeY, sz, { alpha: handDetected ? 1 : 0.35 });
   ctx.shadowColor = 'transparent';
+  // v132 力度條：相左邊一條直柱，顯示而家比放鬆位升咗幾多；到頂線就計一下揸實。
+  // 病人／治療師即刻睇到「仲差幾多」，唔使估。
+  if(handDetected){
+    const lvl = clamp01(cook.digi.level || 0);
+    const bw = Math.max(10, g.badgeS * 0.11), bh = g.badgeS * 0.78;
+    const bx = g.badgeX - g.badgeS * 0.5 - bw * 1.3, by = g.badgeY - bh / 2;
+    rrPath(ctx, bx, by, bw, bh, bw / 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(23,70,61,0.5)'; ctx.stroke();
+    const fh = Math.max(bw, bh * lvl);
+    ctx.save();
+    rrPath(ctx, bx, by, bw, bh, bw / 2); ctx.clip();
+    ctx.fillStyle = sq ? '#E07B39' : (lvl >= 1 ? '#E07B39' : '#1A6B5A');
+    ctx.fillRect(bx, by + bh - fh, bw, fh);
+    ctx.restore();
+    // 計數線（頂）：到呢度就算揸實
+    ctx.beginPath(); ctx.moveTo(bx - bw * 0.5, by + bw * 0.5); ctx.lineTo(bx + bw * 1.5, by + bw * 0.5);
+    ctx.lineWidth = 3; ctx.strokeStyle = '#C0392B'; ctx.stroke();
+  }
   const f = Math.round(g.badgeS * 0.17);
   ctx.font = '900 ' + f + 'px "PingFang TC","Noto Sans TC",sans-serif';
   const txt = !handDetected ? '請將手入鏡' : (sq ? '揸實 ✊' : '放鬆 🖐');
@@ -23379,7 +23431,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v131-20261119-digiflex-cooking";
+  const LEVEL_APP_BUILD = "v132-20261119-digiflex-lenient";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

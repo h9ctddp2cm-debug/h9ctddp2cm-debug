@@ -1702,6 +1702,13 @@ Original prompt: Fix Level 6–7 interactions: make light clothes-peg press dete
 - Validation：四組測試 590 個（113+171+135+171）587 pass / 3 skip / 0 fail（首次跑 group 3 因 dist 未 rebuild 有 1 個 dist-gated 子測試預期性 fail，rebuild 後重跑 `tests/v114-public-no-keepsake.test.mjs` 5/5 同全組 135/135 皆過）；`tools/checkjs.sh` 11 OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 199 files（同 v114 一致，純文字改動冇影響檔案數）；`rg -c "__qa" dist/public/index.html` → 0；dist 內三個版本標記／`留念`／`寫名、簽名`／`名字只保留在此頁` 全部確認正確（前者 3 處存在，後三者 0 個殘留）；Playwright 三個尺寸（筆電 1413×653、iPad 橫向 1180×820、iPad 直向 820×1180）載入公開版首頁，零 page error（`console.error` 同 `pageerror` 皆空）——因涉及文字本身係死碼，冇可達 UI 路徑可截圖顯示呢組文字，故 QA 重點放喺「頁面正常載入、冇 JS 錯誤」而非畫面文字截圖；`ych_rehab_qa_artifacts/v114b/v114b-qa-contact-sheet.png`（首頁三尺寸存底）。
 - Residual notes：`ADV_RULES` 入面其他主題（`cooking`/`mahjong`/`cards`/`laundry`）嘅 `lines[1]`/`tail`/`tts` 同樣係死碼（同一個讀取模式，只用 `lines[0]`），呢次冇一併清理，維持原文，因為稽核只針對插花一句；如日後同類稽核再揪出其他主題嘅殘留描述文字，可用同一手法直接改字（不涉及功能判斷）。
 
+## 2026-11-19 v132 — Level 6 煮蛋炒飯握力器計數放寬：唔使揸咁耐、唔使放到咁盡＋力度條
+- 治療師試用 v131 後回報「too difficult, need to hold too long」。用慢速（1–3 秒）合成揸實重現到三個原因：(1) 放鬆位每幀跟手 3%，病人慢慢揸緊時放鬆位跟住升，要越揸越盡先過線；(2) 「揸實」仲用校準嘅絕對門檻／`isGrasping`，揸住器材嘅放鬆手形本身分數已高時會一直「揸實中」；(3) 放鬆要由峰值回落「峰值−放鬆位」一半，而放鬆位可能係手張開入鏡時嘅低分，病人要放到近乎張開手先計到一下。
+- 新規則（`cookDigiflexDetect`）：只用相對規則 `on = sc ≥ baseline + rise`，`rise` = 校準範圍 × 25%（`DIGIFLEX_RELATIVE_RISE`），下限 0.03、上限 0.08（`DIGIFLEX_MAX_RISE`）；放鬆位 = 最近 2.5 秒「未開始揸」幀（低過放鬆位＋四成升幅）嘅最低分數（`DIGIFLEX_BASELINE_WINDOW_MS`），慢慢揸緊時唔會跟上去；半揸位企超過 3 秒（`DIGIFLEX_RESEED_MS`）就重新跟手；放鬆 = 由峰值回落四成升幅（`DIGIFLEX_OFF_FRACTION`），揸住超過 2 秒只需回落兩成（`DIGIFLEX_OFF_FRACTION_LATE`／`DIGIFLEX_LATE_MS`），或者返到放鬆位＋一半升幅；升幅計算上限 2×rise，放鬆位錯咗都唔使放返去咁遠；「揸實」狀態超過 4 秒無放鬆（`DIGIFLEX_STUCK_MS`）當係新放鬆位、唔計一下；中位數 5 幀→3 幀；最短揸實 100→80 ms。
+- 畫面：握力器相左邊加「力度條」（`cook.digi.level`），顯示而家比放鬆位升咗幾多，到頂嘅紅線就計一下揸實；揸實中成條橙色，放鬆時回落。
+- 合成慢速測試結果（30 fps）：curl .20→.45 慢揸 1.5 秒：0.30 秒入「揸實」（v131 0.46 秒），放鬆後 0.28 秒計一下（v131 0.74 秒）；細力慢揸 .20→.26 都計到（v131 計唔到）；手本身已屈曲揸住器材（.35→.45）放鬆後 0.31 秒計一下（v131 要近乎張開手）。
+- 新測試 `tests/v132-digiflex-lenient.test.mjs`（原始碼接線＋四個 Playwright 慢速／細力／屈曲手／揸攰 e2e）；v131 測試更新至新常數。Markers：`v132-20261119-digiflex-lenient`、`perf v132`。安全審閱 `security-reviews/v132-security-review.md`。
+
 ## 2026-11-19 v131 — Level 6 煮蛋炒飯改為握力器（Digi-Flex）揸實放鬆計數版：12 步遞增次數＋每揸一下即時動畫＋握力器校準
 - 治療師要求：Level 6 煮飯遊戲改為病人揸住 Digi-Flex 握力器，成隻手揸實→放鬆算一下；由抓鬆冷飯開始 12 個步驟全部要揸夠次數先完成（似 Level 3／4 超市情景），每揸一下螢幕即時有該步驟嘅動作動畫（Cooking Mama 式），並用 AI 廚房背景接續超市故事（買完餸返到屋企煮蛋炒飯）。
 - 發現：公開版 Level 6 之前屬 gross-tabletop，`usesAdvancedThemeModule('cooking')` 回傳 false，所以 Level 6「煮蛋炒飯」一直行通用「青菜→炒鍋／麵→湯鍋」揀放引擎，並非 12 步煮飯模組。v131 加 `isLevel6DigiflexTask()` 分支，Level 6 煮飯改行 12 步模組（`gameType:'grasp'`）。Level 5 煮飯、研究模式完全不變。

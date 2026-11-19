@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v131-20261119-digiflex-cooking";
+const CACHE_VERSION = "fthue-rehab-v132-20261119-digiflex-lenient";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");
