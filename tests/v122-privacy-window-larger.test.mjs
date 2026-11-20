@@ -14,10 +14,10 @@ const manifest = fs.readFileSync(path.join(root, 'manifest.webmanifest'), 'utf8'
 const pageUrl = pathToFileURL(path.join(root, 'index.html')).href;
 
 test('v122 release markers', () => {
-  assert.match(html, /const LEVEL_APP_BUILD = "v135-20261119-digiflex-calib-optional";/);
-  assert.match(html, /perf v135/);
-  assert.match(sw, /^const CACHE_VERSION = "fthue-rehab-v135-20261119-digiflex-calib-optional";/);
-  assert.match(manifest, /v135-20261119-digiflex-calib-optional/);
+  assert.match(html, /const LEVEL_APP_BUILD = "v136-20261120-cashier-arrive-arm";/);
+  assert.match(html, /perf v136/);
+  assert.match(sw, /^const CACHE_VERSION = "fthue-rehab-v136-20261120-cashier-arrive-arm";/);
+  assert.match(manifest, /v136-20261120-cashier-arrive-arm/);
 });
 
 test('v122 sharp window constants: 50% padding, minimum side 45% of the canvas short side', () => {

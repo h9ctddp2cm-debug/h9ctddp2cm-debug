@@ -8973,6 +8973,31 @@ function level6AnyItemHeld(){
 function level6BareReopenEnabled(){
   return level6AutoPlaceEnabled() && !level6AnyItemHeld();
 }
+/* v136: therapist bedside (19 Nov) — in the peg-held Level 6 games the voice
+   kept saying 張開手 although the peg had already been relaxed: the small
+   reopen a real clothes peg allows often stays below the calibrated re-arm
+   point. While NOTHING is held, staying over the next item for
+   LEVEL6_ARRIVE_ARM_MS now prepares the pick-up by itself (the item's orange
+   halo shows); the next observed squeeze picks it up. A genuinely opened hand
+   still arms at once as before. Release rules and research mode are untouched. */
+const LEVEL6_ARRIVE_ARM_MS = 700;
+function level6ArriveArmEnabled(){
+  return !research.active && isLevel6() && isGraspStyleMode()
+    && (level6AutoPlaceEnabled() || isLevel6RealToolTask()) && !level6AnyItemHeld();
+}
+function level6ArriveArmPoll(ctl, best, now, canArm){
+  if(!best || best.placed || !level6ArriveArmEnabled()){   // placed flowers stay adjustable only through a real open
+    ctl.arriveId = null; ctl.arriveStart = 0;
+    if(ctl.arriveArmed){ ctl.arriveArmed = false; ctl.armed = false; }
+    return false;
+  }
+  if(ctl.arriveId !== best.id){ ctl.arriveId = best.id; ctl.arriveStart = now; }
+  // arm only while the hand is really over the item (not during the contact grace after
+  // drifting off) AND is not squeezing: a hand parked closed on an item never picks it up
+  // by itself — the pick-up still needs a squeeze that starts after the preparation.
+  if(canArm !== false && !ctl.armed && now - ctl.arriveStart >= LEVEL6_ARRIVE_ARM_MS){ ctl.armed = true; ctl.arriveArmed = true; }
+  return !!(ctl.armed && ctl.arriveArmed);
+}
 function pegRelativeHoldReset(){
   pegRelative.base = null;
   pegRelative.holdSince = 0;
@@ -12027,6 +12052,7 @@ let shoulderHoldSpokenSecond = null;
 let shoulderHoldInterruptedSpoken = false;
 let totalWrong = 0;
 let basicOpenStart = 0, basicGraspStart = 0, basicGraspCandidate = '', basicGraspArmed = false;
+let basicArriveId = '', basicArriveStart = 0, basicArriveArmed = false;   // v136 arrival arms pick-up
 let basicPostReleaseOpenStart = 0;
 let basicContactCandidate = '', basicContactUntil = 0;
 let wrongStreak = 0;  // 連續錯誤次數，到 5 就自動暫停從新講規則
@@ -12473,6 +12499,7 @@ function initGame(){
   releaseDwellStart = 0; releaseDwellPlate = null;
   releaseDwellPauseAt = 0; releaseDwellLastOpenAt = 0;
   basicOpenStart = 0; basicGraspStart = 0; basicGraspCandidate = ''; basicGraspArmed = false;
+  basicArriveId = ""; basicArriveStart = 0; basicArriveArmed = false;
   basicPostReleaseOpenStart = 0;
   basicContactCandidate = ''; basicContactUntil = 0;
   gripActive = false;
@@ -13447,7 +13474,7 @@ function updateFramePerfOverlay(now){
     framePerf.overlayEl = el;
   }
   const p = framePerfSnapshot();
-  el.textContent = `perf v135  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
+  el.textContent = `perf v136  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
     + `鏡頭 ${p.video[0]}×${p.video[1]}  畫布 ${p.canvas[0]}×${p.canvas[1]}  dpr ${p.dpr}  手模型 ${p.handDelegate || '-'}\n`
     + `手 ${p.hand.hands} 隻  標籤 ${p.hand.label || '-'} ${p.hand.score}  接納 ${p.hand.path || '-'}  嚴格 ${p.hand.strict} 連續 ${p.hand.continuity} 單手 ${p.hand.lone} 拒絕 ${p.hand.rejected}\n`
     + `左右手檢查 ${p.hand.check === 'off' ? '關' : '開'}  鎖定手形 ${p.hand.lockSize || '-'}  大小拒絕 ${p.hand.sizeRejected}  遠處拒絕 ${p.hand.farRejected}`
@@ -15414,6 +15441,7 @@ function updateGraspLogic(){
     const voiceNearFood = nearest &&
       nearestDist <= pickupContactRadius(nearest.r, voiceMargin);
     let overFood = nearest && nearestDist <= pickupContactRadius(nearest.r, pickupMargin);
+    const directContact = !!overFood;   // v136: the arrival dwell only advances while really over the garment
     if(overFood){
       basicContactCandidate = nearest.id;
       basicContactUntil = now + CONTACT_GRACE_MS;
@@ -15421,12 +15449,23 @@ function updateGraspLogic(){
       const locked = foods.find(f=>f.id === basicContactCandidate && !f.removed && !f.held);
       if(locked){ nearest = locked; overFood = true; }
     }
+    // v136: peg task — staying over the garment prepares the pick-up by itself
+    if(overFood && level6ArriveArmEnabled()){
+      if(basicArriveId !== nearest.id){ basicArriveId = nearest.id; basicArriveStart = now; }
+      if(directContact && !isGrasping && !basicGraspArmed && now - basicArriveStart >= LEVEL6_ARRIVE_ARM_MS){
+        basicGraspArmed = true; basicArriveArmed = true; basicGraspCandidate = nearest.id; basicOpenStart = 0;
+      }
+    } else {
+      basicArriveId = ''; basicArriveStart = 0;
+      if(basicArriveArmed){ basicArriveArmed = false; basicGraspArmed = false; }
+    }
     updatePublicPatientVoiceGuide({
       phase:'contact', item:nearest, touching:!!voiceNearFood,
-      openForPickup:!!(voiceNearFood&&!isGrasping&&openPrep),
+      openForPickup:!!(voiceNearFood&&((!isGrasping&&openPrep)||(basicArriveArmed&&basicGraspArmed))),
     });
     if(!overFood){
       basicOpenStart = 0; basicGraspStart = 0; basicGraspCandidate = ''; basicGraspArmed = false;
+      basicArriveId = ''; basicArriveStart = 0; basicArriveArmed = false;
       basicContactCandidate = ''; basicContactUntil = 0;
       setActionPrompt(basicGraspArmed ? graspPrompt('hold') : pickupArmPrompt(),
         basicGraspArmed ? graspPrompt('carry') : '穩定張開後再合埋夾起');
@@ -15434,7 +15473,7 @@ function updateGraspLogic(){
       basicGraspStart = 0; basicGraspCandidate = nearest.id;
       if(!basicOpenStart) basicOpenStart = now;
       const pct = Math.min(100, Math.round((now-basicOpenStart)/PREP_OPEN_MS*100));
-      if(now-basicOpenStart >= PREP_OPEN_MS) basicGraspArmed = true;
+      if(now-basicOpenStart >= PREP_OPEN_MS){ basicGraspArmed = true; basicArriveArmed = false; }
       setActionPrompt(basicGraspArmed ? graspPrompt('hold') : graspPrompt('prep'),
         basicGraspArmed ? graspPrompt('carry') : pct + '%');
     } else if(basicGraspArmed && basicGraspCandidate === nearest.id
@@ -15456,6 +15495,7 @@ function updateGraspLogic(){
       }
       const pct = Math.min(100, Math.round((now-basicGraspStart)/GRASP_HOLD_MS*100));
       if(now-basicGraspStart >= GRASP_HOLD_MS){
+        basicArriveId = ''; basicArriveStart = 0; basicArriveArmed = false;   // v136
         nearest.held = true; heldItem = nearest; grabCount++;
         pegRelativeHoldReset();
         laundryAutoHangSince = 0;
@@ -16499,6 +16539,11 @@ function renderGame(){
     const visualR=f.visualR||f.r;
     const visualPoint=publicLevel6HeldDisplayPoint(f.x,f.y,visualR,f.held);
     const drawX=visualPoint.x,drawY=visualPoint.y;
+    // v136: peg task — orange halo = this garment is ready to be clipped
+    if(isLaundryRackGame() && !heldItem && !f.held && basicGraspArmed && basicGraspCandidate === f.id){
+      ctx.fillStyle = 'rgba(224,123,57,0.30)';
+      ctx.beginPath(); ctx.arc(drawX, drawY, visualR * 1.25, 0, Math.PI*2); ctx.fill();
+    }
     if(f.drawItem){
       // 主題自繪物件（麻雀 / 啤牌 / 煮飯 / 插花 / 晾衫）＋大字標籤
       f.drawItem(ctx, drawX, drawY, visualR * (f.drawScale || 0.92));
@@ -17508,12 +17553,13 @@ const picker = {
   openStart:0, graspStart:0, graspId:null, heldId:null, relStart:0,
   relPauseAt:0, relLastOpenAt:0,
   contactId:null, contactUntil:0, postReleaseOpenStart:0, autoPlaceStart:0,
+  arriveId:null, arriveStart:0, arriveArmed:false,
   reset(){
     this.hoverId=null; this.start=0; this.pct=0; this.armed=false; this.lock=null;
     this.startId=null; this.openStart=0; this.graspStart=0; this.graspId=null;
     this.heldId=null; this.relStart=0; this.relPauseAt=0; this.relLastOpenAt=0;
     this.contactId=null; this.contactUntil=0; this.postReleaseOpenStart=0;
-    this.autoPlaceStart=0;
+    this.autoPlaceStart=0; this.arriveId=null; this.arriveStart=0; this.arriveArmed=false;
   },
   poll(items, releaseZone){
     this.pct = 0;
@@ -17614,7 +17660,8 @@ const picker = {
       setActionPrompt('已放開', '保持張開手');
       return null;
     }
-    let best = nearestItem(items);
+    const directContact = nearestItem(items);   // v136: the arrival dwell only advances while really over the item
+    let best = directContact;
     if(best){
       this.contactId = best.id;
       this.contactUntil = now + advancedContactGraceMs();
@@ -17625,6 +17672,7 @@ const picker = {
       this.hoverId = null; this.start = 0; this.lock = null;
       this.graspStart = 0; this.graspId = null;
       this.contactId = null; this.contactUntil = 0;
+      level6ArriveArmPoll(this, null, now);
       if(isGraspStyleMode() && handReleasedOrOpen()){
         if(!this.openStart) this.openStart = now;
         if(now - this.openStart >= advancedGraspArmMs()) this.armed = true;
@@ -17635,9 +17683,10 @@ const picker = {
       return null;
     }
     this.hoverId = best.id;
+    const arrived = level6ArriveArmPoll(this, best, now, !!directContact && !isGrasping);   // v136
     updatePublicPatientVoiceGuide({
       phase:'contact',item:best,touching:true,
-      openForPickup:!!(isGraspStyleMode()&&handReleasedOrOpen()),
+      openForPickup:!!(isGraspStyleMode()&&(handReleasedOrOpen()||arrived)),
     });
     if(isGraspStyleMode()){
       if(handReleasedOrOpen()){
@@ -17645,7 +17694,7 @@ const picker = {
         if(!this.openStart) this.openStart = now;
         const armMs = advancedGraspArmMs();
         this.pct = Math.min(1, (now - this.openStart) / armMs);
-        if(now - this.openStart >= armMs) this.armed = true;
+        if(now - this.openStart >= armMs){ this.armed = true; this.arriveArmed = false; }
         return null;
       }
       this.openStart = 0;
@@ -17653,6 +17702,8 @@ const picker = {
         if(isLevel6Chopsticks()) setActionPrompt('先張開筷子', '穩定張開後再合埋夾起');
         return null;
       }
+      // v136: an arrival-prepared pick-up still needs the squeeze itself.
+      if(this.arriveArmed && !isGrasping){ this.graspStart = 0; this.graspId = null; return null; }
       if(this.graspId !== best.id){ this.graspId = best.id; this.graspStart = now; }
       const holdMs = advancedGraspHoldMs();
       this.pct = Math.min(1, (now - this.graspStart) / holdMs);
@@ -17662,6 +17713,7 @@ const picker = {
         // v123: Level 6 mahjong/cards count each confirmed pick-up (same as
         // Level 6 flowers); Level 5 keeps counting placements instead.
         if(isLevel6()) grabCount++;
+        this.arriveId = null; this.arriveStart = 0; this.arriveArmed = false;   // v136
         updatePublicPatientVoiceGuide({
           phase:'pickup',item:best,zones:releaseZone?[releaseZone]:[],
         });
@@ -17689,12 +17741,13 @@ const carrier = {
   heldId:null, hoverId:null, startId:null, start:0, pct:0, armed:false, relStart:0,
   relPauseAt:0, relLastOpenAt:0,
   openStart:0, graspStart:0, graspId:null, contactId:null, contactUntil:0,
-  postReleaseOpenStart:0, autoPlaceStart:0,
+  postReleaseOpenStart:0, autoPlaceStart:0, arriveId:null, arriveStart:0, arriveArmed:false,
   reset(){ this.heldId=null; this.hoverId=null; this.startId=null; this.start=0;
            this.pct=0; this.armed=false; this.relStart=0; this.relPauseAt=0;
            this.relLastOpenAt=0; this.openStart=0;
            this.graspStart=0; this.graspId=null; this.contactId=null; this.contactUntil=0;
-           this.postReleaseOpenStart=0; this.autoPlaceStart=0; },
+           this.postReleaseOpenStart=0; this.autoPlaceStart=0;
+           this.arriveId=null; this.arriveStart=0; this.arriveArmed=false; },
   poll(items, zones){
     const ev = { grab:null, drop:null, zone:null };
     this.pct = 0;
@@ -17719,7 +17772,8 @@ const carrier = {
         setActionPrompt('已放開', '保持張開手');
         return ev;
       }
-      let best = nearestItem(items);
+      const directContact = nearestItem(items);   // v136: the arrival dwell only advances while really over the item
+      let best = directContact;
       if(best){
         this.contactId = best.id;
         this.contactUntil = now + advancedContactGraceMs();
@@ -17727,9 +17781,10 @@ const carrier = {
         best = items.find(it=>it.id === this.contactId && !it.gone) || null;
       }
       this.hoverId = best ? best.id : null;
+      const arrived = level6ArriveArmPoll(this, best, now, !!directContact && !isGrasping);   // v136
       updatePublicPatientVoiceGuide({
         phase:'contact',item:best,touching:!!best,
-        openForPickup:!!(best&&isGraspStyleMode()&&handReleasedOrOpen()),
+        openForPickup:!!(best&&isGraspStyleMode()&&(handReleasedOrOpen()||arrived)),
       });
       if(!best){
         this.startId = null; this.graspStart = 0; this.graspId = null;
@@ -17749,7 +17804,7 @@ const carrier = {
           if(!this.openStart) this.openStart = now;
           const armMs = advancedGraspArmMs();
           this.pct = Math.min(1, (now - this.openStart) / armMs);
-          if(now - this.openStart >= armMs) this.armed = true;
+          if(now - this.openStart >= armMs){ this.armed = true; this.arriveArmed = false; }
           return ev;
         }
         this.openStart = 0;
@@ -17757,6 +17812,8 @@ const carrier = {
           if(isLevel6Chopsticks()) setActionPrompt('先張開筷子', '穩定張開後再合埋夾起');
           return ev;
         }
+        // v136: an arrival-prepared pick-up still needs the squeeze itself.
+        if(this.arriveArmed && !isGrasping){ this.graspStart = 0; this.graspId = null; return ev; }
         if(this.graspId !== best.id){ this.graspId = best.id; this.graspStart = now; }
         const holdMs = advancedGraspHoldMs();
         this.pct = Math.min(1, (now - this.graspStart) / holdMs);
@@ -17765,6 +17822,7 @@ const carrier = {
           this.relPauseAt = 0; this.relLastOpenAt = 0;
           this.graspStart = 0; this.graspId = null; this.contactId = null;
           this.contactUntil = 0; this.pct = 0; ev.grab = best.id;
+          this.arriveId = null; this.arriveStart = 0; this.arriveArmed = false;
           updatePublicPatientVoiceGuide({phase:'pickup',item:best,zones});
         }
         return ev;
@@ -22122,9 +22180,13 @@ window.__qa = {
       // v123: Level 6 mahjong/cards share the Level 5 picker modules.
       advancedPlaced:advCurrent==='cards'?cards.got:(advCurrent==='mahjong'?mj.taken.length:null),
       carrier:{heldId:carrier.heldId,hoverId:carrier.hoverId,armed:carrier.armed,
-        openStart:carrier.openStart,graspStart:carrier.graspStart,graspId:carrier.graspId},
+        openStart:carrier.openStart,graspStart:carrier.graspStart,graspId:carrier.graspId,
+        arriveArmed:carrier.arriveArmed},
+      picker:{heldId:picker.heldId,hoverId:picker.hoverId,armed:picker.armed,
+        arriveArmed:picker.arriveArmed},
       basic:{armed:basicGraspArmed,openStart:basicOpenStart,
-        graspStart:basicGraspStart,graspCandidate:basicGraspCandidate},
+        graspStart:basicGraspStart,graspCandidate:basicGraspCandidate,
+        arriveArmed:basicArriveArmed},
       gestureStabilizer:{...detectedGestureState},
       cursor:{x:cursorX,y:cursorY},
       prompt:document.getElementById('statusBar')?.textContent?.trim()||'',
@@ -23540,7 +23602,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v135-20261119-digiflex-calib-optional";
+  const LEVEL_APP_BUILD = "v136-20261120-cashier-arrive-arm";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

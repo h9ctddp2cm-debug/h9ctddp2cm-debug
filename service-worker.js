@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v135-20261119-digiflex-calib-optional";
+const CACHE_VERSION = "fthue-rehab-v136-20261120-cashier-arrive-arm";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

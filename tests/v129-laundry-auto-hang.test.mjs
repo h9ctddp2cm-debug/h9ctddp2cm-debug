@@ -162,10 +162,10 @@ test('v129 source wiring: Level 6 carrier auto-place', () => {
   // object centre inside the zone (negative margin removes the radius padding)
   assert.match(src, /heldItemTouchesZone\(carriedItem, z, -\(\(carriedItem && carriedItem\.r\) \|\| 0\)\)/);
   assert.match(src, /if\(now - this\.autoPlaceStart >= LEVEL6_AUTO_PLACE_MS\)\{\n\s*ev\.drop = this\.heldId; ev\.zone = zAuto;/);
-  assert.match(src, /this\.postReleaseOpenStart=0; this\.autoPlaceStart=0; \},/);
+  assert.match(src, /this\.postReleaseOpenStart=0; this\.autoPlaceStart=0;\n\s*this\.arriveId=null; this\.arriveStart=0; this\.arriveArmed=false; \},/);   // v136 adds the arrival fields
   // picker module (cards / mahjong): cursor inside the 放牌區 box
   assert.match(src, /if\(releaseZone && level6AutoPlaceEnabled\(\) && pointInsideZone\(cursorX, cursorY, releaseZone\)\)\{/);
-  assert.match(src, /this\.postReleaseOpenStart=0;\n\s*this\.autoPlaceStart=0;\n\s*\},/);
+  assert.match(src, /this\.postReleaseOpenStart=0;\n\s*this\.autoPlaceStart=0; this\.arriveId=null; this\.arriveStart=0; this\.arriveArmed=false;\n\s*\},/);   // v136 adds the arrival fields
   // wording
   assert.match(src, /setActionPrompt\(level6AutoPlaceEnabled\(\) \? '移到目標停住' : \(isGrasping \? '保持揸住' : '張開手放低'\), ''\);/);
   assert.match(src, /'已拿住 · 移到放牌區，停住自動放低'/);

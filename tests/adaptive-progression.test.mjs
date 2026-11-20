@@ -332,6 +332,6 @@ test('the therapist card is explicit that no automatic assessment happens', () =
 
 test('the adaptive module ships offline with a bumped cache version', () => {
   assert.match(build, /cp "\$ROOT\/fthue-adaptive-progression\.js" "\$DIST\/fthue-adaptive-progression\.js"/);
-  assert.match(serviceWorker, /fthue-rehab-v135-20261119-digiflex-calib-optional/);
+  assert.match(serviceWorker, /fthue-rehab-v136-20261120-cashier-arrive-arm/);
   assert.match(serviceWorker, /importScripts\("\.\/offline-assets\.js"\)/);
 });
