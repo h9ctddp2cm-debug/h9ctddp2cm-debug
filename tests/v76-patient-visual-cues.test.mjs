@@ -10,7 +10,7 @@ const html = readFileSync(path.join(root, 'index.html'), 'utf8');
 test('current build markers stay aligned', () => {
   const manifest = readFileSync(path.join(root, 'manifest.webmanifest'), 'utf8');
   const worker = readFileSync(path.join(root, 'service-worker.js'), 'utf8');
-  const version = 'v136-20261120-cashier-arrive-arm';
+  const version = 'v137-20261120-shoulder-rearm-drop10';
   assert.match(html, new RegExp(version));
   assert.match(manifest, new RegExp(version));
   assert.match(worker, new RegExp(version));

@@ -34,9 +34,18 @@
     patientGateStableFrames: 2,
     patientTargetFeedbackMs: 150,
     patientHoldExitFrames: 3,
-    patientDownSmoothAlpha: 0.16,
+    // v137: 0.16 → 0.25 so a lowering arm is noticed sooner at low camera
+    // frame rates (settling from 90° to <9° takes ~8 frames instead of ~14).
+    patientDownSmoothAlpha: 0.25,
     patientReturnToleranceDeg: 14,
     patientReturnFloorToleranceDeg: 9,
+    // v137 patient re-arm rule (therapist decision): in public patient mode a
+    // repetition completes — and the next one is admitted — once the arm has
+    // dropped patientRearmDropDeg below the highest angle of that lift. The
+    // patient no longer has to return to the captured resting pose or settle
+    // at a floor. The next lift is credited as soon as it is at the target again.
+    // Non-patient sessions (patientAssist=false) keep the strict return gates.
+    patientRearmDropDeg: 10,
   };
 
   function clamp01(value) {
@@ -215,6 +224,7 @@
         targetReached:false,repetitions:0,cycleArmed:false,targetStableFrames:0,returnStableFrames:0,
         activeGateStableFrames:config.gateStableFrames,holdBelowTargetFrames:0,
         returnFloorDeg:null,startFloorDeg:null,
+        cyclePeakDeg:null,startPeakDeg:null,
         holdDurationMs:Math.max(0,Number(options&&options.holdDurationMs)||0),
         holdStartedAtMs:null,holdRemainingSec:null,holdComplete:false,holdRestartCount:0,
         holdGracePauseAtMs:null,
@@ -362,18 +372,25 @@
         if(state.phase==='await-start'){
           state.startFloorDeg=Number.isFinite(state.startFloorDeg)
             ? Math.min(state.startFloorDeg,state.estimatedAngle):state.estimatedAngle;
+          state.startPeakDeg=Number.isFinite(state.startPeakDeg)
+            ? Math.max(state.startPeakDeg,state.estimatedAngle):state.estimatedAngle;
+          const droppedFromPeak=patientAssist
+            && state.estimatedAngle<=state.startPeakDeg-config.patientRearmDropDeg;
           const inWindow=state.estimatedAngle>=Math.max(0,state.selectedStartDeg-config.startToleranceDeg)
             && state.estimatedAngle<=state.selectedStartDeg+returnWindow;
           const atOwnFloor=state.estimatedAngle<=relativeCapDeg
             && state.estimatedAngle<=state.startFloorDeg+
               (patientAssist ? config.patientReturnFloorToleranceDeg : config.returnFloorToleranceDeg);
-          const atStart=inWindow||atOwnFloor;
+          const atStart=inWindow||atOwnFloor||droppedFromPeak;
           state.startStableFrames=atStart?state.startStableFrames+1:0;
           state.targetStableFrames=0; state.returnStableFrames=0;
           if(state.startStableFrames>=gateFrames){
             state.phase='outward'; state.startStableFrames=0; state.startFloorDeg=null;
+            state.startPeakDeg=null; state.cyclePeakDeg=null;
           }
         }else if(state.phase==='outward'){
+          state.cyclePeakDeg=Number.isFinite(state.cyclePeakDeg)
+            ? Math.max(state.cyclePeakDeg,state.estimatedAngle):state.estimatedAngle;
           state.targetStableFrames=state.estimatedAngle>=state.selectedTargetDeg-targetTolerance
             ? state.targetStableFrames+1:0;
           state.returnStableFrames=0;
@@ -389,6 +406,7 @@
             state.phase=state.holdDurationMs>0?'target-hold':'await-return';
           }
         }else if(state.phase==='target-hold'){
+          state.cyclePeakDeg=Math.max(state.cyclePeakDeg??state.estimatedAngle,state.estimatedAngle);
           const atTarget=state.estimatedAngle>=state.selectedTargetDeg-targetTolerance;
           state.targetStableFrames=atTarget?state.targetStableFrames+1:0;
           state.returnStableFrames=0;
@@ -425,6 +443,9 @@
           }
         }else if(state.phase==='await-return'){
           state.targetStableFrames=0;
+          state.cyclePeakDeg=Math.max(state.cyclePeakDeg??state.estimatedAngle,state.estimatedAngle);
+          const droppedFromPeak=patientAssist
+            && state.estimatedAngle<=state.cyclePeakDeg-config.patientRearmDropDeg;
           state.returnFloorDeg=Number.isFinite(state.returnFloorDeg)
             ? Math.min(state.returnFloorDeg,state.estimatedAngle):state.estimatedAngle;
           const inWindow=state.estimatedAngle>=Math.max(0,state.selectedStartDeg-config.startToleranceDeg)
@@ -432,7 +453,8 @@
           const atOwnFloor=state.estimatedAngle<=relativeCapDeg
             && state.estimatedAngle<=state.returnFloorDeg+
               (patientAssist ? config.patientReturnFloorToleranceDeg : config.returnFloorToleranceDeg);
-          state.returnStableFrames=inWindow||atOwnFloor?state.returnStableFrames+1:0;
+          state.returnStableFrames=inWindow||atOwnFloor||droppedFromPeak
+            ?state.returnStableFrames+1:0;
         }
         if(state.phase==='await-return'&&state.cycleArmed
             &&state.returnStableFrames>=gateFrames){
@@ -444,8 +466,11 @@
           state.trainingMin=state.selectedStartDeg;
           state.prescribedExcursionDeg=state.selectedTargetDeg-state.selectedStartDeg;
           state.progress=clamp01((state.estimatedAngle-state.trainingMin)/(state.trainingMax-state.trainingMin));
-          state.phase='await-start'; state.startStableFrames=0; state.returnStableFrames=0;
-          state.returnFloorDeg=null; state.startFloorDeg=null;
+          state.startStableFrames=0; state.returnStableFrames=0;
+          state.returnFloorDeg=null; state.startFloorDeg=null; state.startPeakDeg=null;
+          // v137 patient mode: the arm has already dropped 10° from its peak —
+          // the next lift is admitted at once (no return to the start pose).
+          state.phase=patientAssist?'outward':'await-start'; state.cyclePeakDeg=null;
         }
         state.gameReady=true; state.reason='ready';
       }
@@ -460,6 +485,7 @@
         estimatedAngle:state.estimatedAngle,baseline:state.baseline,refArmLen:state.refArmLen,maximum:state.maximum,
         observedTargetAngle:state.observedTargetAngle,prescribedExcursionDeg:state.prescribedExcursionDeg,
         selectedStartDeg:state.selectedStartDeg,selectedTargetDeg:state.selectedTargetDeg,peakEstimatedAngle:state.peakEstimatedAngle,
+        cyclePeakDeg:state.cyclePeakDeg,startPeakDeg:state.startPeakDeg,
         targetReached:state.targetReached,repetitions:state.repetitions,
         holdDurationMs:state.holdDurationMs,holdRemainingSec:state.holdRemainingSec,
         holdComplete:state.holdComplete,holdRestartCount:state.holdRestartCount,
@@ -532,7 +558,26 @@
         state.startStableFrames=0;
         state.targetStableFrames=0;
         state.returnStableFrames=0;
+        state.cyclePeakDeg=null;state.startPeakDeg=null;
       }
+      return true;
+    }
+    /* v137 (therapist rule): the patient need not lower the arm after every
+       lift — "if the patient keeps the arm up at or above the set angle, keep
+       scoring". The public game layer calls this once the reward animation
+       has finished while the lift is still waiting for its return: the
+       repetition is counted now and the next lift is admitted immediately, so
+       an arm still at the target is credited again on the next frames. */
+    function completeHeldRepetition(){
+      if(!state.calibrated||!state.cycleArmed||state.phase!=='await-return')return false;
+      state.repetitions+=1;state.cycleArmed=false;state.targetReached=false;
+      state.targetStableFrames=0;state.returnStableFrames=0;
+      state.holdStartedAtMs=null;state.holdRemainingSec=null;state.holdComplete=false;
+      state.holdAtTarget=false;state.holdInterrupted=false;
+      state.holdBelowTargetFrames=0;state.holdGracePauseAtMs=null;
+      state.returnFloorDeg=null;state.startFloorDeg=null;state.startPeakDeg=null;
+      state.cyclePeakDeg=null;
+      state.phase='outward';
       return true;
     }
     function setHoldDuration(seconds){
@@ -544,7 +589,7 @@
       state.holdGracePauseAtMs=null;
       return true;
     }
-    return {config,state,reset,setTarget,setHoldDuration,setExerciseMode,startChoices,update,snapshot,guidance,toText};
+    return {config,state,reset,setTarget,completeHeldRepetition,setHoldDuration,setExerciseMode,startChoices,update,snapshot,guidance,toText};
   }
 
   const api={CONFIG,createController,exerciseModeAvailable,shoulderFlexionLevel,selectedArm,shoulderFlexion2D,shoulderFlexionWorld,torsoSignature,armVector2D,clamp01,median};

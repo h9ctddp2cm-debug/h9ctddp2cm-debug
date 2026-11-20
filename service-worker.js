@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v136-20261120-cashier-arrive-arm";
+const CACHE_VERSION = "fthue-rehab-v137-20261120-shoulder-rearm-drop10";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

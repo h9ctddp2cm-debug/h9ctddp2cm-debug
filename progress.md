@@ -1702,6 +1702,17 @@ Original prompt: Fix Level 6–7 interactions: make light clothes-peg press dete
 - Validation：四組測試 590 個（113+171+135+171）587 pass / 3 skip / 0 fail（首次跑 group 3 因 dist 未 rebuild 有 1 個 dist-gated 子測試預期性 fail，rebuild 後重跑 `tests/v114-public-no-keepsake.test.mjs` 5/5 同全組 135/135 皆過）；`tools/checkjs.sh` 11 OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 199 files（同 v114 一致，純文字改動冇影響檔案數）；`rg -c "__qa" dist/public/index.html` → 0；dist 內三個版本標記／`留念`／`寫名、簽名`／`名字只保留在此頁` 全部確認正確（前者 3 處存在，後三者 0 個殘留）；Playwright 三個尺寸（筆電 1413×653、iPad 橫向 1180×820、iPad 直向 820×1180）載入公開版首頁，零 page error（`console.error` 同 `pageerror` 皆空）——因涉及文字本身係死碼，冇可達 UI 路徑可截圖顯示呢組文字，故 QA 重點放喺「頁面正常載入、冇 JS 錯誤」而非畫面文字截圖；`ych_rehab_qa_artifacts/v114b/v114b-qa-contact-sheet.png`（首頁三尺寸存底）。
 - Residual notes：`ADV_RULES` 入面其他主題（`cooking`/`mahjong`/`cards`/`laundry`）嘅 `lines[1]`/`tail`/`tts` 同樣係死碼（同一個讀取模式，只用 `lines[0]`），呢次冇一併清理，維持原文，因為稽核只針對插花一句；如日後同類稽核再揪出其他主題嘅殘留描述文字，可用同一手法直接改字（不涉及功能判斷）。
 
+## 2026-11-20 v137 — Level 3／4 膊頭屈曲：動畫完結唔再強制返起點、比最高點低 10° 即開始新一下、公開版冇度數
+- 治療師床邊回報（v136 後）：病人抬手超過目標度數，遊戲都冇反應；要將手完全放返落去（「返到 0°」）再抬先玩到，重新偵測太耐，病人覺得係自己做得唔好。病人坐輪椅，手放大髀起步，大車輪令手冇得垂喺身側。
+- 成因（Node 模擬重現）：每一下獎勵動畫完結時 `finishShoulderRewardCycle()` 叫 `setTarget()`，強制控制器返「等起點」（`await-start`）；如果病人當時已抬緊第二下（手喺半空），之後抬幾高都唔計，直至放到目標 45% 以下（例如 60° 目標要 ≤27°）並停穩；加上放低時嘅平滑濾波 `patientDownSmoothAlpha=0.16` 較慢，低幀率下約 1 秒先「見到」手放低咗。
+- 新規則（只限公開版 `patientAssist`／`!research.active`；研究模式一字不改）：
+  1. 動畫完結時公開版唔再 reset 控制器（研究模式照舊 `setTarget()`）：病人抬緊嘅一下繼續計，抬到目標即有反應。治療師規則「病人未必下下都放低手（可能想舉耐啲）；如果繼續舉住手（治療師設定嘅度數或以上）就繼續／再拿多次分」：新 `completeHeldRepetition()`，動畫完結時手仍喺目標之上等緊放低，就即刻計埋呢一下，之後手仍喺目標之上就即時再計下一下（每次動畫完結得一分，不斷舉住就不斷有分）。
+  2. 治療師規則「只要比啱啱舉高個下嗰個點低 10° 就得喇」：`patientRearmDropDeg = 10`，控制器記住每下嘅最高估算角度（`cyclePeakDeg`／`startPeakDeg`），估算角度比最高點低 10° 就完成一下並即刻進入 `outward`，唔使返起點、唔使停穩；如果嗰刻手仍然喺目標之上，新一下即時計。
+  3. `patientDownSmoothAlpha` 0.16 → 0.25（由 90° 回落至 <9° 約 8 幀，之前約 14 幀）。
+  4. 公開版唔顯示度數：提示改為「抬高」／「慢慢放低」／「放低啲再抬高」；校準列「現在／目標」讀數隱藏（`.level4-live-readouts[hidden]`）；畫面頂「目標 xx°」字樣（德華公園及預設場景）只喺研究模式畫。治療師決定：「其實唔使計，亦都唔使顯示，因為橫掂都唔準確」。輪椅病人手放大髀起步：校準嗰刻嘅姿勢就係 0°，度數係由休息位計起抬咗幾多，唔另外計算。
+- 驗證：`tests/v137-shoulder-rearm-drop10.test.mjs`（控制器模擬：半空時冇 reset 繼續計、過目標即計、跌 4° 唔計／跌 14° 即計、舉住手每次動畫完結計一下、研究模式門檻不變、index 接線、提示冇度數、標記）；Playwright 公開版 Level 4 保齡球（筆電／直向）及 Level 3 德華公園（iPad）：舉住手兩次動畫完結各計一分 → 跌 14° 再計 → 再抬到 110° 即有反應 → 放返大髀再計；超市故事＋保持 2 秒模式舉住手亦每次動畫完結計一步；DOM 內冇任何「xx°」字串。全套 Node 測試通過；dist `__qa` 0、research/pilot 0。
+- 標記 `v137-20261120-shoulder-rearm-drop10`、`perf v137`；QA 對照表 `ych_rehab_qa_artifacts/v137/v137-qa-contact-sheet.png`；`security-reviews/v137-security-review.md`。
+
 ## 2026-11-20 v136 — Level 6 衣夾遊戲「到位即準備」（放鬆少少都算）＋超市收銀員改為男性
 - 治療師床邊回報（v135 後）：「夾夾嗰啲遊戲時都叫我張開手，明明我已經將開咗手……可唔可以將嗰個門檻再校低啲，一去到要夾嗰個位就當張開手，有個橙色浮標出現返？」原因：真衣夾只容許手指張返少少，手形往往去唔到校準嘅「分開」位（`isSeparated`），所以 `handOpenPrep` 一直係 false、語音照講「張開手」、件衫冇橙圈。
 - 新規則（只限公開版 Level 6 抓握式遊戲、未拎住嘢：`level6ArriveArmEnabled()` = `!research.active && isLevel6() && isGraspStyleMode() && (level6AutoPlaceEnabled() || isLevel6RealToolTask()) && !level6AnyItemHeld()`）：手停喺件衫／花／牌上面滿 `LEVEL6_ARRIVE_ARM_MS = 700` ms，而且手當時「唔係夾實中」（`!isGrasping`），就自動當已張開——`armed=true`、橙圈出現、語音講「夾住」；之後夾實一下就夾起。真正張開手照舊即刻準備（`arriveArmed=false`）。
