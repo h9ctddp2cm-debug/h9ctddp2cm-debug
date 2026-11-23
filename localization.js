@@ -142,6 +142,8 @@
     '插花':'Flower Arranging',
     '啤牌':'Playing Cards',
     '麻雀':'Mahjong',
+    '每舉一下摸一隻牌，摸齊就食糊':'Each lift draws one tile. Complete the hand to win.',
+    '每舉一下揭一張牌，五張睇牌型':'Each lift reveals one card. Five cards show the hand.',
     '煮蛋炒飯':'Cook Egg Fried Rice',
     '主動抬高手臂，把虛擬花材運送到花瓶':'Actively raise the arm and transport the virtual flowers to the vase.',
     '主動抬高手臂運送 → 把花材放入花瓶':'Actively raise the arm to transport → place the flowers in the vase',

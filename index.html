@@ -2264,6 +2264,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
         <div class="r-item"><div class="r-label" id="resultAccuracyLabel">準確率</div><div class="r-value" id="resAccuracy">0%</div></div>
       </div>
       <p id="shoulderResultSummary" hidden style="margin:10px 0;padding:10px 12px;border-radius:12px;background:#edf7f3;font-weight:750;line-height:1.45;"></p>
+      <p id="dealResultSummary" hidden style="margin:10px 0;padding:10px 12px;border-radius:12px;background:#fff6dc;border:2px solid #e6c15a;font-weight:800;font-size:19px;line-height:1.45;"></p>
       <!-- PUBLIC_BUILD_REMOVE_START: movement video review panel (source/research build only) -->
       <section class="movement-review" id="movementReview" hidden
         data-testid="panel-movement-review" aria-labelledby="movementReviewTitle">
@@ -4200,8 +4201,529 @@ function drawSupermarketScene(ctx,cw,ch){
   }
   ctx.restore();
 }
+/* ==================== v138 牌局場景（Level 3/4 肩前屈：麻雀「摸牌食糊」／啤牌「揭牌」） ====================
+   純視覺同音效獎勵層：只讀取 shoulderFlexionState 嘅進度／達標訊號。
+   同 v73 保齡球、v125 超市一樣：呢層完全唔會改變抬臂達標判定，亦唔加任何新輸入。
+   每次達標＝摸／揭一隻牌；一手牌齊晒就有大慶祝，然後自動開新一手。
+   牌面係預先砌好嘅一手有效牌（麻雀：四副＋一對眼；啤牌：一個牌型），
+   所以冇輸贏、冇扣分，只有「今次係咩牌」嘅驚喜。番數沿用簡化訓練計分，並非官方規則裁判。 */
+const DEAL_FLIP_MS=420,DEAL_SHOW_MS=560,DEAL_FLY_MS=520,DEAL_GROUP_MS=1100,DEAL_WIN_MS=3200,DEAL_TAIL_MS=300;
+const MJ_DEAL_PREDEALT_SETS = 2;
+const CARD_DEAL_TYPES = [
+  { id:'pair', zh:'一對', en:'One pair', subZh:'有兩張一樣', subEn:'Two of a kind', w:30, tier:0 },
+  { id:'twopair', zh:'兩對', en:'Two pairs', subZh:'兩組一樣', subEn:'Two pairs of matching cards', w:22, tier:0 },
+  { id:'trips', zh:'三條', en:'Three of a kind', subZh:'有三張一樣', subEn:'Three matching cards', w:15, tier:1 },
+  { id:'straight', zh:'順子', en:'Straight', subZh:'五張連號', subEn:'Five cards in a row', w:12, tier:1 },
+  { id:'flush', zh:'同花', en:'Flush', subZh:'五張同一花色', subEn:'Five cards of one suit', w:10, tier:1 },
+  { id:'fullhouse', zh:'葫蘆', en:'Full house', subZh:'三條加一對', subEn:'Three of a kind plus a pair', w:7, tier:2 },
+  { id:'quads', zh:'四條', en:'Four of a kind', subZh:'有四張一樣', subEn:'Four matching cards', w:3, tier:2 },
+  { id:'straightflush', zh:'同花順', en:'Straight flush', subZh:'同花色兼連號', subEn:'One suit, five in a row', w:1, tier:2 },
+];
+const MJ_DEAL_FAN_EN = {
+  '字一色':'All honours', '清一色':'Full flush', '混一色':'Half flush', '大三元':'Big three dragons',
+  '小三元':'Small three dragons', '大四喜':'Big four winds', '小四喜':'Small four winds',
+  '對對糊':'All triplets', '平糊':'All sequences', '雞糊':'Basic win',
+};
+const dealTable={kind:'',roundNo:0,wins:0,slots:[],order:[],drawn:0,groups:[],result:null,best:null,
+  anim:{phase:'idle',startedMs:0,slot:-1,group:-1,handDone:false,stage:0}};
+function isDealTableTheme(){
+  return isShoulderFlexionLevel()&&!research.active&&(state.theme==='mahjong'||state.theme==='cards');
+}
+function dealText(zh,en){ return window.YCHLanguage?window.YCHLanguage.text(zh,en):zh; }
+function resetDealTableAnim(){
+  const a=dealTable.anim;
+  a.phase='idle';a.startedMs=0;a.slot=-1;a.group=-1;a.handDone=false;a.stage=0;
+}
+function resetDealTable(){
+  dealTable.kind='';dealTable.roundNo=0;dealTable.wins=0;dealTable.slots=[];dealTable.order=[];
+  dealTable.drawn=0;dealTable.groups=[];dealTable.result=null;dealTable.best=null;
+  resetDealTableAnim();
+}
+/* 砌一手有效麻雀牌：四副（順子／刻子）＋一對眼，每款牌最多四隻。 */
+function buildMahjongDealHand(rand){
+  const r=typeof rand==='function'?rand:Math.random;
+  const pick=a=>a[Math.min(a.length-1,Math.floor(r()*a.length))];
+  const suits=['p','s','w'],winds=['E','S','W','N'],dragons=['C','F','B'],honors=winds.concat(dragons);
+  for(let attempt=0;attempt<200;attempt++){
+    const roll=r();
+    const pattern=roll<0.30?'mixed':roll<0.54?'chows':roll<0.70?'pungs':roll<0.84?'halfflush':roll<0.94?'flush':'dragons';
+    const bigThree=pattern==='dragons'&&r()<0.3;
+    const oneSuit=pick(suits);
+    const counts={};
+    const fits=tiles=>{
+      const add={};tiles.forEach(t=>{add[t]=(add[t]||0)+1;});
+      return Object.keys(add).every(t=>(counts[t]||0)+add[t]<=4);
+    };
+    const take=tiles=>tiles.forEach(t=>{counts[t]=(counts[t]||0)+1;});
+    const suitNow=()=>(pattern==='halfflush'||pattern==='flush')?oneSuit:pick(suits);
+    const chow=()=>{const s=suitNow(),n=1+Math.floor(r()*7);return {kind:'chow',t:s+n,tiles:[s+n,s+(n+1),s+(n+2)]};};
+    const pungOf=t=>({kind:'pung',t,tiles:[t,t,t]});
+    const suitPung=()=>pungOf(suitNow()+(1+Math.floor(r()*9)));
+    const sets=[];
+    for(let i=0;i<4;i++){
+      let set=null;
+      for(let tries=0;tries<30&&!set;tries++){
+        let c;
+        if(pattern==='chows') c=chow();
+        else if(pattern==='pungs') c=r()<0.3?pungOf(pick(honors)):suitPung();
+        else if(pattern==='halfflush') c=i===0?pungOf(pick(honors)):(r()<0.65?chow():suitPung());
+        else if(pattern==='flush') c=r()<0.7?chow():suitPung();
+        else if(pattern==='dragons') c=i<2?pungOf(dragons[i]):(i===2&&bigThree?pungOf(dragons[2]):chow());
+        else c=r()<0.6?chow():suitPung();
+        if(fits(c.tiles)) set=c;
+      }
+      if(!set) break;
+      take(set.tiles);sets.push(set);
+    }
+    if(sets.length!==4) continue;
+    let pair=null;
+    for(let tries=0;tries<30&&!pair;tries++){
+      let t;
+      if(pattern==='dragons'&&!bigThree) t=dragons[2];
+      else if(pattern==='flush') t=oneSuit+(1+Math.floor(r()*9));
+      else if(pattern==='halfflush') t=r()<0.5?pick(honors):oneSuit+(1+Math.floor(r()*9));
+      else t=r()<0.2?pick(winds):pick(suits)+(1+Math.floor(r()*9));
+      if(fits([t,t])) pair=t;
+    }
+    if(!pair) continue;
+    return {sets,pair,result:mjScoreCombo(sets,pair)};
+  }
+  const sets=[['p1','p2','p3'],['p4','p5','p6'],['s2','s3','s4'],['w6','w7','w8']]
+    .map(tiles=>({kind:'chow',t:tiles[0],tiles}));
+  return {sets,pair:'E',result:mjScoreCombo(sets,'E')};
+}
+/* 啤牌牌型判斷：cards = [{s:'S'|'H'|'D'|'C', r:0–12（A=0）}] */
+function cardDealClassify(cards){
+  const ranks=cards.map(c=>c.r).sort((a,b)=>a-b);
+  const counts={};ranks.forEach(v=>{counts[v]=(counts[v]||0)+1;});
+  const groups=Object.keys(counts).map(k=>counts[k]).sort((a,b)=>b-a);
+  const flush=cards.every(c=>c.s===cards[0].s);
+  const straight=groups.length===5&&((ranks[4]-ranks[0]===4)||(ranks[0]===0&&ranks[1]===9&&ranks[4]===12));
+  if(straight&&flush) return 'straightflush';
+  if(groups[0]===4) return 'quads';
+  if(groups[0]===3&&groups[1]===2) return 'fullhouse';
+  if(flush) return 'flush';
+  if(straight) return 'straight';
+  if(groups[0]===3) return 'trips';
+  if(groups[0]===2&&groups[1]===2) return 'twopair';
+  if(groups[0]===2) return 'pair';
+  return 'high';
+}
+/* 砌一手五張啤牌：先抽牌型（常見嘅多、罕有嘅少），再砌出啱啱係嗰個牌型嘅五張。 */
+function buildCardDealHand(rand){
+  const r=typeof rand==='function'?rand:Math.random;
+  const shuffle=list=>{
+    const a=list.slice();
+    for(let i=a.length-1;i>0;i--){const j=Math.min(i,Math.floor(r()*(i+1)));const t=a[i];a[i]=a[j];a[j]=t;}
+    return a;
+  };
+  const allSuits=['S','H','D','C'];
+  const total=CARD_DEAL_TYPES.reduce((sum,t)=>sum+t.w,0);
+  for(let attempt=0;attempt<200;attempt++){
+    let roll=r()*total,type=CARD_DEAL_TYPES[0];
+    for(const t of CARD_DEAL_TYPES){ if(roll<t.w){type=t;break;} roll-=t.w; }
+    const rp=shuffle([0,1,2,3,4,5,6,7,8,9,10,11,12]);
+    const same=(rank,n)=>shuffle(allSuits).slice(0,n).map(s=>({s,r:rank}));
+    const singles=ranks=>ranks.map(rank=>({s:shuffle(allSuits)[0],r:rank}));
+    const oneSuit=shuffle(allSuits)[0];
+    const start=Math.min(9,Math.floor(r()*10));
+    const run=[0,1,2,3,4].map(i=>(start+i)%13);
+    let cards;
+    if(type.id==='pair') cards=same(rp[0],2).concat(singles(rp.slice(1,4)));
+    else if(type.id==='twopair') cards=same(rp[0],2).concat(same(rp[1],2),singles([rp[2]]));
+    else if(type.id==='trips') cards=same(rp[0],3).concat(singles(rp.slice(1,3)));
+    else if(type.id==='fullhouse') cards=same(rp[0],3).concat(same(rp[1],2));
+    else if(type.id==='quads') cards=same(rp[0],4).concat(singles([rp[1]]));
+    else if(type.id==='straight') cards=singles(run);
+    else if(type.id==='flush') cards=rp.slice(0,5).sort((a,b)=>a-b).map(rank=>({s:oneSuit,r:rank}));
+    else cards=run.map(rank=>({s:oneSuit,r:rank}));
+    if(cardDealClassify(cards)!==type.id) continue;
+    return {cards,type};
+  }
+  return {cards:[{s:'S',r:0},{s:'H',r:0},{s:'D',r:6},{s:'C',r:9},{s:'S',r:11}],type:CARD_DEAL_TYPES[0]};
+}
+function beginDealTableRound(){
+  const kind=state.theme==='cards'?'cards':'mahjong';
+  if(dealTable.kind!==kind){ resetDealTable(); dealTable.kind=kind; }
+  dealTable.roundNo++;
+  dealTable.drawn=0;
+  resetDealTableAnim();
+  const slots=[],groups=[];
+  if(kind==='mahjong'){
+    const hand=buildMahjongDealHand();
+    hand.sets.forEach((set,i)=>{
+      groups.push({start:slots.length,len:3,kind:set.kind});
+      set.tiles.forEach(code=>slots.push({code,group:i,shown:i<MJ_DEAL_PREDEALT_SETS}));
+    });
+    groups.push({start:slots.length,len:2,kind:'pair'});
+    slots.push({code:hand.pair,group:4,shown:false},{code:hand.pair,group:4,shown:false});
+    dealTable.order=slots.map((s,i)=>i).filter(i=>!slots[i].shown);
+    dealTable.result=hand.result;
+  }else{
+    const hand=buildCardDealHand();
+    groups.push({start:0,len:hand.cards.length,kind:'hand'});
+    hand.cards.forEach(card=>slots.push({card,group:0,shown:false}));
+    const order=slots.map((s,i)=>i);
+    for(let i=order.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=order[i];order[i]=order[j];order[j]=t;}
+    dealTable.order=order;
+    dealTable.result=hand.type;
+  }
+  dealTable.slots=slots;dealTable.groups=groups;
+}
+function ensureDealTableRound(){
+  const kind=state.theme==='cards'?'cards':'mahjong';
+  if(dealTable.kind!==kind||!dealTable.slots.length) beginDealTableRound();
+}
+/* 達標一刻：摸／揭下一隻牌（只係開動畫同記低今手進度，唔影響計分同判定）。 */
+function startDealTableDraw(){
+  if(!isDealTableTheme()) return;
+  ensureDealTableRound();
+  const a=dealTable.anim;
+  if(a.phase!=='idle'||dealTable.drawn>=dealTable.order.length) return;
+  const slotIndex=dealTable.order[dealTable.drawn];
+  dealTable.drawn++;
+  const slot=dealTable.slots[slotIndex];
+  slot.shown=true;
+  a.phase='reveal';a.startedMs=nowMs();a.slot=slotIndex;a.stage=0;
+  a.handDone=dealTable.drawn>=dealTable.order.length;
+  const grp=dealTable.groups[slot.group];
+  a.group=(dealTable.kind==='mahjong'&&!a.handDone&&grp
+    &&dealTable.slots.slice(grp.start,grp.start+grp.len).every(s=>s.shown))?slot.group:-1;
+  if(a.handDone){
+    dealTable.wins++;
+    const res=dealTable.result;
+    const value=dealTable.kind==='mahjong'?(res&&res.fan)||0:CARD_DEAL_TYPES.indexOf(res);
+    if(!dealTable.best||value>dealTable.best.value) dealTable.best={value,result:res};
+  }
+}
+function dealTableRewardMs(){
+  const a=dealTable.anim;
+  if(a.phase==='idle') return 0;
+  return DEAL_FLIP_MS+DEAL_SHOW_MS+DEAL_FLY_MS+(a.handDone?DEAL_WIN_MS:(a.group>=0?DEAL_GROUP_MS:DEAL_TAIL_MS));
+}
+/* 獎勵週期完結：收起動畫；啱啱食糊／揭齊就開新一手。 */
+function finishDealTableDraw(){
+  const a=dealTable.anim;
+  if(a.phase==='idle') return;
+  const won=a.handDone;
+  resetDealTableAnim();
+  if(won&&isDealTableTheme()) beginDealTableRound();
+}
+function dealMahjongFanText(result){
+  if(!result||!Array.isArray(result.names)) return '';
+  const english=!!(window.YCHLanguage&&window.YCHLanguage.isEnglish());
+  return result.names.map(name=>{
+    const m=/^(\S+)\s+(\d+)番$/.exec(name);
+    if(!m) return name;
+    return english?(MJ_DEAL_FAN_EN[m[1]]||'Win')+' '+m[2]+' fan':m[1]+' '+m[2]+' 番';
+  }).join(english?' + ':'＋');
+}
+function dealTileName(code){
+  const english=!!(window.YCHLanguage&&window.YCHLanguage.isEnglish());
+  if(!english) return mjLabel(code);
+  const honor={E:'East wind',S:'South wind',W:'West wind',N:'North wind',C:'Red dragon',F:'Green dragon',B:'White dragon'}[code];
+  if(honor) return honor;
+  return code.slice(1)+' '+({p:'Dots',s:'Bamboo',w:'Characters'})[code[0]];
+}
+function dealTableSummaryText(){
+  if(!dealTable.kind) return '';
+  const left=Math.max(0,dealTable.order.length-dealTable.drawn);
+  if(dealTable.kind==='mahjong'){
+    if(dealTable.wins>0){
+      return dealText('麻雀：今次食糊 '+dealTable.wins+' 鋪（最大：'+dealMahjongFanText(dealTable.best&&dealTable.best.result)+'）。',
+        'Mahjong: '+dealTable.wins+' winning hand(s) today (best: '+dealMahjongFanText(dealTable.best&&dealTable.best.result)+').');
+    }
+    return dealText('麻雀：今鋪仲差 '+left+' 隻就食糊，下次繼續。','Mahjong: '+left+' more tile(s) to win this hand. Carry on next time.');
+  }
+  if(dealTable.wins>0){
+    const best=dealTable.best&&dealTable.best.result;
+    return dealText('啤牌：今次揭齊 '+dealTable.wins+' 手牌（最好：'+(best?best.zh:'')+'）。',
+      'Cards: '+dealTable.wins+' hand(s) revealed today (best: '+(best?best.en:'')+').');
+  }
+  return dealText('啤牌：今手仲有 '+left+' 張未揭，下次繼續。','Cards: '+left+' more card(s) to reveal in this hand. Carry on next time.');
+}
+function playDealClack(){
+  // 麻雀／啤牌「啪」一聲（WebAudio 合成，無外部音檔）
+  try{
+    const actx=getAudioCtx();const t0=actx.currentTime;
+    const dur=0.07,len=Math.max(1,Math.floor(actx.sampleRate*dur));
+    const buf=actx.createBuffer(1,len,actx.sampleRate);
+    const data=buf.getChannelData(0);
+    for(let s=0;s<len;s++)data[s]=(Math.random()*2-1)*Math.pow(1-s/len,3);
+    const src=actx.createBufferSource();src.buffer=buf;
+    const bp=actx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=1500;bp.Q.value=1.4;
+    const g=actx.createGain();g.gain.value=0.55;
+    src.connect(bp);bp.connect(g);g.connect(actx.destination);
+    src.start(t0);src.stop(t0+dur+0.02);
+  }catch(e){}
+}
+function playDealChime(big){
+  try{
+    const actx=getAudioCtx();
+    (big?[523.25,659.25,783.99,1046.5]:[659.25,880]).forEach((freq,i)=>{
+      const o=actx.createOscillator(),g=actx.createGain();
+      o.connect(g);g.connect(actx.destination);
+      o.type='triangle';o.frequency.value=freq;
+      const when=actx.currentTime+i*0.11,dur=big?0.26:0.18;
+      g.gain.setValueAtTime(0.28,when);
+      g.gain.exponentialRampToValueAtTime(0.001,when+dur);
+      o.start(when);o.stop(when+dur+0.05);
+    });
+  }catch(e){}
+}
+function dealTableGeometry(cw,ch){
+  const portrait=ch>cw;
+  const cssScale=cw/Math.max(1,gameCanvas.clientWidth||cw);
+  const mj=dealTable.kind!=='cards';
+  const aspect=mj?MJ_ATLAS.ch/MJ_ATLAS.cw:CARD_ATLAS.ch/CARD_ATLAS.cw;
+  const top=(portrait?168:132)*cssScale;
+  const gapT=0.07,gapG=0.42;
+  // 直向：上排＝開局已有嘅兩副，下排＝要摸嘅兩副＋眼；橫向：一排過
+  const rows=mj?(portrait?[[0,1],[2,3,4]]:[[0,1,2,3,4]]):[[0]];
+  const rowUnits=rows.map(list=>{
+    let n=0;list.forEach(gi=>{n+=dealTable.groups[gi]?dealTable.groups[gi].len:0;});
+    return n*(1+gapT)-gapT+(list.length-1)*gapG;
+  });
+  const maxUnits=Math.max(1,Math.max.apply(null,rowUnits));
+  const maxTileH=ch*(mj?(portrait?0.105:0.16):(portrait?0.17:0.225));
+  const tileW=Math.min(cw*(portrait?0.94:0.92)/maxUnits,maxTileH/aspect);
+  const tileH=tileW*aspect;
+  const rowGap=tileW*0.14;
+  const rects=[];
+  rows.forEach((list,ri)=>{
+    let x=cw/2-rowUnits[ri]*tileW/2;
+    const y=top+ri*(tileH+rowGap)+tileH/2;
+    list.forEach((gi,k)=>{
+      const grp=dealTable.groups[gi];
+      if(!grp) return;
+      if(k>0) x+=gapG*tileW;
+      for(let i=0;i<grp.len;i++){
+        rects[grp.start+i]={x:x+tileW/2,y,w:tileW,h:tileH};
+        x+=tileW*(i<grp.len-1?1+gapT:1);
+      }
+    });
+  });
+  const rackBottom=top+rows.length*tileH+(rows.length-1)*rowGap;
+  const infoFont=Math.round(Math.min(cw,ch)*(portrait?0.042:0.05));
+  const drawW=Math.min(cw,ch)*(portrait?0.21:(mj?0.15:0.165));
+  const drawH=drawW*aspect;
+  const infoY=rackBottom+infoFont*0.95;
+  const laneTop=(portrait?infoY+infoFont*0.75:rackBottom)+drawH/2+14*cssScale;
+  const laneBottom=ch-drawH/2-18*cssScale;
+  return {portrait,cssScale,mj,aspect,top,tileW,tileH,rects,rackBottom,infoFont,infoY,
+    drawW,drawH,laneX:cw*0.5,laneTop,laneBottom};
+}
+function drawDealFace(ctx,slot,x,y,w){
+  if(slot.card) drawCard2(ctx,slot.card.s,CARD_RANKS[slot.card.r],x,y,w);
+  else drawTile(ctx,slot.code,x,y,w);
+}
+function drawDealBack(ctx,g,x,y,w){
+  const h=w*g.aspect;
+  ctx.save();
+  ctx.fillStyle='rgba(0,0,0,0.22)';rrPath(ctx,x-w/2+3,y-h/2+6,w,h,w*0.12);ctx.fill();
+  if(g.mj){
+    ctx.fillStyle='#F7F3E6';rrPath(ctx,x-w/2,y-h/2,w,h,w*0.12);ctx.fill();
+    ctx.fillStyle='#1E8A5F';rrPath(ctx,x-w/2+w*0.05,y-h/2+w*0.05,w*0.90,h-w*0.10,w*0.09);ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,0.35)';ctx.lineWidth=Math.max(2,w*0.03);
+    rrPath(ctx,x-w*0.30,y-h*0.32,w*0.60,h*0.64,w*0.06);ctx.stroke();
+  }else{
+    ctx.fillStyle='#FFFFFF';rrPath(ctx,x-w/2,y-h/2,w,h,w*0.10);ctx.fill();
+    ctx.fillStyle='#B3262B';rrPath(ctx,x-w/2+w*0.07,y-h/2+w*0.07,w*0.86,h-w*0.14,w*0.07);ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,0.55)';ctx.lineWidth=Math.max(2,w*0.025);
+    rrPath(ctx,x-w*0.30,y-h*0.34,w*0.60,h*0.68,w*0.05);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x,y-h*0.20);ctx.lineTo(x+w*0.16,y);ctx.lineTo(x,y+h*0.20);ctx.lineTo(x-w*0.16,y);ctx.closePath();ctx.stroke();
+  }
+  ctx.restore();
+}
+function drawDealBanner(ctx,cw,y,font,main,sub,color){
+  ctx.save();
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.font='900 '+font+'px "PingFang TC","Noto Sans TC",sans-serif';
+  let mw=ctx.measureText(main).width;
+  const subFont=Math.round(font*0.52);
+  let sw=0;
+  if(sub){ ctx.font='800 '+subFont+'px "PingFang TC","Noto Sans TC",sans-serif'; sw=ctx.measureText(sub).width; }
+  const bw=Math.min(cw*0.94,Math.max(mw,sw)+font*1.4),bh=font*(sub?2.35:1.6);
+  const bx=cw/2-bw/2,by=y-bh/2;
+  ctx.fillStyle='rgba(0,0,0,0.28)';rrPath(ctx,bx+4,by+8,bw,bh,22);ctx.fill();
+  ctx.fillStyle='#FFF8E1';rrPath(ctx,bx,by,bw,bh,22);ctx.fill();
+  ctx.lineWidth=6;ctx.strokeStyle=color;rrPath(ctx,bx,by,bw,bh,22);ctx.stroke();
+  ctx.fillStyle=color;ctx.font='900 '+font+'px "PingFang TC","Noto Sans TC",sans-serif';
+  ctx.fillText(main,cw/2,by+font*(sub?0.82:0.82),bw-font*0.6);
+  if(sub){
+    ctx.fillStyle='#5A3B12';ctx.font='800 '+subFont+'px "PingFang TC","Noto Sans TC",sans-serif';
+    ctx.fillText(sub,cw/2,by+font*1.72,bw-font*0.6);
+  }
+  ctx.restore();
+}
+function updateDealTableSounds(g,cw,ch){
+  const a=dealTable.anim;
+  if(a.phase==='idle') return;
+  const t=nowMs()-a.startedMs;
+  const landed=DEAL_FLIP_MS+DEAL_SHOW_MS+DEAL_FLY_MS;
+  if(a.stage<1&&t>=DEAL_FLIP_MS*0.5){ a.stage=1; playDealClack(); }
+  if(a.stage<2&&t>=landed){
+    a.stage=2;
+    const rect=g.rects[a.slot];
+    playDealClack();
+    if(a.handDone){
+      playDealChime(true);playApplauseSound();
+      speakCantonese(dealTable.kind==='mahjong'?dealText('自摸！食糊！','Self-drawn win!')
+        :dealText(dealTable.result.zh+'！',dealTable.result.en+'!'));
+      fxBurst(cw*0.5,ch*0.45,{count:46,speed:6.5});
+    }else if(a.group>=0){
+      playDealChime(false);
+      if(rect) fxBurst(rect.x,rect.y,{count:18});
+    }
+  }
+  if(a.handDone&&a.stage<3&&t>=landed+700){ a.stage=3; fxBurst(cw*0.28,ch*0.40,{count:34,speed:5.5}); }
+  if(a.handDone&&a.stage<4&&t>=landed+1400){ a.stage=4; fxBurst(cw*0.72,ch*0.40,{count:34,speed:5.5}); }
+}
+function drawDealTableScene(ctx,cw,ch){
+  ensureDealTableRound();
+  const g=dealTableGeometry(cw,ch);
+  const a=dealTable.anim;
+  const t=a.phase==='idle'?0:nowMs()-a.startedMs;
+  const landed=DEAL_FLIP_MS+DEAL_SHOW_MS+DEAL_FLY_MS;
+  updateDealTableSounds(g,cw,ch);
+  ctx.save();
+  ctx.beginPath();ctx.rect(0,0,cw,ch);ctx.clip();
+  // 枱面：麻雀綠絨／啤牌藍絨＋木邊
+  const felt=ctx.createRadialGradient(cw/2,ch*0.55,Math.min(cw,ch)*0.1,cw/2,ch*0.55,Math.max(cw,ch)*0.75);
+  felt.addColorStop(0,g.mj?'#2F9A72':'#2B6CA3');felt.addColorStop(1,g.mj?'#17543E':'#153B60');
+  ctx.fillStyle=felt;ctx.fillRect(0,0,cw,ch);
+  const rim=Math.max(10,Math.min(cw,ch)*0.018);
+  ctx.strokeStyle='#7A4A22';ctx.lineWidth=rim;ctx.strokeRect(rim/2,rim/2,cw-rim,ch-rim);
+  ctx.strokeStyle='rgba(255,255,255,0.18)';ctx.lineWidth=2;ctx.strokeRect(rim+3,rim+3,cw-rim*2-6,ch-rim*2-6);
+
+  // 手牌：已有嘅牌面朝上；未有嘅留空位；下一隻要去嘅位着燈
+  const nextSlot=(a.phase==='idle'&&dealTable.drawn<dealTable.order.length)?dealTable.order[dealTable.drawn]:-1;
+  const winning=a.handDone&&t>=landed;
+  dealTable.slots.forEach((slot,i)=>{
+    const rc=g.rects[i];
+    if(!rc) return;
+    const flying=a.phase!=='idle'&&a.slot===i&&t<landed;
+    if(slot.shown&&!flying){
+      const bounce=winning?Math.abs(Math.sin((t-landed)/190+i*0.55))*rc.h*0.08:0;
+      if(a.group>=0&&slot.group===a.group&&t>=landed){
+        const pulse=0.5+0.5*Math.sin((t-landed)/110);
+        ctx.fillStyle='rgba(255,226,122,'+(0.35+0.4*pulse).toFixed(3)+')';
+        rrPath(ctx,rc.x-rc.w*0.58,rc.y-rc.h*0.56,rc.w*1.16,rc.h*1.12,rc.w*0.16);ctx.fill();
+      }
+      drawDealFace(ctx,slot,rc.x,rc.y+bounce,rc.w);
+    }else{
+      ctx.save();
+      const isNext=i===nextSlot||flying;
+      ctx.setLineDash([Math.max(6,rc.w*0.12),Math.max(5,rc.w*0.09)]);
+      ctx.lineWidth=isNext?Math.max(4,rc.w*0.06):Math.max(2,rc.w*0.035);
+      ctx.strokeStyle=isNext?'rgba(255,226,122,'+(0.6+0.4*Math.sin(nowMs()/180)).toFixed(3)+')':'rgba(255,255,255,0.38)';
+      rrPath(ctx,rc.x-rc.w/2,rc.y-rc.h/2,rc.w,rc.h,rc.w*0.12);ctx.stroke();
+      ctx.restore();
+    }
+  });
+
+  // 進度文字：第幾鋪／仲差幾多
+  const left=Math.max(0,dealTable.order.length-dealTable.drawn);
+  const line1=g.mj?dealText('第 '+dealTable.roundNo+' 鋪','Hand '+dealTable.roundNo)
+    :dealText('第 '+dealTable.roundNo+' 手牌','Hand '+dealTable.roundNo);
+  const line2=left===0?(g.mj?dealText('食糊！','Win!'):dealText('揭齊喇！','All revealed!'))
+    :g.mj?(left===1?dealText('聽牌！仲差 1 隻','Ready! 1 tile to go'):dealText('仲差 '+left+' 隻食糊',left+' tiles to win'))
+    :dealText('仲有 '+left+' 張未揭',left+' cards to reveal');
+  const line3=dealTable.wins>0?(g.mj?dealText('已食糊 '+dealTable.wins+' 鋪','Wins: '+dealTable.wins)
+    :dealText('已揭齊 '+dealTable.wins+' 手','Hands done: '+dealTable.wins)):'';
+  ctx.save();
+  ctx.textBaseline='middle';
+  ctx.shadowColor='rgba(0,0,0,0.45)';ctx.shadowBlur=6;
+  if(g.portrait){
+    ctx.textAlign='center';
+    ctx.font='800 '+g.infoFont+'px "PingFang TC","Noto Sans TC",sans-serif';
+    ctx.fillStyle='#FFE27A';
+    ctx.fillText(line1+' · '+line2+(line3?' · '+line3:''),cw/2,g.infoY,cw*0.94);
+  }else if(!winning){ // 食糊橫額出現時唔畫兩邊文字，避免疊字
+    const midY=(g.rackBottom+ch)/2;
+    const sideW=cw*0.5-g.drawW*0.5-cw*0.07;
+    ctx.textAlign='center';
+    ctx.fillStyle='#FFFFFF';ctx.font='800 '+Math.round(g.infoFont*0.9)+'px "PingFang TC","Noto Sans TC",sans-serif';
+    ctx.fillText(line1,cw*0.20,midY-g.infoFont*0.8,sideW);
+    ctx.fillStyle='#FFE27A';ctx.font='900 '+Math.round(g.infoFont*1.15)+'px "PingFang TC","Noto Sans TC",sans-serif';
+    ctx.fillText(line2,cw*0.20,midY+g.infoFont*0.55,sideW);
+    if(line3){
+      ctx.fillStyle='#FFFFFF';ctx.font='800 '+Math.round(g.infoFont*0.9)+'px "PingFang TC","Noto Sans TC",sans-serif';
+      ctx.fillText(line3,cw*0.80,midY,sideW);
+    }
+  }
+  ctx.restore();
+
+  // 抬手路線：由枱底牌墩升上「摸牌／揭牌」位
+  ctx.save();
+  ctx.setLineDash([14,12]);ctx.lineWidth=5;ctx.strokeStyle='rgba(255,255,255,0.40)';
+  ctx.beginPath();ctx.moveTo(g.laneX,g.laneBottom);ctx.lineTo(g.laneX,g.laneTop);ctx.stroke();
+  ctx.setLineDash([10,8]);ctx.lineWidth=4;
+  ctx.strokeStyle='rgba(255,226,122,'+(0.55+0.35*Math.sin(nowMs()/200)).toFixed(3)+')';
+  rrPath(ctx,g.laneX-g.drawW*0.56,g.laneTop-g.drawH*0.55,g.drawW*1.12,g.drawH*1.10,g.drawW*0.14);ctx.stroke();
+  ctx.restore();
+  // 牌墩（裝飾）：兩邊各幾隻覆轉嘅牌
+  const wallW=g.drawW*0.62;
+  [-2.35,-1.65,1.65,2.35].forEach(k=>drawDealBack(ctx,g,g.laneX+k*wallW*1.08,ch-wallW*g.aspect*0.36,wallW));
+
+  // 摸緊／揭緊嗰隻牌
+  const slotNow=a.slot>=0?dealTable.slots[a.slot]:null;
+  if(a.phase==='idle'){
+    if(dealTable.drawn<dealTable.order.length&&!shoulderRewardCycle.active){
+      const p=clamp01(Number(shoulderFlexionState.progress)||0);
+      drawDealBack(ctx,g,g.laneX,g.laneBottom-(g.laneBottom-g.laneTop)*p,g.drawW*(0.92+0.08*p));
+    }
+  }else if(slotNow&&t<landed){
+    if(t<DEAL_FLIP_MS){
+      const q=t/DEAL_FLIP_MS,sx=Math.max(0.04,Math.abs(Math.cos(q*Math.PI)));
+      ctx.save();ctx.translate(g.laneX,g.laneTop);ctx.scale(sx,1);ctx.translate(-g.laneX,-g.laneTop);
+      if(q<0.5) drawDealBack(ctx,g,g.laneX,g.laneTop,g.drawW);
+      else drawDealFace(ctx,slotNow,g.laneX,g.laneTop,g.drawW);
+      ctx.restore();
+    }else if(t<DEAL_FLIP_MS+DEAL_SHOW_MS){
+      const q=(t-DEAL_FLIP_MS)/DEAL_SHOW_MS;
+      const pop=1+0.10*Math.sin(Math.min(1,q*1.6)*Math.PI);
+      ctx.fillStyle='rgba(255,226,122,0.45)';
+      ctx.beginPath();ctx.arc(g.laneX,g.laneTop,g.drawH*0.72,0,Math.PI*2);ctx.fill();
+      drawDealFace(ctx,slotNow,g.laneX,g.laneTop,g.drawW*pop);
+      if(slotNow.code){
+        ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.font='900 '+Math.round(g.infoFont*1.05)+'px "PingFang TC","Noto Sans TC",sans-serif';
+        ctx.lineWidth=Math.max(5,g.infoFont*0.22);ctx.strokeStyle='rgba(0,0,0,0.55)';ctx.fillStyle='#FFFFFF';
+        const ny=g.laneTop+g.drawH*0.5+g.infoFont*0.95;
+        ctx.strokeText(dealTileName(slotNow.code),g.laneX,ny);ctx.fillText(dealTileName(slotNow.code),g.laneX,ny);
+        ctx.restore();
+      }
+    }else{
+      const q=clamp01((t-DEAL_FLIP_MS-DEAL_SHOW_MS)/DEAL_FLY_MS),e=1-Math.pow(1-q,2.4);
+      const rc=g.rects[a.slot];
+      if(rc){
+        const x=g.laneX+(rc.x-g.laneX)*e,y=g.laneTop+(rc.y-g.laneTop)*e-Math.sin(q*Math.PI)*g.drawH*0.18;
+        drawDealFace(ctx,slotNow,x,y,g.drawW+(rc.w-g.drawW)*e);
+      }
+    }
+  }
+
+  // 一副完成／食糊橫額
+  if(a.phase!=='idle'&&t>=landed){
+    const bannerY=(g.laneTop+g.laneBottom)/2;
+    if(a.handDone){
+      const font=Math.round(Math.min(cw,ch)*(g.portrait?0.095:0.115));
+      if(g.mj) drawDealBanner(ctx,cw,bannerY,font,dealText('自摸！食糊！','Self-drawn win!'),dealMahjongFanText(dealTable.result),'#B3262B');
+      else drawDealBanner(ctx,cw,bannerY,font,dealText(dealTable.result.zh+'！',dealTable.result.en+'!'),
+        dealText(dealTable.result.subZh,dealTable.result.subEn),'#B3262B');
+    }else if(a.group>=0&&t<landed+DEAL_GROUP_MS){
+      const grp=dealTable.groups[a.group];
+      const font=Math.round(Math.min(cw,ch)*(g.portrait?0.07:0.085));
+      drawDealBanner(ctx,cw,bannerY,font,grp&&grp.kind==='pung'?dealText('一副刻子！','A triplet!'):dealText('一副順子！','A sequence!'),'','#1A6B5A');
+    }
+  }
+  fxUpdateDraw(ctx);
+  ctx.restore();
+}
 function drawShoulderFlexionGuide(ctx,cw,ch){
   if(!isShoulderFlexionLevel()) return;
+  if(isDealTableTheme()){ drawDealTableScene(ctx,cw,ch); return; } // v138 麻雀／啤牌牌局
   if(state.theme==='bowlinglane'){ drawBowlingAlleyScene(ctx,cw,ch); return; }
   if(state.theme==='basketball'){ drawBasketballCourtScene(ctx,cw,ch); return; }
   if(state.theme==='supermarket'){ drawSupermarketScene(ctx,cw,ch); return; }
@@ -6447,12 +6969,14 @@ function renderActivityLibrary(){
       '<div class="ac-copy"><h3></h3><p class="ac-goal"></p></div>' +
       '<div class="ac-visual"><img loading="eager" decoding="async"></div>';
     btn.querySelector('h3').textContent = th.title;
-    btn.querySelector('.ac-goal').textContent = th.goal;
+    // v138 Level 3／4 麻雀／啤牌改為牌局玩法，卡片目標句跟住改
+    const goalText = (isShoulderFlexionLevel() && th.shoulderGoal) || th.goal;
+    btn.querySelector('.ac-goal').textContent = goalText;
     const img = btn.querySelector('.ac-visual img');
     img.src = th.thumbnail;
     img.alt = th.thumbnailAlt;
     img.addEventListener('error', ()=> btn.querySelector('.ac-visual').remove());
-    btn.setAttribute('aria-label', th.title + '：' + th.goal);
+    btn.setAttribute('aria-label', th.title + '：' + goalText);
     btn.addEventListener('click', ()=> selectActivity(id));
     grid.appendChild(btn);
     if(id==='dimsum'&&(state.level==='3'||state.level==='4')){
@@ -11011,6 +11535,7 @@ const THEMES = {
   mahjong: mkTheme({
     id:'mahjong', title:'麻雀',
     goal:'選一組牌食糊',
+    shoulderGoal:'每舉一下摸一隻牌，摸齊就食糊', // v138 Level 3／4 牌局
     itemWord:'麻雀牌', difficulty:'中等', targetStyle:'panel',
     thumbnail:'img/advanced/real_mahjong_tiles.png', thumbnailAlt:'真實香港麻雀牌',
     categoriesFor(){
@@ -11027,6 +11552,7 @@ const THEMES = {
   cards: mkTheme({
     id:'cards', title:'啤牌',
     goal:'收集相同花色的啤牌',
+    shoulderGoal:'每舉一下揭一張牌，五張睇牌型', // v138 Level 3／4 牌局
     itemWord:'啤牌', difficulty:'容易至中等', targetStyle:'panel',
     thumbnail:'img/advanced/thumb_card_heart.png', thumbnailAlt:'紅心啤牌',
     categoriesFor(){
@@ -12018,10 +12544,15 @@ function shoulderRewardDurationMs(){
     return Math.max(SHOULDER_REWARD_MIN_MS,TEAHOUSE_FLY_MS+TEAHOUSE_STEAM_MS+900);
   }
   if(state.theme==='tsuenwan') return SHOULDER_PHOTO_REWARD_MS;
+  if(isDealTableTheme()){
+    // v138 牌局：翻牌＋入位＋（一副完成／食糊）慶祝都播完先再接受下一次抬手
+    return Math.max(SHOULDER_REWARD_MIN_MS,dealTableRewardMs());
+  }
   return SHOULDER_REWARD_MIN_MS;
 }
 function startShoulderRewardCycle(){
   if(shoulderRewardCycle.active) return;
+  if(isDealTableTheme())startDealTableDraw(); // v138 牌局：先摸／揭牌，定好今次動畫長度
   const started=nowMs();
   shoulderRewardCycle.active=true;
   shoulderRewardCycle.startedMs=started;
@@ -12040,6 +12571,7 @@ function finishShoulderRewardCycle(){
   resetTeahouseServe();
   foods=[];
   spawnInitialFoods();
+  finishDealTableDraw(); // v138 牌局：收起動畫；啱啱食糊就開新一鋪
   shoulderFlexionCycleAwarded=false;
   shoulderRewardCycle.reset();
   // Research sessions re-arm from the participant-specific zero only after the
@@ -12417,7 +12949,8 @@ function showFeedback(correct){
 }
 function triggerFeedback(correct){
   if(research.active && research.visitKind === 'assess') return;
-  if(correct){ playCorrectSound(); showFeedback(true); }
+  // v138 牌局：翻牌本身就係即時回饋；中央大剔號會遮住牌面，所以只保留「叮」聲
+  if(correct){ playCorrectSound(); if(!isDealTableTheme()) showFeedback(true); }
   else { playWrongSound(); showFeedback(false); }
 }
 const SHOULDER_HOLD_COUNT_CANTONESE={1:'一',2:'二',3:'三',4:'四',5:'五'};
@@ -12501,6 +13034,7 @@ function initGame(){
   lastLevelShown = -1;  // reset 升級追蹤，讓 initGame 後首次 spawn 觸發 tier 0 banner
   heldItem = null; foods = []; targets = []; resetBowlingStrike(); resetBasketballShot(); resetTeahouseServe();
   resetSupermarketStory(); // v125 超市故事狀態一併清齊
+  resetDealTable();        // v138 麻雀／啤牌牌局狀態一併清齊
   resetDimsumOrderGame();  // v69 筷子點心落單狀態一併清齊
   resetLaundryOrderGame(); // v71 晾衫單狀態一併清齊
   resetFridgeGame();       // v72 雪櫃收納狀態一併清齊
@@ -12776,6 +13310,7 @@ function setupTargets(){
     return;
   }
   if(isShoulderFlexionLevel()){
+    if(isDealTableTheme()){ targets=[]; return; } // v138 牌局：牌位由場景直接繪畫
     if(state.theme==='bowlinglane'||state.theme==='basketball'||state.theme==='supermarket'||isTeahouseDimsumMode()){
       // v73 保齡球／v74 模擬茶樓／v125 超市：目標由場景直接繪畫，唔使用通用目標盤
       targets=[];
@@ -13482,7 +14017,7 @@ function updateFramePerfOverlay(now){
     framePerf.overlayEl = el;
   }
   const p = framePerfSnapshot();
-  el.textContent = `perf v137  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
+  el.textContent = `perf v138  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
     + `鏡頭 ${p.video[0]}×${p.video[1]}  畫布 ${p.canvas[0]}×${p.canvas[1]}  dpr ${p.dpr}  手模型 ${p.handDelegate || '-'}\n`
     + `手 ${p.hand.hands} 隻  標籤 ${p.hand.label || '-'} ${p.hand.score}  接納 ${p.hand.path || '-'}  嚴格 ${p.hand.strict} 連續 ${p.hand.continuity} 單手 ${p.hand.lone} 拒絕 ${p.hand.rejected}\n`
     + `左右手檢查 ${p.hand.check === 'off' ? '關' : '開'}  鎖定手形 ${p.hand.lockSize || '-'}  大小拒絕 ${p.hand.sizeRejected}  遠處拒絕 ${p.hand.farRejected}`
@@ -16564,6 +17099,8 @@ function renderGame(){
     if(isBasketballTheme() && basketballShot.phase!=='idle') continue;
     // v125 超市：貨品全部由場景層繪畫
     if(isSupermarketTheme()) continue;
+    // v138 牌局：牌全部由場景層繪畫
+    if(isDealTableTheme()) continue;
     // v74 模擬茶樓：點心飛入蒸籠／蒸緊嗰陣由場景層接手畫，避免出現兩件點心
     if(isTeahouseDimsumMode() && teahouseServe.phase!=='idle') continue;
     ctx.save();
@@ -16830,6 +17367,14 @@ function endGame(endReason){
           ' · 最高估算 '+(Number.isFinite(s.peakEstimatedAngle)?s.peakEstimatedAngle.toFixed(1)+'°':'—')+
           ' · 重複 '+(s.repetitions||0)+'。不是量角器 ROM 或 FTHUE 自動分級。';
     }
+  }
+
+  // v138 牌局成果：今次食糊幾多鋪／揭齊幾多手（只講今次，唔同上次比較）
+  const dealSummary=document.getElementById('dealResultSummary');
+  if(dealSummary){
+    const dealLine=isDealTableTheme()?dealTableSummaryText():'';
+    dealSummary.hidden=!dealLine;
+    dealSummary.textContent=dealLine;
   }
 
   /* PUBLIC_BUILD_REMOVE_START: research result DOM and export controls */
@@ -22926,6 +23471,33 @@ window.__qa = {
       return dimsumPlateContents.length;
     },
   },
+  dealTable:{
+    // v138 QA：牌局狀態；trigger() 模擬一次抬臂達標（跳過姿勢追蹤），finish() 收起動畫
+    state(){
+      return { kind:dealTable.kind, roundNo:dealTable.roundNo, wins:dealTable.wins, drawn:dealTable.drawn,
+        total:dealTable.order.length, order:dealTable.order.slice(),
+        slots:dealTable.slots.map(s=>({ code:s.code||null, card:s.card?s.card.s+CARD_RANKS[s.card.r]:null, group:s.group, shown:!!s.shown })),
+        groups:dealTable.groups.map(g=>({ start:g.start, len:g.len, kind:g.kind })),
+        result:dealTable.kind==='mahjong'?(dealTable.result?{ names:dealTable.result.names.slice(), fan:dealTable.result.fan }:null)
+          :(dealTable.result?{ id:dealTable.result.id, zh:dealTable.result.zh }:null),
+        anim:{ phase:dealTable.anim.phase, slot:dealTable.anim.slot, group:dealTable.anim.group, handDone:dealTable.anim.handDone },
+        rewardMs:dealTableRewardMs(), summary:dealTableSummaryText(), active:isDealTableTheme() };
+    },
+    trigger(){
+      if(!isDealTableTheme()) return null;
+      startDealTableDraw();
+      return window.__qa.dealTable.state();
+    },
+    finish(){ finishDealTableDraw(); return window.__qa.dealTable.state(); },
+    setAnimElapsed(ms){ if(dealTable.anim.phase!=='idle') dealTable.anim.startedMs=nowMs()-Math.max(0,Number(ms)||0); return dealTable.anim.phase; },
+    geometry(){ const g=dealTableGeometry(gameCanvas.width,gameCanvas.height);
+      return { top:g.top, rackBottom:g.rackBottom, tileW:g.tileW, tileH:g.tileH, laneTop:g.laneTop, laneBottom:g.laneBottom,
+        drawW:g.drawW, drawH:g.drawH, cssScale:g.cssScale, cw:gameCanvas.width, ch:gameCanvas.height, rects:g.rects.map(r=>({x:r.x,y:r.y,w:r.w,h:r.h})) }; },
+    buildMahjong(seed){ let a=seed>>>0; const r=()=>{ a=(a+0x6D2B79F5)>>>0; let t=a; t=Math.imul(t^(t>>>15),t|1); t^=t+Math.imul(t^(t>>>7),t|61); return ((t^(t>>>14))>>>0)/4294967296; };
+      const h=buildMahjongDealHand(r); return { sets:h.sets.map(x=>({kind:x.kind,t:x.t,tiles:x.tiles.slice()})), pair:h.pair, names:h.result.names.slice(), fan:h.result.fan }; },
+    buildCards(seed){ let a=seed>>>0; const r=()=>{ a=(a+0x6D2B79F5)>>>0; let t=a; t=Math.imul(t^(t>>>15),t|1); t^=t+Math.imul(t^(t>>>7),t|61); return ((t^(t>>>14))>>>0)/4294967296; };
+      const h=buildCardDealHand(r); return { cards:h.cards.map(c=>({s:c.s,r:c.r})), type:h.type.id, classified:cardDealClassify(h.cards) }; },
+  },
   shopStory:{
     // v125 QA：超市故事狀態；trigger() 模擬一次抬臂達標（跳過姿勢追蹤），skipScene() 將過場即時完結
     state(){
@@ -23633,7 +24205,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v137-20261120-shoulder-rearm-drop10";
+  const LEVEL_APP_BUILD = "v138-20261123-mahjong-cards-deal";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

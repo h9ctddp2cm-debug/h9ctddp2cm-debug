@@ -1897,3 +1897,14 @@ Original prompt: Fix Level 6–7 interactions: make light clothes-peg press dete
 - Validation：四組測試 596 個（118+191+178+109）593 pass / 3 skip / 0 fail；`tools/checkjs.sh` 11 OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 199 files；`rg -c "__qa" dist/public/index.html` → 0；dist 內三個標記、`.35/.47/.25` 常數同新 `releasing` 三元式都確認存在。Playwright（筆電 1413×653、iPad 橫向 1180×820、iPad 直向 820×1180，`?perf=1`，合成 v115 校準）：揸實→held（1 transition）、0.29/0.32 攜帶 60 幀保持、0.33/0.36 放鬆 45 幀→released 並 `配對成功 ×1`（1 transition），每個尺寸合共恰好 2 個 transition、零 page error；HUD 顯示 近指 0.330 放手≥0.320 張開≥0.344、遠指 0.360 放手≥0.350 張開≥0.374、合併 0.340 拎起≤0.310 放手閘≥0.330 — `ych_rehab_qa_artifacts/v119/v119-qa-contact-sheet.png`。
 - 部署檔（`/tmp/v119/index.html`、`service-worker.js`、`manifest.webmanifest`，以 live v118 為基礎）：9 個 inline script `node --check` OK、SW OK、manifest JSON OK；`__qa` 0；常數 `.35/.47/.22/.2/.25/.1`、pair floor 三元式、`releasing` 三元式、`v119-20261118-peg-release-35` 標記；Playwright 以 route 攔截將 live 網站嘅三個檔案換成 v119 版本，筆電／iPad 橫向／直向首頁載入零 page error（`ych_rehab_qa_artifacts/v119/v119-live-home-*.png`）。
 - Residual notes：再武裝仍要 47%；如果床邊見到「放低咗但夾唔起下一件」，下一步係單獨檢討 `PUBLIC_PEG_REARM_RATIO`（唔使再郁放手）。治療師可用 `?perf=1` 即場睇 近指／遠指／合併 三個比率同門檻。
+
+## 2026-11-23 v138 — Level 3／4 麻雀「摸牌食糊」＋啤牌「揭牌睇牌型」（牌局場景）
+- 治療師回報：病人已經玩到悶；Level 3／4 嘅拼圖公園、點心、晾衫、啤牌、麻雀「好悶」——舉一下只係一件嘢升上去個格，冇後果、冇懸念、冇終點。治療師同意「五個場景逐個改」，次序：麻雀 → 啤牌 → 晾衫 → 德華公園相簿 → 點心紙。今版做頭兩個。
+- 新玩法（只限公開版 `isDealTableTheme()`＝`isShoulderFlexionLevel()&&!research.active&&theme∈{mahjong,cards}`；研究模式照舊用通用目標盤）：
+  1. 麻雀：每一鋪預先砌好一手有效嘅食糊牌（四副＋一對眼，每款牌最多四隻；雞糊／平糊／對對糊／混一色／清一色／小三元／大三元按比重出現）。開局枱面已有兩副（6 隻），病人每舉一下「摸一隻牌」，翻開 → 顯示牌名 → 飛入手牌位；摸齊一副有細慶祝（「一副順子！／一副刻子！」），差一隻顯示「聽牌！仲差 1 隻」，第 8 隻「自摸！食糊！」＋番數＋紙碎＋掌聲，然後自動開新一鋪。番數沿用 `mjScoreCombo` 簡化訓練計分（並非官方規則裁判）。
+  2. 啤牌：每手五張，預先抽定牌型（一對／兩對／三條／順子／同花／葫蘆／四條／同花順，常見嘅多、罕有嘅少，一定有牌型），每舉一下揭一張（揭牌次序隨機），第五張顯示牌型名同一句解釋，然後開新一手。冇輸贏、冇扣分。
+  3. 共通：枱面寫住「第 N 鋪／仲差 X 隻食糊」「已食糊 N 鋪」；完場頁多一行「今次食糊 N 鋪（最大：…）」／「今次揭齊 N 手牌（最好：…）」，只講今次、唔同上次比較。活動卡目標句喺 Level 3／4 改為「每舉一下摸一隻牌，摸齊就食糊」／「每舉一下揭一張牌，五張睇牌型」（Level 5／6 麻雀、啤牌不變）。
+  4. 中央大剔號喺牌局場景唔顯示（會遮住啱啱翻開嘅牌面），「叮」聲保留。
+- 實作：純視覺／音效獎勵層，同 v73 保齡球、v125 超市一樣掛喺現有獎勵週期：`startShoulderRewardCycle()` → `startDealTableDraw()`；`shoulderRewardDurationMs()` → `dealTableRewardMs()`（普通一隻 2.6 秒下限、食糊約 4.7 秒）；`finishShoulderRewardCycle()` → `finishDealTableDraw()`。只讀 `shoulderFlexionState.progress` 同獎勵週期狀態，冇改控制器、達標判定、計分、v137 規則（舉住手每次動畫完結照計、比最高點低 10° 即開始新一下）。牌面用現有 `mahjong_atlas`／`cards_atlas`，冇新圖檔。所有新畫布文字經 `dealText(zh,en)`，英文版有對應譯名。
+- 驗證：`tests/v138-mahjong-cards-deal.test.mjs`（3000 個種子嘅麻雀牌全部係有效 14 隻食糊牌並經 `mjEvaluate` 獨立覆核、4000 個種子嘅啤牌五張不重複並同宣告牌型一致、壞隨機源唔會死循環、牌局層冇寫入控制器／分數、文字有英文、接線同標記）；Playwright 公開流程（筆電 1413×653／iPad 橫向 1180×820／直向 820×1180，中英文）：抬手 → 翻牌 → 入位 → 一副完成 → 聽牌 → 食糊 → 新一鋪 → 完場頁成果行。全套 Node 測試通過；dist `__qa` 0。
+- 標記 `v138-20261123-mahjong-cards-deal`、`perf v138`；QA 對照表 `ych_rehab_qa_artifacts/v138/v138-qa-contact-sheet.png`；`security-reviews/v138-security-review.md`。

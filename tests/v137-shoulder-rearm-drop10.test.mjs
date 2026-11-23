@@ -170,8 +170,8 @@ test('index.html: public Level 3/4 prompts and readouts carry no degree figures'
 test('v137 release markers', () => {
   const sw = readFileSync(path.join(root, 'service-worker.js'), 'utf8');
   const manifest = readFileSync(path.join(root, 'manifest.webmanifest'), 'utf8');
-  assert.match(html, /const LEVEL_APP_BUILD = "v137-20261120-shoulder-rearm-drop10";/);
-  assert.match(html, /perf v137/);
-  assert.match(sw, /^const CACHE_VERSION = "fthue-rehab-v137-20261120-shoulder-rearm-drop10";/);
-  assert.match(manifest, /v137-20261120-shoulder-rearm-drop10/);
+  assert.match(html, /const LEVEL_APP_BUILD = "v138-20261123-mahjong-cards-deal";/);
+  assert.match(html, /perf v138/);
+  assert.match(sw, /^const CACHE_VERSION = "fthue-rehab-v138-20261123-mahjong-cards-deal";/);
+  assert.match(manifest, /v138-20261123-mahjong-cards-deal/);
 });
