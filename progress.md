@@ -1908,3 +1908,17 @@ Original prompt: Fix Level 6–7 interactions: make light clothes-peg press dete
 - 實作：純視覺／音效獎勵層，同 v73 保齡球、v125 超市一樣掛喺現有獎勵週期：`startShoulderRewardCycle()` → `startDealTableDraw()`；`shoulderRewardDurationMs()` → `dealTableRewardMs()`（普通一隻 2.6 秒下限、食糊約 4.7 秒）；`finishShoulderRewardCycle()` → `finishDealTableDraw()`。只讀 `shoulderFlexionState.progress` 同獎勵週期狀態，冇改控制器、達標判定、計分、v137 規則（舉住手每次動畫完結照計、比最高點低 10° 即開始新一下）。牌面用現有 `mahjong_atlas`／`cards_atlas`，冇新圖檔。所有新畫布文字經 `dealText(zh,en)`，英文版有對應譯名。
 - 驗證：`tests/v138-mahjong-cards-deal.test.mjs`（3000 個種子嘅麻雀牌全部係有效 14 隻食糊牌並經 `mjEvaluate` 獨立覆核、4000 個種子嘅啤牌五張不重複並同宣告牌型一致、壞隨機源唔會死循環、牌局層冇寫入控制器／分數、文字有英文、接線同標記）；Playwright 公開流程（筆電 1413×653／iPad 橫向 1180×820／直向 820×1180，中英文）：抬手 → 翻牌 → 入位 → 一副完成 → 聽牌 → 食糊 → 新一鋪 → 完場頁成果行。全套 Node 測試通過；dist `__qa` 0。
 - 標記 `v138-20261123-mahjong-cards-deal`、`perf v138`；QA 對照表 `ych_rehab_qa_artifacts/v138/v138-qa-contact-sheet.png`；`security-reviews/v138-security-review.md`。
+
+## 2026-11-24 v139 — Level 3／4「洗衫晾衫」故事（入機 → 洗衫 → 晾衫 → 太陽晒乾 → 收衫 → 摺衫 → 入衣櫃）
+- 治療師回報（五個場景逐個改，第三個）：晾衫唔應該只係一件衫升上竹。情景應該係：攞衫逐件放入洗衣機 → 撳掣（舉一下）→ 逐件攞返出嚟 → 逐件晾上竹 → 太陽升起（病人休息睇動畫：濕衫滴水 → 晒乾發光）→ 逐件收落嚟 → 逐件摺衫 → 逐件放入衣櫃。另外指示「全部 Level 3–4 遊戲 setting 跟返超市嗰個」——偵測完全唔郁。
+- 新玩法（只限公開版 `isLaundryStoryTheme()`＝`isShoulderFlexionLevel()&&!research.active&&state.theme==='laundry'`）：跟 v125 超市同一個故事引擎做法——`scene` 步驟自動播放（休息），`rep` 步驟要抬臂達標一次。
+  1. 劇本 `buildLaundrySteps()`：開場（2.2 秒）→ 入機 ×N → 撳掣 ×1 → 洗衫休息 3.8 秒（滾筒轉、泡泡、「洗好喇！」）→ 攞出 ×N → 去露台 → 晾衫 ×N（虛線空位、衣夾、濕衫滴水）→ 太陽休息 6.2 秒（太陽升起、暖光、水滴漸少、閃光、「晒乾晒！」）→ 收衫 ×N → 入房 → 摺衫 ×N → 入櫃 ×N → 完場（拍手，之後自動完結，同超市一樣）。
+  2. 抬手次數＝6N＋1：少 3 件＝19、中 4 件＝25（預設）、多 6 件＝37；設定頁洗衫晾衫卡下面新增「衫量」選擇（`state.laundryLoadSize`）。
+  3. 畫面：三個場景（洗衣間／露台／睡房）、底部七步進度條（入機／洗衫／晾衫／晒乾／收衫／摺衫／入櫃）；「放」嘅步驟件衫跟住手沿虛線由衫籃去目標，「攞」嘅步驟手掌標記升向件衫，達標後件衫飛入籃。說話只喺轉新動作嗰陣講一次。輔助棍模式晾衫有一句「用棍將件衫叉上竹」。
+  4. 中央大剔號喺呢個場景唔顯示（`showFeedback` 提早 return；「叮」聲保留）。完場頁多一行「洗衫晾衫：今次 N 件衫……全部做齊」或「今次做到「X」呢一步，下次繼續」（只講今次）。Level 3／4 活動卡同成績頁標題改為「洗衫晾衫」（`shoulderTitle`＋`themeShownTitle()`），目標句「洗衫、晾衫、摺衫、入衣櫃，每舉一下做一件」。
+- 實作：純視覺／音效獎勵層。`startLaundryStoryAction()` 掛喺超市 `startSupermarketAction()` 同一位置（`startShoulderRewardCycle()` 之前），`shoulderRewardDurationMs()` 用 `laundryStory.rewardMs`（動畫 850 ms＋停頓＋之後嘅過場總長，下限 2.6 秒）。只讀 `shoulderFlexionState.progress`；`shoulder-flexion-controller.js`、達標判定、計分、v137 規則（舉住手繼續計分、比最高點低 10° 再開始）全部冇改，冇任何嘢變嚴格。
+- 新圖：`img/laundry_room_bg.jpg`、`laundry_pole_bg.jpg`、`laundry_bedroom_bg.jpg`、`laundry_washer.png`、`laundry_wardrobe.png`、`laundry_basket.png`；衣物沿用現有 `laundry_*.png`。
+- 英文：劇本每句有 `en`／`subEn`，`localization.js` 加 22 條（標題、目標、衫量、三個衫量標籤同「約 N 次抬手」、全部步驟句）。
+- 驗證：`tests/v139-laundry-story.test.mjs`（13：劇本次序、每件衫每步一次、19／25／37、休息過場、七步進度、掛鈎位置、冇寫入控制器／分數、英文、圖片、標記）；Playwright 公開流程 筆電 1413×653（中 4 件）、iPad 1180×820（英文 3 件）、直向 820×1180（6 件）由開場行到完場頁；全套 Node 測試；`tools/checkjs.sh`、`node --check service-worker.js`、`git diff --check`、`./scripts/build-dist.sh`。
+- 標記 `v139-20261124-laundry-story`、`perf v139`；QA 對照表 `ych_rehab_qa_artifacts/v139/v139-qa-contact-sheet.png`；`security-reviews/v139-security-review.md`。
+- 未決：治療師問「係咪應該顯示返個度數」——v137 按佢當時指示喺公開版收起即時度數（成績頁仍有相機估算紀錄）；今版冇改，等佢決定。英文版超市「單長度」細字仍然顯示通用後備句（舊問題）。

@@ -20,7 +20,8 @@ test('result context never mentions recording or therapist alerts in trial mode'
   assert.doesNotMatch(html, /不錄影／不提示/);
   assert.doesNotMatch(html, /no recording or therapist alerts/);
   // trial and training now share the level tag + theme title context line
-  assert.match(html, /: currentLevel\(\)\.tag \+ ' · ' \+ \(window\.YCHLanguage \? window\.YCHLanguage\.text\(getTheme\(\)\.title\) : getTheme\(\)\.title\);/);
+  // v139: the title goes through themeShownTitle() so Level 3/4 can show a scene-specific name (洗衫晾衫)
+  assert.match(html, /: currentLevel\(\)\.tag \+ ' · ' \+ \(window\.YCHLanguage \? window\.YCHLanguage\.text\(themeShownTitle\(getTheme\(\)\)\) : themeShownTitle\(getTheme\(\)\)\);/);
 });
 
 test('research-mode result context and mode buttons are untouched', () => {

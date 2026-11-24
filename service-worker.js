@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v138-20261123-mahjong-cards-deal";
+const CACHE_VERSION = "fthue-rehab-v139-20261124-laundry-story";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

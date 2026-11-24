@@ -2708,6 +2708,7 @@ const state = {
   cookSqueezeAmount: 'normal', // v131 Level 6 Digi-Flex cooking: less | normal | more
   dimsumDifficulty: 'basic', // Level 6 chopsticks dim sum: basic | complex order
   theme: 'dimsum',      // 活動 id
+  laundryLoadSize: 'medium', // v139 Level 3/4 洗衫晾衫：short（3 件）| medium（4 件）| long（6 件）
   shopListSize: 'medium', // v125 Level 3/4 超市購物單長度：short（2 樣）| medium（4 樣）| long（6 樣）；v126 預設中單
   dimsumSceneMode: 'teahouse', // Level 3/4 點心顯示模式：teahouse（模擬茶樓）| camera（看到自己＝原有鏡頭畫面）
   mode: 'single',       // single | dual
@@ -4201,6 +4202,630 @@ function drawSupermarketScene(ctx,cw,ch){
   }
   ctx.restore();
 }
+/* ==================== v139 洗衫晾衫故事（Level 3/4 肩前屈：衣物主題） ====================
+   跟 v125 超市同一個做法：全畫面場景＋故事步驟。scene 步驟自動播放（病人休息睇動畫），
+   rep 步驟要抬臂達標一次。流程：污糟衫逐件入洗衣機 → 撳掣 → 洗衫 → 逐件攞出 →
+   逐件晾上竹 → 太陽晒乾 → 逐件收衫 → 逐件摺好 → 逐件放入衣櫃。
+   純視覺同音效獎勵層：只讀取 shoulderFlexionState 嘅進度／達標訊號，達標判定完全唔變。 */
+const LAUNDRY_LOAD_SIZES = { short:3, medium:4, long:6 };
+const LAUNDRY_LOAD_LABELS = { short:'少（3 件）', medium:'中（4 件）', long:'多（6 件）' };
+const LAUNDRY_STORY_ITEMS = {
+  shirt1:{ img:()=>imgLaundryShirt1, color:'#9aa6e2' },
+  jeans: { img:()=>imgLaundryJeans,  color:'#6f9cc9' },
+  vest:  { img:()=>imgLaundryVest,   color:'#f3f3ee' },
+  skirt: { img:()=>imgLaundrySkirt,  color:'#c9a13a' },
+  shirt2:{ img:()=>imgLaundryShirt2, color:'#bf6a90' },
+  socks: { img:()=>imgLaundrySocks,  color:'#7a4a35' },
+};
+const LAUNDRY_STORY_POOL = ['shirt1','jeans','vest','skirt','shirt2','socks'];
+const LAUNDRY_ACTION_MS = 850;      // 抬手達標後，件衫入機／上竹／摺好嘅動畫
+const LAUNDRY_SCENE_PAD_MS = 450;   // 動畫完結後停一停先去下一步
+const LAUNDRY_WASH_MS = 3800;       // 洗衣機轉（休息）
+const LAUNDRY_SUN_MS = 6200;        // 太陽晒衫（休息）
+const LAUNDRY_STAGES = [
+  { key:'load',    zh:'入機', en:'Load' },
+  { key:'wash',    zh:'洗衫', en:'Wash' },
+  { key:'hang',    zh:'晾衫', en:'Hang' },
+  { key:'sun',     zh:'晒乾', en:'Dry' },
+  { key:'collect', zh:'收衫', en:'Collect' },
+  { key:'fold',    zh:'摺衫', en:'Fold' },
+  { key:'store',   zh:'入櫃', en:'Store' },
+];
+const laundryStory = {
+  active:false, steps:[], idx:0, stepStartedMs:0, loadSize:'medium', list:[],
+  basket:[], drum:[], pole:[], pile:[], shelf:[],
+  washed:false, dry:false, washOn:false, sunChimed:false, washChimed:false, doneBurst:false,
+  anim:{ phase:'idle', startedMs:0, step:null, fromP:0 },
+  rewardMs:2600, spokenKey:'', ended:false, completed:false, repsDone:0, stage:0,
+};
+function isLaundryStoryTheme(){ return isShoulderFlexionLevel()&&!research.active&&state.theme==='laundry'; }
+function laundryLoadSizeKey(){ return LAUNDRY_LOAD_SIZES[state.laundryLoadSize] ? state.laundryLoadSize : 'medium'; }
+function buildLaundryList(sizeKey){ return LAUNDRY_STORY_POOL.slice(0,LAUNDRY_LOAD_SIZES[sizeKey]||4); }
+// 故事劇本：scene 步驟自動播放（唔使抬手）；rep 步驟要抬臂達標一次。
+function buildLaundrySteps(list){
+  const steps=[], n=list.length;
+  const rep=(scene,action,stage,item,k,text,en)=>steps.push({ kind:'rep', scene, action, stage, item, k, n, text, en });
+  steps.push({ kind:'scene', scene:'wash', cut:'intro', stage:0, ms:2200,
+    text:'今日要洗衫', en:'Laundry day', sub:'一籃污糟衫，逐件放入洗衣機', subEn:'Put the clothes into the washer one by one' });
+  list.forEach((id,k)=>rep('wash','load',0,id,k,'抬高手，將衫放入洗衣機','Lift your arm: put a garment into the washer'));
+  rep('wash','press',1,null,0,'抬高手，撳掣開機','Lift your arm: press the start button');
+  steps.push({ kind:'scene', scene:'wash', cut:'washing', stage:1, ms:LAUNDRY_WASH_MS,
+    text:'洗緊衫，休息一陣', en:'Washing. Take a rest', sub:'洗衣機轉緊', subEn:'The washer is spinning' });
+  list.forEach((id,k)=>rep('wash','unload',1,id,k,'抬高手，將衫由洗衣機攞出嚟','Lift your arm: take a garment out of the washer'));
+  steps.push({ kind:'scene', scene:'balcony', cut:'walk', stage:2, ms:2100,
+    text:'洗好喇，攞去露台晾', en:'Washed. Out to the balcony', sub:'濕衫要晾上竹', subEn:'Wet clothes go on the pole' });
+  list.forEach((id,k)=>rep('balcony','hang',2,id,k,'抬高手，將衫晾上竹','Lift your arm: hang a garment on the pole'));
+  steps.push({ kind:'scene', scene:'balcony', cut:'sun', stage:3, ms:LAUNDRY_SUN_MS,
+    text:'太陽出嚟喇，休息一陣', en:'The sun is out. Take a rest', sub:'等太陽晒乾啲衫', subEn:'Let the sun dry the clothes' });
+  list.forEach((id,k)=>rep('balcony','collect',4,id,k,'抬高手，將衫收落嚟','Lift your arm: take a garment down'));
+  steps.push({ kind:'scene', scene:'room', cut:'walk', stage:5, ms:2100,
+    text:'收晒衫，入房摺衫', en:'All collected. Inside to fold', sub:'逐件摺好', subEn:'Fold them one by one' });
+  list.forEach((id,k)=>rep('room','fold',5,id,k,'抬高手，摺好一件衫','Lift your arm: fold a garment'));
+  list.slice().reverse().forEach((id,k)=>rep('room','store',6,id,k,'抬高手，將摺好嘅衫放入衣櫃','Lift your arm: put a folded garment into the wardrobe'));
+  steps.push({ kind:'scene', scene:'room', cut:'done', stage:7, ms:3200, end:true,
+    text:'全部收好晒！好叻呀！', en:'All put away. Well done!', sub:'洗、晾、摺、入櫃都做齊', subEn:'Washed, dried, folded and stored' });
+  return steps;
+}
+function laundryRepCount(steps){ return steps.filter(s=>s.kind==='rep').length; }
+function resetLaundryStory(){
+  laundryStory.active=false; laundryStory.steps=[]; laundryStory.idx=0; laundryStory.stepStartedMs=0;
+  laundryStory.list=[]; laundryStory.basket=[]; laundryStory.drum=[]; laundryStory.pole=[]; laundryStory.pile=[]; laundryStory.shelf=[];
+  laundryStory.washed=false; laundryStory.dry=false; laundryStory.washOn=false;
+  laundryStory.sunChimed=false; laundryStory.washChimed=false; laundryStory.doneBurst=false;
+  laundryStory.anim={ phase:'idle', startedMs:0, step:null, fromP:0 };
+  laundryStory.rewardMs=2600; laundryStory.spokenKey=''; laundryStory.ended=false;
+  laundryStory.completed=false; laundryStory.repsDone=0; laundryStory.stage=0;
+}
+function beginLaundryStory(){
+  resetLaundryStory();
+  laundryStory.loadSize=laundryLoadSizeKey();
+  laundryStory.list=buildLaundryList(laundryStory.loadSize);
+  laundryStory.steps=buildLaundrySteps(laundryStory.list);
+  laundryStory.basket=laundryStory.list.slice();
+  laundryStory.pole=laundryStory.list.map(()=>null);
+  laundryStory.shelf=laundryStory.list.map(()=>null);
+  laundryStory.active=true; laundryStory.stepStartedMs=nowMs();
+}
+function laundryCurrentStep(){ return laundryStory.steps[laundryStory.idx]||null; }
+function laundryNextRepStep(){
+  for(let i=laundryStory.idx;i<laundryStory.steps.length;i++) if(laundryStory.steps[i].kind==='rep') return laundryStory.steps[i];
+  return null;
+}
+// 由呢步開始，去到下一個 rep 步驟之前嘅所有 scene 步驟總時長（獎勵週期要蓋住佢哋）
+function laundrySceneMsUntilNextRep(fromIdx){
+  let ms=0;
+  for(let i=fromIdx;i<laundryStory.steps.length;i++){
+    const s=laundryStory.steps[i];
+    if(s.kind==='rep') break;
+    ms+=s.ms||0;
+  }
+  return ms;
+}
+function laundryGoToStep(i){
+  const prev=laundryCurrentStep();
+  if(prev&&prev.kind==='scene'&&i>laundryStory.idx){
+    if(prev.cut==='washing'){ laundryStory.washOn=false; laundryStory.washed=true; }
+    if(prev.cut==='sun') laundryStory.dry=true;
+  }
+  laundryStory.idx=Math.min(i,laundryStory.steps.length-1);
+  laundryStory.stepStartedMs=nowMs();
+  const cur=laundryCurrentStep();
+  if(cur) laundryStory.stage=cur.stage;
+}
+// 每幀：scene 步驟時間到就自動行落一步；完場步驟時間到就結束遊戲
+function updateLaundryStory(){
+  if(!laundryStory.active||laundryStory.ended) return;
+  let guard=0;
+  while(guard++<12){
+    const s=laundryCurrentStep();
+    if(!s||s.kind!=='scene') break;
+    if(nowMs()-laundryStory.stepStartedMs<s.ms) break;
+    if(s.end){
+      laundryStory.ended=true;
+      if(state.running) endGame();
+      return;
+    }
+    laundryGoToStep(laundryStory.idx+1);
+  }
+  const cur=laundryCurrentStep();
+  if(cur&&laundryStory.anim.phase==='idle'){
+    // 每個步驟只喺轉新動作嗰陣講一次（唔會逐件重複講）
+    const key=cur.kind==='rep'?cur.action:((cur.cut==='washing'||cur.cut==='sun')?cur.cut:'');
+    if(key&&laundryStory.spokenKey!==key){
+      laundryStory.spokenKey=key;
+      try{ speakCantonese(cur.text); }catch(e){}
+    }
+  }
+}
+// 抬臂達標：執行而家呢個 rep 步驟嘅動畫（如果而家仲喺 scene，就跳去下一個 rep）
+function startLaundryStoryAction(){
+  if(!laundryStory.active||laundryStory.anim.phase!=='idle') return;
+  let s=laundryCurrentStep();
+  if(!s||s.kind!=='rep'){
+    const next=laundryNextRepStep();
+    if(!next) return;
+    laundryGoToStep(laundryStory.steps.indexOf(next));
+    s=next;
+  }
+  laundryStory.anim={ phase:'fly', startedMs:nowMs(), step:s, fromP:clamp01(Number(shoulderFlexionState.progress)||0) };
+  laundryStory.rewardMs=Math.max(SHOULDER_REWARD_MIN_MS,
+    LAUNDRY_ACTION_MS+LAUNDRY_SCENE_PAD_MS+laundrySceneMsUntilNextRep(laundryStory.idx+1));
+  playShopDing();
+}
+function laundryTake(arr,id){ const i=arr.indexOf(id); if(i>=0) arr.splice(i,1); }
+function applyLaundryStep(s){
+  if(!s) return;
+  if(s.action==='load'){ laundryTake(laundryStory.basket,s.item); laundryStory.drum.push(s.item); }
+  else if(s.action==='press'){ laundryStory.washOn=true; }
+  else if(s.action==='unload'){ laundryTake(laundryStory.drum,s.item); laundryStory.basket.push(s.item); }
+  else if(s.action==='hang'){ laundryTake(laundryStory.basket,s.item); laundryStory.pole[s.k]=s.item; }
+  else if(s.action==='collect'){ laundryStory.pole[s.k]=null; laundryStory.basket.push(s.item); }
+  else if(s.action==='fold'){ laundryTake(laundryStory.basket,s.item); laundryStory.pile.push(s.item); }
+  else if(s.action==='store'){ laundryTake(laundryStory.pile,s.item); laundryStory.shelf[s.k]=s.item; }
+  laundryStory.repsDone++;
+}
+function updateLaundryStoryAction(){
+  if(laundryStory.anim.phase!=='fly') return;
+  if(nowMs()-laundryStory.anim.startedMs>=LAUNDRY_ACTION_MS){
+    const s=laundryStory.anim.step;
+    applyLaundryStep(s);
+    laundryStory.anim={ phase:'idle', startedMs:0, step:null, fromP:0 };
+    // 動畫完結即推進到下一步（之後嘅 scene 步驟由 updateLaundryStory 計時）
+    if(laundryStory.idx===laundryStory.steps.indexOf(s)) laundryGoToStep(laundryStory.idx+1);
+    const nxt=laundryCurrentStep();
+    if(nxt&&nxt.kind==='scene'&&nxt.end){ laundryStory.completed=true; playApplauseSound(); playHaoboCheer(); }
+  }
+}
+function laundryStageLabel(i){ const st=LAUNDRY_STAGES[Math.max(0,Math.min(LAUNDRY_STAGES.length-1,i))]; return dealText(st.zh,st.en); }
+// 成績頁一句：只講今次做到邊一步（唔同上次比較）
+function laundryStorySummaryText(){
+  if(!laundryStory.list.length||laundryStory.repsDone<=0) return '';
+  const n=laundryStory.list.length;
+  if(laundryStory.completed){
+    return dealText('洗衫晾衫：今次 '+n+' 件衫由洗衫、晾衫、摺衫到放入衣櫃，全部做齊。',
+      'Laundry: all '+n+' garments were washed, dried, folded and put away today.');
+  }
+  return dealText('洗衫晾衫：今次做到「'+LAUNDRY_STAGES[Math.min(6,laundryStory.stage)].zh+'」呢一步，下次繼續。',
+    'Laundry: reached the "'+LAUNDRY_STAGES[Math.min(6,laundryStory.stage)].en+'" step today. Carry on next time.');
+}
+function laundryItemImg(id){ const it=LAUNDRY_STORY_ITEMS[id]; const im=it&&it.img(); return (im&&im.complete&&im.naturalWidth>0)?im:null; }
+function laundryStoryGeometry(cw,ch){
+  const g=shopGeometry(cw,ch), portrait=g.portrait, m=Math.min(cw,ch);
+  const stripH=Math.max(24,m*0.058);
+  const stripY=ch-stripH-m*0.012;            // 底部「七個步驟」進度條
+  const floorY=stripY-m*0.012;               // 物件企喺呢條線
+  const gs=m*(portrait?0.20:0.22);           // 手上件衫嘅大細
+  const basketW=m*(portrait?0.36:0.40), basketH=basketW*322/520;
+  const mkBasket=x=>({ x, y:floorY-basketH*0.5, w:basketW, h:basketH, mouth:{ x, y:floorY-basketH*0.84 } });
+  const room=Math.max(60,floorY-g.contentTop-6);
+  // 洗衣機
+  const washerH=Math.min(ch*(portrait?0.44:0.64),room), washerW=washerH*404/560;
+  const washer={ x:cw*(portrait?0.68:0.66), y:floorY-washerH/2, w:washerW, h:washerH };
+  washer.door={ x:washer.x, y:washer.y-washerH/2+washerH*0.465, r:washerW*0.295 };
+  washer.button={ x:washer.x-washerW/2+washerW*0.87, y:washer.y-washerH/2+washerH*0.095, r:washerW*0.07 };
+  // 晾衫竹
+  const poleY=g.contentTop+m*0.035;
+  const poleBasket=mkBasket(cw*0.5);
+  const hangH=Math.max(40,Math.min(m*(portrait?0.26:0.30),(poleBasket.y-basketH*0.5)-poleY-m*0.05));
+  const poleX0=cw*0.06, poleX1=cw*0.94;
+  // 衣櫃＋摺衫枱
+  const wardH=Math.min(ch*(portrait?0.44:0.70),room), wardW=wardH*441/640;
+  const wardrobe={ x:cw*(portrait?0.74:0.78), y:floorY-wardH/2, w:wardW, h:wardH };
+  const table={ x:cw*(portrait?0.31:0.49), topY:ch*(portrait?0.66:0.74), w:m*(portrait?0.38:0.44), th:Math.max(8,m*0.028), bottom:floorY };
+  const foldW=gs*0.62, foldH=gs*0.25;
+  return {
+    g, portrait, m, stripH, stripY, floorY, gs, foldW, foldH,
+    washBasket:mkBasket(cw*(portrait?0.24:0.17)), washer,
+    poleY, poleX0, poleX1, hangH, poleBasket,
+    roomBasket:mkBasket(cw*(portrait?0.22:0.20)), wardrobe, table,
+    slot(i,n){ const w=(poleX1-poleX0)/Math.max(1,n); return { x:poleX0+w*(i+0.5), y:poleY+hangH*0.52, w:w*0.86 }; },
+    pile(i){ return { x:table.x, y:table.topY-foldH*0.5-i*foldH*0.82 }; },
+    shelf(i){ // 六個位：由下面嗰層開始，逐層向上
+      const row=Math.floor(i/2), col=i%2, surf=[0.60,0.43,0.247][Math.min(2,row)];
+      const top=wardrobe.y-wardH/2, left=wardrobe.x-wardW/2;
+      const fw=wardW*0.25, fh=fw*foldH/foldW;
+      return { x:left+wardW*(col?0.66:0.37), y:top+wardH*surf-fh*0.5, w:fw, h:fh };
+    },
+  };
+}
+function drawLaundryGarment(ctx,id,cx,cy,maxW,maxH,alpha,rot){
+  const im=laundryItemImg(id);
+  ctx.save(); ctx.translate(cx,cy); if(rot) ctx.rotate(rot);
+  if(im) drawShopImgFit(ctx,im,0,0,maxW,maxH,alpha);
+  else{
+    ctx.globalAlpha=alpha==null?1:alpha;
+    ctx.fillStyle=(LAUNDRY_STORY_ITEMS[id]||{}).color||'#9aa6e2';
+    rrPath(ctx,-maxW*0.32,-maxH*0.4,maxW*0.64,maxH*0.8,10); ctx.fill();
+  }
+  ctx.restore();
+}
+// 摺好嘅衫：圓角長方形，用返件衫本身嘅布料花紋
+function drawLaundryFolded(ctx,id,cx,cy,w,h){
+  const it=LAUNDRY_STORY_ITEMS[id]||{}, im=laundryItemImg(id), r=h*0.28;
+  ctx.save();
+  ctx.fillStyle='rgba(0,0,0,0.20)'; rrPath(ctx,cx-w/2+2,cy-h/2+3,w,h,r); ctx.fill();
+  rrPath(ctx,cx-w/2,cy-h/2,w,h,r); ctx.fillStyle=it.color||'#cfd4e6'; ctx.fill();
+  ctx.save(); rrPath(ctx,cx-w/2,cy-h/2,w,h,r); ctx.clip();
+  if(im){
+    const s=Math.max(w/(im.naturalWidth*0.42),h/(im.naturalHeight*0.26));
+    ctx.drawImage(im,cx-im.naturalWidth*s/2,cy-im.naturalHeight*s*0.55,im.naturalWidth*s,im.naturalHeight*s);
+  }
+  ctx.restore();
+  ctx.lineWidth=Math.max(1.5,h*0.07); ctx.strokeStyle='rgba(40,44,70,0.55)'; rrPath(ctx,cx-w/2,cy-h/2,w,h,r); ctx.stroke();
+  ctx.lineWidth=Math.max(1,h*0.045); ctx.strokeStyle='rgba(20,24,40,0.22)';
+  ctx.beginPath(); ctx.moveTo(cx-w/2+r,cy+h*0.16); ctx.lineTo(cx+w/2-r,cy+h*0.16); ctx.stroke();
+  ctx.restore();
+}
+function drawLaundryBasket(ctx,b,ids){
+  const n=ids.length;
+  ids.forEach((id,i)=>{
+    const off=(i-(n-1)/2);
+    drawLaundryGarment(ctx,id,b.x+off*b.w*0.13,b.y-b.h*0.26-(i%2)*b.h*0.05,b.w*0.44,b.w*0.44,1,off*0.16);
+  });
+  if(imgLaundryBasket&&imgLaundryBasket.complete&&imgLaundryBasket.naturalWidth>0) drawShopImgFit(ctx,imgLaundryBasket,b.x,b.y,b.w,b.h);
+  else{
+    ctx.save(); ctx.fillStyle='#5896d6'; ctx.strokeStyle='#28568c'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(b.x-b.w/2,b.y-b.h*0.4); ctx.lineTo(b.x+b.w/2,b.y-b.h*0.4);
+    ctx.lineTo(b.x+b.w*0.4,b.y+b.h/2); ctx.lineTo(b.x-b.w*0.4,b.y+b.h/2); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore();
+  }
+}
+function drawLaundryWasher(ctx,w,ids,spinning,lit){
+  const t=nowMs(), sx=spinning?Math.sin(t/42)*w.w*0.007:0, d=w.door;
+  ctx.save(); ctx.translate(sx,0);
+  if(imgLaundryWasher&&imgLaundryWasher.complete&&imgLaundryWasher.naturalWidth>0) drawShopImgFit(ctx,imgLaundryWasher,w.x,w.y,w.w,w.h);
+  else{
+    rrPath(ctx,w.x-w.w/2,w.y-w.h/2,w.w,w.h,14); ctx.fillStyle='#f4f1ee'; ctx.fill(); ctx.lineWidth=3; ctx.strokeStyle='#b9b2ac'; ctx.stroke();
+    ctx.beginPath(); ctx.arc(d.x,d.y,d.r,0,Math.PI*2); ctx.fillStyle='#3c4658'; ctx.fill();
+  }
+  // 機入面嘅衫（玻璃門後面）
+  const rr=d.r*0.86, n=ids.length;
+  ctx.save(); ctx.beginPath(); ctx.arc(d.x,d.y,rr,0,Math.PI*2); ctx.clip();
+  if(spinning){ ctx.fillStyle='rgba(120,196,246,0.50)'; ctx.fillRect(d.x-rr,d.y-rr,rr*2,rr*2); }
+  ids.forEach((id,i)=>{
+    if(spinning){
+      const a=t/240+i*Math.PI*2/Math.max(1,n);
+      drawLaundryGarment(ctx,id,d.x+Math.cos(a)*rr*0.36,d.y+Math.sin(a)*rr*0.36,rr*1.05,rr*1.05,0.95,a*1.3);
+    }else{
+      const off=(i-(n-1)/2);
+      drawLaundryGarment(ctx,id,d.x+off*rr*0.30,d.y+rr*0.30-(i%2)*rr*0.14,rr*1.05,rr*1.05,0.95,off*0.35);
+    }
+  });
+  if(spinning){
+    for(let k=0;k<9;k++){
+      const a=t/190+k*0.698, q=rr*(0.25+0.6*((k*37)%10)/10);
+      ctx.beginPath(); ctx.arc(d.x+Math.cos(a)*q,d.y+Math.sin(a*1.3)*q,rr*(0.05+0.03*(k%3)),0,Math.PI*2);
+      ctx.fillStyle='rgba(255,255,255,0.78)'; ctx.fill();
+    }
+  }
+  ctx.restore();
+  // 玻璃反光
+  ctx.beginPath(); ctx.arc(d.x,d.y,rr*0.86,Math.PI*1.08,Math.PI*1.42);
+  ctx.lineWidth=Math.max(3,rr*0.10); ctx.lineCap='round'; ctx.strokeStyle='rgba(255,255,255,0.55)'; ctx.stroke();
+  if(lit){
+    ctx.beginPath(); ctx.arc(w.button.x,w.button.y,w.button.r*0.78,0,Math.PI*2);
+    ctx.fillStyle='rgba(90,235,130,'+(0.55+0.35*Math.sin(t/160))+')'; ctx.fill();
+  }
+  ctx.restore();
+  if(spinning){ // 肥皂泡由機頂飄上去
+    ctx.save();
+    for(let k=0;k<7;k++){
+      const ph=((t/1700)+k*0.143)%1;
+      const bx=w.x+Math.sin(k*2.1+ph*5)*w.w*0.34, by=w.y-w.h/2-ph*w.h*0.42;
+      ctx.beginPath(); ctx.arc(bx,by,w.w*(0.022+0.012*(k%3)),0,Math.PI*2);
+      ctx.fillStyle='rgba(255,255,255,'+(0.75*(1-ph))+')'; ctx.fill();
+      ctx.lineWidth=1.5; ctx.strokeStyle='rgba(120,190,240,'+(0.8*(1-ph))+')'; ctx.stroke();
+    }
+    ctx.restore();
+  }
+}
+function drawLaundryPole(ctx,L,cw){
+  const y=L.poleY, r=Math.max(7,L.m*0.016), x0=cw*0.015, x1=cw*0.985;
+  ctx.save();
+  ctx.fillStyle='rgba(0,0,0,0.16)'; rrPath(ctx,x0+3,y-r+5,x1-x0,r*2,r); ctx.fill();
+  rrPath(ctx,x0,y-r,x1-x0,r*2,r); ctx.fillStyle='#d6b260'; ctx.fill(); ctx.lineWidth=3; ctx.strokeStyle='#8c6828'; ctx.stroke();
+  ctx.strokeStyle='#f0d68c'; ctx.lineWidth=Math.max(2,r*0.3); ctx.beginPath(); ctx.moveTo(x0+r,y-r*0.45); ctx.lineTo(x1-r,y-r*0.45); ctx.stroke();
+  ctx.strokeStyle='#8c6828'; ctx.lineWidth=Math.max(3,r*0.4);
+  for(let i=1;i<9;i++){ const x=x0+(x1-x0)*i/9; ctx.beginPath(); ctx.moveTo(x,y-r); ctx.lineTo(x,y+r); ctx.stroke(); }
+  ctx.restore();
+}
+function drawLaundryPeg(ctx,x,y,s){
+  ctx.save();
+  rrPath(ctx,x-s*0.5,y-s*1.5,s,s*2.6,s*0.3); ctx.fillStyle='#e2a054'; ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle='#784a1e'; ctx.stroke();
+  ctx.strokeStyle='#9a9a9a'; ctx.lineWidth=Math.max(2,s*0.22); ctx.beginPath(); ctx.moveTo(x-s*0.5,y-s*0.2); ctx.lineTo(x+s*0.5,y-s*0.2); ctx.stroke();
+  ctx.restore();
+}
+// 掛喺竹上嘅衫：頂部貼住竹，兩個木衣夾夾住；wet（0–1）滴水，shine（0–1）晒乾發光
+function drawLaundryHung(ctx,L,id,slot,i,wet,shine,swayBoost,pegDrop){
+  const im=laundryItemImg(id), t=nowMs();
+  let w=slot.w*0.7, h=L.hangH;
+  if(im){ const s=Math.min(slot.w/im.naturalWidth,L.hangH/im.naturalHeight); w=im.naturalWidth*s; h=im.naturalHeight*s; }
+  const sway=Math.sin(t/820+i*1.3)*(0.03+0.10*(swayBoost||0));
+  ctx.save(); ctx.translate(slot.x,L.poleY); ctx.rotate(sway);
+  if(im) ctx.drawImage(im,-w/2,2,w,h);
+  else{ ctx.fillStyle=(LAUNDRY_STORY_ITEMS[id]||{}).color||'#9aa6e2'; rrPath(ctx,-w/2,2,w,h,10); ctx.fill(); }
+  const ps=Math.max(6,L.m*0.013), dy=-(pegDrop||0)*L.m*0.06;
+  drawLaundryPeg(ctx,-w*0.24,dy,ps); drawLaundryPeg(ctx,w*0.24,dy,ps);
+  ctx.restore();
+  if(wet>0.02){ // 水滴
+    ctx.save();
+    for(let j=0;j<3;j++){
+      const ph=((t/(980+j*210))+i*0.37+j*0.33)%1;
+      const dx=slot.x+(j-1)*w*0.26, dyy=L.poleY+h+ph*L.hangH*0.5, rr=Math.max(3,L.m*0.007);
+      ctx.globalAlpha=wet*(1-ph)*0.95; ctx.fillStyle='#4aa3e8';
+      ctx.beginPath(); ctx.moveTo(dx,dyy-rr*2.2); ctx.quadraticCurveTo(dx+rr*1.3,dyy,dx,dyy+rr); ctx.quadraticCurveTo(dx-rr*1.3,dyy,dx,dyy-rr*2.2); ctx.fill();
+    }
+    ctx.restore();
+  }
+  if(shine>0.02){ // 晒乾：閃閃發光
+    ctx.save(); ctx.fillStyle='#fff7c2'; ctx.strokeStyle='#f2b72e'; ctx.lineWidth=1.5;
+    for(let j=0;j<3;j++){
+      const tw=0.5+0.5*Math.sin(t/260+i*1.7+j*2.1);
+      const sx=slot.x+[-0.42,0.40,0.05][j]*w, sy=L.poleY+h*[0.22,0.48,0.82][j], q=Math.max(5,L.m*0.016)*(0.6+0.6*tw);
+      ctx.globalAlpha=shine*(0.35+0.65*tw);
+      ctx.beginPath(); ctx.moveTo(sx,sy-q); ctx.quadraticCurveTo(sx,sy,sx+q,sy); ctx.quadraticCurveTo(sx,sy,sx,sy+q);
+      ctx.quadraticCurveTo(sx,sy,sx-q,sy); ctx.quadraticCurveTo(sx,sy,sx,sy-q); ctx.fill(); ctx.stroke();
+    }
+    ctx.restore();
+  }
+}
+function drawLaundrySun(ctx,x,y,r,alpha){
+  const t=nowMs();
+  ctx.save(); ctx.globalAlpha=alpha;
+  const halo=ctx.createRadialGradient(x,y,r*0.6,x,y,r*2.6);
+  halo.addColorStop(0,'rgba(255,226,120,0.75)'); halo.addColorStop(1,'rgba(255,226,120,0)');
+  ctx.fillStyle=halo; ctx.beginPath(); ctx.arc(x,y,r*2.6,0,Math.PI*2); ctx.fill();
+  ctx.translate(x,y); ctx.rotate(t/2600);
+  ctx.fillStyle='#ffc93c';
+  for(let k=0;k<12;k++){
+    ctx.rotate(Math.PI/6);
+    ctx.beginPath(); ctx.moveTo(r*1.12,-r*0.13); ctx.lineTo(r*1.55,0); ctx.lineTo(r*1.12,r*0.13); ctx.closePath(); ctx.fill();
+  }
+  const disc=ctx.createRadialGradient(-r*0.3,-r*0.3,r*0.1,0,0,r);
+  disc.addColorStop(0,'#fff3b0'); disc.addColorStop(1,'#ffb81f');
+  ctx.fillStyle=disc; ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fill();
+  ctx.lineWidth=Math.max(2,r*0.06); ctx.strokeStyle='#f09a12'; ctx.stroke();
+  ctx.restore();
+}
+function drawLaundryTable(ctx,tb){
+  ctx.save();
+  const legW=Math.max(8,tb.w*0.06);
+  ctx.fillStyle='#a8743c';
+  ctx.fillRect(tb.x-tb.w*0.42,tb.topY+tb.th,legW,tb.bottom-tb.topY-tb.th);
+  ctx.fillRect(tb.x+tb.w*0.42-legW,tb.topY+tb.th,legW,tb.bottom-tb.topY-tb.th);
+  ctx.fillStyle='rgba(0,0,0,0.16)'; rrPath(ctx,tb.x-tb.w/2+3,tb.topY+5,tb.w,tb.th,6); ctx.fill();
+  rrPath(ctx,tb.x-tb.w/2,tb.topY,tb.w,tb.th,6); ctx.fillStyle='#d9a868'; ctx.fill(); ctx.lineWidth=2.5; ctx.strokeStyle='#8a5c2a'; ctx.stroke();
+  ctx.restore();
+}
+// 橫額：同超市橫額一樣嘅樣，但闊度會照顧埋細字（細字長過主句都唔會出界）
+function drawLaundryBanner(ctx,cw,g,text,sub){
+  const maxW=g.portrait?cw-24:cw-g.panelRight*2-24;
+  let font=g.bannerFont, subFont=Math.round(font*0.62);
+  const fam='px "PingFang TC","Noto Sans TC",sans-serif';
+  ctx.save();
+  const measure=()=>{
+    ctx.font='800 '+font+fam; const tw=ctx.measureText(text).width;
+    ctx.font='700 '+subFont+fam; const sw=sub?ctx.measureText(sub).width:0;
+    return Math.max(tw,sw);
+  };
+  let wide=measure();
+  if(wide+font*1.2>maxW){ // 長句自動縮細字體
+    font=Math.max(18,Math.floor(font*(maxW-font*1.2)/wide)); subFont=Math.round(font*0.62); wide=measure();
+  }
+  const bw=Math.min(maxW,wide+font*1.6), bh=font*(sub?2.55:1.75), bx=cw/2-bw/2, by=g.bannerY;
+  rrPath(ctx,bx,by,bw,bh,18);
+  ctx.fillStyle='rgba(255,255,255,0.94)'; ctx.fill();
+  ctx.lineWidth=4; ctx.strokeStyle='#1A6B5A'; ctx.stroke();
+  ctx.fillStyle='#17463d'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.font='800 '+font+fam; ctx.fillText(text,cw/2,by+font*0.95,bw-font*0.5);
+  if(sub){ ctx.font='700 '+subFont+fam; ctx.fillStyle='#8a5a12'; ctx.fillText(sub,cw/2,by+font*1.95,bw-font*0.5); }
+  ctx.restore();
+  return by+bh;
+}
+function laundryPathPos(from,to,p,arc){
+  const e=clamp01(p);
+  return { x:from.x+(to.x-from.x)*e, y:from.y+(to.y-from.y)*e-Math.sin(e*Math.PI)*arc };
+}
+function drawLaundryPath(ctx,from,to,arc){
+  ctx.save(); ctx.setLineDash([12,10]); ctx.lineWidth=5; ctx.strokeStyle='rgba(26,107,90,0.50)';
+  ctx.beginPath();
+  for(let k=0;k<=20;k++){ const q=laundryPathPos(from,to,k/20,arc); if(k===0) ctx.moveTo(q.x,q.y); else ctx.lineTo(q.x,q.y); }
+  ctx.stroke(); ctx.restore();
+}
+function drawLaundryHand(ctx,L,x,y){
+  const hh=Math.max(72,L.gs*0.92);
+  if(imgShopHand&&imgShopHand.complete&&imgShopHand.naturalWidth){
+    const hw=hh*imgShopHand.naturalWidth/imgShopHand.naturalHeight;
+    ctx.drawImage(imgShopHand,x-hw/2,y-hh*0.5,hw,hh);
+  }else{
+    ctx.save(); ctx.beginPath(); ctx.arc(x,y,Math.max(20,L.gs*0.2),0,Math.PI*2); ctx.fillStyle='#F6B04E'; ctx.fill(); ctx.restore();
+  }
+}
+// 底部進度條：七個步驟，做完嘅變綠色，而家嗰步係黃色
+function drawLaundryStageStrip(ctx,cw,L,stage){
+  const n=LAUNDRY_STAGES.length, gap=Math.max(4,L.m*0.008);
+  const totalW=Math.min(cw*0.96,L.m*(L.portrait?0.96:1.5)), pw=(totalW-gap*(n-1))/n, x0=cw/2-totalW/2, h=L.stripH;
+  const font=Math.round(Math.min(h*0.52,pw*0.26));
+  ctx.save(); ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.font='800 '+font+'px "PingFang TC","Noto Sans TC",sans-serif';
+  for(let i=0;i<n;i++){
+    const x=x0+i*(pw+gap), done=i<stage, cur=i===stage;
+    rrPath(ctx,x,L.stripY,pw,h,h*0.45);
+    ctx.fillStyle=done?'#1A6B5A':cur?'#FFE27A':'rgba(255,255,255,0.86)'; ctx.fill();
+    ctx.lineWidth=cur?3.5:2; ctx.strokeStyle=cur?'#b7791f':done?'#0f4a3e':'rgba(90,90,90,0.55)'; ctx.stroke();
+    ctx.fillStyle=done?'#ffffff':cur?'#4a3208':'#555555';
+    const label=(i+1)+' '+laundryStageLabel(i);
+    ctx.fillText(label,x+pw/2,L.stripY+h*0.52,pw-8);
+  }
+  ctx.restore();
+}
+function drawLaundryStoryScene(ctx,cw,ch){
+  if(!laundryStory.active&&state.running) beginLaundryStory();
+  updateLaundryStoryAction();
+  updateLaundryStory();
+  preloadHaoboCheer();
+  const L=laundryStoryGeometry(cw,ch), g=L.g;
+  const anim=laundryStory.anim;
+  const step=anim.step||laundryCurrentStep()||{ kind:'scene', scene:'wash', cut:'intro', stage:0, text:'今日要洗衫', en:'Laundry day', ms:2200 };
+  const fly=anim.phase==='fly';
+  const animP=fly?clamp01((nowMs()-anim.startedMs)/LAUNDRY_ACTION_MS):0;
+  const progress=fly?1:clamp01(Number(shoulderFlexionState.progress)||0);
+  const sceneT=step.kind==='scene'?clamp01((nowMs()-laundryStory.stepStartedMs)/Math.max(1,step.ms||1)):0;
+  const isRep=step.kind==='rep';
+  const act=isRep?step.action:'';
+  const n=Math.max(1,laundryStory.list.length);
+  const stick=state.shoulderExerciseMode==='assisted-stick';
+  const countSub=isRep&&act!=='press'?dealText('第 '+(step.k+1)+' 件 · 共 '+step.n+' 件','Garment '+(step.k+1)+' of '+step.n):'';
+  let main=dealText(step.text,step.en), sub=isRep?countSub:dealText(step.sub||'',step.subEn||'');
+  // 抬手時件衫跟住手行嘅位置；達標後頭 30% 動畫補完餘下嘅路
+  const carryP=fly?anim.fromP+(1-anim.fromP)*clamp01(animP/0.3):progress;
+  const arcOf=(a,b)=>Math.max(L.m*0.06,Math.abs(b.x-a.x)*0.16);
+  ctx.save(); ctx.rect(0,0,cw,ch); ctx.clip();
+  if(step.scene==='wash'){
+    drawShopBgCover(ctx,imgLaundryRoomBg,cw,ch,'#efe3c6');
+    const b=L.washBasket, w=L.washer, door=w.door;
+    const washing=step.cut==='washing';
+    if(washing&&sceneT>=0.82){
+      main=dealText('洗好喇！','Washing done!'); sub=dealText('可以攞啲衫出嚟','Time to take the clothes out');
+      if(!laundryStory.washChimed){ laundryStory.washChimed=true; playShopDing(); }
+    }
+    const spinning=washing&&sceneT<0.82;
+    const drumIds=laundryStory.drum.filter(id=>!(act==='unload'&&fly&&id===step.item));
+    if(act==='press'&&!fly) drawShopGlow(ctx,w.button.x,w.button.y,w.button.r*2.3);
+    if((act==='load'||act==='unload')&&!fly) drawShopGlow(ctx,door.x,door.y,door.r*1.18);
+    drawLaundryWasher(ctx,w,drumIds,spinning,laundryStory.washOn||(act==='press'&&fly));
+    const basketIds=laundryStory.basket.filter(id=>!(act==='load'&&id===step.item));
+    drawLaundryBasket(ctx,b,basketIds);
+    if(act==='load'){
+      const arc=arcOf(b.mouth,door);
+      if(!fly||animP<0.3){
+        drawLaundryPath(ctx,b.mouth,door,arc);
+        const p=laundryPathPos(b.mouth,door,carryP,arc);
+        drawLaundryGarment(ctx,step.item,p.x,p.y,L.gs,L.gs);
+        drawLaundryHand(ctx,L,p.x,p.y+L.gs*0.42);
+      }else{ // 件衫縮入洗衣機門
+        const q=clamp01((animP-0.3)/0.7), s=L.gs*(1-0.6*q);
+        drawLaundryGarment(ctx,step.item,door.x,door.y+door.r*0.2*q,s,s,1-0.5*q,q*0.6);
+      }
+    }else if(act==='press'){
+      if(!fly) drawShopArmMarker(ctx,g,w.button.x,w.button.y+g.itemSize*0.2,progress);
+      else{
+        ctx.save(); ctx.globalAlpha=1-animP; ctx.lineWidth=6; ctx.strokeStyle='#3ad06a';
+        ctx.beginPath(); ctx.arc(w.button.x,w.button.y,w.button.r*(1+animP*3.2),0,Math.PI*2); ctx.stroke(); ctx.restore();
+      }
+    }else if(act==='unload'){
+      if(!fly) drawShopArmMarker(ctx,g,door.x,door.y+g.itemSize*0.3,progress);
+      else{
+        const p=shopFlyPos(door,b.mouth,animP), s=L.gs*(0.45+0.5*animP);
+        drawLaundryGarment(ctx,step.item,p.x,p.y,s,s,1,(1-animP)*0.5);
+      }
+    }
+  }else if(step.scene==='balcony'){
+    drawShopBgCover(ctx,imgLaundryPoleBg,cw,ch,'#9fd0f5');
+    const b=L.poleBasket, sunCut=step.cut==='sun';
+    const sunRise=sunCut?1-Math.pow(1-clamp01(sceneT/0.45),2.2):(laundryStory.dry?1:0);
+    if(sunRise>0){
+      const sr=L.m*0.085, sx=cw*(L.portrait?0.86:0.94), syEnd=L.poleY+L.hangH*(L.portrait?1.25:0.80), syStart=ch*0.86;
+      if(sunCut){ ctx.fillStyle='rgba(255,214,110,'+(0.20*clamp01(sceneT/0.5))+')'; ctx.fillRect(0,0,cw,ch); }
+      drawLaundrySun(ctx,sx,syStart+(syEnd-syStart)*sunRise,sr,laundryStory.dry?0.92:1);
+    }
+    const wet=laundryStory.dry?0:(sunCut?1-clamp01(sceneT/0.6):1);
+    const shine=laundryStory.dry?0.8:(sunCut?clamp01((sceneT-0.5)/0.2):0);
+    if(sunCut&&sceneT>=0.72){
+      main=dealText('晒乾晒！','All dry!'); sub=dealText('可以收衫喇','Time to take the clothes down');
+      if(!laundryStory.sunChimed){
+        laundryStory.sunChimed=true; playDealChime(true);
+        fxBurst(cw*0.5,L.poleY+L.hangH*0.5,{ count:40, speed:6 });
+      }
+    }
+    // 竹上面嘅空位（晾衫階段先顯示）
+    if(act==='hang'||step.cut==='walk'){
+      ctx.save(); ctx.setLineDash([9,8]); ctx.lineWidth=3; ctx.strokeStyle='rgba(255,255,255,0.85)';
+      for(let i=0;i<n;i++){
+        if(laundryStory.pole[i]) continue;
+        const s=L.slot(i,n); rrPath(ctx,s.x-s.w*0.42,L.poleY+L.m*0.03,s.w*0.84,L.hangH*0.9,12); ctx.stroke();
+      }
+      ctx.restore();
+    }
+    if(act==='hang'&&!fly){ const s=L.slot(step.k,n); drawShopGlow(ctx,s.x,s.y,Math.min(s.w,L.hangH)*0.5); }
+    drawLaundryPole(ctx,L,cw);
+    laundryStory.pole.forEach((id,i)=>{
+      if(!id) return;
+      if(act==='collect'&&fly&&i===step.k) return;
+      if(act==='collect'&&!fly&&i===step.k){ const s=L.slot(i,n); drawShopGlow(ctx,s.x,s.y,Math.min(s.w,L.hangH)*0.56); }
+      drawLaundryHung(ctx,L,id,L.slot(i,n),i,wet,shine,0,0);
+    });
+    const basketIds=laundryStory.basket.filter(id=>!(act==='hang'&&id===step.item));
+    drawLaundryBasket(ctx,b,basketIds);
+    if(act==='hang'){
+      const s=L.slot(step.k,n), arc=arcOf(b.mouth,s)*0.5;
+      if(stick) sub=dealText('用棍將件衫叉上竹','Use the stick to lift the garment onto the pole')+(countSub?' · '+countSub:'');
+      if(!fly||animP<0.3){
+        drawLaundryPath(ctx,b.mouth,s,arc);
+        const p=laundryPathPos(b.mouth,s,carryP,arc);
+        drawLaundryGarment(ctx,step.item,p.x,p.y,Math.min(L.gs,s.w),L.gs);
+        drawLaundryHand(ctx,L,p.x,p.y+L.gs*0.42);
+      }else{ // 夾上竹：兩個衣夾跌落嚟夾實，件衫搖兩下
+        const q=clamp01((animP-0.3)/0.7);
+        drawLaundryHung(ctx,L,step.item,s,step.k,1,0,1-q,1-clamp01(q/0.35));
+      }
+    }else if(act==='collect'){
+      const s=L.slot(step.k,n);
+      if(!fly) drawShopArmMarker(ctx,g,s.x,s.y+g.itemSize*0.25,progress);
+      else{
+        const p=shopFlyPos(s,b.mouth,animP), sz=L.gs*(1-0.25*animP);
+        drawLaundryGarment(ctx,step.item,p.x,p.y,sz,sz,1,animP*0.4);
+      }
+    }
+  }else{
+    drawShopBgCover(ctx,imgLaundryBedroomBg,cw,ch,'#f3e2c4');
+    const b=L.roomBasket, wd=L.wardrobe, tb=L.table;
+    if(imgLaundryWardrobe&&imgLaundryWardrobe.complete&&imgLaundryWardrobe.naturalWidth>0) drawShopImgFit(ctx,imgLaundryWardrobe,wd.x,wd.y,wd.w,wd.h);
+    else{ rrPath(ctx,wd.x-wd.w*0.32,wd.y-wd.h/2,wd.w*0.64,wd.h,8); ctx.fillStyle='#e8c99a'; ctx.fill(); ctx.lineWidth=4; ctx.strokeStyle='#a9793f'; ctx.stroke(); }
+    if(act==='store'&&!fly){ const s=L.shelf(step.k); drawShopGlow(ctx,s.x,s.y,s.w*0.62); }
+    laundryStory.shelf.forEach((id,i)=>{ if(id){ const s=L.shelf(i); drawLaundryFolded(ctx,id,s.x,s.y,s.w,s.h); } });
+    drawLaundryTable(ctx,tb);
+    const pileIds=laundryStory.pile.filter(id=>!(act==='store'&&id===step.item));
+    pileIds.forEach((id,i)=>{ const p=L.pile(i); drawLaundryFolded(ctx,id,p.x,p.y,L.foldW,L.foldH); });
+    const basketIds=laundryStory.basket.filter(id=>!(act==='fold'&&id===step.item));
+    drawLaundryBasket(ctx,b,basketIds);
+    if(act==='fold'){
+      const land=L.pile(laundryStory.pile.length), spot={ x:tb.x, y:land.y-L.gs*0.42 }, arc=arcOf(b.mouth,spot);
+      if(!fly) drawShopGlow(ctx,spot.x,spot.y,L.gs*0.5);
+      if(!fly||animP<0.3){
+        drawLaundryPath(ctx,b.mouth,spot,arc);
+        const p=laundryPathPos(b.mouth,spot,carryP,arc);
+        drawLaundryGarment(ctx,step.item,p.x,p.y,L.gs,L.gs);
+        drawLaundryHand(ctx,L,p.x,p.y+L.gs*0.42);
+      }else if(animP<0.65){ // 對摺
+        const q=clamp01((animP-0.3)/0.35);
+        ctx.save(); ctx.translate(spot.x,spot.y); ctx.scale(1-0.5*q,1-0.45*q);
+        drawLaundryGarment(ctx,step.item,0,0,L.gs,L.gs); ctx.restore();
+      }else{ // 變成摺好嘅一疊，放落枱
+        const q=clamp01((animP-0.65)/0.35), y=spot.y+(land.y-spot.y)*q, k=1.25-0.25*q;
+        drawLaundryFolded(ctx,step.item,land.x,y,L.foldW*k,L.foldH*k);
+      }
+    }else if(act==='store'){
+      const from=L.pile(Math.max(0,laundryStory.pile.length-1)), s=L.shelf(step.k), arc=arcOf(from,s)*0.6;
+      if(!fly||animP<0.3){
+        drawLaundryPath(ctx,from,s,arc);
+        const p=laundryPathPos(from,s,carryP,arc);
+        drawLaundryFolded(ctx,step.item,p.x,p.y,L.foldW,L.foldH);
+        drawLaundryHand(ctx,L,p.x,p.y+L.gs*0.36);
+      }else{
+        const q=clamp01((animP-0.3)/0.7), k=1+(L.foldW/s.w-1)*(1-q);
+        drawLaundryFolded(ctx,step.item,s.x,s.y,s.w*k,s.h*k);
+      }
+    }
+    if(step.cut==='done'&&!laundryStory.doneBurst){
+      laundryStory.doneBurst=true;
+      fxBurst(cw*0.3,ch*0.42,{ count:40, speed:6 }); fxBurst(cw*0.7,ch*0.42,{ count:40, speed:6 });
+    }
+  }
+  drawLaundryStageStrip(ctx,cw,L,step.stage);
+  drawLaundryBanner(ctx,cw,g,main,sub);
+  fxUpdateDraw(ctx);
+  ctx.restore();
+}
 /* ==================== v138 牌局場景（Level 3/4 肩前屈：麻雀「摸牌食糊」／啤牌「揭牌」） ====================
    純視覺同音效獎勵層：只讀取 shoulderFlexionState 嘅進度／達標訊號。
    同 v73 保齡球、v125 超市一樣：呢層完全唔會改變抬臂達標判定，亦唔加任何新輸入。
@@ -4727,6 +5352,7 @@ function drawShoulderFlexionGuide(ctx,cw,ch){
   if(state.theme==='bowlinglane'){ drawBowlingAlleyScene(ctx,cw,ch); return; }
   if(state.theme==='basketball'){ drawBasketballCourtScene(ctx,cw,ch); return; }
   if(state.theme==='supermarket'){ drawSupermarketScene(ctx,cw,ch); return; }
+  if(isLaundryStoryTheme()){ drawLaundryStoryScene(ctx,cw,ch); return; } // v139 洗衫晾衫故事
   if(isTeahouseDimsumMode()){ drawTeahouseScene(ctx,cw,ch); return; }
   const x=cw*(ch>cw?.68:.58),bottom=ch*.80,top=ch*.32;
   const target=shoulderFlexionState.selectedTargetDeg??'—';
@@ -6478,7 +7104,7 @@ function selectShoulderExerciseMode(mode){
   const context=document.getElementById('settingsContext');
   if(context){
     const th=getTheme();
-    context.textContent=currentLevel().tag+' · '+th.title+' · '+th.actionLabelFor(state.level)
+    context.textContent=currentLevel().tag+' · '+themeShownTitle(th)+' · '+th.actionLabelFor(state.level)
       +' · '+shoulderExerciseProfile().label;
   }
   return true;
@@ -6905,11 +7531,11 @@ function selectActivity(themeId){
   // gameplay. No setup control is allowed to rewrite the task/theme pair.
   if(state.level === '67' && !lockLevel6Activity(themeId)) return;
   const th = getTheme();
-  document.getElementById('settingsTitle').textContent = th.title
+  document.getElementById('settingsTitle').textContent = themeShownTitle(th)
     + (themeId==='dimsum'&&(state.level==='3'||state.level==='4')
       ? (state.dimsumSceneMode==='teahouse'?'（模擬茶樓）':'（看到自己）') : '');
   document.getElementById('settingsContext').textContent =
-    currentLevel().tag + ' · ' + th.title + ' · ' + th.actionLabelFor(state.level)
+    currentLevel().tag + ' · ' + themeShownTitle(th) + ' · ' + th.actionLabelFor(state.level)
     + (shoulderExerciseModeAvailable() ? ' · ' + shoulderExerciseProfile().label : '');
   const setupGuide=document.getElementById('cameraSetupGuide');
   if(setupGuide){
@@ -6968,7 +7594,7 @@ function renderActivityLibrary(){
     btn.innerHTML =
       '<div class="ac-copy"><h3></h3><p class="ac-goal"></p></div>' +
       '<div class="ac-visual"><img loading="eager" decoding="async"></div>';
-    btn.querySelector('h3').textContent = th.title;
+    btn.querySelector('h3').textContent = themeShownTitle(th);
     // v138 Level 3／4 麻雀／啤牌改為牌局玩法，卡片目標句跟住改
     const goalText = (isShoulderFlexionLevel() && th.shoulderGoal) || th.goal;
     btn.querySelector('.ac-goal').textContent = goalText;
@@ -6976,7 +7602,7 @@ function renderActivityLibrary(){
     img.src = th.thumbnail;
     img.alt = th.thumbnailAlt;
     img.addEventListener('error', ()=> btn.querySelector('.ac-visual').remove());
-    btn.setAttribute('aria-label', th.title + '：' + goalText);
+    btn.setAttribute('aria-label', themeShownTitle(th) + '：' + goalText);
     btn.addEventListener('click', ()=> selectActivity(id));
     grid.appendChild(btn);
     if(id==='dimsum'&&(state.level==='3'||state.level==='4')){
@@ -7011,6 +7637,25 @@ function renderActivityLibrary(){
         if(!b)return;
         e.stopPropagation();
         if(SHOP_LIST_SIZES[b.dataset.shopList]) state.shopListSize=b.dataset.shopList;
+        syncBar();
+      });
+      syncBar();
+      grid.appendChild(bar);
+    }
+    if(id==='laundry'&&(state.level==='3'||state.level==='4')&&!research.active){
+      // v139 洗衫晾衫：今次洗幾多件衫（少／中／多）；決定故事總抬手次數
+      const bar=document.createElement('div');
+      bar.className='dimsum-mode-bar';
+      bar.dataset.laundryLoadBar='1';
+      bar.innerHTML='<span class="dm-label">衫量</span>'
+        +Object.keys(LAUNDRY_LOAD_SIZES).map(k=>'<button type="button" class="dm-btn" data-laundry-load="'+k+'">'+LAUNDRY_LOAD_LABELS[k]
+          +'<small style="display:block;font-weight:600;font-size:12px">約 '+laundryRepCount(buildLaundrySteps(buildLaundryList(k)))+' 次抬手</small></button>').join('');
+      const syncBar=()=>bar.querySelectorAll('.dm-btn').forEach(b=>b.classList.toggle('selected',b.dataset.laundryLoad===laundryLoadSizeKey()));
+      bar.addEventListener('click',e=>{
+        const b=e.target.closest('[data-laundry-load]');
+        if(!b)return;
+        e.stopPropagation();
+        if(LAUNDRY_LOAD_SIZES[b.dataset.laundryLoad]) state.laundryLoadSize=b.dataset.laundryLoad;
         syncBar();
       });
       syncBar();
@@ -7369,7 +8014,7 @@ function updateRulesForActivity(){
     const rulesEl0 = document.getElementById('rulesContent');
     if(rulesEl0){
       rulesEl0.innerHTML =
-        `<div style="font-size:22px;font-weight:800;color:#0a7d75;margin-bottom:12px;">${th.title}</div>` +
+        `<div style="font-size:22px;font-weight:800;color:#0a7d75;margin-bottom:12px;">${themeShownTitle(th)}</div>` +
         `<div style="font-size:clamp(28px,4vw,38px);font-weight:900;line-height:1.35;margin-bottom:16px;">${actionCue}</div>` +
         `<div style="font-size:17px;color:#5a5a5a;line-height:1.5;">${r.lines[0]}</div>`;
     }
@@ -7390,7 +8035,7 @@ function updateRulesForActivity(){
       ? `<div style="font-size:22px;font-weight:800;color:#0a7d75;margin-bottom:12px;">桌面肩水平外展</div>` +
         `<div style="font-size:clamp(28px,4vw,38px);font-weight:900;line-height:1.35;margin-bottom:16px;">${actionCue}</div>` +
         '<div style="font-size:17px;color:#5a5a5a;">只移動已選患側手臂；返回中線後才開始下一次</div>'
-      : `<div style="font-size:22px;font-weight:800;color:#0a7d75;margin-bottom:12px;">${th.title}</div>` +
+      : `<div style="font-size:22px;font-weight:800;color:#0a7d75;margin-bottom:12px;">${themeShownTitle(th)}</div>` +
         `<div style="font-size:clamp(28px,4vw,38px);font-weight:900;line-height:1.35;margin-bottom:16px;">${actionCue}</div>` +
         `<div style="font-size:17px;color:#5a5a5a;">由中線拿取 · ${affectedDirectionLabel()}</div>`;
   }
@@ -10914,6 +11559,13 @@ const imgLaundryJeans = new Image(); imgLaundryJeans.src = 'img/laundry_jeans.pn
 const imgLaundrySkirt = new Image(); imgLaundrySkirt.src = 'img/laundry_skirt.png';
 const imgLaundryVest = new Image(); imgLaundryVest.src = 'img/laundry_vest.png';
 const imgLaundrySocks = new Image(); imgLaundrySocks.src = 'img/laundry_socks.png';
+// v139 洗衫晾衫故事（Level 3/4）：三個場景背景＋洗衣機、衣櫃、洗衣籃
+const imgLaundryRoomBg = new Image(); imgLaundryRoomBg.src = 'img/laundry_room_bg.jpg';
+const imgLaundryPoleBg = new Image(); imgLaundryPoleBg.src = 'img/laundry_pole_bg.jpg';
+const imgLaundryBedroomBg = new Image(); imgLaundryBedroomBg.src = 'img/laundry_bedroom_bg.jpg';
+const imgLaundryWasher = new Image(); imgLaundryWasher.src = 'img/laundry_washer.png';
+const imgLaundryWardrobe = new Image(); imgLaundryWardrobe.src = 'img/laundry_wardrobe.png';
+const imgLaundryBasket = new Image(); imgLaundryBasket.src = 'img/laundry_basket.png';
 // Public Level 6 affected-hand pinch cursors (user-provided, locally processed
 // to transparent PNG). Research mode deliberately keeps its original cursor.
 const imgLevel6PinchRight = new Image(); imgLevel6PinchRight.src = 'img/level6_pinch_right.png';
@@ -11366,6 +12018,8 @@ const BASE_THEME = {
   actionLabelFor(level){ return LEVEL_ACTION[level] || LEVEL_ACTION['4']; },
 };
 function mkTheme(def){ return Object.assign(Object.create(BASE_THEME), def); }
+// v139：同一個主題喺 Level 3/4 可以有自己嘅名（例如「衣物分類」→「洗衫晾衫」）
+function themeShownTitle(th){ return (isShoulderFlexionLevel()&&!research.active&&th&&th.shoulderTitle)||(th?th.title:''); }
 
 /* Level 4 scenario demonstrations (LEVEL4_GUIDE_ASSETS).
    保齡球、巴士拍卡及洗麻雀使用實景示範 GIF：畫面內沒有人臉、沒有可識別人物，
@@ -11601,6 +12255,8 @@ const THEMES = {
   laundry: mkTheme({
     id:'laundry', title:'衣物分類',
     goal:'將衣物放到相同顏色的洗衣籃',
+    shoulderTitle:'洗衫晾衫',
+    shoulderGoal:'洗衫、晾衫、摺衫、入衣櫃，每舉一下做一件',
     itemWord:'衣物', difficulty:'容易至中等', targetStyle:'panel',
     thumbnail:'img/advanced/g_tshirt_red.png', thumbnailAlt:'紅色上衣',
     categoriesFor(){
@@ -12544,6 +13200,10 @@ function shoulderRewardDurationMs(){
     return Math.max(SHOULDER_REWARD_MIN_MS,TEAHOUSE_FLY_MS+TEAHOUSE_STEAM_MS+900);
   }
   if(state.theme==='tsuenwan') return SHOULDER_PHOTO_REWARD_MS;
+  if(isLaundryStoryTheme()){
+    // v139：動畫＋跟住嘅過場（洗衣機轉／太陽晒衫）都蓋住，等過場完先再接受下一次抬手
+    return Math.max(SHOULDER_REWARD_MIN_MS,laundryStory.rewardMs);
+  }
   if(isDealTableTheme()){
     // v138 牌局：翻牌＋入位＋（一副完成／食糊）慶祝都播完先再接受下一次抬手
     return Math.max(SHOULDER_REWARD_MIN_MS,dealTableRewardMs());
@@ -12939,6 +13599,8 @@ function playApplauseSound(){
   }catch(e){}
 }
 function showFeedback(correct){
+  // v139 洗衫晾衫：件衫入機／上竹本身就係即時回饋；中央大剔號會遮住畫面，只保留「叮」聲
+  if(correct&&isLaundryStoryTheme()) return;
   const el = document.getElementById('feedbackOverlay');
   el.textContent = correct ? '✓' : '✕';
   el.classList.toggle('correct-feedback',correct);
@@ -13035,6 +13697,7 @@ function initGame(){
   heldItem = null; foods = []; targets = []; resetBowlingStrike(); resetBasketballShot(); resetTeahouseServe();
   resetSupermarketStory(); // v125 超市故事狀態一併清齊
   resetDealTable();        // v138 麻雀／啤牌牌局狀態一併清齊
+  resetLaundryStory();     // v139 洗衫晾衫故事狀態一併清齊
   resetDimsumOrderGame();  // v69 筷子點心落單狀態一併清齊
   resetLaundryOrderGame(); // v71 晾衫單狀態一併清齊
   resetFridgeGame();       // v72 雪櫃收納狀態一併清齊
@@ -13311,6 +13974,7 @@ function setupTargets(){
   }
   if(isShoulderFlexionLevel()){
     if(isDealTableTheme()){ targets=[]; return; } // v138 牌局：牌位由場景直接繪畫
+    if(isLaundryStoryTheme()){ targets=[]; return; } // v139 洗衫晾衫：全部由場景直接繪畫
     if(state.theme==='bowlinglane'||state.theme==='basketball'||state.theme==='supermarket'||isTeahouseDimsumMode()){
       // v73 保齡球／v74 模擬茶樓／v125 超市：目標由場景直接繪畫，唔使用通用目標盤
       targets=[];
@@ -14017,7 +14681,7 @@ function updateFramePerfOverlay(now){
     framePerf.overlayEl = el;
   }
   const p = framePerfSnapshot();
-  el.textContent = `perf v138  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
+  el.textContent = `perf v139  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
     + `鏡頭 ${p.video[0]}×${p.video[1]}  畫布 ${p.canvas[0]}×${p.canvas[1]}  dpr ${p.dpr}  手模型 ${p.handDelegate || '-'}\n`
     + `手 ${p.hand.hands} 隻  標籤 ${p.hand.label || '-'} ${p.hand.score}  接納 ${p.hand.path || '-'}  嚴格 ${p.hand.strict} 連續 ${p.hand.continuity} 單手 ${p.hand.lone} 拒絕 ${p.hand.rejected}\n`
     + `左右手檢查 ${p.hand.check === 'off' ? '關' : '開'}  鎖定手形 ${p.hand.lockSize || '-'}  大小拒絕 ${p.hand.sizeRejected}  遠處拒絕 ${p.hand.farRejected}`
@@ -15663,6 +16327,7 @@ function updateShoulderFlexionGame(){
   if(shoulderFlexionState.targetReady&&!shoulderFlexionCycleAwarded){
     shoulderFlexionCycleAwarded=true;
     if(isSupermarketTheme())startSupermarketAction(); // v125 先定好故事動畫長度，再開獎勵週期
+    if(isLaundryStoryTheme())startLaundryStoryAction(); // v139 同超市一樣：先定好故事動畫長度
     startShoulderRewardCycle();
     triggerFeedback(true);
     if(state.theme==='bowlinglane')startBowlingStrike();
@@ -17101,6 +17766,8 @@ function renderGame(){
     if(isSupermarketTheme()) continue;
     // v138 牌局：牌全部由場景層繪畫
     if(isDealTableTheme()) continue;
+    // v139 洗衫晾衫：衫全部由場景層繪畫
+    if(isLaundryStoryTheme()) continue;
     // v74 模擬茶樓：點心飛入蒸籠／蒸緊嗰陣由場景層接手畫，避免出現兩件點心
     if(isTeahouseDimsumMode() && teahouseServe.phase!=='idle') continue;
     ctx.save();
@@ -17344,7 +18011,7 @@ function endGame(endReason){
   if(rc) rc.textContent = research.active
     ? research.participantId + ' · Session ' + research.sessionNo + ' · ' +
       pilotScenarioName(research.scenarioId) + ' · ' + researchTrackName(research.dualTaskLevel) + ' · ' + currentLevel().tag
-    : currentLevel().tag + ' · ' + (window.YCHLanguage ? window.YCHLanguage.text(getTheme().title) : getTheme().title);
+    : currentLevel().tag + ' · ' + (window.YCHLanguage ? window.YCHLanguage.text(themeShownTitle(getTheme())) : themeShownTitle(getTheme()));
   document.getElementById('resScore').textContent = score;
   document.getElementById('resCorrect').textContent = correctCount;
   document.getElementById('resGrabs').textContent = level2Result ? correctCount : grabCount;
@@ -17375,6 +18042,8 @@ function endGame(endReason){
     const dealLine=isDealTableTheme()?dealTableSummaryText():'';
     dealSummary.hidden=!dealLine;
     dealSummary.textContent=dealLine;
+    const laundryLine=isLaundryStoryTheme()?laundryStorySummaryText():''; // v139 洗衫晾衫：今次做到邊一步
+    if(laundryLine){ dealSummary.hidden=false; dealSummary.textContent=laundryLine; }
   }
 
   /* PUBLIC_BUILD_REMOVE_START: research result DOM and export controls */
@@ -22491,6 +23160,7 @@ window.__qa = {
     }
     if(opts.dimsumSceneMode==='teahouse'||opts.dimsumSceneMode==='camera') state.dimsumSceneMode=opts.dimsumSceneMode;
     if(SHOP_LIST_SIZES[opts.shopListSize]) state.shopListSize=opts.shopListSize; // v125
+    if(LAUNDRY_LOAD_SIZES[opts.laundryLoadSize]) state.laundryLoadSize=opts.laundryLoadSize; // v139
     if(opts.fridgeDifficulty==='zones'||opts.fridgeDifficulty==='basic') state.fridgeDifficulty=opts.fridgeDifficulty;
     if(COOK_SQUEEZE_AMOUNTS[opts.cookSqueezeAmount]) state.cookSqueezeAmount=opts.cookSqueezeAmount; // v131
     if([...LAUNDRY_DIFFICULTY_KEYS,'complex'].includes(opts.laundryDifficulty)) state.laundryDifficulty=opts.laundryDifficulty;
@@ -23519,6 +24189,30 @@ window.__qa = {
     skipScene(){ const s=shopCurrentStep(); if(s&&s.kind==='scene'){ shopStory.stepStartedMs=nowMs()-(s.ms||0)-1; updateSupermarketStory(); } return window.__qa.shopStory.state(); },
     steps(){ return shopStory.steps.map(s=>({ kind:s.kind, scene:s.scene, action:s.action||null, item:s.item||null, ms:s.ms||0 })); },
   },
+  laundryStory:{
+    // v139 QA：洗衫晾衫故事狀態；trigger() 模擬一次抬臂達標，finishAnim()／skipScene() 將動畫／過場即時完結
+    state(){
+      const cur=laundryCurrentStep();
+      return { active:laundryStory.active, ended:laundryStory.ended, completed:laundryStory.completed, idx:laundryStory.idx, total:laundryStory.steps.length,
+        reps:laundryRepCount(laundryStory.steps), repsDone:laundryStory.repsDone, loadSize:laundryStory.loadSize, stage:laundryStory.stage,
+        list:laundryStory.list.slice(), basket:laundryStory.basket.slice(), drum:laundryStory.drum.slice(), pole:laundryStory.pole.slice(),
+        pile:laundryStory.pile.slice(), shelf:laundryStory.shelf.slice(), washed:laundryStory.washed, dry:laundryStory.dry,
+        step:cur?{ kind:cur.kind, scene:cur.scene, action:cur.action||null, cut:cur.cut||null, item:cur.item||null, k:cur.k, text:cur.text }:null,
+        anim:laundryStory.anim.phase, rewardMs:laundryStory.rewardMs, summary:laundryStorySummaryText() };
+    },
+    trigger(){
+      if(!isLaundryStoryTheme()) return null;
+      if(!laundryStory.active) beginLaundryStory();
+      startLaundryStoryAction();
+      return window.__qa.laundryStory.state();
+    },
+    setAnimElapsed(ms){ if(laundryStory.anim.phase==='fly') laundryStory.anim.startedMs=nowMs()-Math.max(0,Number(ms)||0); return window.__qa.laundryStory.state(); },
+    finishAnim(){ if(laundryStory.anim.phase==='fly'){ laundryStory.anim.startedMs=nowMs()-LAUNDRY_ACTION_MS-1; updateLaundryStoryAction(); } return window.__qa.laundryStory.state(); },
+    setSceneElapsed(fraction){ const s=laundryCurrentStep(); if(s&&s.kind==='scene'){ laundryStory.stepStartedMs=nowMs()-(s.ms||0)*Math.max(0,Math.min(0.99,Number(fraction)||0)); } return window.__qa.laundryStory.state(); },
+    skipScene(){ const s=laundryCurrentStep(); if(s&&s.kind==='scene'){ laundryStory.stepStartedMs=nowMs()-(s.ms||0)-1; updateLaundryStory(); } return window.__qa.laundryStory.state(); },
+    steps(){ return laundryStory.steps.map(s=>({ kind:s.kind, scene:s.scene, action:s.action||null, cut:s.cut||null, item:s.item||null, ms:s.ms||0 })); },
+    geometry(){ const L=laundryStoryGeometry(gameCanvas.width,gameCanvas.height); return { portrait:L.portrait, washer:L.washer, washBasket:L.washBasket, poleY:L.poleY, hangH:L.hangH, wardrobe:L.wardrobe, table:L.table, stripY:L.stripY, contentTop:L.g.contentTop }; },
+  },
   laundryRack:{
     // v101 QA：直接掛 n 件衫上 Level 6 晾衫架（跳過手勢），回傳架上狀態
     hang(n, rackIndex){
@@ -24205,7 +24899,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v138-20261123-mahjong-cards-deal";
+  const LEVEL_APP_BUILD = "v139-20261124-laundry-story";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

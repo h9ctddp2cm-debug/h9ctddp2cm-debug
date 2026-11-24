@@ -78,7 +78,7 @@ test('scene block admits no hand-contact/grip/release signal', () => {
 });
 
 test('strike starts only from the existing targetReady award point', () => {
-  assert.match(publicSource, /shoulderFlexionCycleAwarded=true;\s*(?:if\(isSupermarketTheme\(\)\)startSupermarketAction\(\);[^\n]*\s*)?startShoulderRewardCycle\(\);\s*triggerFeedback\(true\);\s*if\(state\.theme==='bowlinglane'\)startBowlingStrike\(\);/);
+  assert.match(publicSource, /shoulderFlexionCycleAwarded=true;\s*(?:if\(isSupermarketTheme\(\)\)startSupermarketAction\(\);[^\n]*\s*)?(?:if\(isLaundryStoryTheme\(\)\)startLaundryStoryAction\(\);[^\n]*\s*)?startShoulderRewardCycle\(\);\s*triggerFeedback\(true\);\s*if\(state\.theme==='bowlinglane'\)startBowlingStrike\(\);/);
   // Pins reset only through the shared reward-cycle completion path.
   assert.match(publicSource, /function finishShoulderRewardCycle\(\)[\s\S]*advanceLevel3RoundVariant\(\);\s*resetBowlingStrike\(\);/);
 });
