@@ -302,6 +302,16 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
 .level4-auto-progress[hidden]{ display:none; }
 .level4-live-readouts{ display:grid; grid-template-columns:1fr; gap:5px; }
 .level4-live-readouts[hidden]{ display:none !important; }
+/* v139 公開版：細字顯示「現在／目標」（相機估算，只供參考） */
+.level4-calib.public-compact{ width:min(190px,calc(100% - 24px)) !important; padding:5px !important; gap:3px; }
+.level4-calib.public-compact .level4-live-readouts{ grid-template-columns:1fr 1fr; gap:4px; }
+.level4-calib.public-compact .level4-reading,
+.level4-calib.public-compact.shoulder-live .level4-reading:first-child{ min-height:30px; padding:3px 7px; font-size:12px; border-width:1px; }
+.level4-calib.public-compact .level4-reading b,
+.game-stage.patient-shoulder-hud .level4-calib.public-compact .level4-reading b,
+.game-stage.patient-shoulder-hud .level4-calib.public-compact.shoulder-live .level4-reading:first-child b{ font-size:19px; }
+.level4-readout-note{ display:none; font-size:10px; font-weight:700; line-height:1.15; color:#4c625e; text-align:center; }
+.level4-calib.public-compact .level4-readout-note{ display:block; }
 .level4-reading{ display:flex; min-height:54px; align-items:center; justify-content:space-between; gap:8px; padding:7px 9px;
   border-radius:12px; background:#edf7f3; color:#254c44; font-size:16px; font-weight:850; line-height:1.1; }
 .level4-reading[hidden]{ display:none !important; }
@@ -2134,6 +2144,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
           <div class="level4-reading"><span>已記錄伸肘終點<span class="en">Captured extended end</span></span><b id="level4ExtendedEndpoint">—</b></div>
           <div class="level4-reading" id="level4ShoulderAbductionReading" hidden><span>肩水平外展範圍<span class="en">Shoulder horizontal-abduction range</span></span><b id="level4ShoulderAbduction">—</b></div>
         </div>
+        <div class="level4-readout-note" id="level4ReadoutNote">相機估算，只供參考</div>
         <details data-testid="details-level4-therapist" aria-label="治療師詳細資料 / Therapist details">
           <summary>治療師詳細資料 / Therapist details</summary>
           <div class="level4-calib-diag" id="level4CalibDiag"></div>
@@ -4394,36 +4405,47 @@ function laundryStoryGeometry(cw,ch){
   const stripH=Math.max(24,m*0.058);
   const stripY=ch-stripH-m*0.012;            // 底部「七個步驟」進度條
   const floorY=stripY-m*0.012;               // 物件企喺呢條線
-  const gs=m*(portrait?0.20:0.22);           // 手上件衫嘅大細
-  const basketW=m*(portrait?0.36:0.40), basketH=basketW*322/520;
-  const mkBasket=x=>({ x, y:floorY-basketH*0.5, w:basketW, h:basketH, mouth:{ x, y:floorY-basketH*0.84 } });
+  const gs=m*(portrait?0.28:0.32);           // 手上件衫嘅大細（治療師要求放大）
+  const basketW=Math.min(m*(portrait?0.42:0.50),cw*(portrait?0.46:0.27)), basketH=basketW*322/520;
+  const mkBasket=(x,k)=>{ const w=basketW*(k||1), h=basketH*(k||1); return { x, y:floorY-h*0.5, w, h, mouth:{ x, y:floorY-h*0.84 } }; };
+  const basketX=Math.max(basketW/2+cw*0.012,cw*(portrait?0.24:0.19));
   const room=Math.max(60,floorY-g.contentTop-6);
+  // 橫向：洗衣機／衣櫃靠右放大到差唔多成個畫面高，橫額移去佢左邊；直向：放喺橫額下面
+  const tall=Math.max(60,floorY-g.bannerY-10*g.cssScale);
+  const sideGap=12*g.cssScale;
   // 洗衣機
-  const washerH=Math.min(ch*(portrait?0.44:0.64),room), washerW=washerH*404/560;
-  const washer={ x:cw*(portrait?0.68:0.66), y:floorY-washerH/2, w:washerW, h:washerH };
+  const washerH=portrait?Math.min(ch*0.52,room,cw*0.52*560/404):Math.min(ch*0.80,tall,cw*0.36*560/404), washerW=washerH*404/560;
+  const washer={ x:cw-washerW/2-cw*0.02, y:floorY-washerH/2, w:washerW, h:washerH };
   washer.door={ x:washer.x, y:washer.y-washerH/2+washerH*0.465, r:washerW*0.295 };
   washer.button={ x:washer.x-washerW/2+washerW*0.87, y:washer.y-washerH/2+washerH*0.095, r:washerW*0.07 };
-  // 晾衫竹
+  // 晾衫竹（露台個籃細少少，留多啲位畀竹上面嘅衫）
   const poleY=g.contentTop+m*0.035;
-  const poleBasket=mkBasket(cw*0.5);
-  const hangH=Math.max(40,Math.min(m*(portrait?0.26:0.30),(poleBasket.y-basketH*0.5)-poleY-m*0.05));
-  const poleX0=cw*0.06, poleX1=cw*0.94;
+  const poleBasket=mkBasket(cw*0.5,0.8);
+  const hangH=Math.max(40,Math.min(m*(portrait?0.34:0.40),floorY-poleY-poleBasket.h*0.78));
+  const poleX0=cw*0.04, poleX1=cw*0.96;
   // 衣櫃＋摺衫枱
-  const wardH=Math.min(ch*(portrait?0.44:0.70),room), wardW=wardH*441/640;
-  const wardrobe={ x:cw*(portrait?0.74:0.78), y:floorY-wardH/2, w:wardW, h:wardH };
-  const table={ x:cw*(portrait?0.31:0.49), topY:ch*(portrait?0.66:0.74), w:m*(portrait?0.38:0.44), th:Math.max(8,m*0.028), bottom:floorY };
+  const wardH=portrait?Math.min(ch*0.50,room,cw*0.50*640/441):Math.min(ch*0.80,tall,cw*0.34*640/441), wardW=wardH*441/640;
+  const wardrobe={ x:cw-wardW/2-cw*(portrait?0.01:0.02), y:floorY-wardH/2, w:wardW, h:wardH };
+  const tableW=Math.min(m*(portrait?0.38:0.44),cw*(portrait?0.40:0.24));
+  const tableX=portrait?cw*0.31:(basketX+basketW/2+wardrobe.x-wardW/2)/2;
+  const table={ x:tableX, topY:ch*(portrait?0.66:0.76), w:tableW, th:Math.max(8,m*0.028), bottom:floorY };
   const foldW=gs*0.62, foldH=gs*0.25;
+  const nItems=Math.max(1,laundryStory.list.length||4);
+  const pileStep=Math.max(foldH*0.4,Math.min(foldH*0.82,(table.topY-g.contentTop-foldH*1.2)/nItems));
   return {
     g, portrait, m, stripH, stripY, floorY, gs, foldW, foldH,
-    washBasket:mkBasket(cw*(portrait?0.24:0.17)), washer,
+    washBasket:mkBasket(basketX), washer,
     poleY, poleX0, poleX1, hangH, poleBasket,
-    roomBasket:mkBasket(cw*(portrait?0.22:0.20)), wardrobe, table,
+    roomBasket:mkBasket(basketX), wardrobe, table,
+    // 橫向時橫額可以用嘅範圍（左邊避開度數面板，右邊避開洗衣機／衣櫃）
+    washBanner:portrait?null:{ x0:g.panelRight, x1:washer.x-washerW/2-sideGap },
+    roomBanner:portrait?null:{ x0:g.panelRight, x1:wardrobe.x-wardW/2-sideGap },
     slot(i,n){ const w=(poleX1-poleX0)/Math.max(1,n); return { x:poleX0+w*(i+0.5), y:poleY+hangH*0.52, w:w*0.86 }; },
-    pile(i){ return { x:table.x, y:table.topY-foldH*0.5-i*foldH*0.82 }; },
+    pile(i){ return { x:table.x, y:table.topY-foldH*0.5-i*pileStep }; },
     shelf(i){ // 六個位：由下面嗰層開始，逐層向上
       const row=Math.floor(i/2), col=i%2, surf=[0.60,0.43,0.247][Math.min(2,row)];
       const top=wardrobe.y-wardH/2, left=wardrobe.x-wardW/2;
-      const fw=wardW*0.25, fh=fw*foldH/foldW;
+      const fw=wardW*0.27, fh=fw*foldH/foldW;
       return { x:left+wardW*(col?0.66:0.37), y:top+wardH*surf-fh*0.5, w:fw, h:fh };
     },
   };
@@ -4460,7 +4482,7 @@ function drawLaundryBasket(ctx,b,ids){
   const n=ids.length;
   ids.forEach((id,i)=>{
     const off=(i-(n-1)/2);
-    drawLaundryGarment(ctx,id,b.x+off*b.w*0.13,b.y-b.h*0.26-(i%2)*b.h*0.05,b.w*0.44,b.w*0.44,1,off*0.16);
+    drawLaundryGarment(ctx,id,b.x+off*b.w*0.14,b.y-b.h*0.40-(i%2)*b.h*0.06,b.w*0.62,b.w*0.62,1,off*0.16);
   });
   if(imgLaundryBasket&&imgLaundryBasket.complete&&imgLaundryBasket.naturalWidth>0) drawShopImgFit(ctx,imgLaundryBasket,b.x,b.y,b.w,b.h);
   else{
@@ -4484,10 +4506,10 @@ function drawLaundryWasher(ctx,w,ids,spinning,lit){
   ids.forEach((id,i)=>{
     if(spinning){
       const a=t/240+i*Math.PI*2/Math.max(1,n);
-      drawLaundryGarment(ctx,id,d.x+Math.cos(a)*rr*0.36,d.y+Math.sin(a)*rr*0.36,rr*1.05,rr*1.05,0.95,a*1.3);
+      drawLaundryGarment(ctx,id,d.x+Math.cos(a)*rr*0.36,d.y+Math.sin(a)*rr*0.36,rr*1.3,rr*1.3,0.95,a*1.3);
     }else{
       const off=(i-(n-1)/2);
-      drawLaundryGarment(ctx,id,d.x+off*rr*0.30,d.y+rr*0.30-(i%2)*rr*0.14,rr*1.05,rr*1.05,0.95,off*0.35);
+      drawLaundryGarment(ctx,id,d.x+off*rr*0.30,d.y+rr*0.26-(i%2)*rr*0.14,rr*1.3,rr*1.3,0.95,off*0.35);
     }
   });
   if(spinning){
@@ -4538,7 +4560,7 @@ function drawLaundryPeg(ctx,x,y,s){
 function drawLaundryHung(ctx,L,id,slot,i,wet,shine,swayBoost,pegDrop){
   const im=laundryItemImg(id), t=nowMs();
   let w=slot.w*0.7, h=L.hangH;
-  if(im){ const s=Math.min(slot.w/im.naturalWidth,L.hangH/im.naturalHeight); w=im.naturalWidth*s; h=im.naturalHeight*s; }
+  if(im){ const s=Math.min(slot.w*1.15/im.naturalWidth,L.hangH/im.naturalHeight); w=im.naturalWidth*s; h=im.naturalHeight*s; }
   const sway=Math.sin(t/820+i*1.3)*(0.03+0.10*(swayBoost||0));
   ctx.save(); ctx.translate(slot.x,L.poleY); ctx.rotate(sway);
   if(im) ctx.drawImage(im,-w/2,2,w,h);
@@ -4597,27 +4619,39 @@ function drawLaundryTable(ctx,tb){
   ctx.restore();
 }
 // 橫額：同超市橫額一樣嘅樣，但闊度會照顧埋細字（細字長過主句都唔會出界）
-function drawLaundryBanner(ctx,cw,g,text,sub){
-  const maxW=g.portrait?cw-24:cw-g.panelRight*2-24;
-  let font=g.bannerFont, subFont=Math.round(font*0.62);
+function drawLaundryBanner(ctx,cw,g,text,sub,region){
+  const maxW=region?Math.max(120,region.x1-region.x0):(g.portrait?cw-24:cw-g.panelRight*2-24);
+  const cx=region?(region.x0+region.x1)/2:cw/2;
+  let font=g.bannerFont, subFont=Math.round(font*0.62), lines=[text];
   const fam='px "PingFang TC","Noto Sans TC",sans-serif';
   ctx.save();
   const measure=()=>{
-    ctx.font='800 '+font+fam; const tw=ctx.measureText(text).width;
+    ctx.font='800 '+font+fam; const tw=Math.max(...lines.map(t=>ctx.measureText(t).width));
     ctx.font='700 '+subFont+fam; const sw=sub?ctx.measureText(sub).width:0;
     return Math.max(tw,sw);
   };
   let wide=measure();
-  if(wide+font*1.2>maxW){ // 長句自動縮細字體
+  if(wide+font*1.2>maxW){ // 位唔夠闊：喺逗號／冒號位分兩行，唔好縮到好細字
+    const cut=text.indexOf('，')>0?text.indexOf('，')+1:(text.indexOf(': ')>0?text.indexOf(': ')+1:0);
+    if(cut>0&&cut<text.length-1){
+      lines=[text.slice(0,cut).trim(),text.slice(cut).trim()];
+      // 冇側邊位（晾衫竹／直向）：兩行都唔可以高過平時一行，免得遮住下面枝竹
+      if(!region){ font=Math.floor(font*0.70); subFont=Math.round(font*0.62); }
+      wide=measure();
+    }
+  }
+  if(wide+font*1.2>maxW){ // 仍然太長先自動縮細字體
     font=Math.max(18,Math.floor(font*(maxW-font*1.2)/wide)); subFont=Math.round(font*0.62); wide=measure();
   }
-  const bw=Math.min(maxW,wide+font*1.6), bh=font*(sub?2.55:1.75), bx=cw/2-bw/2, by=g.bannerY;
+  const extra=font*1.12*(lines.length-1);
+  const bw=Math.min(maxW,wide+font*1.6), bh=font*(sub?2.55:1.75)+extra, bx=cx-bw/2, by=g.bannerY;
   rrPath(ctx,bx,by,bw,bh,18);
   ctx.fillStyle='rgba(255,255,255,0.94)'; ctx.fill();
   ctx.lineWidth=4; ctx.strokeStyle='#1A6B5A'; ctx.stroke();
   ctx.fillStyle='#17463d'; ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.font='800 '+font+fam; ctx.fillText(text,cw/2,by+font*0.95,bw-font*0.5);
-  if(sub){ ctx.font='700 '+subFont+fam; ctx.fillStyle='#8a5a12'; ctx.fillText(sub,cw/2,by+font*1.95,bw-font*0.5); }
+  ctx.font='800 '+font+fam;
+  lines.forEach((t,i)=>ctx.fillText(t,cx,by+font*(0.95+1.12*i),bw-font*0.5));
+  if(sub){ ctx.font='700 '+subFont+fam; ctx.fillStyle='#8a5a12'; ctx.fillText(sub,cx,by+font*1.95+extra,bw-font*0.5); }
   ctx.restore();
   return by+bh;
 }
@@ -4632,7 +4666,7 @@ function drawLaundryPath(ctx,from,to,arc){
   ctx.stroke(); ctx.restore();
 }
 function drawLaundryHand(ctx,L,x,y){
-  const hh=Math.max(72,L.gs*0.92);
+  const hh=Math.max(72,L.gs*0.66);
   if(imgShopHand&&imgShopHand.complete&&imgShopHand.naturalWidth){
     const hw=hh*imgShopHand.naturalWidth/imgShopHand.naturalHeight;
     ctx.drawImage(imgShopHand,x-hw/2,y-hh*0.5,hw,hh);
@@ -4789,7 +4823,7 @@ function drawLaundryStoryScene(ctx,cw,ch){
     const basketIds=laundryStory.basket.filter(id=>!(act==='fold'&&id===step.item));
     drawLaundryBasket(ctx,b,basketIds);
     if(act==='fold'){
-      const land=L.pile(laundryStory.pile.length), spot={ x:tb.x, y:land.y-L.gs*0.42 }, arc=arcOf(b.mouth,spot);
+      const land=L.pile(laundryStory.pile.length), spot={ x:tb.x, y:Math.max(land.y-L.gs*0.42,g.contentTop+(L.portrait?0:g.bannerFont*1.12)+L.gs*0.5) }, arc=arcOf(b.mouth,spot);
       if(!fly) drawShopGlow(ctx,spot.x,spot.y,L.gs*0.5);
       if(!fly||animP<0.3){
         drawLaundryPath(ctx,b.mouth,spot,arc);
@@ -4822,7 +4856,7 @@ function drawLaundryStoryScene(ctx,cw,ch){
     }
   }
   drawLaundryStageStrip(ctx,cw,L,step.stage);
-  drawLaundryBanner(ctx,cw,g,main,sub);
+  drawLaundryBanner(ctx,cw,g,main,sub,step.scene==='wash'?L.washBanner:step.scene==='room'?L.roomBanner:null);
   fxUpdateDraw(ctx);
   ctx.restore();
 }
@@ -15327,10 +15361,12 @@ function level4UpdateCalibrationBar(){
     const liveAngleReady=shoulder.framingReady&&shoulder.gameReady
       &&shoulder.frame?.fresh===true&&shoulder.reason==='ready'
       &&Number.isFinite(shoulder.estimatedAngle);
-    // v137 public patient mode hides the degree figures (relative camera
-    // estimate, not a goniometer reading); the research view keeps them.
+    // v139: the therapist asked for the 現在／目標 figures back in public
+    // patient mode, in small type (v137 had hidden them). They are still a
+    // relative camera estimate, not a goniometer reading, and are labelled so.
     const readouts=document.querySelector('.level4-live-readouts');
-    if(readouts) readouts.hidden=!research.active;
+    if(readouts) readouts.hidden=false;
+    bar.classList.toggle('public-compact',!research.active);
     document.getElementById('level4FlexedEndpoint').textContent=liveAngleReady
       ? Math.round(shoulder.estimatedAngle)+'°' : '—';
     document.getElementById('level4ExtendedEndpoint').textContent=Number.isFinite(shoulder.selectedTargetDeg)?shoulder.selectedTargetDeg+'°':'—';
@@ -15349,6 +15385,7 @@ function level4UpdateCalibrationBar(){
     return;
   }
   bar.classList.remove('shoulder-live');
+  bar.classList.remove('public-compact');
   const readoutsBox=document.querySelector('.level4-live-readouts');
   if(readoutsBox) readoutsBox.hidden=false;
   const labels=document.querySelectorAll('.level4-live-readouts .level4-reading > span');

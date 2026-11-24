@@ -154,13 +154,15 @@ test('index.html: public reward end no longer resets the controller; research ke
   assert.equal((finish.match(/setTarget\(/g) || []).length, 1);
 });
 
-test('index.html: public Level 3/4 prompts and readouts carry no degree figures', () => {
+test('index.html: public Level 3/4 prompts carry no degree figures; live readouts are small and labelled', () => {
   assert.match(html, /\}else if\(!research\.active\)\{[\s\S]{0,260}setActionPrompt\('慢慢放低',''\);[\s\S]{0,80}setActionPrompt\('放低啲再抬高',''\);[\s\S]{0,40}setActionPrompt\('抬高',''\);/);
   // research prompts unchanged
   assert.match(html, /setActionPrompt\('到起點',shoulderFlexionState\.selectedStartDeg\+'°'\);/);
   assert.match(html, /setActionPrompt\('抬高至',target\+'°'\);/);
-  // live 現在／目標 readouts hidden in public mode, shown in research
-  assert.match(html, /if\(readouts\) readouts\.hidden=!research\.active;/);
+  // v139 (therapist decision, 24 Nov): the live 現在／目標 readouts are shown again in
+  // public mode, in small type and labelled as a camera estimate
+  assert.match(html, /if\(readouts\) readouts\.hidden=false;\n\s*bar\.classList\.toggle\('public-compact',!research\.active\);/);
+  assert.match(html, /<div class="level4-readout-note" id="level4ReadoutNote">相機估算，只供參考<\/div>/);
   assert.match(html, /\.level4-live-readouts\[hidden\]\{ display:none !important; \}/);
   // canvas 目標 xx° labels only in research
   assert.match(html, /if\(topY>=34 && research\.active\)\{/);

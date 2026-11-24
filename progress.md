@@ -1919,6 +1919,10 @@ Original prompt: Fix Level 6–7 interactions: make light clothes-peg press dete
 - 實作：純視覺／音效獎勵層。`startLaundryStoryAction()` 掛喺超市 `startSupermarketAction()` 同一位置（`startShoulderRewardCycle()` 之前），`shoulderRewardDurationMs()` 用 `laundryStory.rewardMs`（動畫 850 ms＋停頓＋之後嘅過場總長，下限 2.6 秒）。只讀 `shoulderFlexionState.progress`；`shoulder-flexion-controller.js`、達標判定、計分、v137 規則（舉住手繼續計分、比最高點低 10° 再開始）全部冇改，冇任何嘢變嚴格。
 - 新圖：`img/laundry_room_bg.jpg`、`laundry_pole_bg.jpg`、`laundry_bedroom_bg.jpg`、`laundry_washer.png`、`laundry_wardrobe.png`、`laundry_basket.png`；衣物沿用現有 `laundry_*.png`。
 - 英文：劇本每句有 `en`／`subEn`，`localization.js` 加 22 條（標題、目標、衫量、三個衫量標籤同「約 N 次抬手」、全部步驟句）。
-- 驗證：`tests/v139-laundry-story.test.mjs`（13：劇本次序、每件衫每步一次、19／25／37、休息過場、七步進度、掛鈎位置、冇寫入控制器／分數、英文、圖片、標記）；Playwright 公開流程 筆電 1413×653（中 4 件）、iPad 1180×820（英文 3 件）、直向 820×1180（6 件）由開場行到完場頁；全套 Node 測試；`tools/checkjs.sh`、`node --check service-worker.js`、`git diff --check`、`./scripts/build-dist.sh`。
+- 驗證：`tests/v139-laundry-story.test.mjs`（14：劇本次序、每件衫每步一次、19／25／37、休息過場、七步進度、掛鈎位置、冇寫入控制器／分數、英文、圖片、標記）；Playwright 公開流程 筆電 1413×653（中 4 件）、iPad 1180×820（英文 3 件）、直向 820×1180（6 件）由開場行到完場頁；全套 Node 測試；`tools/checkjs.sh`、`node --check service-worker.js`、`git diff --check`、`./scripts/build-dist.sh`。
 - 標記 `v139-20261124-laundry-story`、`perf v139`；QA 對照表 `ych_rehab_qa_artifacts/v139/v139-qa-contact-sheet.png`；`security-reviews/v139-security-review.md`。
-- 未決：治療師問「係咪應該顯示返個度數」——v137 按佢當時指示喺公開版收起即時度數（成績頁仍有相機估算紀錄）；今版冇改，等佢決定。英文版超市「單長度」細字仍然顯示通用後備句（舊問題）。
+- 治療師睇完第一版對照表嘅跟進（同日，未推送前）：
+  1. 「The clothes and washing machine should be larger in size」→ `laundryStoryGeometry` 放大：手上件衫 `gs=m*(portrait?0.28:0.32)`（之前約 0.2）；洗衣機／衣櫃橫向佔畫面高度約 80%（靠右邊），直向約 50–52%；衫籃同籃入面、滾筒入面、竹上面嘅衫一齊放大；摺衫枱放喺衫籃同衣櫃中間。橫向時指示牌改放喺洗衣機／衣櫃左邊（`washBanner`／`roomBanner`），唔再壓住部機；句子太長會喺逗號／冒號位分兩行（`drawLaundryBanner`），晾衫竹同直向嘅兩行版縮到同一行版一樣高，唔會遮住枝竹。
+  2. 「同埋係咪應該要顯示返個度數？」→ 佢答「顯示，不過字體細個啲」：公開版 Level 3／4 重新顯示即時「現在／目標」度數，用細字精簡版（`.level4-calib.public-compact`：19px 數字、闊度最多 190px），下面一行細字「相機估算，只供參考」（`#level4ReadoutNote`）。v137 收起度數嘅決定由呢個指示取代；指示句（抬高／慢慢放低）同畫面上嘅目標標籤仍然冇度數。適用於全部 Level 3／4 場景。
+  3. 順手補返英文版缺嘅字：HUD「完成次數」→ Lifts done、「自拍」→ Selfie、「白色背景」→ White（之前顯示通用後備句，令直向英文版按鈕排太長，會遮住新嘅度數細牌）。
+- 仍然未做：英文版超市「單長度」細字仍然顯示通用後備句（舊問題）。

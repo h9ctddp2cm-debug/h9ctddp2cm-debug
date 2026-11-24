@@ -182,6 +182,27 @@ test('activity card, load-size bar and result line describe the new play', () =>
   assert.doesNotMatch(summary, /上次|比較|進步|退步|last time|previous/i);
 });
 
+test('therapist follow-up: bigger clothes and appliances, small live degree readout', () => {
+  const geo = fnSource('laundryStoryGeometry');
+  // carried garment is about a third of the short screen edge (was about a fifth)
+  assert.match(geo, /const gs=m\*\(portrait\?0\.28:0\.32\);/);
+  // landscape: washer and wardrobe grow to most of the screen height beside the banner
+  assert.match(geo, /const washerH=portrait\?Math\.min\(ch\*0\.52,room,[^)]*\):Math\.min\(ch\*0\.80,tall,/);
+  assert.match(geo, /const wardH=portrait\?Math\.min\(ch\*0\.50,room,[^)]*\):Math\.min\(ch\*0\.80,tall,/);
+  assert.match(geo, /washBanner:portrait\?null:\{ x0:g\.panelRight, x1:washer\.x-washerW\/2-sideGap \}/);
+  // 現在／目標 is visible again in public mode, compact and labelled as a camera estimate
+  assert.match(html, /if\(readouts\) readouts\.hidden=false;\n\s*bar\.classList\.toggle\('public-compact',!research\.active\);/);
+  assert.match(html, /\.level4-calib\.public-compact \.level4-reading b,[\s\S]{0,260}\{ font-size:19px; \}/);
+  assert.match(html, /id="level4ReadoutNote">相機估算，只供參考</);
+  assert.ok(localization.includes("'相機估算，只供參考':'Camera estimate, for reference only'"));
+  assert.ok(localization.includes("'完成次數':'Lifts done'"));
+  assert.ok(localization.includes("'自拍':'Selfie'"));
+  // long banner text wraps instead of shrinking to tiny type
+  assert.match(fnSource('drawLaundryBanner'), /lines=\[text\.slice\(0,cut\)\.trim\(\),text\.slice\(cut\)\.trim\(\)\];/);
+  // prompts still carry no degree figures and nothing about detection changed
+  assert.match(html, /setActionPrompt\('抬高',''\);/);
+});
+
 test('new scene pictures are shipped', () => {
   ['laundry_room_bg.jpg', 'laundry_pole_bg.jpg', 'laundry_bedroom_bg.jpg',
     'laundry_washer.png', 'laundry_wardrobe.png', 'laundry_basket.png'].forEach(file => {

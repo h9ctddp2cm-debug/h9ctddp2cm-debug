@@ -43,8 +43,15 @@ and theme `laundry`); other modes keep the generic target panel:
   Sounds are the existing WebAudio-synthesised ones. No camera-pipeline change: `numHands:2`,
   confidences 0.20/0.18/0.18, `runningMode:'VIDEO'`, `PUBLIC_GAME_WORK_INTERVAL_MS`,
   `PUBLIC_CANVAS_MAX_EDGE` unchanged.
-- Public mode shows no degree figures in the new scene (unchanged from v137). Clinical wording
-  unchanged: 網頁不識別實體工具，亦不量度握力或捏力.
+- Degree readout: at the therapist's request (「顯示，不過字體細個啲」) public Level 3/4 shows the
+  live 現在 / 目標 angles again, in a compact small-type panel with the caption 相機估算，只供參考
+  (camera estimate, for reference only). This supersedes the v137 decision to hide them. It is a
+  display-only change (`readouts.hidden=false` + a CSS class); the numbers are the same values the
+  result screen already reports. Spoken / on-screen prompts and the canvas target label still carry
+  no degree figures. Clinical wording unchanged: 網頁不識別實體工具，亦不量度握力或捏力.
+- Therapist follow-up on size: garments, washer, wardrobe and basket are drawn larger and the
+  instruction banner moved beside the appliance in landscape (drawing geometry only). Three missing
+  English labels (完成次數, 自拍, 白色背景) now have translations instead of the generic fallback.
 - Level 5 / Level 6 laundry modules (cloth-peg laundry, laundry sorting), chopsticks
   (`gameType:'dwell'`) and all other Level 3/4 scenes are untouched; the v138 block and its hooks are
   byte-identical apart from the release marker.
@@ -52,7 +59,7 @@ and theme `laundry`); other modes keep the generic target panel:
   dist/public `__qa` 0 occurrences; banned-wording scan of dist/public 0 files.
 
 ## Verification
-- `tests/v139-laundry-story.test.mjs` (13 tests: script order, each garment once per stage, 19/25/37
+- `tests/v139-laundry-story.test.mjs` (14 tests: script order, each garment once per stage, 19/25/37
   lifts, rest scenes, stage strip, hook placement, read-only wiring, English strings, assets, markers)
   + full Node suite green (two groups).
 - Playwright public flow from intro to the result screen at laptop 1413×653 (4 garments), iPad
