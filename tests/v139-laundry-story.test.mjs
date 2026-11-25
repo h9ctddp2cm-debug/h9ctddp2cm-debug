@@ -147,7 +147,8 @@ test('the scene never feeds back into detection, scoring or the v137 re-arm rule
 
 test('the game ends by itself only after the closing scene', () => {
   const update = fnSource('updateLaundryStory');
-  assert.match(update, /if\(s\.end\)\{\s*laundryStory\.ended=true;\s*if\(state\.running\) endGame\(\);\s*return;\s*\}/);
+  // v141: with session time left the closing scene starts another round instead
+  assert.match(update, /if\(s\.end\)\{\s*if\(storyRoundCanRepeat\(\)\)\{ restartLaundryRound\(\); return; \}\s*laundryStory\.ended=true;\s*if\(state\.running\) endGame\(\);\s*return;\s*\}/);
   assert.match(fnSource('updateLaundryStoryAction'), /if\(nxt&&nxt\.kind==='scene'&&nxt\.end\)\{ laundryStory\.completed=true;/);
 });
 
@@ -222,8 +223,8 @@ test('other Level 3/4 scenes and the Level 5/6 laundry games are not rerouted', 
 test('release markers are v139', () => {
   const sw = readFileSync(path.join(root, 'service-worker.js'), 'utf8');
   const manifest = readFileSync(path.join(root, 'manifest.webmanifest'), 'utf8');
-  assert.match(html, /const LEVEL_APP_BUILD = "v140-20261125-cursor-stays";/);
-  assert.match(html, /perf v140/);
-  assert.match(sw, /^const CACHE_VERSION = "fthue-rehab-v140-20261125-cursor-stays";/);
-  assert.match(manifest, /v140-20261125-cursor-stays/);
+  assert.match(html, /const LEVEL_APP_BUILD = "v141-20261125-story-repeat";/);
+  assert.match(html, /perf v141/);
+  assert.match(sw, /^const CACHE_VERSION = "fthue-rehab-v141-20261125-story-repeat";/);
+  assert.match(manifest, /v141-20261125-story-repeat/);
 });

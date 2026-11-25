@@ -1957,3 +1957,22 @@ Original prompt: Fix Level 6–7 interactions: make light clothes-peg press dete
   - 已知代價：揸實手如果停喺一張唔啱嘅牌上面，會拎起嗰張牌（放入收牌區會計錯）。快速掠過唔會拎起（要停定 0.3 秒）。
   - Tests：`v140` 測試檔 14 個（紅圈：放鬆／揸實、牌上面／牌之間都有，手唔見冇，夾住後冇；揸實停住拎起、掠過 130 ms 唔拎、手唔見唔拎；插花揸實停 1.3 秒仍然唔拎）。`v129`、`v130`、`v136`、`level67-interactions`、`v76` 內啤牌／麻雀嘅舊期望（揸實唔會自己拎起、「先張開手」）改為新規則，插花等保留舊期望；`level67-interactions` 仍然驗證錯手、舊畫面、缺關節點、手別不明喺啤牌／麻雀都拎唔到。兩組測試 739 個（297＋442）736 pass／3 skip／0 fail；`tools/checkjs.sh` 11 OK；`node --check service-worker.js`；`git diff --check` 乾淨；build 223 files、守門通過、`__qa` 0、dist 載入冇 page error。
   - QA 對照表已重做（七行：紅圈前後對照、揸實停住自動拎起前後對照、麻雀＋舊夾法、手唔見前後對照、手返嚟／未見過手、筆電／直向、插花不變）。未喺真機／真手試過。
+
+## 2026-11-25 v141 — 超市／洗衫晾衫／煮蛋炒飯：做完一轉、時間未夠就自動再嚟
+- 治療師回報：「cooking、laundry（Level 3 同 4）同 supermarket（Level 3）可唔可以自動重複再玩？設定有時間選項（例如 5 分鐘），但而家病人一做完遊戲就完咗——大部分病人兩分鐘左右就做完一轉。」
+- 追查：
+  - Level 3／4「去超市買餸」`updateSupermarketStory()`、「洗衫晾衫」`updateLaundryStory()`：完場畫面（3.2 秒）播完就直接 `endGame()`，唔理仲有幾多時間。
+  - Level 6「煮蛋炒飯」`cookAdvance()`：第 12 步做完 `cook.done=true`，慶祝畫面閂咗之後 `cookDetect()` 直接 return，病人對住「已完成」畫面乾等到時間完。
+  - 其他 Level 3／4 場景（保齡球、籃球、茶樓、麻雀摸牌、啤牌揭牌）本身已經係一直玩到時間完，冇改。
+- 改動：
+  1. 共用判斷 `storyRoundCanRepeat()`：遊戲進行中、而且剩餘時間 ≥ `STORY_REPEAT_MIN_LEFT_S`（8 秒）先再開新一轉；得返幾秒就同以前一樣喺「全部收好晒」畫面完場。
+  2. 超市：`shopStory.rounds`／`repsDone`；最後一件收好（拍手嗰下）計一轉；完場畫面播完 → `restartSupermarketRound()` 由「行入超市」再嚟（購物單長度不變），開場橫額改為「再去超市買餸／第 N 轉」，並讀一句「做得好，再嚟一轉」。
+  3. 洗衫晾衫：`laundryStory.rounds`；同一個做法（`restartLaundryRound()`），開場改為「又有一籃污糟衫／第 N 轉 · 逐件放入洗衣機」（有英文）。
+  4. 煮蛋炒飯：`cook.rounds`（`reset()` 唔清，開新一局先清）；煮好一碟時如果剩餘時間 ≥ `COOK_REPEAT_MIN_LEFT_S`（15 秒，包埋 6.5 秒慶祝畫面），慶祝畫面寫「稍後自動繼續」，閂咗之後 `cookStartNextRound()` 由第 1 步再煮，開場橫額「再煮多一碟蛋炒飯！／第 N 碟」。握力器嘅放鬆基準（`cook.digi`）照用返之前學到嗰個，只清走未完成嘅一下（同轉步驟一樣），所以偵測同第一碟完全一樣。時間唔夠就同以前一樣停喺完成畫面等時間完。
+  5. 成績頁（`dealResultSummary` 嗰一格）：超市「今次完成咗 N 轉…」、煮蛋炒飯「今次煮好 N 碟，第 N+1 碟做到第 X 步」、洗衫晾衫「今次做齊 N 轉…，第 N+1 轉做到「晾衫」呢一步」。未做完第一轉：超市／煮蛋炒飯同以前一樣唔顯示，洗衫晾衫保留 v139 原句。
+- 冇改：分數同抬手／揸實次數繼續累積（冇清零）；抬臂達標判定、v137 重新準備規則、握力器計數門檻、`numHands:2`、信心值 0.20/0.18/0.18、`runningMode:'VIDEO'`、`PUBLIC_GAME_WORK_INTERVAL_MS=1000/30`、`PUBLIC_CANVAS_MAX_EDGE=1600` 全部不變；冇任何嘢變嚴；完場仍然只由計時器（或者撳停止）決定；Level 5、Level 6 其他遊戲冇改。
+- QA 鈎（公開版冇）：`__qa.setTimeLeft()`、`__qa.closeReward()`；`shopStory`／`laundryStory`／`cook` 狀態多咗 `rounds`、`summary`、`timeLeft`。
+- Tests：新增 `tests/v141-story-auto-repeat.test.mjs`（16：標記、時間判斷、三個遊戲嘅接線同成績句、之後幾轉劇本同第一轉一樣、Level 3／4 超市同洗衫晾衫全流程——做完 → 自動第 2 轉 → 真抬手照計分 → 剩 6 秒喺完場畫面完；煮蛋炒飯全流程——第 1 碟 → 第 2 碟用同一個基準、真揸實照計 → 剩 10 秒唔再開第 3 碟）。`tests/v139-laundry-story.test.mjs` 一條 regex 跟新寫法更新。15 個標記測試檔升到 v141。
+- Validation：兩組測試 755 個（297＋458）752 pass／3 skip／0 fail；`tools/checkjs.sh` 11 OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 223 files（內置守門全部通過）；`rg -c "__qa" dist/public/index.html` → 0；dist 載入冇 page error，有 `storyRoundCanRepeat`／`cookStartNextRound`；三個標記 `v141-20261125-story-repeat`＋`perf v141`。
+- QA 對照表 `ych_rehab_qa_artifacts/v141/v141-qa-contact-sheet.png`（Playwright 測試假動作：iPad 橫向 1180×820、直向 820×1180、筆電 1413×653）。未喺真機／真病人試過。
+- 順手見到、今次冇改：(a) 煮蛋炒飯完成畫面嗰句「包括握放、手腕畫圈、前臂旋轉估算、手肘屈伸、伸手及舀取轉移」係舊版手勢玩法嘅字，握力器版其實只有揸實／放鬆；(b) 之後幾轉嘅購物單／衫同第一轉一樣，未有輪流換款；(c) 原始碼版（有錄影功能嗰個）連續 15 次成功會彈「治療師參考：可考慮進階」，玩耐咗會出現多啲——公開版係試玩模式，唔會彈。
