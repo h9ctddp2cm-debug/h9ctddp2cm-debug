@@ -72,7 +72,7 @@ test('advanced Level 6 activities receive phase-specific grasp and release cues'
   // v129: public Level 6 flowers / cards / mahjong place themselves on the target
   assert.match(html, /setActionPrompt\(level6AutoPlaceEnabled\(\) \? '移到目標停住' : \(isGrasping \? '保持揸住' : '張開手放低'\), ''\)/);
   // v130: a still-closed hand over the next object (not yet re-armed) is told to open first
-  assert.match(html, /setActionPrompt\(isGrasping\n\s*\? \(level6AutoPlaceEnabled\(\) && !advancedArmed \? '先張開手' : '揸實'\)\n\s*: '揸實拿起', ''\);/);
+  assert.match(html, /setActionPrompt\(isGrasping\n\s*\? \(level6AutoPlaceEnabled\(\) && !advancedArmed && !level6QuickReadyEnabled\(\) \? '先張開手' : '揸實'\)\n\s*: '揸實拿起', ''\);/);
   assert.match(html, /setActionPrompt\('張開手', ''\)/);
 });
 

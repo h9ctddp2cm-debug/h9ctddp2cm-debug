@@ -367,7 +367,7 @@ for (const { task } of LEVEL6_GESTURE_TASKS) {
     });
   });
 
-  test(`Level 6 ${task} rejects wrong-hand, stale-frame, partial-landmark, and static-grasp input`, async t => {
+  test(`Level 6 ${task} rejects wrong-hand, stale-frame, partial-landmark input (and static grasp outside cards / mahjong)`, async t => {
     if (!browser) return t.skip('playwright unavailable');
     await withPage({ width: 1180, height: 820 }, async page => {
       const result = await page.evaluate((taskId) => {
@@ -426,7 +426,16 @@ for (const { task } of LEVEL6_GESTURE_TASKS) {
         return { stale, wrongHand, partial, staticClosed, missingHandedness, uncertainHandedness };
       }, task);
 
+      // v140: in public Level 6 cards / mahjong a correctly seen hand that
+      // keeps squeezing while resting on an item picks it up (therapist
+      // request); the other games keep refusing a static grasp.
+      const squeezeRestPicksUp = task === 'cards' || task === 'mahjong';
       for (const [name, state] of Object.entries(result)) {
+        if (name === 'staticClosed' && squeezeRestPicksUp) {
+          assert.ok(state.held, 'a squeezing hand resting on a card / tile group picks it up');
+          assert.equal(state.grabCount, 1, 'exactly one pick-up');
+          continue;
+        }
         assert.equal(state.held, null, `${name} cannot pick up an item`);
         assert.equal(state.grabCount, 0, `${name} remains idempotent/fail-closed`);
       }

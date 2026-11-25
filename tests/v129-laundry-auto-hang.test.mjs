@@ -165,7 +165,7 @@ test('v129 source wiring: Level 6 carrier auto-place', () => {
   assert.match(src, /this\.postReleaseOpenStart=0; this\.autoPlaceStart=0;\n\s*this\.arriveId=null; this\.arriveStart=0; this\.arriveArmed=false; \},/);   // v136 adds the arrival fields
   // picker module (cards / mahjong): cursor inside the 放牌區 box
   assert.match(src, /if\(releaseZone && level6AutoPlaceEnabled\(\) && pointInsideZone\(cursorX, cursorY, releaseZone\)\)\{/);
-  assert.match(src, /this\.postReleaseOpenStart=0;\n\s*this\.autoPlaceStart=0; this\.arriveId=null; this\.arriveStart=0; this\.arriveArmed=false;\n\s*\},/);   // v136 adds the arrival fields
+  assert.match(src, /this\.postReleaseOpenStart=0;\n\s*this\.autoPlaceStart=0; this\.arriveId=null; this\.arriveStart=0; this\.arriveArmed=false;\n\s*this\.sqId=null; this\.sqStart=0;\n\s*\},/);   // v136 adds the arrival fields, v140 the squeeze-rest fields
   // wording
   assert.match(src, /setActionPrompt\(level6AutoPlaceEnabled\(\) \? '移到目標停住' : \(isGrasping \? '保持揸住' : '張開手放低'\), ''\);/);
   assert.match(src, /'已拿住 · 移到放牌區，停住自動放低'/);
@@ -249,7 +249,11 @@ for(const start of [
       assert.equal(out.zoneHold.held, null, 'staying on the target places the object with the hand still closed');
       assert.equal(out.zoneHold.grasping, true, 'the hand never opened');
       assert.equal(out.zoneHold.correct, 1, 'counted as a correct placement');
-      assert.equal(out.stillClosed.held, null, 'a still-closed hand over an object does not re-grab');
+      // v140: in cards a squeezing hand resting on the next card picks it up
+      // without letting go first; flowers keep the earlier rule (mahjong is
+      // paused by its celebration here).
+      if(start.level6Task === 'cards') assert.ok(out.stillClosed.held, 'cards: a squeezing hand resting on the next card picks it up');
+      else assert.equal(out.stillClosed.held, null, 'a still-closed hand over an object does not re-grab');
       // mahjong opens its 和牌 celebration after a placed group (play is paused
       // while it shows), so the re-pick-up is asserted for flowers and cards.
       if(start.level6Task !== 'mahjong') assert.ok(out.graspAgain.held, 'open at the object, then pinch → next pick-up');

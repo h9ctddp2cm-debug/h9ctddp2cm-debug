@@ -19,20 +19,20 @@ Public Level 6 playing cards and mahjong only (`level6CursorAlwaysShown()`), dra
 
 Follow-up before release (therapist: the red ring is the patient's "ready, squeeze now" signal and
 must come with the hand picture): in the same two games (`level6QuickReadyEnabled()`)
-4. the red ring is drawn whenever a seen, relaxed hand is really prepared — also between cards, and
-   after the stay-on-the-card preparation, whose time is 300 ms here instead of 700 ms; the ring
-   fills while that preparation runs; it has a white edge and is slightly thicker.
-5. no ring while the hand is unseen, during the grace window, while the hand has been squeezed all
-   along, or while a card is held — i.e. exactly when a squeeze would not pick anything up.
+4. the stay-on-the-card preparation for a relaxed hand takes 300 ms here instead of 700 ms; the
+   ring has a white edge and is slightly thicker;
+5. (superseded in part by the second follow-up below) the ring is drawn whenever the camera sees
+   the hand and nothing is held; no ring while the hand is unseen.
 
 ## Safety / privacy
-- Display layer only. `picker.update` still returns early while no hand is reported, so an unseen hand
-  cannot pick up, move, place or release anything, and no time is accumulated toward the pick-up,
-  release or stay-to-place timers. Scores are written only when the hand is seen again.
-- The shorter stay-on-the-card preparation (300 ms) is the only rule change and it is more lenient,
-  never stricter: a hand that has been squeezed all along still never picks up by itself (the
-  preparation refuses a squeezing hand), and a pick-up still needs the squeeze. A wrong card picked
-  up can simply be put down again; there is no penalty beyond the existing gentle cross mark.
+- The hand picture is display only. `picker.update` still returns early while no hand is reported,
+  so an unseen hand cannot pick up, move, place or release anything, and no time is accumulated
+  toward the pick-up, release or stay-to-place timers. Scores are written only when the hand is
+  seen again.
+- Rule changes (both more lenient, never stricter; see the second follow-up below): the shorter
+  stay-on-the-card preparation (300 ms), and a squeezing hand resting on a card / tile group picks
+  it up. A wrong card picked up can simply be put down again; there is no penalty beyond the
+  existing gentle cross mark.
 - Otherwise detection is unchanged: hand admission, the 1.5 s grace, thresholds
   (0.20 / 0.18 / 0.18), `numHands:2`, `runningMode:'VIDEO'`, work interval and canvas limit are
   untouched. Level 5 (all games) and the other Level 6 games (flowers, peg laundry, chopsticks
@@ -46,12 +46,28 @@ must come with the hand picture): in the same two games (`level6QuickReadyEnable
 - Public bundle: built with `./scripts/build-dist.sh` (built-in guards pass); QA hooks absent from
   `dist/public/index.html`.
 
+## Follow-up before release: ring with the seen hand, squeezing hand picks up
+- Therapist decision at the bedside: in Level 6 playing cards and mahjong a patient who keeps
+  squeezing must not be asked to let go first ("我哋係鼓勵佢夾，因為夾出力"; a tired patient lets go
+  naturally). The red ring is drawn whenever the camera sees the hand and nothing is held.
+- New interaction rule, these two games only: a squeezing hand in direct contact with one card /
+  tile group picks it up after resting there (300 ms while still, 900 ms at most). This replaces,
+  for these two games, the earlier rule that a hand parked closed on an item never picks it up.
+  Flowers, peg laundry, chopsticks, fried rice and every Level 5 game keep the earlier rule.
+- Fail-closed input is unchanged and still tested for both games: an unseen hand, the grace window
+  with a held-over cursor, the wrong hand, a repeated frame, missing landmarks and uncertain
+  handedness cannot build rest time and cannot pick anything up.
+- Nothing is stricter: open → squeeze and relax → squeeze still work with the same timings.
+- Known trade-off, accepted by the therapist's request: a squeezing hand that rests on a wrong
+  card picks that card up; a quick pass does not.
+- No new data, network request, asset, dependency, permission or storage key.
+
 ## Verification
-- `tests/v140-cards-mahjong-cursor-stays.test.mjs` (13) — held item and hand picture stay at the last
+- `tests/v140-cards-mahjong-cursor-stays.test.mjs` (14) — held item and hand picture stay at the last
   seen place past the grace, nothing is placed while unseen, placed and scored once the hand
   returns; relaxed picture when nothing is held; centre before first sighting; flowers and Level 5
   cards unchanged.
-- Full suite 738 tests: 735 pass, 3 skipped, 0 failed. `tools/checkjs.sh`, `node --check
+- Full suite 739 tests: 736 pass, 3 skipped, 0 failed. `tools/checkjs.sh`, `node --check
   service-worker.js`, `git diff --check` clean.
 - Playwright contact sheet with a synthetic hand at 1180×820, 820×1180 and 1413×653, including a
   v139 / v140 before-after pair.

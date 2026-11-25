@@ -29,9 +29,7 @@ test('v136 source wiring: arrival-arm constant, gate, pollers, peg task, halo', 
   // off) and only while the hand is not squeezing
   assert.match(src, /if\(canArm !== false && !ctl\.armed && now - ctl\.arriveStart >= level6ArriveArmMs\(\)\)\{ ctl\.armed = true; ctl\.arriveArmed = true; \}/);
   // an arrival-prepared pick-up still needs the squeeze itself (both pollers)
-  // (v140: the cards / mahjong poller additionally sets the ready-ring value there)
-  assert.equal((src.match(/if\(this\.arriveArmed && !isGrasping\)\{ this\.graspStart = 0; this\.graspId = null; return ev; \}/g) || []).length, 1);
-  assert.equal((src.match(/if\(this\.arriveArmed && !isGrasping\)\{\n\s*this\.graspStart = 0; this\.graspId = null;\n\s*this\.pct = level6ReadyRingPct\(this, best, now, readyCanArm\);[^\n]*\n\s*return null;\n\s*\}/g) || []).length, 1);
+  assert.equal((src.match(/if\(this\.arriveArmed && !isGrasping\)\{ this\.graspStart = 0; this\.graspId = null; return (null|ev); \}/g) || []).length, 2);
   // a genuine open arm supersedes the arrival arm
   assert.equal((src.match(/this\.armed = true; this\.arriveArmed = false;/g) || []).length, 2);
   // voice: arrival counts as "open for pickup" → 夾住, not 張開手
@@ -103,7 +101,7 @@ for(const start of [
   { level: '67', level6Task: 'flowers' },
   { level: '67', level6Task: 'cards' },
 ]){
-  test(`Level 6 ${start.level6Task} e2e (safety kept): a hand parked CLOSED on the target or on the next item never picks anything up by itself; a reopen + squeeze still does`, async t => {
+  test(`Level 6 ${start.level6Task} e2e: a hand parked CLOSED on the target never re-grabs the placed item; parked closed on the next item it picks nothing up in flowers (cards: picks it up, v140)`, async t => {
     if(!browser) return t.skip('playwright unavailable');
     const context = await browser.newContext({ viewport: { width: 1180, height: 820 } });
     const page = await context.newPage();
@@ -127,8 +125,16 @@ for(const start of [
       assert.equal(out.zoneHold.correct, 1);
       assert.equal(out.vaseLinger.held, null, 'a closed hand lingering on the target never re-grabs the placed item');
       assert.equal(out.vaseLinger.correct, 1);
-      assert.equal(out.nextParked.held, null, 'a hand parked closed on the next item does not pick it up by itself');
       assert.equal(out.nextParked.grasping, true);
+      if(start.level6Task === 'cards'){
+        // v140: in cards a squeezing hand resting on the next card picks it up
+        // without letting go first (flowers keep the rule below).
+        assert.ok(out.nextParked.held, 'cards: a squeezing hand resting on the next card picks it up');
+        assert.equal(out.nextParked.correct, 1);
+        assert.deepEqual(errors, []);
+        return;
+      }
+      assert.equal(out.nextParked.held, null, 'a hand parked closed on the next item does not pick it up by itself');
       assert.equal(out.reopen.armed, true, 'a genuine open still arms immediately');
       assert.ok(out.graspAgain.held, 'closing again picks up the next object');
       assert.deepEqual(errors, []);

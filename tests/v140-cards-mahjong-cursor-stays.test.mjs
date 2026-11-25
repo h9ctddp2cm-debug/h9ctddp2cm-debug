@@ -89,7 +89,8 @@ async function walk(page, start, steps){
         cursor: st.cursor, correct: st.correctCount, grabs: st.grabCount,
         armed: !!((st.carrier && st.carrier.armed) || (st.picker && st.picker.armed)),
         lastSeen: st.lastSeenCursor, heldShownAt: st.heldShownAt,
-        ring: st.picker ? st.picker.pct : null, arriveMs: st.arriveArmMs };
+        ring: st.picker ? st.picker.pct : null, arriveMs: st.arriveArmMs,
+        readyRing: st.readyRing };
     }
     return out;
   }, { start, steps, CLOSED, OPEN, RELAXED });
@@ -232,73 +233,107 @@ test('Level 5 cards e2e (unchanged): the always-shown hand picture is not used',
   }
 });
 
-test('v140 source wiring: the ready ring in Level 6 cards / mahjong follows the real preparation', () => {
+test('v140 source wiring: ready ring always with the seen hand, squeezing hand resting on an item picks it up (Level 6 cards / mahjong only)', () => {
   assert.match(src, /const LEVEL6_QUICK_READY_ARRIVE_MS = 300;/);
   assert.match(src, /const LEVEL6_QUICK_READY_THEMES = \['cards','mahjong'\];/);
+  assert.match(src, /const LEVEL6_SQUEEZED_PICK_MS = 300;/);
+  assert.match(src, /const LEVEL6_SQUEEZED_PICK_SLOW_MS = 900;/);
   assert.match(src, /function level6QuickReadyEnabled\(\)\{\n\s*return level6AutoPlaceEnabled\(\) && LEVEL6_QUICK_READY_THEMES\.includes\(state\.theme\);/);
   assert.match(src, /function level6ArriveArmMs\(\)\{\n\s*return level6QuickReadyEnabled\(\) \? LEVEL6_QUICK_READY_ARRIVE_MS : LEVEL6_ARRIVE_ARM_MS;/);
-  // the preparation itself still refuses a squeezing hand (canArm) and still needs the squeeze afterwards
+  // the relaxed-hand preparation still refuses a squeezing hand and still needs the squeeze afterwards
   assert.match(src, /if\(canArm !== false && !ctl\.armed && now - ctl\.arriveStart >= level6ArriveArmMs\(\)\)\{ ctl\.armed = true; ctl\.arriveArmed = true; \}/);
-  assert.match(src, /if\(this\.arriveArmed && !isGrasping\)\{\n\s*this\.graspStart = 0; this\.graspId = null;\n\s*this\.pct = level6ReadyRingPct\(this, best, now, readyCanArm\);/);
-  // the ring is only a drawing value: the unseen-hand and grace guards still leave it at 0
-  assert.match(src, /poll\(items, releaseZone\)\{\n\s*this\.pct = 0;\n\s*if\(cursorX < 0 \|\| !handDetected\)\{/);
-  // the carrier module (flowers / laundry) is not given the ring rule
+  // squeeze-rest: only these two games, only a squeezing hand in direct contact with one item
+  assert.match(src, /function level6SqueezedPickPoll\(ctl, best, now, onItem\)\{\n\s*if\(!best \|\| !onItem \|\| !isGrasping \|\| !level6QuickReadyEnabled\(\)\)\{\n\s*ctl\.sqId = null; ctl\.sqStart = 0;\n\s*return false;/);
+  assert.match(src, /return rested >= LEVEL6_SQUEEZED_PICK_SLOW_MS\n\s*\|\| \(rested >= LEVEL6_SQUEEZED_PICK_MS && isStill\(now\)\);/);
+  assert.match(src, /const squeezedPick = isGraspStyleMode\(\) && level6SqueezedPickPoll\(this, best, now, !!directContact\);/);
+  assert.match(src, /if\(!this\.armed && !squeezedPick\)\{/);
+  assert.match(src, /if\(squeezedPick \|\| now - this\.graspStart >= holdMs\)\{\n\s*this\.heldId = best\.id; this\.armed = false;/);
+  // an unseen hand (and the grace window) can never build squeeze-rest time
+  assert.match(src, /poll\(items, releaseZone\)\{\n\s*this\.pct = 0;\n\s*if\(cursorX < 0 \|\| !handDetected\)\{\n[^\n]*\n\s*this\.armed = false; this\.sqId = null; this\.sqStart = 0;/);
+  assert.match(src, /this\.sqId = null; this\.sqStart = 0;   \/\/ v140: a stale cursor never builds squeeze-rest time/);
+  // ring: with the seen hand whenever nothing is held
+  assert.match(src, /function level6ReadyRingAlways\(\)\{\n\s*return level6QuickReadyEnabled\(\) && level6CursorLive\(\) && !picker\.heldId;/);
+  assert.match(src, /if\(level6ReadyRingAlways\(\)\) pct = 1;/);
+  // the carrier module (flowers / laundry) is not given either rule
   const carrierSrc = src.slice(src.indexOf('const carrier = {'), src.indexOf('function advDrawCursor'));
-  assert.doesNotMatch(carrierSrc.slice(0, carrierSrc.indexOf('\n};')), /level6ReadyRingPct|level6QuickReadyEnabled/);
+  assert.doesNotMatch(carrierSrc.slice(0, carrierSrc.indexOf('\n};')), /level6SqueezedPickPoll|level6QuickReadyEnabled|level6ReadyRingAlways/);
 });
 
 for(const task of ['cards', 'mahjong']){
-  test(`Level 6 ${task} e2e: the red ring shows whenever a seen, relaxed hand is ready (between items too), never for a squeezed or unseen hand`, async t => {
+  test(`Level 6 ${task} e2e: the red ring comes with the hand picture whenever the camera sees the hand and nothing is held (relaxed or squeezed, on or between items); none for an unseen hand`, async t => {
     const env = await open(t); if(!env) return;
     const { context, page, errors } = env;
     try{
       const out = await walk(page, { level: '67', level6Task: task }, [
-        ['between', 'far', 'open', 8],              // relaxed hand away from every card / group
+        ['betweenRelaxed', 'far', 'relaxed', 8],    // away from every card / group
+        ['betweenSqueezed', 'far', 'closed', 30],   // ~1 s squeezed away from every item
         ['onItem', 'item', 'open', 6],
         ['lost', 'item', 'none', 90],               // beyond the grace
         ['back', 'item', 'open', 8],
         ['squeeze', 'item', 'closed', 8],
       ]);
-      assert.equal(out.between.arriveMs, 300);
-      assert.equal(out.between.ring, 1, 'ring shown between items');
-      assert.equal(out.between.armed, true);
-      assert.equal(out.onItem.ring, 1);
+      assert.equal(out.betweenRelaxed.arriveMs, 300);
+      assert.equal(out.betweenRelaxed.readyRing, true, 'ring shown between items');
+      assert.equal(out.betweenSqueezed.grasping, true);
+      assert.equal(out.betweenSqueezed.readyRing, true, 'ring shown for a squeezing hand too');
+      assert.equal(out.betweenSqueezed.held, null, 'squeezing away from every item picks nothing up');
+      assert.equal(out.onItem.readyRing, true);
       assert.equal(out.lost.handDetected, false);
-      assert.equal(out.lost.ring, 0, 'no ring while the hand is not seen');
-      assert.equal(out.lost.armed, false);
+      assert.equal(out.lost.readyRing, false, 'no ring while the hand is not seen');
       assert.equal(out.lost.held, null);
-      assert.equal(out.back.ring, 1, 'ring returns as soon as the hand is seen relaxed again');
+      assert.equal(out.back.readyRing, true, 'ring returns as soon as the hand is seen again');
       assert.ok(out.squeeze.held, 'the squeeze picks up');
+      assert.equal(out.squeeze.readyRing, false, 'while holding, the ring shows the placement progress as before');
       assert.deepEqual(errors, []);
     }finally{
       await context.close();
     }
   });
 
-  test(`Level 6 ${task} e2e: a hand parked squeezed on an item has no ring and picks nothing up; letting go a little brings the ring, the next squeeze picks up`, async t => {
+  test(`Level 6 ${task} e2e: a hand that keeps squeezing and rests on an item picks it up without letting go first; a quick pass or an unseen hand does not`, async t => {
     const env = await open(t); if(!env) return;
     const { context, page, errors } = env;
     try{
       const out = await walk(page, { level: '67', level6Task: task }, [
-        ['parked', 'item', 'closed', 40],           // ~1.3 s squeezed on the item from the first frame
-        ['relaxed', 'item', 'relaxed', 20],         // let go a little (not a wide open hand)
-        ['squeeze', 'item', 'closed', 8],
+        ['arrive', 'far', 'closed', 12],            // squeezing from the very first frame
+        ['pass', 'item', 'closed', 4],              // ~130 ms over the item …
+        ['away', 'far', 'closed', 12],              // … and off again
+        ['unseen', 'item', 'none', 90],             // the camera cannot see the hand
+        ['backFar', 'far', 'closed', 12],
+        ['rest', 'item', 'closed', 30],             // ~1 s resting squeezed on the item
+        ['carry', 'between', 'closed', 12],
       ]);
-      assert.equal(out.parked.grasping, true);
-      assert.equal(out.parked.ring, 0);
-      assert.equal(out.parked.armed, false);
-      assert.equal(out.parked.held, null, 'a parked squeezed hand never picks up by itself');
-      assert.equal(out.relaxed.grasping, false);
-      assert.equal(out.relaxed.ring, 1);
-      assert.equal(out.relaxed.armed, true);
-      assert.equal(out.relaxed.held, null, 'the ring alone does not pick up');
-      assert.ok(out.squeeze.held);
+      assert.equal(out.arrive.grasping, true);
+      assert.equal(out.arrive.armed, false, 'the hand never opened');
+      assert.equal(out.pass.held, null, 'a quick pass does not pick up');
+      assert.equal(out.away.held, null);
+      assert.equal(out.unseen.held, null, 'an unseen hand picks nothing up');
+      assert.equal(out.unseen.grabs, 0);
+      assert.equal(out.backFar.held, null);
+      assert.ok(out.rest.held, 'resting squeezed on the item picks it up');
+      assert.equal(out.rest.grasping, true, 'the hand never let go');
+      assert.equal(out.rest.grabs, 1);
+      assert.ok(out.carry.held, 'and it is carried on as usual');
       assert.deepEqual(errors, []);
     }finally{
       await context.close();
     }
   });
 }
+
+test('Level 6 flowers e2e (unchanged): a hand parked squeezed on a flower picks nothing up and has no always-on ring', async t => {
+  const env = await open(t); if(!env) return;
+  const { context, page, errors } = env;
+  try{
+    const out = await walk(page, { level: '67', level6Task: 'flowers' }, [['parked', 'item', 'closed', 40]]);
+    assert.equal(out.parked.grasping, true);
+    assert.equal(out.parked.held, null);
+    assert.equal(out.parked.readyRing, false);
+    assert.deepEqual(errors, []);
+  }finally{
+    await context.close();
+  }
+});
 
 test('Level 6 flowers e2e (unchanged): the stay-on-the-item preparation keeps its 700 ms', async t => {
   const env = await open(t); if(!env) return;

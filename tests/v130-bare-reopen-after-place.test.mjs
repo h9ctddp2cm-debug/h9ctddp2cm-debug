@@ -32,9 +32,10 @@ test('v130 source wiring: idle reopen rule, gate, prompt and voice', () => {
   assert.match(src, /pinch\.isPinching = false;\n\s*\}\n\s*\/\/ One stabilized state[\s\S]{0,200}const pinchHeld = stabiliseDetectedGesture\(pinch\.isPinching, 'pinch'\);/);
   assert.match(src, /bareUnpinchedSinceMs = 0;\n\s*pegRelativeReset\(\);/);
   // prompt over the next item while the hand is still closed and not armed
-  assert.match(src, /\? \(level6AutoPlaceEnabled\(\) && !advancedArmed \? '先張開手' : '揸實'\)/);
+  // (v140: not in cards / mahjong, where a squeezing hand resting on the item picks it up)
+  assert.match(src, /\? \(level6AutoPlaceEnabled\(\) && !advancedArmed && !level6QuickReadyEnabled\(\) \? '先張開手' : '揸實'\)/);
   assert.match(src, /if\(phase === 'reopen'\) return level6AutoPlaceEnabled\(\) \? '張開手' : '';/);
-  assert.match(src, /if\(s\.touching&&isGrasping&&level6AutoPlaceEnabled\(\)\) return publicPatientVoiceSay\('reopen',itemId,!!s\.silent\);/);
+  assert.match(src, /if\(s\.touching&&isGrasping&&level6AutoPlaceEnabled\(\)&&!level6QuickReadyEnabled\(\)\) return publicPatientVoiceSay\('reopen',itemId,!!s\.silent\);/);
   // peg / chopsticks / Level 5 excluded through level6AutoPlaceEnabled()
   assert.match(src, /function level6AutoPlaceEnabled\(\)\{\n\s*return !research\.active && typeof isLevel6 === 'function' && isLevel6\(\)\n\s*&& isGraspStyleMode\(\) && !isLevel6RealToolTask\(\)/);
 });
@@ -125,6 +126,14 @@ for(const start of [
       assert.equal(out.zoneHold.correct, 1);
       assert.equal(out.slight.grasping, true, 'a posture below the idle mark stays a pinch');
       assert.equal(out.slight.openPrep, false);
+      if(start.level6Task === 'cards'){
+        // v140: in cards the still-squeezing hand resting on the next card picks
+        // it up without letting go first, and is never told to open first.
+        assert.ok(out.slight.held, 'cards: a squeezing hand resting on the next card picks it up');
+        assert.doesNotMatch(String(out.slight.prompt), /先張開手/);
+        assert.deepEqual(errors, []);
+        return;
+      }
       // 130 ms of a relaxed-but-not-open hand: still counted as closed, told to open first
       assert.equal(out.relaxedBrief.grasping, true, 'a brief relaxation is still a closed hand');
       assert.equal(out.relaxedBrief.openPrep, false);
