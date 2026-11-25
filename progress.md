@@ -1941,3 +1941,9 @@ Original prompt: Fix Level 6–7 interactions: make light clothes-peg press dete
 - Validation：兩組測試 732 個（297＋435）729 pass／3 skip／0 fail；`tools/checkjs.sh` OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 223 files（內置守門全部通過）；`rg -c "__qa" dist/public/index.html` → 0；dist 載入冇 page error、有 `level6LastSeenCursorPoint`；三個標記 `v140-20261125-cursor-stays`＋`perf v140`。
 - QA 對照表 `ych_rehab_qa_artifacts/v140/v140-qa-contact-sheet.png`（Playwright 測試假手：iPad 橫向 1180×820、直向 820×1180、筆電 1413×653；v139 對 v140 前後對照）。未喺真機／真手試過。
 - 順手見到、今次冇改：(a) Level 6 插花／晾衫（`carrier`）鏡頭睇唔到手時，夾住嘅花會畫喺畫面左上角——同一類問題，等治療師決定係咪一齊改；(b) Level 6 啤牌英文版橫額同「已拿住」字牌仍然顯示通用後備句（舊問題）；(c) v136「到位即準備」：鏡頭真正跟丟之後，隻手如果已經揸實咁喺牌上面重新出現，可以直接拎起（寬鬆，冇改）。
+- 治療師睇完第一版對照表嘅跟進（同日，未推送前）：「顯示得嚟仲要有圈呀！有紅色圈先至係真係準備俾佢夾呀嘛」——紅圈係病人嘅「準備好，可以夾」訊號。
+  - 追查：紅圈＝`picker.pct`，以前只喺「張開手喺牌上面」先畫；放鬆手喺牌之間（其實已經 `armed`）冇圈，v136「到位即準備」準備好之後亦冇圈，所以成日見到手冇圈、但一夾又拎到。
+  - 改動（只限公開版 Level 6 啤牌／麻雀 `level6QuickReadyEnabled()`）：(1) 鏡頭睇到放鬆手而且已經準備好（`armed`），無論喺牌上面定牌之間都畫滿紅圈；(2)「停喺牌上面自動準備」由 700 ms 改為 300 ms（`level6ArriveArmMs()`／`LEVEL6_QUICK_READY_ARRIVE_MS`），期間紅圈逐漸填滿；(3) 紅圈加粗（7px）並加白邊，喺紅色牌面同麻雀牌上面都睇得清楚。
+  - 冇紅圈嘅情況（即係真係未準備好）：鏡頭睇唔到手（淺色手形）、1.5 秒寬限期內、手一直揸實未鬆過、已經夾住牌。一直揸實停喺牌上面仍然唔會自己拎起（v136 規則保留），拎起仍然要「夾」嗰一下。
+  - 其他遊戲（插花、晾衫、筷子、煮蛋炒飯、Level 5）嘅圈同 700 ms 不變。
+  - Tests：`v140` 測試檔增至 13 個（紅圈喺牌之間／牌上面出現、手唔見即冇圈、揸實冇圈、鬆少少圈返嚟、插花仍然 700 ms）；`v136`、`v78` 各一條原始碼 regex 跟新寫法更新。兩組測試 738 個（297＋441）735 pass／3 skip／0 fail；`tools/checkjs.sh` 11 OK；build 223 files、守門通過、`__qa` 0。QA 對照表已重做（六行：紅圈前後對照、紅圈幾時有／冇、手唔見前後對照、手返嚟／未見過手、筆電／直向、插花不變）。

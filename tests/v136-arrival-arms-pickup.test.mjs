@@ -27,9 +27,11 @@ test('v136 source wiring: arrival-arm constant, gate, pollers, peg task, halo', 
   assert.equal((src.match(/level6ArriveArmPoll\(this, best, now, !!directContact && !isGrasping\);\s*\/\/ v136/g) || []).length, 2);
   // the dwell arms only while really over the item (not during the contact grace after drifting
   // off) and only while the hand is not squeezing
-  assert.match(src, /if\(canArm !== false && !ctl\.armed && now - ctl\.arriveStart >= LEVEL6_ARRIVE_ARM_MS\)\{ ctl\.armed = true; ctl\.arriveArmed = true; \}/);
+  assert.match(src, /if\(canArm !== false && !ctl\.armed && now - ctl\.arriveStart >= level6ArriveArmMs\(\)\)\{ ctl\.armed = true; ctl\.arriveArmed = true; \}/);
   // an arrival-prepared pick-up still needs the squeeze itself (both pollers)
-  assert.equal((src.match(/if\(this\.arriveArmed && !isGrasping\)\{ this\.graspStart = 0; this\.graspId = null; return (null|ev); \}/g) || []).length, 2);
+  // (v140: the cards / mahjong poller additionally sets the ready-ring value there)
+  assert.equal((src.match(/if\(this\.arriveArmed && !isGrasping\)\{ this\.graspStart = 0; this\.graspId = null; return ev; \}/g) || []).length, 1);
+  assert.equal((src.match(/if\(this\.arriveArmed && !isGrasping\)\{\n\s*this\.graspStart = 0; this\.graspId = null;\n\s*this\.pct = level6ReadyRingPct\(this, best, now, readyCanArm\);[^\n]*\n\s*return null;\n\s*\}/g) || []).length, 1);
   // a genuine open arm supersedes the arrival arm
   assert.equal((src.match(/this\.armed = true; this\.arriveArmed = false;/g) || []).length, 2);
   // voice: arrival counts as "open for pickup" → 夾住, not 張開手

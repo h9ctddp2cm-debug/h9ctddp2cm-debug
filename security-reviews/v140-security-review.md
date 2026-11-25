@@ -17,11 +17,23 @@ Public Level 6 playing cards and mahjong only (`level6CursorAlwaysShown()`), dra
 3. A held card / tile group and its "已拿住" label are drawn at that same place instead of snapping
    back to the starting place.
 
+Follow-up before release (therapist: the red ring is the patient's "ready, squeeze now" signal and
+must come with the hand picture): in the same two games (`level6QuickReadyEnabled()`)
+4. the red ring is drawn whenever a seen, relaxed hand is really prepared — also between cards, and
+   after the stay-on-the-card preparation, whose time is 300 ms here instead of 700 ms; the ring
+   fills while that preparation runs; it has a white edge and is slightly thicker.
+5. no ring while the hand is unseen, during the grace window, while the hand has been squeezed all
+   along, or while a card is held — i.e. exactly when a squeeze would not pick anything up.
+
 ## Safety / privacy
 - Display layer only. `picker.update` still returns early while no hand is reported, so an unseen hand
   cannot pick up, move, place or release anything, and no time is accumulated toward the pick-up,
   release or stay-to-place timers. Scores are written only when the hand is seen again.
-- Detection is not stricter and not looser: hand admission, the 1.5 s grace, thresholds
+- The shorter stay-on-the-card preparation (300 ms) is the only rule change and it is more lenient,
+  never stricter: a hand that has been squeezed all along still never picks up by itself (the
+  preparation refuses a squeezing hand), and a pick-up still needs the squeeze. A wrong card picked
+  up can simply be put down again; there is no penalty beyond the existing gentle cross mark.
+- Otherwise detection is unchanged: hand admission, the 1.5 s grace, thresholds
   (0.20 / 0.18 / 0.18), `numHands:2`, `runningMode:'VIDEO'`, work interval and canvas limit are
   untouched. Level 5 (all games) and the other Level 6 games (flowers, peg laundry, chopsticks
   `gameType:'dwell'`, fried-rice gripper) are unchanged.
@@ -35,11 +47,11 @@ Public Level 6 playing cards and mahjong only (`level6CursorAlwaysShown()`), dra
   `dist/public/index.html`.
 
 ## Verification
-- `tests/v140-cards-mahjong-cursor-stays.test.mjs` (7) — held item and hand picture stay at the last
+- `tests/v140-cards-mahjong-cursor-stays.test.mjs` (13) — held item and hand picture stay at the last
   seen place past the grace, nothing is placed while unseen, placed and scored once the hand
   returns; relaxed picture when nothing is held; centre before first sighting; flowers and Level 5
   cards unchanged.
-- Full suite 732 tests: 729 pass, 3 skipped, 0 failed. `tools/checkjs.sh`, `node --check
+- Full suite 738 tests: 735 pass, 3 skipped, 0 failed. `tools/checkjs.sh`, `node --check
   service-worker.js`, `git diff --check` clean.
 - Playwright contact sheet with a synthetic hand at 1180×820, 820×1180 and 1413×653, including a
   v139 / v140 before-after pair.

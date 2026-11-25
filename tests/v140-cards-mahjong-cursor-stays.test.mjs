@@ -13,12 +13,19 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 // stays with it. Display only: tracking, the grace window, pick-up, release and
 // automatic placement are untouched; other Level 6 games and Level 5 keep the
 // earlier behaviour.
+//
+// Follow-up the same day: "顯示得嚟仲要有圈呀！有紅色圈先至係真係準備俾佢夾呀嘛" —
+// the red ring around the hand picture is the patient's "ready, squeeze now"
+// signal. In these two games the ring now shows whenever the pick-up is really
+// prepared (also between cards and after the stay-on-the-card preparation,
+// which is 300 ms here instead of 700 ms) and never while the hand is unseen
+// or still squeezed.
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const src = readFileSync(path.join(root, 'index.html'), 'utf8');
 
 test('v140 source wiring: always-shown hand picture is limited to Level 6 cards / mahjong and is display only', () => {
-  assert.match(src, /function level6CursorAlwaysShown\(\)\{\n\s*return isLevel6\(\) && isGraspStyleMode\(\) && \(advCurrent === 'cards' \|\| advCurrent === 'mahjong'\);/);
+  assert.match(src, /function level6CursorAlwaysShown\(\)\{\n\s*return !research\.active && isLevel6\(\) && isGraspStyleMode\(\)\n\s*&& \(advCurrent === 'cards' \|\| advCurrent === 'mahjong'\);/);
   assert.match(src, /const LEVEL6_LAST_SEEN_CURSOR_ALPHA = \{ pinch:\.62, relaxed:\.54 \};/);
   // a held card / tile group is shown pinched while the hand is not seen
   assert.match(src, /grasping: picker\.heldId \? true : !!\(last && last\.grasping\),/);
@@ -41,6 +48,7 @@ test('v140 source wiring: always-shown hand picture is limited to Level 6 cards 
 const SCALE = 0.2597;
 const CLOSED = 0.42 * SCALE;
 const OPEN = 0.85 * SCALE;
+const RELAXED = 0.60 * SCALE;
 
 let browser = null;
 before(async () => {
@@ -55,7 +63,7 @@ after(async () => { if(browser) await browser.close(); });
 
 /* steps: [tag, where, posture | 'none', frames] — 'none' = the camera returns no hand */
 async function walk(page, start, steps){
-  return page.evaluate(({ start, steps, CLOSED, OPEN }) => {
+  return page.evaluate(({ start, steps, CLOSED, OPEN, RELAXED }) => {
     window.__qa.startGame({ ...start, duration: 60, affectedSide: 'right' });
     const l = window.__qa.level67Layout();
     const W = l.canvas.width, H = l.canvas.height;
@@ -64,7 +72,8 @@ async function walk(page, start, steps){
     const pos = { item: { x: item.x, y: item.y }, zone: { x: zone.x, y: zone.y },
       between: { x: 0.5 * (item.x + zone.x), y: 0.5 * (item.y + zone.y) },
       far: { x: 0.06 * W, y: 0.06 * H } };
-    const gap = { closed: CLOSED, open: OPEN };
+    // 'relaxed' = the pinch let go a little (60% of the hand scale), not a wide open hand
+    const gap = { closed: CLOSED, open: OPEN, relaxed: RELAXED };
     const out = { canvas: { W, H }, pos };
     for(const [tag, where, posture, frames] of steps){
       const p = pos[where];
@@ -72,17 +81,18 @@ async function walk(page, start, steps){
       for(let i = 0; i < frames; i++){
         const spec = { stepMs: 33, poseMissing: ['shoulder', 'elbow', 'wrist'], nx: p.x / W, ny: p.y / H };
         if(posture === 'none') spec.noHand = true;
-        else { spec.gesture = posture; spec.apertures = { index: gap[posture], middle: gap[posture] }; }
+        else { spec.gesture = posture === 'closed' ? 'closed' : 'open'; spec.apertures = { index: gap[posture], middle: gap[posture] }; }
         window.__qa.setLevel6ToolFrame(spec);
         st = window.__qa.level6ToolState();
       }
       out[tag] = { held: st.held, grasping: st.isGrasping, handDetected: st.handDetected,
         cursor: st.cursor, correct: st.correctCount, grabs: st.grabCount,
         armed: !!((st.carrier && st.carrier.armed) || (st.picker && st.picker.armed)),
-        lastSeen: st.lastSeenCursor, heldShownAt: st.heldShownAt };
+        lastSeen: st.lastSeenCursor, heldShownAt: st.heldShownAt,
+        ring: st.picker ? st.picker.pct : null, arriveMs: st.arriveArmMs };
     }
     return out;
-  }, { start, steps, CLOSED, OPEN });
+  }, { start, steps, CLOSED, OPEN, RELAXED });
 }
 
 async function open(t){
@@ -216,6 +226,86 @@ test('Level 5 cards e2e (unchanged): the always-shown hand picture is not used',
     });
     assert.equal(out.handDetected, false);
     assert.equal(out.lastSeen, null);
+    assert.deepEqual(errors, []);
+  }finally{
+    await context.close();
+  }
+});
+
+test('v140 source wiring: the ready ring in Level 6 cards / mahjong follows the real preparation', () => {
+  assert.match(src, /const LEVEL6_QUICK_READY_ARRIVE_MS = 300;/);
+  assert.match(src, /const LEVEL6_QUICK_READY_THEMES = \['cards','mahjong'\];/);
+  assert.match(src, /function level6QuickReadyEnabled\(\)\{\n\s*return level6AutoPlaceEnabled\(\) && LEVEL6_QUICK_READY_THEMES\.includes\(state\.theme\);/);
+  assert.match(src, /function level6ArriveArmMs\(\)\{\n\s*return level6QuickReadyEnabled\(\) \? LEVEL6_QUICK_READY_ARRIVE_MS : LEVEL6_ARRIVE_ARM_MS;/);
+  // the preparation itself still refuses a squeezing hand (canArm) and still needs the squeeze afterwards
+  assert.match(src, /if\(canArm !== false && !ctl\.armed && now - ctl\.arriveStart >= level6ArriveArmMs\(\)\)\{ ctl\.armed = true; ctl\.arriveArmed = true; \}/);
+  assert.match(src, /if\(this\.arriveArmed && !isGrasping\)\{\n\s*this\.graspStart = 0; this\.graspId = null;\n\s*this\.pct = level6ReadyRingPct\(this, best, now, readyCanArm\);/);
+  // the ring is only a drawing value: the unseen-hand and grace guards still leave it at 0
+  assert.match(src, /poll\(items, releaseZone\)\{\n\s*this\.pct = 0;\n\s*if\(cursorX < 0 \|\| !handDetected\)\{/);
+  // the carrier module (flowers / laundry) is not given the ring rule
+  const carrierSrc = src.slice(src.indexOf('const carrier = {'), src.indexOf('function advDrawCursor'));
+  assert.doesNotMatch(carrierSrc.slice(0, carrierSrc.indexOf('\n};')), /level6ReadyRingPct|level6QuickReadyEnabled/);
+});
+
+for(const task of ['cards', 'mahjong']){
+  test(`Level 6 ${task} e2e: the red ring shows whenever a seen, relaxed hand is ready (between items too), never for a squeezed or unseen hand`, async t => {
+    const env = await open(t); if(!env) return;
+    const { context, page, errors } = env;
+    try{
+      const out = await walk(page, { level: '67', level6Task: task }, [
+        ['between', 'far', 'open', 8],              // relaxed hand away from every card / group
+        ['onItem', 'item', 'open', 6],
+        ['lost', 'item', 'none', 90],               // beyond the grace
+        ['back', 'item', 'open', 8],
+        ['squeeze', 'item', 'closed', 8],
+      ]);
+      assert.equal(out.between.arriveMs, 300);
+      assert.equal(out.between.ring, 1, 'ring shown between items');
+      assert.equal(out.between.armed, true);
+      assert.equal(out.onItem.ring, 1);
+      assert.equal(out.lost.handDetected, false);
+      assert.equal(out.lost.ring, 0, 'no ring while the hand is not seen');
+      assert.equal(out.lost.armed, false);
+      assert.equal(out.lost.held, null);
+      assert.equal(out.back.ring, 1, 'ring returns as soon as the hand is seen relaxed again');
+      assert.ok(out.squeeze.held, 'the squeeze picks up');
+      assert.deepEqual(errors, []);
+    }finally{
+      await context.close();
+    }
+  });
+
+  test(`Level 6 ${task} e2e: a hand parked squeezed on an item has no ring and picks nothing up; letting go a little brings the ring, the next squeeze picks up`, async t => {
+    const env = await open(t); if(!env) return;
+    const { context, page, errors } = env;
+    try{
+      const out = await walk(page, { level: '67', level6Task: task }, [
+        ['parked', 'item', 'closed', 40],           // ~1.3 s squeezed on the item from the first frame
+        ['relaxed', 'item', 'relaxed', 20],         // let go a little (not a wide open hand)
+        ['squeeze', 'item', 'closed', 8],
+      ]);
+      assert.equal(out.parked.grasping, true);
+      assert.equal(out.parked.ring, 0);
+      assert.equal(out.parked.armed, false);
+      assert.equal(out.parked.held, null, 'a parked squeezed hand never picks up by itself');
+      assert.equal(out.relaxed.grasping, false);
+      assert.equal(out.relaxed.ring, 1);
+      assert.equal(out.relaxed.armed, true);
+      assert.equal(out.relaxed.held, null, 'the ring alone does not pick up');
+      assert.ok(out.squeeze.held);
+      assert.deepEqual(errors, []);
+    }finally{
+      await context.close();
+    }
+  });
+}
+
+test('Level 6 flowers e2e (unchanged): the stay-on-the-item preparation keeps its 700 ms', async t => {
+  const env = await open(t); if(!env) return;
+  const { context, page, errors } = env;
+  try{
+    const out = await walk(page, { level: '67', level6Task: 'flowers' }, [['seen', 'far', 'open', 4]]);
+    assert.equal(out.seen.arriveMs, 700);
     assert.deepEqual(errors, []);
   }finally{
     await context.close();

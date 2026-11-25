@@ -10187,6 +10187,31 @@ function level6BareReopenEnabled(){
    halo shows); the next observed squeeze picks it up. A genuinely opened hand
    still arms at once as before. Release rules and research mode are untouched. */
 const LEVEL6_ARRIVE_ARM_MS = 700;
+/* v140: therapist bedside (25 Nov) — in public Level 6 playing cards / mahjong
+   the red ring around the hand picture is what tells the patient "ready, squeeze
+   now". It only showed after a clearly opened hand, so a relaxed hand resting on
+   a card had no ring for a long time although a squeeze already picked the card
+   up. In these two games the stay-on-the-item preparation is shorter, the ring
+   fills while it runs and stays full whenever the pick-up is prepared.
+   Nothing is stricter: an opened hand still prepares at once, and the pick-up
+   itself still needs the squeeze. */
+const LEVEL6_QUICK_READY_ARRIVE_MS = 300;
+const LEVEL6_QUICK_READY_THEMES = ['cards','mahjong'];
+function level6QuickReadyEnabled(){
+  return level6AutoPlaceEnabled() && LEVEL6_QUICK_READY_THEMES.includes(state.theme);
+}
+function level6ArriveArmMs(){
+  return level6QuickReadyEnabled() ? LEVEL6_QUICK_READY_ARRIVE_MS : LEVEL6_ARRIVE_ARM_MS;
+}
+/* Ring shown around the hand picture while it rests on an item without a
+   clearly opened hand: 1 = prepared, 0..1 = the stay-on-the-item preparation is
+   running, 0 = not preparing (still squeezing / drifted off / other games). */
+function level6ReadyRingPct(ctl, best, now, canArm){
+  if(!level6QuickReadyEnabled() || !best || best.placed) return 0;
+  if(ctl.armed) return 1;
+  if(canArm === false || ctl.arriveId !== best.id || !ctl.arriveStart) return 0;
+  return Math.max(0, Math.min(1, (now - ctl.arriveStart) / level6ArriveArmMs()));
+}
 function level6ArriveArmEnabled(){
   return !research.active && isLevel6() && isGraspStyleMode()
     && (level6AutoPlaceEnabled() || isLevel6RealToolTask()) && !level6AnyItemHeld();
@@ -10201,7 +10226,7 @@ function level6ArriveArmPoll(ctl, best, now, canArm){
   // arm only while the hand is really over the item (not during the contact grace after
   // drifting off) AND is not squeezing: a hand parked closed on an item never picks it up
   // by itself — the pick-up still needs a squeeze that starts after the preparation.
-  if(canArm !== false && !ctl.armed && now - ctl.arriveStart >= LEVEL6_ARRIVE_ARM_MS){ ctl.armed = true; ctl.arriveArmed = true; }
+  if(canArm !== false && !ctl.armed && now - ctl.arriveStart >= level6ArriveArmMs()){ ctl.armed = true; ctl.arriveArmed = true; }
   return !!(ctl.armed && ctl.arriveArmed);
 }
 function pegRelativeHoldReset(){
@@ -18960,6 +18985,11 @@ const picker = {
       if(isGraspStyleMode() && handReleasedOrOpen()){
         if(!this.openStart) this.openStart = now;
         if(now - this.openStart >= advancedGraspArmMs()) this.armed = true;
+        // v140: cards / mahjong — the ring also shows between items, so a relaxed
+        // hand the camera can see always carries its "ready" ring.
+        if(level6QuickReadyEnabled()){
+          this.pct = this.armed ? 1 : Math.min(1, (now - this.openStart) / advancedGraspArmMs());
+        }
       }
       if(isGraspStyleMode() && !this.armed && isLevel6Chopsticks()){
         setActionPrompt('先張開筷子', '穩定張開後再合埋夾起');
@@ -18979,15 +19009,22 @@ const picker = {
         const armMs = advancedGraspArmMs();
         this.pct = Math.min(1, (now - this.openStart) / armMs);
         if(now - this.openStart >= armMs){ this.armed = true; this.arriveArmed = false; }
+        if(this.armed && level6QuickReadyEnabled()) this.pct = 1;   // v140: prepared = full ring at once
         return null;
       }
       this.openStart = 0;
+      const readyCanArm = !!directContact && !isGrasping;
       if(!this.armed){
         if(isLevel6Chopsticks()) setActionPrompt('先張開筷子', '穩定張開後再合埋夾起');
+        this.pct = level6ReadyRingPct(this, best, now, readyCanArm);   // v140: ring fills while preparing
         return null;
       }
       // v136: an arrival-prepared pick-up still needs the squeeze itself.
-      if(this.arriveArmed && !isGrasping){ this.graspStart = 0; this.graspId = null; return null; }
+      if(this.arriveArmed && !isGrasping){
+        this.graspStart = 0; this.graspId = null;
+        this.pct = level6ReadyRingPct(this, best, now, readyCanArm);   // v140: full ring = prepared
+        return null;
+      }
       if(this.graspId !== best.id){ this.graspId = best.id; this.graspStart = now; }
       const holdMs = advancedGraspHoldMs();
       this.pct = Math.min(1, (now - this.graspStart) / holdMs);
@@ -22400,7 +22437,8 @@ function flowersFinish(){ return flowersFinishApi.run(); }
 const LEVEL6_LAST_SEEN_CURSOR_ALPHA = { pinch:.62, relaxed:.54 };
 let level6LastSeenCursor = null;   // { x, y, grasping }
 function level6CursorAlwaysShown(){
-  return isLevel6() && isGraspStyleMode() && (advCurrent === 'cards' || advCurrent === 'mahjong');
+  return !research.active && isLevel6() && isGraspStyleMode()
+    && (advCurrent === 'cards' || advCurrent === 'mahjong');
 }
 function level6CursorLive(){ return cursorX >= 0 && cursorY >= 0 && handDetected; }
 function level6NoteCursorSeen(){
@@ -22475,7 +22513,13 @@ function advDrawCursor(ctx, pct){
         ? Math.max(64, Math.min(94, Math.min(gameCanvas.width, gameCanvas.height) * 0.105)) * 0.62
         : 36;
       ctx.arc(cursorX, cursorY, progressRadius, -Math.PI/2, -Math.PI/2 + pct*Math.PI*2);
-      ctx.strokeStyle = '#C0392B'; ctx.lineWidth = 5; ctx.stroke();
+      if(level6QuickReadyEnabled()){
+        // v140: white edge under the red ring so it stays readable on red cards and tiles
+        ctx.strokeStyle = 'rgba(255,255,255,.92)'; ctx.lineWidth = 11; ctx.stroke();
+        ctx.strokeStyle = '#C0392B'; ctx.lineWidth = 7; ctx.stroke();
+      }else{
+        ctx.strokeStyle = '#C0392B'; ctx.lineWidth = 5; ctx.stroke();
+      }
     }
   } else {
     ctx.beginPath(); ctx.arc(cursorX, cursorY, 22, 0, Math.PI*2);
@@ -23521,7 +23565,8 @@ window.__qa = {
         openStart:carrier.openStart,graspStart:carrier.graspStart,graspId:carrier.graspId,
         arriveArmed:carrier.arriveArmed},
       picker:{heldId:picker.heldId,hoverId:picker.hoverId,armed:picker.armed,
-        arriveArmed:picker.arriveArmed},
+        arriveArmed:picker.arriveArmed,pct:picker.pct},
+      arriveArmMs:level6ArriveArmMs(),   // v140
       // v140: where the hand picture / held card is drawn while the hand is not seen
       lastSeenCursor:level6LastSeenCursorPoint(),
       heldShownAt:advancedHeldId?level6HeldDrawPoint():null,
