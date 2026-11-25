@@ -45,3 +45,26 @@ Therapist follow-up to v141 (stories repeat until the session time is up):
 - Playwright contact sheet (iPad landscape / portrait, department laptop) in
   `ych_rehab_qa_artifacts/v142/`. Simulated movement only; the sound change is verified by tests
   only and has not been listened to on a real device.
+
+## Addendum 2026-11-26 — story pictures (same marker, not yet released)
+Therapist feedback on the contact sheet, all three display-only:
+
+1. Supermarket home scene: dry goods were drawn on the wall below the wall cabinet. Items are now
+   placed on the shelves of the cabinet and the fridge that are in the background picture
+   (`shopHomeLayout`, shelf positions stored as fractions of the picture). The banner moves to
+   the top right (landscape) or beside the angle panel (portrait) so the cabinet shelf is visible.
+2. Laundry basket: clothes are drawn inside the basket (basket, clothes clipped to the basket,
+   then the front wall again) instead of standing behind it.
+3. The sun stops in the sky above the bamboo pole (`laundrySunSpot`) instead of beside the
+   clothes below the pole.
+
+Safety / privacy: no detection, scoring, timing, sound or wording about clinical meaning changes;
+nothing is stricter. The step sentence and the "items left in the bag" line are the same text in
+a new place. No new asset, request, storage key or dependency. Two read-only QA hooks
+(`homeLayout`, `sunSpot`) exist in the source build only and are absent from the public bundle.
+
+Verification: `tests/v142-story-scene-fit.test.mjs` (15) checks on iPad landscape, iPad portrait
+and the department laptop that every item stands on a pictured shelf, inside the furniture and
+clear of the banner, and that the whole sun is above the pole and on screen. On a phone held sideways, where the cabinet is hidden under the top buttons, the dry goods stand on the kitchen counter instead (display fallback only). Node tests in two foreground groups: 297 + 485 = 782; 779 pass, 3 skipped, 0 failed.
+Contact sheet updated with before / after rows. Simulated movement only; not tried on a real
+device.

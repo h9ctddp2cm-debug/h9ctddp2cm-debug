@@ -4002,6 +4002,78 @@ function shopShelfLayout(g,itemId,remaining){
   for(let i=0;i<n;i++){ items.push({ x:cx+(n-1-i)*gap-((n-1)*gap)/2, y:g.shelfItemY-i*s*0.03, s }); }
   return { items, crate:null };
 }
+// 屋企畫面：廚櫃／雪櫃層板喺背景圖入面嘅位置（佔成幅圖闊、高嘅比例）。
+// rows：base = 層板面（貨品企喺度）、top = 嗰格嘅頂。廚櫃由下層開始放，雪櫃由上面開始放。
+const SHOP_HOME_CABINET={ u0:0.212, u1:0.508, rows:[{ base:0.386, top:0.247 },{ base:0.236, top:0.075 }], labelU:0.355, labelV:0.428,
+  counter:{ u0:0.315, u1:0.470, base:0.745 } }; // 畫面太矮、廚櫃俾頂部資料遮住（例如手機橫向）：乾貨改放廚房枱面
+const SHOP_HOME_FRIDGE={ u0:0.630, u1:0.835, rows:[{ base:0.378, top:0.235 },{ base:0.492, top:0.385 },{ base:0.612, top:0.500 },{ base:0.716, top:0.620 }], labelU:0.730, labelV:0.790 };
+function shopHomeBgRect(cw,ch){ // 同 drawShopBgCover「鋪滿畫面」一樣嘅計法，先知道幅圖喺畫面邊度
+  const im=imgShopHomeBg, ok=im&&im.complete&&im.naturalWidth>0;
+  const iw=ok?im.naturalWidth:1280, ih=ok?im.naturalHeight:960;
+  const s=Math.max(cw/iw,ch/ih), w=iw*s, h=ih*s;
+  return { x:(cw-w)/2, y:(ch-h)/2, w, h };
+}
+function shopHomeLayout(cw,ch,g,nDry,nCold){
+  const r=shopHomeBgRect(cw,ch), cs=g.cssScale, slotS=g.itemSize*0.62;
+  // 橫額讓位畀廚櫃：橫向放右上（雪櫃頂）、直向放度數面板右邊，廚櫃下層成格露出嚟
+  const banner=g.portrait
+    ? (cw-12*cs-g.panelRight>=380*cs ? { x0:g.panelRight, x1:cw-12*cs, y:156*cs } : { x0:12*cs, x1:cw-12*cs, y:g.bannerY }) // 手機直向太窄：橫額照舊放度數面板下面
+    : { x0:Math.max(g.panelRight,r.x+r.w*0.585+12*cs), x1:cw-60*cs, y:g.bannerY };
+  const bannerBottom=banner.y+g.bannerH+6*cs;
+  const place=(def,n,clearTop)=>{
+    const x0=Math.max(slotS*0.45,r.x+r.w*def.u0), x1=Math.min(cw-8*cs,r.x+r.w*def.u1), innerW=Math.max(slotS,x1-x0);
+    const rows=def.rows.map(row=>{
+      const base=r.y+r.h*row.base, top=r.y+r.h*row.top, room=base-Math.max(top,clearTop);
+      return { base, room, size:Math.min(slotS,room*0.94), ok:clearTop<=top+(base-top)*0.25&&base<=ch-8*cs };
+    });
+    let use=rows.filter(o=>o.ok);
+    if(!use.length){ // 冇一格完全露出：揀最多位嗰格；連嗰格都擺唔落（手機橫向，廚櫃喺頂部按鈕下面）先放喺廚櫃枱面
+      const best=rows.slice().sort((a,b)=>b.room-a.room)[0];
+      if(def.counter&&best.room*0.94<slotS*0.75){
+        const c=def.counter, size=slotS*0.8, a=Math.max(4*cs,r.x+r.w*c.u0), w=Math.max(size,r.x+r.w*c.u1-a), stepX=Math.min(size*1.02,w/Math.max(1,n));
+        return Array.from({ length:Math.max(1,n) },(_,i)=>({ x:a+stepX*(i+0.5), base:Math.min(ch-8*cs,r.y+r.h*c.base), size }));
+      }
+      best.size=Math.max(slotS*0.5,Math.min(slotS,best.room*0.94)); use=[best];
+    }
+    const cap=o=>Math.max(1,Math.floor(innerW/(o.size*0.92)));
+    const total=use.reduce((t,o)=>t+cap(o),0), squeeze=n>total?n/total:1; // 太多件：每層排密啲
+    const out=[];
+    use.forEach(o=>{
+      const c=Math.ceil(cap(o)*squeeze), stepX=Math.min(o.size*1.02,innerW/c);
+      for(let i=0;i<c;i++) out.push({ x:x0+stepX*(i+0.5), base:o.base, size:o.size });
+    });
+    return out;
+  };
+  const midX=def=>Math.min(cw-slotS*0.62-8*cs,Math.max(slotS*0.62+8*cs,r.x+r.w*def.labelU)); // 成個標籤留喺畫面入面
+  const labelH=slotS*0.62, labelY=def=>Math.min(ch-labelH*0.5-6*cs,r.y+r.h*def.labelV);
+  return {
+    slotS, banner, rect:r,
+    cab:place(SHOP_HOME_CABINET,nDry,g.portrait?bannerBottom:g.hudTop+4*cs),
+    fr:place(SHOP_HOME_FRIDGE,nCold,bannerBottom),
+    cabLabel:{ x:midX(SHOP_HOME_CABINET), y:labelY(SHOP_HOME_CABINET) },
+    frLabel:{ x:midX(SHOP_HOME_FRIDGE), y:labelY(SHOP_HOME_FRIDGE) },
+  };
+}
+// sink 0 = 喺格仔正中；1 = 貼住格仔底（即係企喺層板上面）。飛緊嗰陣由 0 慢慢變 1，落到層板唔會跳一跳。
+function drawShopImgSink(ctx,img,cx,cy,maxW,maxH,sink,shadow){
+  if(!img||!img.complete||!img.naturalWidth) return;
+  const s=Math.min(maxW/img.naturalWidth,maxH/img.naturalHeight);
+  const w=img.naturalWidth*s,h=img.naturalHeight*s;
+  const top=cy-h/2+(maxH-h)/2*clamp01(sink)+h*0.03*clamp01(sink);
+  ctx.save();
+  if(shadow){ ctx.fillStyle='rgba(60,40,10,0.24)'; ctx.beginPath(); ctx.ellipse(cx,top+h-h*0.02,w*0.44,Math.max(2,h*0.045),0,0,Math.PI*2); ctx.fill(); }
+  ctx.drawImage(img,cx-w/2,top,w,h); ctx.restore();
+}
+function drawShopHomeLabel(ctx,text,x,y,slotS){
+  const font=Math.round(slotS*0.36);
+  ctx.save();
+  ctx.font='800 '+font+'px "PingFang TC","Noto Sans TC",sans-serif';
+  const w=ctx.measureText(text).width+font*1.1, h=font*1.55;
+  rrPath(ctx,x-w/2,y-h/2,w,h,h/2);
+  ctx.fillStyle='rgba(255,255,255,0.90)'; ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle='rgba(58,42,16,0.55)'; ctx.stroke();
+  ctx.fillStyle='#3a2a10'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(text,x,y+font*0.04);
+  ctx.restore();
+}
 function drawShopCrate(ctx,c){
   ctx.save();
   ctx.fillStyle='rgba(0,0,0,0.16)';ctx.fillRect(c.x+6,c.y+c.h+2,c.w,8);
@@ -4217,35 +4289,39 @@ function drawSupermarketScene(ctx,cw,ch){
     drawShopBanner(ctx,cw,g,step.text);
     drawShopImgFit(ctx,imgShopEcobag,g.laneX,ch*0.70,g.bagW*1.2,g.bagW*1.3);
   }else if(scene==='home'||scene==='done'){
-    // 屋企：左上廚櫃（乾貨）、右邊雪櫃（鮮食）；袋喺下方中間
-    const slotS=g.itemSize*0.62;
-    const cabPos=i=>({ x:g.cabinetX-g.cabinetW/2+slotS*0.6+(i%4)*slotS*0.95, y:g.cabinetY+Math.floor(i/4)*slotS*1.05 });
-    const frPos=i=>({ x:g.fridgeX-g.fridgeW/2+slotS*0.6+(i%3)*slotS*0.95, y:g.fridgeY+Math.floor(i/3)*slotS*1.05 });
-    ctx.save();ctx.fillStyle='rgba(255,255,255,0.20)';
-    rrPath(ctx,g.cabinetX-g.cabinetW/2-8,g.cabinetY-slotS*0.6,g.cabinetW+16,slotS*2.3,14);ctx.fill();
-    rrPath(ctx,g.fridgeX-g.fridgeW/2-8,g.fridgeY-slotS*0.6,g.fridgeW+16,slotS*2.3,14);ctx.fill();
-    ctx.fillStyle='#3a2a10';ctx.font='800 '+Math.round(slotS*0.42)+'px "PingFang TC","Noto Sans TC",sans-serif';ctx.textAlign='center';ctx.textBaseline='bottom';
-    ctx.fillText('廚櫃',g.cabinetX,g.cabinetY-slotS*0.7);ctx.fillText('雪櫃',g.fridgeX,g.fridgeY-slotS*0.7);ctx.restore();
+    // 屋企：乾貨企喺廚櫃層板上面、鮮食放喺雪櫃層架上面（位置跟背景圖入面嘅櫃同雪櫃）；袋喺下方中間
+    const nDry=shopStory.list.reduce((t,l)=>t+(SHOP_ITEMS[l.id].cold?0:l.need),0);
+    const nCold=shopStory.list.reduce((t,l)=>t+(SHOP_ITEMS[l.id].cold?l.need:0),0);
+    const H=shopHomeLayout(cw,ch,g,nDry,nCold);
+    const slotAt=(arr,i)=>arr[Math.min(i,arr.length-1)];
+    const hb=Object.assign({},g,{ bannerY:H.banner.y });
+    drawShopHomeLabel(ctx,'廚櫃',H.cabLabel.x,H.cabLabel.y,H.slotS);
+    drawShopHomeLabel(ctx,'雪櫃',H.frLabel.x,H.frLabel.y,H.slotS);
     let ci=0,fi=0;
-    shopStory.shelved.forEach(id=>{ const cold=SHOP_ITEMS[id].cold;const p=cold?frPos(fi++):cabPos(ci++); drawShopImgFit(ctx,shopItemImg(id),p.x,p.y,slotS,slotS); });
+    shopStory.shelved.forEach(id=>{
+      const p=SHOP_ITEMS[id].cold?slotAt(H.fr,fi++):slotAt(H.cab,ci++);
+      drawShopImgSink(ctx,shopItemImg(id),p.x,p.base-p.size/2,p.size,p.size,1,true);
+    });
     if(scene==='home'){
       const a=anim.phase==='fly'?anim.step:null;
       const cur=step;
       const cold=SHOP_ITEMS[cur.item].cold;
-      const target=cold?frPos(fi):cabPos(ci);
-      drawShopBanner(ctx,cw,g,cur.text,'袋入面仲有 '+shopStory.bagged.length+' 件');
+      const slot=cold?slotAt(H.fr,fi):slotAt(H.cab,ci);
+      const target={ x:slot.x, y:slot.base-slot.size/2 };
+      drawLaundryBanner(ctx,cw,hb,cur.text,'袋入面仲有 '+shopStory.bagged.length+' 件',H.banner);
       drawShopImgFit(ctx,imgShopEcobag,g.laneX,ch*(g.portrait?0.82:0.80),g.bagW*1.1,g.bagW*1.2);
       if(!a){
-        drawShopGlow(ctx,target.x,target.y,slotS*0.75);
+        drawShopGlow(ctx,target.x,target.y,slot.size*0.75);
         drawShopImgFit(ctx,shopItemImg(cur.item),g.laneX,ch*(g.portrait?0.72:0.68),g.itemSize*0.8,g.itemSize*0.8);
-        drawShopArmMarker(ctx,g,target.x,target.y+slotS*0.6,progress);
+        drawShopArmMarker(ctx,g,target.x,target.y+slot.size*0.5,progress);
       }else{
         const from={x:g.laneX,y:ch*(g.portrait?0.72:0.68)};
         const p=shopFlyPos(from,target,animP);
-        drawShopImgFit(ctx,shopItemImg(a.item),p.x,p.y,g.itemSize*0.8-(g.itemSize*0.8-slotS)*animP,g.itemSize*0.8-(g.itemSize*0.8-slotS)*animP);
+        const sz=g.itemSize*0.8-(g.itemSize*0.8-slot.size)*animP;
+        drawShopImgSink(ctx,shopItemImg(a.item),p.x,p.y,sz,sz,animP,false);
       }
     }else{
-      drawShopBanner(ctx,cw,g,step.text,'買咗 '+shopStory.shelved.length+' 件，全部收好');
+      drawLaundryBanner(ctx,cw,hb,step.text,'買咗 '+shopStory.shelved.length+' 件，全部收好',H.banner);
     }
   }
   ctx.restore();
@@ -4539,17 +4615,38 @@ function drawLaundryFolded(ctx,id,cx,cy,w,h){
   ctx.beginPath(); ctx.moveTo(cx-w/2+r,cy+h*0.16); ctx.lineTo(cx+w/2-r,cy+h*0.16); ctx.stroke();
   ctx.restore();
 }
+// 個籃張圖（520×322）入面嘅位置：前面籃邊嘅頂線、籃口左右內邊、籃身
+const LAUNDRY_BASKET_SHAPE={ w:520, h:322, rimSide:93, rimMid:101, mouthL:40, mouthR:480, bodyTopY:112, bodyTopL:20, bodyTopR:500, bodyBotY:314, bodyBotL:60, bodyBotR:460 };
 function drawLaundryBasket(ctx,b,ids){
   const n=ids.length;
-  ids.forEach((id,i)=>{
-    const off=(i-(n-1)/2);
-    drawLaundryGarment(ctx,id,b.x+off*b.w*0.14,b.y-b.h*0.40-(i%2)*b.h*0.06,b.w*0.62,b.w*0.62,1,off*0.16);
-  });
-  if(imgLaundryBasket&&imgLaundryBasket.complete&&imgLaundryBasket.naturalWidth>0) drawShopImgFit(ctx,imgLaundryBasket,b.x,b.y,b.w,b.h);
-  else{
+  const ready=imgLaundryBasket&&imgLaundryBasket.complete&&imgLaundryBasket.naturalWidth>0;
+  if(!ready){ // 圖未載入：簡單畫一個籃
+    ids.forEach((id,i)=>{ const off=(i-(n-1)/2); drawLaundryGarment(ctx,id,b.x+off*b.w*0.14,b.y-b.h*0.30,b.w*0.56,b.w*0.56,1,off*0.2); });
     ctx.save(); ctx.fillStyle='#5896d6'; ctx.strokeStyle='#28568c'; ctx.lineWidth=3;
-    ctx.beginPath(); ctx.moveTo(b.x-b.w/2,b.y-b.h*0.4); ctx.lineTo(b.x+b.w/2,b.y-b.h*0.4);
+    ctx.beginPath(); ctx.moveTo(b.x-b.w/2,b.y-b.h*0.2); ctx.lineTo(b.x+b.w/2,b.y-b.h*0.2);
     ctx.lineTo(b.x+b.w*0.4,b.y+b.h/2); ctx.lineTo(b.x-b.w*0.4,b.y+b.h/2); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore();
+    return;
+  }
+  // 啲衫喺個籃「入面」：先畫成個籃（後面籃邊）→ 再畫衫（只准喺籃口同籃身範圍）→ 最後補返前面籃邊同籃身，
+  // 咁啲衫就會被前面遮住下半截，淨係喺窿仔度見到，上半截就喺籃口伸出嚟。
+  const S=LAUNDRY_BASKET_SHAPE, k=b.w/S.w, L=b.x-b.w/2, T=b.y-b.h/2;
+  const X=u=>L+u*k, Y=v=>T+v*k;
+  drawShopImgFit(ctx,imgLaundryBasket,b.x,b.y,b.w,b.h);
+  if(n){
+    ctx.save(); ctx.beginPath();
+    ctx.moveTo(X(S.mouthL-S.w),Y(-S.h*3)); ctx.lineTo(X(S.mouthR+S.w),Y(-S.h*3)); ctx.lineTo(X(S.mouthR),Y(S.rimSide));
+    ctx.lineTo(X(S.bodyTopR),Y(S.bodyTopY)); ctx.lineTo(X(S.bodyBotR),Y(S.bodyBotY)); ctx.lineTo(X(S.bodyBotL),Y(S.bodyBotY));
+    ctx.lineTo(X(S.bodyTopL),Y(S.bodyTopY)); ctx.lineTo(X(S.mouthL),Y(S.rimSide)); ctx.closePath(); ctx.clip();
+    ids.forEach((id,i)=>{
+      const off=(i-(n-1)/2), tilt=off*0.30+((i%2)?0.10:-0.10);
+      drawLaundryGarment(ctx,id,b.x+off*b.w*0.115,b.y-b.h*0.17-(i%2)*b.h*0.07,b.w*0.54,b.w*0.54,1,tilt);
+    });
+    ctx.restore();
+    ctx.save(); ctx.beginPath();
+    ctx.moveTo(X(-4),Y(S.rimSide)); ctx.quadraticCurveTo(X(S.w/2),Y(S.rimMid*2-S.rimSide),X(S.w+4),Y(S.rimSide));
+    ctx.lineTo(X(S.w+4),Y(S.h+4)); ctx.lineTo(X(-4),Y(S.h+4)); ctx.closePath(); ctx.clip();
+    drawShopImgFit(ctx,imgLaundryBasket,b.x,b.y,b.w,b.h);
+    ctx.restore();
   }
 }
 function drawLaundryWasher(ctx,w,ids,spinning,lit){
@@ -4650,6 +4747,14 @@ function drawLaundryHung(ctx,L,id,slot,i,wet,shine,swayBoost,pegDrop){
     }
     ctx.restore();
   }
+}
+// 太陽停喺晾衫竹上面嘅天空（右上角：橫額右邊、頂部按鈕下面），唔再喺竹下面啲衫隔籬。
+function laundrySunSpot(cw,ch,L){
+  const g=L.g, cs=g.cssScale, poleR=Math.max(7,L.m*0.016);
+  const top=(L.portrait?150:78)*cs, bottom=L.poleY-poleR-6*cs;       // 上：頂部按鈕；下：條竹
+  const band=L.portrait?cw*0.18:g.panelRight-16*cs;                   // 右邊留畀太陽嘅闊度（橫額唔會去到）
+  const r=Math.max(18*cs,Math.min(L.m*0.085,(bottom-top)/2/1.58,band/2/1.58));
+  return { r, x:cw-(L.portrait?8*cs:g.panelRight/2)-(L.portrait?r*1.58:0), y:Math.max(top+r*1.58,bottom-r*1.58) };
 }
 function drawLaundrySun(ctx,x,y,r,alpha){
   const t=nowMs();
@@ -4818,7 +4923,7 @@ function drawLaundryStoryScene(ctx,cw,ch){
     const b=L.poleBasket, sunCut=step.cut==='sun';
     const sunRise=sunCut?1-Math.pow(1-clamp01(sceneT/0.45),2.2):(laundryStory.dry?1:0);
     if(sunRise>0){
-      const sr=L.m*0.085, sx=cw*(L.portrait?0.86:0.94), syEnd=L.poleY+L.hangH*(L.portrait?1.25:0.80), syStart=ch*0.86;
+      const sun=laundrySunSpot(cw,ch,L), sr=sun.r, sx=sun.x, syEnd=sun.y, syStart=ch*0.86;
       if(sunCut){ ctx.fillStyle='rgba(255,214,110,'+(0.20*clamp01(sceneT/0.5))+')'; ctx.fillRect(0,0,cw,ch); }
       drawLaundrySun(ctx,sx,syStart+(syEnd-syStart)*sunRise,sr,laundryStory.dry?0.92:1);
     }
@@ -24438,6 +24543,16 @@ window.__qa = {
         anim:shopStory.anim.phase, rewardMs:shopStory.rewardMs, hasCart:!!shopStory.hasCart, bagGiven:!!shopStory.bagGiven, bagTaken:!!shopStory.bagTaken,
         rounds:shopStory.rounds, repsDone:shopStory.repsDone, summary:shopStorySummaryText(), timeLeft };
     },
+    // 屋企畫面：貨品位置對返背景圖入面廚櫃／雪櫃嘅層板（全部用畫布像素）
+    homeLayout(){
+      const cw=gameCanvas.width, ch=gameCanvas.height, g=shopGeometry(cw,ch);
+      const nDry=shopStory.list.reduce((t,l)=>t+(SHOP_ITEMS[l.id].cold?0:l.need),0);
+      const nCold=shopStory.list.reduce((t,l)=>t+(SHOP_ITEMS[l.id].cold?l.need:0),0);
+      const H=shopHomeLayout(cw,ch,g,nDry,nCold), r=H.rect;
+      const box=def=>({ x0:r.x+r.w*def.u0, x1:r.x+r.w*def.u1, rows:def.rows.map(o=>({ base:r.y+r.h*o.base, top:r.y+r.h*o.top })) });
+      return { cw, ch, portrait:g.portrait, cssScale:g.cssScale, hudTop:g.hudTop, bannerH:g.bannerH, panelRight:g.panelRight, nDry, nCold,
+        banner:H.banner, cab:H.cab, fr:H.fr, cabLabel:H.cabLabel, frLabel:H.frLabel, cabinet:box(SHOP_HOME_CABINET), fridge:box(SHOP_HOME_FRIDGE), counterBase:r.y+r.h*SHOP_HOME_CABINET.counter.base };
+    },
     trigger(){
       if(!isSupermarketTheme()) return null;
       if(!shopStory.active) beginSupermarketStory();
@@ -24458,6 +24573,11 @@ window.__qa = {
         pile:laundryStory.pile.slice(), shelf:laundryStory.shelf.slice(), washed:laundryStory.washed, dry:laundryStory.dry,
         step:cur?{ kind:cur.kind, scene:cur.scene, action:cur.action||null, cut:cur.cut||null, item:cur.item||null, k:cur.k, text:cur.text }:null,
         anim:laundryStory.anim.phase, rewardMs:laundryStory.rewardMs, summary:laundryStorySummaryText(), rounds:laundryStory.rounds, timeLeft };
+    },
+    // 太陽停低嘅位置同條竹（畫布像素）
+    sunSpot(){
+      const cw=gameCanvas.width, ch=gameCanvas.height, L=laundryStoryGeometry(cw,ch);
+      return { cw, ch, portrait:L.portrait, cssScale:L.g.cssScale, poleY:L.poleY, poleR:Math.max(7,L.m*0.016), panelRight:L.g.panelRight, sun:laundrySunSpot(cw,ch,L) };
     },
     trigger(){
       if(!isLaundryStoryTheme()) return null;

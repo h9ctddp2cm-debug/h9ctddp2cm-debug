@@ -1995,3 +1995,22 @@ Original prompt: Fix Level 6–7 interactions: make light clothes-peg press dete
 - Tests：新增 `tests/v142-story-rotate-no-cheer.test.mjs`（12：標記、輪流規則、超市／洗衫每轉清單、之後幾轉劇本照自己張單砌、「好波」只剩保齡球同籃球兩處、煮蛋炒飯字句、偵測設定不變；Level 3／4 超市同洗衫晾衫連玩三轉全流程——每轉清單啱、收好嘅嘢同張單一致）。`tests/v141-story-auto-repeat.test.mjs` 兩條斷言跟新寫法更新。標記測試檔升到 v142。
 - Validation：兩組測試 767 個（297＋470）764 pass／3 skip／0 fail；`tools/checkjs.sh` 11 OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 223 files（內置守門全部通過）；`rg -c "__qa" dist/public/index.html` → 0；dist 載入冇 page error；三個標記 `v142-20261125-story-rotate`＋`perf v142`。
 - QA 對照表 `ych_rehab_qa_artifacts/v142/v142-qa-contact-sheet.png`（Playwright 測試假動作：iPad 橫向 1180×820、直向 820×1180、筆電 1413×653）。聲音改動只有測試驗證，冇真機聽過。未喺真機／真病人試過。
+
+## 2026-11-26 v142（續）— 屋企畫面啲貨放入廚櫃／雪櫃；衫放入籃入面；太陽喺竹上面
+- 治療師睇完 v142 對照表（未推送）之後三個畫面問題：
+  1. 「點解豉油同埋啲乾貨會凌空？應該要放入櫃入面」。
+  2. 「啲衫都係應該喺個籃入面而唔係喺個籃嘅後面」。
+  3. 「個太陽應該喺條竹嘅上面」。
+- 三樣都係舊畫法（v125 屋企畫面、v139 洗衫晾衫），唔係 v142 整出嚟；正式網站 v141 都係咁。
+- 原因同改動（全部只係畫面，冇掂偵測同計分）：
+  1. 屋企畫面：以前貨品位置係「畫面闊／高嘅固定比例」，同背景圖入面個廚櫃、雪櫃冇關係，而且橫額啱啱遮住廚櫃，所以啲乾貨畫咗落櫃底下面幅瓷磚牆度。而家 `SHOP_HOME_CABINET`／`SHOP_HOME_FRIDGE` 記低層板喺背景圖入面嘅位置（佔成幅圖嘅比例），`shopHomeBgRect()` 用返同背景一樣嘅「鋪滿」計法，`shopHomeLayout()` 逐格計位：乾貨企喺廚櫃下層層板、鮮食放雪櫃層架，每格大細唔超過嗰格高度；件數多就每層排密啲。`drawShopImgSink()` 貼底畫＋細陰影；飛入去嘅落點同之後畫嘅位置一樣。
+     - 橫額讓位：橫向搬去右上（雪櫃頂，`drawLaundryBanner` 嘅範圍寫法，太長會分兩行）；直向搬去度數面板右邊。被橫額遮住嘅雪櫃第一層唔放嘢。
+     - 「廚櫃」「雪櫃」改做白底細標籤（櫃底、雪櫃抽屜位），兩塊半透明白底板刪走。
+  2. 衫籃 `drawLaundryBasket()`：以前先畫衫、再成個籃冚上去，件衫企到好高，喺窿仔度睇落似喺籃後面。而家分三層：成個籃 → 衫（只准喺籃口同籃身範圍，`LAUNDRY_BASKET_SHAPE`）→ 再補返前面籃邊同籃身。衫放低咗、斜擺，下半截被前面籃身遮住。洗衣房、露台、房三個畫面個籃一齊改。
+  3. 太陽 `laundrySunSpot()`：停喺竹上面嘅天空（右上，橫額右邊、頂部按鈕下面），大細跟住可用空間（筆電畫面矮，太陽細啲）。升起動畫照舊由下面升上去。
+- 冇改：抬臂達標判定、重新準備規則、每轉換款、自動再嚟、成績頁、所有偵測設定。Level 5 冇掂；Level 6 筷子仍然 `gameType:'dwell'`。
+- QA hook（公開版冇）：`__qa.shopStory.homeLayout()`、`__qa.laundryStory.sunSpot()`。
+- 細螢幕後備（唔係主要裝置，只係唔好畫錯）：手機橫向時廚櫃喺頂部按鈕下面擺唔落，乾貨改為企喺廚櫃枱面（`SHOP_HOME_CABINET.counter`）；只有廚櫃層格真係擺唔落（剩低高度少過貨品 75%）先用，部門筆電照放廚櫃。手機直向太窄，橫額照舊放度數面板下面。
+- Tests：新增 `tests/v142-story-scene-fit.test.mjs`（15：畫法接線；手機橫向乾貨企喺枱面；iPad 橫向／直向／筆電 × 中單／長單，每件貨都企喺圖入面嘅層板、喺櫃／雪櫃範圍入面、冇被橫額遮住；三個畫面太陽成個喺竹上面、喺畫面入面、喺頂部按鈕下面）。
+- Validation：Node 測試兩組前景跑 297 ＋ 485 ＝ 782：779 pass／3 skip／0 fail；`tools/checkjs.sh` 11 OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 223 files；`rg -c "__qa" dist/public/index.html` → 0；dist 載入冇 page error。標記不變（`v142-20261125-story-rotate`，未推送過）。
+- QA 對照表更新 `ych_rehab_qa_artifacts/v142/v142-qa-contact-sheet.png`（加咗三項修正嘅前後對比）。Playwright 測試假動作；未喺真機／真病人試過。
