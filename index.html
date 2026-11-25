@@ -3732,6 +3732,9 @@ const SHOP_ITEMS = {
 const SHOP_LIST_SIZES = { short:2, medium:4, long:6 };
 const SHOP_LIST_LABELS = { short:'短單（2 樣）', medium:'中單（4 樣）', long:'長單（6 樣）' };
 const SHOP_LIST_POOL = ['apple','soysauce','orange','milk','choysum','eggs'];
+// v142 每轉換款：第 1 轉同以前一樣（POOL 頭 N 樣）；之後每轉喺呢條八樣貨嘅清單度順序攞落去，攞到尾就返轉頭。
+// （魚張圖又扁又淺色，擺上貨架睇唔清，所以冇放入輪流清單。）
+const SHOP_LIST_ROTATION = ['apple','soysauce','orange','milk','choysum','eggs','rice','toiletpaper'];
 const SHOP_ACTION_MS = 850;      // 抬手達標後，件貨飛入車／飛上櫃嘅動畫
 const SHOP_SCENE_PAD_MS = 450;   // 動畫完結後停一停先去下一步
 const shopStory = {
@@ -3749,15 +3752,26 @@ function storyRoundCanRepeat(){
 }
 function isSupermarketTheme(){ return isShoulderFlexionLevel() && state.theme==='supermarket'; }
 function shopListSizeKey(){ return SHOP_LIST_SIZES[state.shopListSize] ? state.shopListSize : 'medium'; }
-function buildShopList(sizeKey){
+/* v142 故事遊戲每轉換款：喺 pool 入面由第 (round-1)*n 樣開始順序攞 n 樣，攞到尾返轉頭。
+   第 1 轉永遠係 pool 頭 n 樣（同以前一樣）。n 同 pool 一樣長（例如六件衫全洗）就改為每轉
+   換一半次序。只係揀邊幾樣出場，同抬臂偵測完全無關。 */
+function storyRoundPick(pool,n,round){
+  const L=pool.length, r=Math.max(1,Math.floor(round||1)), m=Math.max(0,Math.min(n,L));
+  if(!L||!m) return [];
+  const step=m<L?m:Math.max(1,Math.floor(L/2));
+  const off=((r-1)*step)%L;
+  return Array.from({length:m},(_,i)=>pool[(off+i)%L]);
+}
+function buildShopList(sizeKey,round){
   const n=SHOP_LIST_SIZES[sizeKey]||4;
-  return SHOP_LIST_POOL.slice(0,n).map(id=>({ id, need:(id==='apple'||id==='orange')?2:1, got:0 }));
+  const ids=Math.max(1,round||1)>1?storyRoundPick(SHOP_LIST_ROTATION,n,round):SHOP_LIST_POOL.slice(0,n);
+  return ids.map(id=>({ id, need:(id==='apple'||id==='orange')?2:1, got:0 }));
 }
 // 故事劇本：scene 步驟自動播放（唔使抬手）；rep 步驟要抬臂達標一次。
 function buildShopSteps(list,round){
   const steps=[], r=Math.max(1,round||1);
   steps.push(r>1
-    ? { kind:'scene', scene:'entrance', text:'再去超市買餸', sub:'第 '+r+' 轉', ms:2200 }
+    ? { kind:'scene', scene:'entrance', text:'再去超市買餸', sub:'第 '+r+' 轉 · 換咗新購物單', ms:2200 }
     : { kind:'scene', scene:'entrance', text:'行入超市', sub:'今日要買餸', ms:2200 });
   steps.push({ kind:'scene', scene:'list', text:'睇吓購物單', ms:2600 });
   steps.push({ kind:'rep', scene:'cart', action:'cart', text:'抬高手，攞架購物車', prompt:'攞購物車' });
@@ -3805,7 +3819,7 @@ function beginSupermarketStory(roundsDone){
   resetSupermarketStory();
   shopStory.rounds=Math.max(0,roundsDone||0);
   shopStory.listSize=shopListSizeKey();
-  shopStory.list=buildShopList(shopStory.listSize);
+  shopStory.list=buildShopList(shopStory.listSize,shopStory.rounds+1);
   shopStory.steps=buildShopSteps(shopStory.list,shopStory.rounds+1);
   shopStory.active=true; shopStory.stepStartedMs=nowMs();
 }
@@ -3905,7 +3919,7 @@ function updateSupermarketAction(){
     // 動畫完結即推進到下一步（之後嘅 scene 步驟由 updateSupermarketStory 計時）
     if(shopStory.idx===shopStory.steps.indexOf(s)) shopGoToStep(shopStory.idx+1);
     const nxt=shopCurrentStep();
-    if(nxt&&nxt.kind==='scene'&&nxt.end){ shopStory.rounds++; shopStory.repsDone=0; playApplauseSound(); playHaoboCheer(); }
+    if(nxt&&nxt.kind==='scene'&&nxt.end){ shopStory.rounds++; shopStory.repsDone=0; playApplauseSound(); } // v142「好波」歡呼只留畀保齡球同籃球
   }
 }
 function resetSupermarketAction(){ /* 獎勵週期完結：步驟已經喺動畫完結時推進，呢度唔使做嘢 */ }
@@ -4084,7 +4098,6 @@ function drawSupermarketScene(ctx,cw,ch){
   if(!shopStory.active&&state.running) beginSupermarketStory();
   updateSupermarketAction();
   updateSupermarketStory();
-  preloadHaoboCheer();
   const g=shopGeometry(cw,ch);
   const step=shopStory.anim.step||shopCurrentStep();
   const scene=step?step.scene:'entrance';
@@ -4275,7 +4288,11 @@ const laundryStory = {
 };
 function isLaundryStoryTheme(){ return isShoulderFlexionLevel()&&!research.active&&state.theme==='laundry'; }
 function laundryLoadSizeKey(){ return LAUNDRY_LOAD_SIZES[state.laundryLoadSize] ? state.laundryLoadSize : 'medium'; }
-function buildLaundryList(sizeKey){ return LAUNDRY_STORY_POOL.slice(0,LAUNDRY_LOAD_SIZES[sizeKey]||4); }
+// v142 每轉換款：第 1 轉同以前一樣；之後每轉順序換下一批衫（六件全洗就換次序）
+function buildLaundryList(sizeKey,round){
+  const n=LAUNDRY_LOAD_SIZES[sizeKey]||4;
+  return Math.max(1,round||1)>1?storyRoundPick(LAUNDRY_STORY_POOL,n,round):LAUNDRY_STORY_POOL.slice(0,n);
+}
 // 故事劇本：scene 步驟自動播放（唔使抬手）；rep 步驟要抬臂達標一次。
 function buildLaundrySteps(list,round){
   const steps=[], n=list.length, r=Math.max(1,round||1);
@@ -4319,7 +4336,7 @@ function beginLaundryStory(roundsDone){
   resetLaundryStory();
   laundryStory.rounds=Math.max(0,roundsDone||0);
   laundryStory.loadSize=laundryLoadSizeKey();
-  laundryStory.list=buildLaundryList(laundryStory.loadSize);
+  laundryStory.list=buildLaundryList(laundryStory.loadSize,laundryStory.rounds+1);
   laundryStory.steps=buildLaundrySteps(laundryStory.list,laundryStory.rounds+1);
   laundryStory.basket=laundryStory.list.slice();
   laundryStory.pole=laundryStory.list.map(()=>null);
@@ -4419,7 +4436,7 @@ function updateLaundryStoryAction(){
     // 動畫完結即推進到下一步（之後嘅 scene 步驟由 updateLaundryStory 計時）
     if(laundryStory.idx===laundryStory.steps.indexOf(s)) laundryGoToStep(laundryStory.idx+1);
     const nxt=laundryCurrentStep();
-    if(nxt&&nxt.kind==='scene'&&nxt.end){ laundryStory.completed=true; laundryStory.rounds++; playApplauseSound(); playHaoboCheer(); }
+    if(nxt&&nxt.kind==='scene'&&nxt.end){ laundryStory.completed=true; laundryStory.rounds++; playApplauseSound(); } // v142「好波」歡呼只留畀保齡球同籃球
   }
 }
 function laundryStageLabel(i){ const st=LAUNDRY_STAGES[Math.max(0,Math.min(LAUNDRY_STAGES.length-1,i))]; return dealText(st.zh,st.en); }
@@ -4740,7 +4757,6 @@ function drawLaundryStoryScene(ctx,cw,ch){
   if(!laundryStory.active&&state.running) beginLaundryStory();
   updateLaundryStoryAction();
   updateLaundryStory();
-  preloadHaoboCheer();
   const L=laundryStoryGeometry(cw,ch), g=L.g;
   const anim=laundryStory.anim;
   const step=anim.step||laundryCurrentStep()||{ kind:'scene', scene:'wash', cut:'intro', stage:0, text:'今日要洗衫', en:'Laundry day', ms:2200 };
@@ -14793,7 +14809,7 @@ function updateFramePerfOverlay(now){
     framePerf.overlayEl = el;
   }
   const p = framePerfSnapshot();
-  el.textContent = `perf v141  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
+  el.textContent = `perf v142  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
     + `鏡頭 ${p.video[0]}×${p.video[1]}  畫布 ${p.canvas[0]}×${p.canvas[1]}  dpr ${p.dpr}  手模型 ${p.handDelegate || '-'}\n`
     + `手 ${p.hand.hands} 隻  標籤 ${p.hand.label || '-'} ${p.hand.score}  接納 ${p.hand.path || '-'}  嚴格 ${p.hand.strict} 連續 ${p.hand.continuity} 單手 ${p.hand.lone} 拒絕 ${p.hand.rejected}\n`
     + `左右手檢查 ${p.hand.check === 'off' ? '關' : '開'}  鎖定手形 ${p.hand.lockSize || '-'}  大小拒絕 ${p.hand.sizeRejected}  遠處拒絕 ${p.hand.farRejected}`
@@ -19976,8 +19992,12 @@ function cookAdvance(earned){
       tier:'完成整道菜',
       title:'蛋炒飯完成！',
       sub:(cook.rounds > 1 ? '第 ' + cook.rounds + ' 碟 · ' : '') + '12 / 12 步全部完成 · 成就：一人一鍋蛋炒飯',
-      detail:'你完成了所有 12 個步驟，包括握放、手腕畫圈、前臂旋轉估算、手肘屈伸、伸手及舀取轉移。' +
-             '<br><small>本活動為虛擬煮食訓練，動作回饋屬估算，並非臨床運動學量度。</small>',
+      // v142 握力器版：只講返真正做咗嘅動作（揸實 → 放鬆），唔再列舊手勢版嘅動作
+      detail: isLevel6DigiflexTask()
+        ? '你完成咗全部 12 個步驟，每一步都係揸實握力器、再放鬆，一下一下煮出嚟。' +
+          '<br><small>本活動為虛擬煮食訓練；網頁不識別實體工具，亦不量度握力或捏力。</small>'
+        : '你完成了所有 12 個步驟，包括握放、手腕畫圈、前臂旋轉估算、手肘屈伸、伸手及舀取轉移。' +
+          '<br><small>本活動為虛擬煮食訓練，動作回饋屬估算，並非臨床運動學量度。</small>',
       progressLabel:'進度：12 / 12 步',
       progressPct:1,
       canvasH:280,
@@ -25138,7 +25158,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v141-20261125-story-repeat";
+  const LEVEL_APP_BUILD = "v142-20261125-story-rotate";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

@@ -34,11 +34,11 @@ function lineConst(name){
   return 'const ' + name + ' = ' + m[1] + ';';
 }
 
-test('v141 release markers', () => {
-  assert.match(sw, /const CACHE_VERSION = "fthue-rehab-v141-20261125-story-repeat";/);
-  assert.match(manifest, /index\.html\?build=v141-20261125-story-repeat/);
-  assert.match(html, /const LEVEL_APP_BUILD = "v141-20261125-story-repeat";/);
-  assert.match(html, /perf v141 {2}/);
+test('release markers (current build)', () => {
+  assert.match(sw, /const CACHE_VERSION = "fthue-rehab-v142-20261125-story-rotate";/);
+  assert.match(manifest, /index\.html\?build=v142-20261125-story-rotate/);
+  assert.match(html, /const LEVEL_APP_BUILD = "v142-20261125-story-rotate";/);
+  assert.match(html, /perf v142 {2}/);
 });
 
 test('a new round starts only while the game runs and enough session time is left', () => {
@@ -56,7 +56,7 @@ test('supermarket: the closing scene restarts the story, or ends the game when t
   const update = fnSource('updateSupermarketStory');
   assert.match(update, /if\(s\.end\)\{\s*if\(storyRoundCanRepeat\(\)\)\{ restartSupermarketRound\(\); return; \}\s*shopStory\.ended=true;\s*if\(state\.running\) endGame\(\);\s*return;\s*\}/);
   // the finished round is counted when the last item is put away (applause moment)
-  assert.match(fnSource('updateSupermarketAction'), /if\(nxt&&nxt\.kind==='scene'&&nxt\.end\)\{ shopStory\.rounds\+\+; shopStory\.repsDone=0; playApplauseSound\(\); playHaoboCheer\(\); \}/);
+  assert.match(fnSource('updateSupermarketAction'), /if\(nxt&&nxt\.kind==='scene'&&nxt\.end\)\{ shopStory\.rounds\+\+; shopStory\.repsDone=0; playApplauseSound\(\); \}/);   // v142: applause only
   // a fresh game clears the round count; a restart keeps it
   assert.match(fnSource('resetSupermarketStory'), /shopStory\.rounds=0; shopStory\.repsDone=0;/);
   assert.match(fnSource('restartSupermarketRound'), /beginSupermarketStory\(shopStory\.rounds\);/);
@@ -75,8 +75,8 @@ test('supermarket: later rounds say which round it is; the story itself is the s
   const r2 = m.buildShopSteps(m.buildShopList('medium'), 2);
   const r3 = m.buildShopSteps(m.buildShopList('medium'), 3);
   assert.equal(r1[0].text, '行入超市'); assert.equal(r1[0].sub, '今日要買餸');
-  assert.equal(r2[0].text, '再去超市買餸'); assert.equal(r2[0].sub, '第 2 轉');
-  assert.equal(r3[0].sub, '第 3 轉');
+  assert.equal(r2[0].text, '再去超市買餸'); assert.match(r2[0].sub, /^第 2 轉/);
+  assert.match(r3[0].sub, /^第 3 轉/);
   assert.equal(r2.length, r1.length);
   assert.deepEqual(r2.slice(1), r1.slice(1));   // same lifts, same order, same scene times
   assert.match(html, /drawShopBanner\(ctx,cw,g,step\?step\.text:'行入超市',step\?step\.sub:'今日要買餸'\);/);

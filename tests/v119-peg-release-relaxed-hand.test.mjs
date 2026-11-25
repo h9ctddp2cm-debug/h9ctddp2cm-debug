@@ -38,9 +38,9 @@ test('v119 public peg constants and calibration wiring', () => {
   // the NEXT pick-up still needs a positively separated hand
   assert.match(publicSource, /const openPrep = isLevel6ToolGestureTask\(\) \? handOpenPrep/);
   // build / cache identifiers bumped
-  assert.match(publicSource, /const LEVEL_APP_BUILD = "v141-20261125-story-repeat";/);
+  assert.match(publicSource, /const LEVEL_APP_BUILD = "v142-20261125-story-rotate";/);
   const sw = readFileSync(path.join(root, 'service-worker.js'), 'utf8');
-  assert.match(sw, /const CACHE_VERSION = "fthue-rehab-v141-20261125-story-repeat";/);
+  assert.match(sw, /const CACHE_VERSION = "fthue-rehab-v142-20261125-story-rotate";/);
 });
 
 /* ---------------- Behavioural harness (as tests/v108, v110) ---------------- */

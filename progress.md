@@ -1976,3 +1976,22 @@ Original prompt: Fix Level 6–7 interactions: make light clothes-peg press dete
 - Validation：兩組測試 755 個（297＋458）752 pass／3 skip／0 fail；`tools/checkjs.sh` 11 OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 223 files（內置守門全部通過）；`rg -c "__qa" dist/public/index.html` → 0；dist 載入冇 page error，有 `storyRoundCanRepeat`／`cookStartNextRound`；三個標記 `v141-20261125-story-repeat`＋`perf v141`。
 - QA 對照表 `ych_rehab_qa_artifacts/v141/v141-qa-contact-sheet.png`（Playwright 測試假動作：iPad 橫向 1180×820、直向 820×1180、筆電 1413×653）。未喺真機／真病人試過。
 - 順手見到、今次冇改：(a) 煮蛋炒飯完成畫面嗰句「包括握放、手腕畫圈、前臂旋轉估算、手肘屈伸、伸手及舀取轉移」係舊版手勢玩法嘅字，握力器版其實只有揸實／放鬆；(b) 之後幾轉嘅購物單／衫同第一轉一樣，未有輪流換款；(c) 原始碼版（有錄影功能嗰個）連續 15 次成功會彈「治療師參考：可考慮進階」，玩耐咗會出現多啲——公開版係試玩模式，唔會彈。
+
+## 2026-11-25 v142 — 超市／洗衫晾衫每轉換款；「好波」歡呼只留畀保齡球、籃球；煮蛋炒飯完成字句
+- 治療師睇完 v141 之後三個跟進：
+  1. 「購物單輪流換款」——好啊。
+  2. 「啲遊戲除咗保齡球同埋籃球之外，唔要最尾嗰句『好波』」。
+  3. 煮蛋炒飯完成畫面嗰句舊字（握放、手腕畫圈⋯）——Ok，改返。
+- 追查「好波」：`playHaoboCheer()`（`audio/haobo_cheer.mp3`）有四個地方播——保齡球擊中、籃球入樽、超市最後一件收好、洗衫晾衫最後一件入櫃。後兩個係 v125／v139 照抄保齡球嘅完場音效；v141 自動再嚟之後每轉都會聽到一次。
+- 改動：
+  1. 每轉換款 `storyRoundPick(pool,n,round)`：由 pool 第 `(round-1)*n` 樣開始順序攞 n 樣，攞到尾返轉頭；第 1 轉永遠係頭 n 樣（同以前完全一樣，主畫面「約 N 次抬手」亦不變）。n 同 pool 一樣長就改為每轉換一半次序。
+     - 超市 `buildShopList(sizeKey,round)`：之後幾轉用 `SHOP_LIST_ROTATION`（蘋果、豉油、橙、牛奶、菜心、雞蛋、米、廁紙，八樣）。短單 4 張單輪流（蘋果豉油／橙牛奶／菜心雞蛋／米廁紙）；中單 2 張單輪流（蘋果豉油橙牛奶／菜心雞蛋米廁紙）；長單每轉向後移 6 樣。米、廁紙本身一直喺 `SHOP_ITEMS`，有圖、貨架同廚櫃畫法都係現成。第 2 轉起開場副題改為「第 N 轉 · 換咗新購物單」。
+     - 魚冇放入輪流清單：試過，`fridge_fish.png` 又扁又淺色，擺上貨架浮喺木板上面、睇唔清。
+     - 洗衫晾衫 `buildLaundryList(sizeKey,round)`：少（3 件）兩批衫輪流；中（4 件）三批輪流；多（6 件）六件全洗，只係換次序。
+     - 每轉抬手次數：洗衫晾衫每轉一樣；超市因為蘋果／橙要攞兩個，冇生果嗰轉會少幾下（中單 22 → 16 下）。
+  2. 「好波」：超市、洗衫晾衫完場只播拍手聲（`playApplauseSound()`），唔再 `playHaoboCheer()`，亦唔再預載音檔。保齡球、籃球不變。茶樓、麻雀摸牌、啤牌揭牌本身冇播過。
+  3. 煮蛋炒飯完成畫面 `cookAdvance()`：握力器版（`isLevel6DigiflexTask()`，公開版一定係）改為「你完成咗全部 12 個步驟，每一步都係揸實握力器、再放鬆，一下一下煮出嚟。」＋細字「本活動為虛擬煮食訓練；網頁不識別實體工具，亦不量度握力或捏力。」；舊句只留喺非握力器分支。
+- 冇改：抬臂達標判定、v137 重新準備規則、握力器計數、v141 自動再嚟同時間規則、成績頁句子、`numHands:2`、信心值 0.20/0.18/0.18、`runningMode:'VIDEO'`、`PUBLIC_GAME_WORK_INTERVAL_MS=1000/30`、`PUBLIC_CANVAS_MAX_EDGE=1600`；冇任何嘢變嚴；Level 5、Level 6 其他遊戲冇改。
+- Tests：新增 `tests/v142-story-rotate-no-cheer.test.mjs`（12：標記、輪流規則、超市／洗衫每轉清單、之後幾轉劇本照自己張單砌、「好波」只剩保齡球同籃球兩處、煮蛋炒飯字句、偵測設定不變；Level 3／4 超市同洗衫晾衫連玩三轉全流程——每轉清單啱、收好嘅嘢同張單一致）。`tests/v141-story-auto-repeat.test.mjs` 兩條斷言跟新寫法更新。標記測試檔升到 v142。
+- Validation：兩組測試 767 個（297＋470）764 pass／3 skip／0 fail；`tools/checkjs.sh` 11 OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 223 files（內置守門全部通過）；`rg -c "__qa" dist/public/index.html` → 0；dist 載入冇 page error；三個標記 `v142-20261125-story-rotate`＋`perf v142`。
+- QA 對照表 `ych_rehab_qa_artifacts/v142/v142-qa-contact-sheet.png`（Playwright 測試假動作：iPad 橫向 1180×820、直向 820×1180、筆電 1413×653）。聲音改動只有測試驗證，冇真機聽過。未喺真機／真病人試過。
