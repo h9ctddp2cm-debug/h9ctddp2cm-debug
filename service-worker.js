@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v139-20261124-laundry-story";
+const CACHE_VERSION = "fthue-rehab-v140-20261125-cursor-stays";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

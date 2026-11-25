@@ -1926,3 +1926,18 @@ Original prompt: Fix Level 6–7 interactions: make light clothes-peg press dete
   2. 「同埋係咪應該要顯示返個度數？」→ 佢答「顯示，不過字體細個啲」：公開版 Level 3／4 重新顯示即時「現在／目標」度數，用細字精簡版（`.level4-calib.public-compact`：19px 數字、闊度最多 190px），下面一行細字「相機估算，只供參考」（`#level4ReadoutNote`）。v137 收起度數嘅決定由呢個指示取代；指示句（抬高／慢慢放低）同畫面上嘅目標標籤仍然冇度數。適用於全部 Level 3／4 場景。
   3. 順手補返英文版缺嘅字：HUD「完成次數」→ Lifts done、「自拍」→ Selfie、「白色背景」→ White（之前顯示通用後備句，令直向英文版按鈕排太長，會遮住新嘅度數細牌）。
 - 仍然未做：英文版超市「單長度」細字仍然顯示通用後備句（舊問題）。
+
+## 2026-11-25 v140 — Level 6 啤牌／麻雀：手形（浮標）一直顯示
+- 治療師回報：「Level 6 啤牌同埋麻雀嘅浮標好耐先出現返，請隨時出現，否則病人會好氣餒，會以為自己冇夾到，其實佢又夾到。」
+- 追查：手形只喺鏡頭睇到手嗰陣先畫（`advDrawCursor` 喺 `cursorX<0 || !handDetected` 直接 return）。鏡頭連續 1.5 秒（`PUBLIC_LEVEL56_DETECTION_LOST_GRACE_MS`）睇唔到手之後追蹤重設（`cursorX=-1`），手形消失；但 `picker.heldId` 其實仍然保留（張牌仍然算夾住），只係張牌冇咗手位置所以畫返喺原位——病人睇落就似「冇夾到」。鏡頭幾時再搵返隻手，取決於相機同手部模型（夾住牌時手指互相遮住，較易漏），呢部分冇喺今次改。
+- 改動（只限公開版 Level 6 啤牌同麻雀 `level6CursorAlwaysShown()`；純顯示）：
+  1. `advDrawCursor`：鏡頭睇到手 → 同以前一樣；睇唔到 → 喺最後見到嘅位置畫淺色手形（夾住 alpha .62／放鬆 .54；睇到時 .84／.72）。夾住嘢就畫捏手形，冇夾嘢畫放鬆手形。
+  2. 開局鏡頭未見過手：手形喺畫面中間（`cw*.5, ch*.62`）等，鏡頭一見到手就跳去手嘅位置。
+  3. `mjRender`／`cardsRender` 夾住嘅牌、同 `advDrawHeldReleasePrompt`「已拿住」字牌，改用 `level6HeldDrawPoint()`（睇到手＝手位置；睇唔到＝最後位置），唔再彈返原位。
+  4. `drawPublicLevel6ClosedPinchCursor(ctx,x,y,alpha,graspingShown=isGrasping)` 加一個參數決定畫邊款手形；`advInit`／`advTeardown` 清走最後位置。
+- 冇改：追蹤、1.5 秒寬限、拎起／放低／停住自動放低規則（`picker.update` 喺手唔見時照舊 return null——睇唔到嘅手唔可以拎、移、放）；偵測冇變嚴；Level 5 全部遊戲、Level 6 插花／晾衫衣夾／筷子（`gameType:'dwell'`）／煮蛋炒飯冇改；`numHands:2`、信心值 0.20/0.18/0.18、`runningMode:'VIDEO'`、`PUBLIC_GAME_WORK_INTERVAL_MS=1000/30`、`PUBLIC_CANVAS_MAX_EDGE=1600` 不變。
+- QA 狀態 `level6ToolState()` 多咗 `lastSeenCursor`、`heldShownAt`。
+- Tests：新增 `tests/v140-cards-mahjong-cursor-stays.test.mjs`（7：原始碼接線；啤牌、麻雀全流程——夾住後手唔見超過寬限，手形同牌留喺最後位置、期間唔會放低、手返嚟先放低計分；冇夾嘢時放鬆手形；開局中間等；插花不變；Level 5 啤牌不變）。`tests/v78-level6-pinch-games.test.mjs` 一條 regex 跟新參數名更新。15 個 marker 測試 sed bump。
+- Validation：兩組測試 732 個（297＋435）729 pass／3 skip／0 fail；`tools/checkjs.sh` OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 223 files（內置守門全部通過）；`rg -c "__qa" dist/public/index.html` → 0；dist 載入冇 page error、有 `level6LastSeenCursorPoint`；三個標記 `v140-20261125-cursor-stays`＋`perf v140`。
+- QA 對照表 `ych_rehab_qa_artifacts/v140/v140-qa-contact-sheet.png`（Playwright 測試假手：iPad 橫向 1180×820、直向 820×1180、筆電 1413×653；v139 對 v140 前後對照）。未喺真機／真手試過。
+- 順手見到、今次冇改：(a) Level 6 插花／晾衫（`carrier`）鏡頭睇唔到手時，夾住嘅花會畫喺畫面左上角——同一類問題，等治療師決定係咪一齊改；(b) Level 6 啤牌英文版橫額同「已拿住」字牌仍然顯示通用後備句（舊問題）；(c) v136「到位即準備」：鏡頭真正跟丟之後，隻手如果已經揸實咁喺牌上面重新出現，可以直接拎起（寬鬆，冇改）。

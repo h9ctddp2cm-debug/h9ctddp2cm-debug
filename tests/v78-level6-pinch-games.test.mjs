@@ -47,7 +47,7 @@ test('public Level 6 uses affected-side image cues (v130: pinch picture only whi
   assert.match(html,/imgLevel6OpenLeft\.src = 'img\/level6_open_left\.png'/);
   assert.match(html,/function level6PinchHandGeometry[\s\S]*?activeAffectedSide\(\)==='left'/);
   assert.match(html,/const anchorY=open \? \.447 : \.505;/);
-  assert.match(html,/function drawPublicLevel6ClosedPinchCursor[\s\S]*?const open=!isGrasping;[\s\S]*?geometry\.side==='left'\?imgLevel6OpenLeft:imgLevel6OpenRight/);
+  assert.match(html,/function drawPublicLevel6ClosedPinchCursor\(ctx,x,y,alpha=\.82,graspingShown=isGrasping\)[\s\S]*?const open=!graspingShown;[\s\S]*?geometry\.side==='left'\?imgLevel6OpenLeft:imgLevel6OpenRight/);
   assert.match(html,/if\(isLevel6\(\)\)\{[\s\S]{0,350}drawPublicLevel6ClosedPinchCursor\(ctx,cursorPoint\.x/);
   assert.match(html,/function advDrawCursor[\s\S]*?if\(isLevel6\(\)\)\{[\s\S]{0,350}drawPublicLevel6ClosedPinchCursor\(ctx,cursorX/);
   assert.doesNotMatch(html,/if\(isLevel6\(\) && isGrasping\)\{/);

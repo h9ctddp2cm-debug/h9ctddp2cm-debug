@@ -13389,13 +13389,13 @@ function level6PinchHandGeometry(x,y,open=false){
   const anchorY=open ? .447 : .505;
   return {side,width,height,x:x-width*anchorX,y:y-height*anchorY,anchorX,anchorY,open};
 }
-function drawPublicLevel6ClosedPinchCursor(ctx,x,y,alpha=.82){
+function drawPublicLevel6ClosedPinchCursor(ctx,x,y,alpha=.82,graspingShown=isGrasping){
   if(!isLevel6()) return false;
   // v130: therapist request — the pinch picture must mean "really squeezing
   // the peg"; a relaxed hand shows the opened-hand picture instead, so the
   // patient can see they are no longer holding. The shared 60/180 ms gesture
   // stabiliser keeps the two pictures from flickering.
-  const open=!isGrasping;
+  const open=!graspingShown;
   const geometry=level6PinchHandGeometry(x,y,open);
   const image=open
     ? (geometry.side==='left'?imgLevel6OpenLeft:imgLevel6OpenRight)
@@ -14715,7 +14715,7 @@ function updateFramePerfOverlay(now){
     framePerf.overlayEl = el;
   }
   const p = framePerfSnapshot();
-  el.textContent = `perf v139  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
+  el.textContent = `perf v140  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
     + `鏡頭 ${p.video[0]}×${p.video[1]}  畫布 ${p.canvas[0]}×${p.canvas[1]}  dpr ${p.dpr}  手模型 ${p.handDelegate || '-'}\n`
     + `手 ${p.hand.hands} 隻  標籤 ${p.hand.label || '-'} ${p.hand.score}  接納 ${p.hand.path || '-'}  嚴格 ${p.hand.strict} 連續 ${p.hand.continuity} 單手 ${p.hand.lone} 拒絕 ${p.hand.rejected}\n`
     + `左右手檢查 ${p.hand.check === 'off' ? '關' : '開'}  鎖定手形 ${p.hand.lockSize || '-'}  大小拒絕 ${p.hand.sizeRejected}  遠處拒絕 ${p.hand.farRejected}`
@@ -18793,7 +18793,9 @@ function updateHeldReleasePrompt(){
 }
 
 function advDrawHeldReleasePrompt(ctx, held){
-  if(!isGraspStyleMode() || !held || cursorX < 0) return;
+  if(!isGraspStyleMode() || !held) return;
+  const labelAt = level6HeldDrawPoint();   // v140: label stays with a held card / tile group
+  if(!labelAt) return;
   const text = isLevel6RealToolTask()
     ? ('已夾住 · ' + level6ToolWords().open + level6ToolWords().noun + '放下')
     : level6AutoPlaceEnabled()
@@ -18808,8 +18810,8 @@ function advDrawHeldReleasePrompt(ctx, held){
   ctx.save();
   ctx.font = 'bold 18px "PingFang TC","Noto Sans TC",sans-serif';
   const w = Math.min(360, ctx.measureText(text).width + 30);
-  const x = Math.max(w/2 + 8, Math.min(gameCanvas.width - w/2 - 8, cursorX));
-  const y = Math.max(46, cursorY - 66);
+  const x = Math.max(w/2 + 8, Math.min(gameCanvas.width - w/2 - 8, labelAt.x));
+  const y = Math.max(46, labelAt.y - 66);
   ctx.fillStyle = 'rgba(18,86,74,0.96)';
   rrPath(ctx, x-w/2, y-21, w, 42, 12); ctx.fill();
   ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -21134,8 +21136,9 @@ function mjRender(ctx){
   L.groups.forEach((g, gi)=>{
     const gone = g.ref.gone;
     const held = heldGroup === g.id && !gone;
-    const gx = held && cursorX >= 0 ? cursorX : g.x;
-    const gy = held && cursorY >= 0 ? cursorY : g.y;
+    const heldAt = held ? level6HeldDrawPoint() : null;   // v140: stays with the hand picture
+    const gx = heldAt ? heldAt.x : g.x;
+    const gy = heldAt ? heldAt.y : g.y;
     ctx.save();
     ctx.globalAlpha = gone ? 0.28 : 1;
     if(held){
@@ -21475,8 +21478,9 @@ function cardsRender(ctx){
   drawAffectedSelectionZone(ctx, '收牌區');
   for(const c of cards.field){
     if(c.gone) continue;
-    const drawX = held === c.id && cursorX >= 0 ? cursorX : c.x;
-    const drawY = held === c.id && cursorY >= 0 ? cursorY : c.y;
+    const heldAt = held === c.id ? level6HeldDrawPoint() : null;   // v140: stays with the hand picture
+    const drawX = heldAt ? heldAt.x : c.x;
+    const drawY = heldAt ? heldAt.y : c.y;
     if(hover === c.id || held === c.id){
       ctx.save();
       ctx.fillStyle = held === c.id ? 'rgba(255,209,102,0.55)' : 'rgba(224,123,57,0.35)';
@@ -22383,8 +22387,57 @@ function flowersFinish(){ return flowersFinishApi.run(); }
 /* ==================================================================
    共用游標繪製 + 進階活動總調度
    ================================================================== */
+/* v140: therapist bedside (25 Nov) — in the public Level 6 playing-cards and
+   mahjong games the hand picture vanished whenever the camera lost the hand for
+   longer than the 1.5 s grace, and a card / tile group that had ALREADY been
+   picked up was drawn back at its starting place, so patients believed the
+   pinch had failed. The hand picture now always stays on screen: at the last
+   place the hand was seen (middle of the play area before the first sighting),
+   a little lighter, and a held card / tile group stays with it.
+   Display only: cursorX / cursorY, handDetected, the grace window and every
+   pick-up, release and automatic-placement rule are untouched, so a hand the
+   camera cannot see still cannot pick up, move or place anything. */
+const LEVEL6_LAST_SEEN_CURSOR_ALPHA = { pinch:.62, relaxed:.54 };
+let level6LastSeenCursor = null;   // { x, y, grasping }
+function level6CursorAlwaysShown(){
+  return isLevel6() && isGraspStyleMode() && (advCurrent === 'cards' || advCurrent === 'mahjong');
+}
+function level6CursorLive(){ return cursorX >= 0 && cursorY >= 0 && handDetected; }
+function level6NoteCursorSeen(){
+  if(level6CursorAlwaysShown() && level6CursorLive()){
+    level6LastSeenCursor = { x:cursorX, y:cursorY, grasping:!!isGrasping };
+  }
+}
+/* Where the hand picture (and a held card / tile group) is drawn while the
+   camera cannot see the hand. null = nothing to draw (every other game). */
+function level6LastSeenCursorPoint(){
+  if(!level6CursorAlwaysShown() || level6CursorLive()) return null;
+  const cw = gameCanvas.width, ch = gameCanvas.height;
+  const last = level6LastSeenCursor;
+  return {
+    x: last ? Math.max(0, Math.min(cw, last.x)) : cw * .5,
+    y: last ? Math.max(0, Math.min(ch, last.y)) : ch * .62,
+    grasping: picker.heldId ? true : !!(last && last.grasping),
+  };
+}
+/* Draw position of the held card / tile group: the live cursor, else the last
+   seen place in the two always-shown games, else null (caller keeps its own). */
+function level6HeldDrawPoint(){
+  if(cursorX >= 0 && cursorY >= 0) return { x:cursorX, y:cursorY };
+  const last = level6LastSeenCursorPoint();
+  return last && level6LastSeenCursor ? { x:last.x, y:last.y } : null;
+}
 function advDrawCursor(ctx, pct){
-  if(cursorX < 0 || cursorY < 0 || !handDetected) return;
+  if(!level6CursorLive()){
+    const last = level6LastSeenCursorPoint();   // v140
+    if(last){
+      drawPublicLevel6ClosedPinchCursor(ctx, last.x, last.y,
+        last.grasping ? LEVEL6_LAST_SEEN_CURSOR_ALPHA.pinch : LEVEL6_LAST_SEEN_CURSOR_ALPHA.relaxed,
+        last.grasping);
+    }
+    return;
+  }
+  level6NoteCursorSeen();   // v140
   ctx.save();
   if(isGraspStyleMode()){
     if(isPatientVisualCueMode()){
@@ -22449,6 +22502,7 @@ function advInit(){
   advCurrent = state.theme;
   advLastW = gameCanvas.width; advLastH = gameCanvas.height;
   picker.reset(); carrier.reset();
+  level6LastSeenCursor = null;   // v140
   heldPromptKey = '';
   fxParticles = []; fxRings = [];
   // 重開遊戲時關掉上一局的慶祝／研究版完成畫面（keep 在公開版無此元素，需先檢查）
@@ -22523,6 +22577,7 @@ function advTeardown(){
     motionGuide.setAttribute('aria-hidden', 'true');
   }
   advCurrent = null;
+  level6LastSeenCursor = null;   // v140
   promptRulesEnabled = true;
   setPromptSlot('rules');
 }
@@ -23467,6 +23522,9 @@ window.__qa = {
         arriveArmed:carrier.arriveArmed},
       picker:{heldId:picker.heldId,hoverId:picker.hoverId,armed:picker.armed,
         arriveArmed:picker.arriveArmed},
+      // v140: where the hand picture / held card is drawn while the hand is not seen
+      lastSeenCursor:level6LastSeenCursorPoint(),
+      heldShownAt:advancedHeldId?level6HeldDrawPoint():null,
       basic:{armed:basicGraspArmed,openStart:basicOpenStart,
         graspStart:basicGraspStart,graspCandidate:basicGraspCandidate,
         arriveArmed:basicArriveArmed},
@@ -24936,7 +24994,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v139-20261124-laundry-story";
+  const LEVEL_APP_BUILD = "v140-20261125-cursor-stays";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 
