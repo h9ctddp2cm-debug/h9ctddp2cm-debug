@@ -32,7 +32,7 @@ test('v129 source wiring: auto-hang constant, gate, releasing, resets, prompts',
   // patient-facing wording: no release instruction at the rack
   assert.match(src, /if\(key === 'carry'\) return '舉高去衣架';/);
   assert.match(src, /return '對準衣架，自動掛上';/);
-  assert.match(src, /if\(isLevel6Peg\(\)\) return laundryAutoHangEnabled\(\) \? '停住' : '放手';/);
+  assert.match(src, /if\(isLevel6Peg\(\)\) return \(laundryAutoHangEnabled\(\) \|\| isLaundryPegStoryGame\(\)\) \? '停住' : '放手';/);
   assert.match(src, /actionCue:'鬆開衣夾 → 揸實拿起 → 舉高到衣架 → 停住自動掛上'/);
   // next pick-up still needs a positively opened hand (unchanged)
   assert.match(src, /const openPrep = isLevel6ToolGestureTask\(\) \? handOpenPrep/);
@@ -58,7 +58,7 @@ after(async () => { if(browser) await browser.close(); });
 async function walk(page, script){
   return page.evaluate(({ cal, SCALE, script }) => {
     const gap = r => r * SCALE;
-    window.__qa.startGame({ level: '67', level6Task: 'peg', shoulderTargetDeg: 90, duration: 60, affectedSide: 'right' });
+    window.__qa.startGame({ level: '67', level6Task: 'peg', laundryPegStory: false, shoulderTargetDeg: 90, duration: 60, affectedSide: 'right' });
     window.__qa.setLevel6PersonalToolCalibration({ pinch: cal });
     const l = window.__qa.level67Layout();
     const item = l.items[0], target = l.targets.find(v => v.type === 'laundry_rack');

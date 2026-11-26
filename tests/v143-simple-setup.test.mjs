@@ -48,13 +48,15 @@ test('game time defaults to the longest choice; the shorter ones stay available'
   assert.match(setup, /id="preview-duration">15 分鐘</);
 });
 
-test('setup page: only the affected side and the target angle sit outside the advanced section', () => {
+test('setup page: only the affected side, the target angle and the game time sit outside the advanced section', () => {
   assert.match(beforeAdvanced, /<div class="card simple-card" data-accordion="affected-side">/);
   assert.match(beforeAdvanced, /<div class="card simple-card" id="shoulderTargetCard"/);
-  assert.equal((beforeAdvanced.match(/<div class="card /g) || []).length, 2);
+  assert.match(beforeAdvanced, /<div class="card simple-card" id="durationCard" data-accordion="duration">/);
+  assert.equal((beforeAdvanced.match(/<div class="card /g) || []).length, 3);
+  assert.ok(beforeAdvanced.includes('id="durationOptions"'), 'game time is chosen on the page itself');
   assert.doesNotMatch(beforeAdvanced, /handCheckBlock/);
   for(const id of ['sceneOptionSlot', 'shoulderExerciseModeCard', 'handCheckBlock', 'laundryDifficultyCard', 'fridgeDifficultyCard',
-    'cookSqueezeCard', 'dimsumDifficultyCard', 'modeOptions', 'durationOptions', 'timingCard', 'fontOptions']){
+    'cookSqueezeCard', 'dimsumDifficultyCard', 'modeOptions', 'timingCard', 'fontOptions']){
     assert.ok(advanced.includes('id="' + id + '"'), id + ' is inside the advanced section');
   }
   assert.match(advanced, /<summary><span>進階設定（治療師用）<\/span>/);
@@ -153,6 +155,38 @@ before(async () => {
 });
 after(async () => { if(browser) await browser.close(); });
 
+test('Level 3/4 mahjong: larger tiles in two rows clear of the angle panel; the win banner names the hand', async t => {
+  if(!browser) return t.skip('playwright unavailable');
+  assert.match(html, /dealMahjongFanText\(dealTable\.result\),'#B3262B',simple\?0\.66:0\.52\)/);
+  for(const [vw, vh, minW] of [[1180, 820, 100], [1413, 653, 90]]){
+    const { context, page, errors } = await openPage(vw, vh);
+    try{
+      await page.evaluate(() => { window.__qa.startGame({ level: '3', theme: 'mahjong', duration: 600, affectedSide: 'right', shoulderTargetDeg: 30, dwellMs: 0 }); });
+      await page.waitForTimeout(400);
+      const o = await page.evaluate(() => {
+        const g = window.__qa.dealTable.geometry();
+        const panel = document.getElementById('level4ReadoutNote').parentElement.getBoundingClientRect();
+        const ys = [...new Set(g.rects.map(r => Math.round(r.y)))];
+        return { g, ys, panel: { r: panel.right, b: panel.bottom, w: panel.width }, scale: g.cssScale };
+      });
+      assert.equal(o.ys.length, 2, 'two rows');
+      assert.equal(o.g.rects.length, 14);
+      assert.ok(o.g.tileW / o.scale >= minW, 'tile width ' + o.g.tileW);
+      // every tile is on the table, below the top buttons, and the drawing lane still has room
+      for(const r of o.g.rects){
+        assert.ok(r.x - r.w / 2 >= 0 && r.x + r.w / 2 <= o.g.cw && r.y - r.h / 2 >= 90 * o.scale, JSON.stringify(r));
+      }
+      assert.ok(o.panel.w > 0 && o.panel.w < 320, 'angle panel is on screen');
+      for(const r of o.g.rects){   // no tile under the angle panel (top left)
+        const under = (r.x - r.w / 2) / o.scale < o.panel.r && (r.y - r.h / 2) / o.scale < o.panel.b;
+        assert.equal(under, false, 'tile under the angle panel ' + JSON.stringify(r));
+      }
+      assert.ok(o.g.laneBottom - o.g.laneTop >= 90 * o.scale, 'lane travel');
+      assert.deepEqual(errors, []);
+    } finally { await context.close(); }
+  }
+});
+
 async function openPage(vw = 1180, vh = 820){
   const context = await browser.newContext({ viewport: { width: vw, height: vh } });
   const page = await context.newPage();
@@ -171,7 +205,7 @@ const visibleCards = () => {
 const visibleAngles = () => [...document.querySelectorAll('#shoulderTargetOptions [data-shoulder-target]')]
   .filter(b => !!(b.offsetWidth || b.offsetHeight)).map(b => Number(b.dataset.shoulderTarget));
 
-test('Level 4 setup: two cards on the page, five angles, the rest behind 「進階設定」', async t => {
+test('Level 4 setup: three cards on the page, five angles, the rest behind 「進階設定」', async t => {
   if(!browser) return t.skip('playwright unavailable');
   const { context, page, errors } = await openPage();
   try{
@@ -179,18 +213,23 @@ test('Level 4 setup: two cards on the page, five angles, the rest behind 「進�
     assert.equal(await page.locator('#screen-library .dimsum-mode-bar').count(), 0, 'game-picker page has cards only');
     await page.click('#activityGrid .activity-card[data-theme="supermarket"]');
     await page.waitForTimeout(300);
-    assert.deepEqual(await page.evaluate(visibleCards), ['患側方向', '肩屈曲目標']);
+    assert.deepEqual(await page.evaluate(visibleCards), ['患側方向', '肩屈曲目標', '遊戲時間']);
     assert.deepEqual(await page.evaluate(visibleAngles), [60, 90, 120, 150, 180]);
     await page.click('#shoulderTargetMore');
     assert.equal((await page.evaluate(visibleAngles)).length, 13);
     await page.click('[data-shoulder-target="110"]');
     assert.equal(await page.evaluate(() => window.__qa.state().shoulderTargetDeg), 110);
     assert.equal(await page.evaluate(() => window.__qa.state().duration), 900);
+    await page.click('#durationOptions [data-duration="600"]');
+    assert.equal(await page.evaluate(() => window.__qa.state().duration), 600);
+    assert.equal(await page.textContent('#preview-duration'), '10 分鐘');
+    await page.click('#durationOptions [data-duration="900"]');
+    assert.equal(await page.evaluate(() => window.__qa.state().duration), 900);
     assert.equal(await page.evaluate(() => document.getElementById('advancedSettings').open), false);
     await page.click('#advancedSettings > summary');
     await page.waitForTimeout(200);
     const cards = await page.evaluate(visibleCards);
-    assert.deepEqual(cards, ['患側方向', '肩屈曲目標', '訓練方式', '訓練模式', '遊戲時間', '目標保持', '字體大小']);
+    assert.deepEqual(cards, ['患側方向', '肩屈曲目標', '遊戲時間', '訓練方式', '訓練模式', '目標保持', '字體大小']);
     assert.equal(await page.locator('#sceneOptionSlot [data-shop-list]').count(), 3);
     assert.equal(await page.locator('#sceneOptionSlot [data-shop-list].selected').getAttribute('data-shop-list'), 'medium');
     await page.click('#sceneOptionSlot [data-shop-list="long"]');
@@ -205,7 +244,7 @@ test('Level 4 setup: two cards on the page, five angles, the rest behind 「進�
   } finally { await context.close(); }
 });
 
-test('Level 3 shows its four angles; Level 5 and 6 show the affected side only', async t => {
+test('Level 3 shows its four angles; Level 5 and 6 show the affected side and the game time', async t => {
   if(!browser) return t.skip('playwright unavailable');
   const { context, page, errors } = await openPage(1413, 653);
   try{
@@ -219,11 +258,11 @@ test('Level 3 shows its four angles; Level 5 and 6 show the affected side only',
       }
       return res;
     }, visibleCards.toString());
-    assert.deepEqual(out['3'].cards, ['患側方向', '肩屈曲目標']);
+    assert.deepEqual(out['3'].cards, ['患側方向', '肩屈曲目標', '遊戲時間']);
     assert.deepEqual(out['3'].angles, [30, 40, 50, 60]);
     assert.equal(out['3'].more, false);
-    assert.deepEqual(out['5'].cards, ['患側方向']);
-    assert.deepEqual(out['67'].cards, ['患側方向']);
+    assert.deepEqual(out['5'].cards, ['患側方向', '遊戲時間']);
+    assert.deepEqual(out['67'].cards, ['患側方向', '遊戲時間']);
     assert.deepEqual(errors, []);
   } finally { await context.close(); }
 });

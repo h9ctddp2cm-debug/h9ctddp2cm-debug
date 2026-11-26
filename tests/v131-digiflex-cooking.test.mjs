@@ -20,7 +20,7 @@ test('v131 source wiring: task profile, routing, constants, calibration copy', (
   assert.match(src, /function isLevel6DigiflexTask\(\)\{\n\s*return isLevel6\(\) && state\.level6Task === 'cooking';/);
   // public Level 6 cooking now runs the 12-step module (grasp type), not the generic picker
   assert.match(src, /cooking:\{\n\s*id:'cooking', theme:'cooking',\n\s*gameType:'grasp',/);
-  assert.match(src, /if\(theme === 'cooking' && isLevel6DigiflexTask\(\)\) return true;\n\s*return !isGrossTabletop\(\) && isAdvTheme\(theme\);/);
+  assert.match(src, /if\(theme === 'cooking' && isLevel6DigiflexTask\(\)\) return true;\n[^\n]*\n\s*if\(theme === 'peg_laundry' && isLaundryPegStoryGame\(\)\) return true;\n\s*return !isGrossTabletop\(\) && isAdvTheme\(theme\);/);
   // progressive counts and the therapist amount setting
   assert.match(src, /const COOK_DIGIFLEX_NEED = \[3,4,4,3,5,2,2,3,4,5,1,8\];/);
   assert.match(src, /const COOK_SQUEEZE_AMOUNTS = \{ less:0\.5, normal:1, more:1\.5 \};/);

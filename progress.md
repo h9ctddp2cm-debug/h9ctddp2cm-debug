@@ -2033,4 +2033,14 @@ Original prompt: Fix Level 6–7 interactions: make light clothes-peg press dete
 - 直向麻雀／啤牌：大橫額「食糊！」出緊時，上面嗰句細字唔再重複畫（淨係畫面）。
 - Validation：Node 測試兩組前景跑 297 ＋ 500 ＝ 797：794 pass／3 skip／0 fail；`tools/checkjs.sh` 11 OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 223 files；`rg -c "__qa" dist/public/index.html` → 0；dist 載入冇 page error，設定頁喺 dist 一樣只得兩張卡。
 - QA 對照表 `ych_rehab_qa_artifacts/v143/v143-qa-contact-sheet.png`（前後對比：設定頁、揀遊戲頁、故事橫額、麻雀／啤牌、慶祝畫面；iPad 橫向／直向、部門筆電、手機設定頁）。Playwright 測試假動作；未喺真機／真病人試過。
-- 未做（等治療師確認）：Level 6 晾衫改用 Level 3–4「洗衫晾衫」故事版面、玩法改做夾衣夾。
+- 第二輪（治療師睇完第一版之後）：「Setting page: need the should AROM target degree and training time too. Also, the mahjong for level 3 and 4 should be larger and need to tell what 糊 the patient just won.」；Level 6 晾衫「要移手再夾」；「please make the level 6 laundry game easier to detect (make the detection method similar to level 6 poker cards please - always show the “浮標”)」。
+  - 設定頁：「遊戲時間」卡（`#durationCard`，5／10／15 分鐘，預設 15）搬返出嚟，同「患側方向」「肩屈曲目標」一齊顯示；其餘仍然喺進階設定。
+  - Level 3／4 麻雀：牌排兩行、放大（iPad 橫向約 1.7 倍）；食糊橫額寫「食糊！」＋牌型同番數（`dealMahjongFanText`，例如「對對糊 3 番」）。摸牌／達標判定冇改。
+  - Level 6 晾衫（衣夾）：預設改用「洗衫晾衫」故事版面（`state.laundryPegStory`，`isLaundryPegStoryGame()`；模組 `laundryPeg*`）。七個階段同 Level 3／4 一樣（入機 → 洗衫 → 晾衫 → 晒乾 → 收衫 → 摺衫 → 入櫃），但每一步改做：移手去橙色虛線圈 → 揸實衣夾夾起 → 件衫跟住手形浮標 → 去到目的地停 0.4 秒（`LEVEL6_AUTO_PLACE_MS`，紅弧行滿）自動放低。開機掣＝夾一下（範圍放大）。中衫量 4 件衫＝一轉 25 下，做完自動再嚟。
+  - 偵測同 Level 6 啤牌／麻雀（v140）共用同一個 `picker`：手形浮標一直顯示（`level6CursorAlwaysShown`）、紅圈＝鏡頭見到隻手、到位 0.3 秒即準備（`level6QuickReadyEnabled`）、揸實衣夾停喺件衫上面都夾得起。夾起之後件衫唔會跌：鬆手、鏡頭一時睇唔到手都照跟住（睇唔到手嗰陣浮標同件衫留喺最後位置、唔計停留時間）。冇扣分、冇限時。v129 衫架遊戲「下一件要先張開手」嗰條規則喺故事版面唔適用。
+  - 舊版衫架遊戲（一架／着燈兩架／着燈四架／分類兩架／分類四架）原封不動，喺進階設定「晾衫版面」揀返（`data-laundry-difficulty` 次序 `story, basic, zones2, zones, sort2, sort`）。Level 3／4 洗衫晾衫故事冇改。
+  - 版面修正：直向冇角度面板時橫額放喺按鈕下面；階段條由左下角時間牌右邊開始。
+  - Tests：新增 `tests/v143-peg-laundry-story.test.mjs`（7，包 6 個 Playwright 實跑：夾起／鬆手唔跌／睇唔到手浮標仍在／開機掣／一轉 25 下／版面唔遮按鈕／舊衫架仍在）；`v143-simple-setup` 而家 16 個。舊測試凡係開衫架遊戲嘅都加 `laundryPegStory:false`（level67-interactions、v71、v78、v92、v96、v119、v123、v128、v129、v136），另更新 v131、v139、v140 嘅原始碼比對。
+  - Validation（第二輪）：Node 測試兩組 297 ＋ 508 ＝ 805：802 pass／3 skip／0 fail；`tools/checkjs.sh` 11 OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 223 files；dist 冇 `__qa`、載入冇 page error。
+  - QA 對照表更新（同一個檔）：加入設定頁時間卡、麻雀放大＋牌型、Level 6 晾衫六格偵測示範同其餘步驟、筆電／直向。Level 6 晾衫偵測係新嘅；用測試假手部畫格，未喺真機／真衣夾試過。
+  - 已知：設定頁 Level 6 頂部嗰句通用說明（「三指張開 → 輕捏拿起 → 移動 → 張開放下」）未改；故事入面如果手啱啱喺起點同目的地中間，可以唔點移手就完成一步（保持寬鬆，冇加限制）。

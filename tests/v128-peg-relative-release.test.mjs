@@ -166,7 +166,7 @@ test('laundry rack e2e: foreshortened hand at the rack — relaxed grip below th
   try{
     const log = await page.evaluate(({ cal, SCALE }) => {
       const gap = r => r * SCALE;
-      window.__qa.startGame({ level: '67', level6Task: 'peg', shoulderTargetDeg: 90, duration: 60, affectedSide: 'right' });
+      window.__qa.startGame({ level: '67', level6Task: 'peg', laundryPegStory: false, shoulderTargetDeg: 90, duration: 60, affectedSide: 'right' });
       window.__qa.setLevel6PersonalToolCalibration({ pinch: cal });
       const l = window.__qa.level67Layout();
       const item = l.items[0], target = l.targets.find(v => v.type === 'laundry_rack');

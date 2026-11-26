@@ -53,7 +53,7 @@ test('v123 laundry difficulty card offers a 1 → 2 → 4 rack ladder and no com
   assert.match(html, /data-laundry-difficulty="sort"[\s\S]{0,180}分類四架/);
   // Buttons appear in ladder order: 1 rack → 2 lit → 4 lit → 2 sort → 4 sort.
   const order = [...laundryCardHtml().matchAll(/data-laundry-difficulty="([a-z0-9]+)"/g)].map(m => m[1]);
-  assert.deepEqual(order, ['basic', 'zones2', 'zones', 'sort2', 'sort']);
+  assert.deepEqual(order, ['story', 'basic', 'zones2', 'zones', 'sort2', 'sort']);   // v143: story layout first
   assert.match(constSource('LAUNDRY_DIFFICULTY_KEYS'), /\['basic', 'zones2', 'zones', 'sort2', 'sort'\]/);
   assert.doesNotMatch(html, /data-laundry-difficulty="complex"/);
   assert.doesNotMatch(laundryCardHtml(), /較複雜/, 'laundry card no longer offers 較複雜');

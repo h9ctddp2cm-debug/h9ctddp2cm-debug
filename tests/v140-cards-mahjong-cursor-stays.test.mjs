@@ -25,7 +25,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const src = readFileSync(path.join(root, 'index.html'), 'utf8');
 
 test('v140 source wiring: always-shown hand picture is limited to Level 6 cards / mahjong and is display only', () => {
-  assert.match(src, /function level6CursorAlwaysShown\(\)\{\n\s*return !research\.active && isLevel6\(\) && isGraspStyleMode\(\)\n\s*&& \(advCurrent === 'cards' \|\| advCurrent === 'mahjong'\);/);
+  assert.match(src, /function level6CursorAlwaysShown\(\)\{\n\s*return !research\.active && isLevel6\(\) && isGraspStyleMode\(\)\n\s*&& \(advCurrent === 'cards' \|\| advCurrent === 'mahjong' \|\| advCurrent === 'peg_laundry'\);/);
   assert.match(src, /const LEVEL6_LAST_SEEN_CURSOR_ALPHA = \{ pinch:\.62, relaxed:\.54 \};/);
   // a held card / tile group is shown pinched while the hand is not seen
   assert.match(src, /grasping: picker\.heldId \? true : !!\(last && last\.grasping\),/);
@@ -238,7 +238,7 @@ test('v140 source wiring: ready ring always with the seen hand, squeezing hand r
   assert.match(src, /const LEVEL6_QUICK_READY_THEMES = \['cards','mahjong'\];/);
   assert.match(src, /const LEVEL6_SQUEEZED_PICK_MS = 300;/);
   assert.match(src, /const LEVEL6_SQUEEZED_PICK_SLOW_MS = 900;/);
-  assert.match(src, /function level6QuickReadyEnabled\(\)\{\n\s*return level6AutoPlaceEnabled\(\) && LEVEL6_QUICK_READY_THEMES\.includes\(state\.theme\);/);
+  assert.match(src, /function level6QuickReadyEnabled\(\)\{\n[^\n]*\n\s*return \(level6AutoPlaceEnabled\(\) && LEVEL6_QUICK_READY_THEMES\.includes\(state\.theme\)\)\n\s*\|\| \(typeof isLaundryPegStoryGame === 'function' && isLaundryPegStoryGame\(\) && isGraspStyleMode\(\)\);/);
   assert.match(src, /function level6ArriveArmMs\(\)\{\n\s*return level6QuickReadyEnabled\(\) \? LEVEL6_QUICK_READY_ARRIVE_MS : LEVEL6_ARRIVE_ARM_MS;/);
   // the relaxed-hand preparation still refuses a squeezing hand and still needs the squeeze afterwards
   assert.match(src, /if\(canArm !== false && !ctl\.armed && now - ctl\.arriveStart >= level6ArriveArmMs\(\)\)\{ ctl\.armed = true; ctl\.arriveArmed = true; \}/);

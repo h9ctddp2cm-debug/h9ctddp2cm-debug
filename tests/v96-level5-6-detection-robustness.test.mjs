@@ -135,7 +135,7 @@ test('handedness dropout grace applies to public Level 5 and Level 6',async()=>{
     const level5=probe();
     window.__qa.startGame({level:'67',level6Task:'flowers',duration:60,affectedSide:'right'});
     const level6=probe();
-    window.__qa.startGame({level:'67',level6Task:'peg',duration:60,affectedSide:'right'});
+    window.__qa.startGame({level:'67',level6Task:'peg',laundryPegStory:false,duration:60,affectedSide:'right'});
     const peg=probe();
     window.__qa.startGame({level:'4',theme:'dimsum',duration:60,affectedSide:'right'});
     const level4=probe();

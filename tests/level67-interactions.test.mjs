@@ -102,7 +102,7 @@ test('English Level 6 waiting prompt keeps the correct open-hand cue', async t =
   await withPage({ width: 1180, height: 820 }, async page => {
     const cue = await page.evaluate(() => {
       window.YCHLanguage.setLanguage('en');
-      window.__qa.startGame({ level: '67', level6Task: 'peg', duration: 60 });
+      window.__qa.startGame({ level: '67', level6Task: 'peg', laundryPegStory: false, duration: 60 });
       const bar = document.getElementById('statusBar');
       return {
         cue: bar.dataset.gestureCue,
@@ -163,7 +163,7 @@ test('Level 6 peg task renders the laundry theme and a drying-line target', asyn
   if (!browser) return t.skip('playwright unavailable');
   await withPage({ width: 1180, height: 820 }, async page => {
     const layout = await page.evaluate(() => {
-      window.__qa.startGame({ level: '67', level6Task: 'peg', shoulderTargetDeg: 90, duration: 60 });
+      window.__qa.startGame({ level: '67', level6Task: 'peg', laundryPegStory: false, shoulderTargetDeg: 90, duration: 60 });
       return window.__qa.level67Layout();
     });
     assert.equal(layout.level, '67');
@@ -297,7 +297,7 @@ async function runToolGestureFlow(page, task) {
       return value;
     };
     window.__qa.startGame({
-      level: '67', level6Task: taskId, shoulderTargetDeg: 90,
+      level: '67', level6Task: taskId, laundryPegStory: false, shoulderTargetDeg: 90,
       duration: 60, affectedSide: 'right',
     });
     const layout = window.__qa.level67Layout();
@@ -381,7 +381,7 @@ for (const { task } of LEVEL6_GESTURE_TASKS) {
           return value;
         };
         const start = () => window.__qa.startGame({
-          level: '67', level6Task: taskId, shoulderTargetDeg: 90,
+          level: '67', level6Task: taskId, laundryPegStory: false, shoulderTargetDeg: 90,
           duration: 60, affectedSide: 'right',
         });
 
@@ -470,7 +470,7 @@ for (const viewport of [
     if (!browser) return t.skip('playwright unavailable');
     await withPage(viewport, async page => {
       const layout = await page.evaluate(() => {
-        window.__qa.startGame({ level: '67', level6Task: 'peg', shoulderTargetDeg: 90, duration: 60 });
+        window.__qa.startGame({ level: '67', level6Task: 'peg', laundryPegStory: false, shoulderTargetDeg: 90, duration: 60 });
         return window.__qa.level67Layout();
       });
       assert.equal(layout.insideCanvas, true, 'every target and item stays inside the canvas');
@@ -502,7 +502,7 @@ test('Home clears safety overlays and result runtime, while Stop remains availab
     });
 
     await page.evaluate(() => {
-      window.__qa.startGame({ level: '67', level6Task: 'peg', shoulderTargetDeg: 90, duration: 60 });
+      window.__qa.startGame({ level: '67', level6Task: 'peg', laundryPegStory: false, shoulderTargetDeg: 90, duration: 60 });
       showSafetyPause('Test safety hold', 'Home must remain actionable here too.');
     });
     await page.locator('#btnSafetyPauseHome').click();

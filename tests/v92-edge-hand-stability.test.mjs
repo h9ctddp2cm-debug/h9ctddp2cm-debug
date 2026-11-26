@@ -103,7 +103,7 @@ for(const spec of [
   test(`Level 6 ${spec.task} ${spec.side} edge dropout preserves gesture continuity and sprite bounds`,async()=>{
     const result=await withPortraitPage(({task,side})=>{
       window.__qa.startGame({
-        level:'67',level6Task:task,duration:60,affectedSide:side,
+        level:'67',level6Task:task,laundryPegStory:false,duration:60,affectedSide:side,
       });
       const layout=window.__qa.level67Layout();
       const item=layout.items.slice().sort((a,b)=>(b.x+b.y)-(a.x+a.y))[0];
@@ -189,7 +189,7 @@ test('Level 5 remains responsive through two virtual minutes of repeated pickup/
 test('Level 6 laundry garments remain bounded and responsive through two virtual minutes of cycling',async()=>{
   const result=await withPortraitPage(()=>{
     window.__qa.startGame({
-      level:'67',level6Task:'peg',duration:300,affectedSide:'right',
+      level:'67',level6Task:'peg',laundryPegStory:false,duration:300,affectedSide:'right',
     });
     let generation=1;
     const frame=(gesture,count,point)=>{

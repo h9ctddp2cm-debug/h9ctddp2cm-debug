@@ -40,7 +40,8 @@ function lineConst(name){
   return 'const ' + name + ' = ' + m[1] + ';';
 }
 const blockStart = html.indexOf('/* ==================== v139 洗衫晾衫故事');
-const blockEnd = html.indexOf('/* ==================== v138 牌局場景');
+// v143: the Level 6 cloth-peg version of the story has its own section after this one
+const blockEnd = html.indexOf('/* ==================== v143 Level 6 晾衫（衣夾）');
 const block = html.slice(blockStart, blockEnd);
 const code = block.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/\s\/\/ [^\n]*$/gm, '');
 
@@ -122,7 +123,7 @@ test('the story is a public Level 3/4 reward layer hooked like the supermarket',
   assert.match(html, /if\(isSupermarketTheme\(\)\)startSupermarketAction\(\);[^\n]*\n\s*if\(isLaundryStoryTheme\(\)\)startLaundryStoryAction\(\);[^\n]*\n\s*startShoulderRewardCycle\(\);\n\s*triggerFeedback\(true\);/);
   assert.match(html, /resetLaundryStory\(\);\s+\/\/ v139/);
   // the big centre tick is skipped (it would cover the garment); the chime stays
-  assert.match(fnSource('showFeedback'), /if\(correct&&isLaundryStoryTheme\(\)\) return;/);
+  assert.match(fnSource('showFeedback'), /if\(correct&&\(isLaundryStoryTheme\(\)\|\|isLaundryPegStoryGame\(\)\)\) return;/);
   assert.match(fnSource('triggerFeedback'), /if\(correct\)\{ playCorrectSound\(\);/);
 });
 
@@ -175,7 +176,7 @@ test('activity card, load-size bar and result line describe the new play', () =>
   assert.match(html, /function themeShownTitle\(th\)\{ return \(isShoulderFlexionLevel\(\)&&!research\.active&&th&&th\.shoulderTitle\)\|\|\(th\?th\.title:''\); \}/);
   assert.match(html, /if\(id==='laundry'&&\(state\.level==='3'\|\|state\.level==='4'\)&&!research\.active\)\{/);
   assert.match(html, /data-laundry-load="'\+k\+'"/);
-  assert.match(html, /const laundryLine=isLaundryStoryTheme\(\)\?laundryStorySummaryText\(\):'';/);
+  assert.match(html, /const laundryLine=\(isLaundryStoryTheme\(\)\|\|isLaundryPegStoryGame\(\)\)\?laundryStorySummaryText\(\):'';/);
   const summary = fnSource('laundryStorySummaryText');
   assert.match(summary, /全部做齊/);
   assert.match(summary, /下次繼續/);

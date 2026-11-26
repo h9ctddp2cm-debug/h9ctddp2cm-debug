@@ -153,7 +153,7 @@ test('Level 6 clothes-peg laundry e2e: a peg relaxed only a little (not separate
   await page.goto(pathToFileURL(path.join(root, 'index.html')).href, { waitUntil: 'domcontentloaded' });
   try{
     const run = (steps) => page.evaluate(({ steps, cal, S }) => {
-      window.__qa.startGame({ level: '67', level6Task: 'peg', shoulderTargetDeg: 90, duration: 60, affectedSide: 'right' });
+      window.__qa.startGame({ level: '67', level6Task: 'peg', laundryPegStory: false, shoulderTargetDeg: 90, duration: 60, affectedSide: 'right' });
       window.__qa.setLevel6PersonalToolCalibration({ pinch: cal });
       const l = window.__qa.level67Layout();
       const item = l.items[0], target = l.targets.find(v => v.type === 'laundry_rack');

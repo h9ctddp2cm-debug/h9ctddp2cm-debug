@@ -75,7 +75,7 @@ test('order lifecycle is wired into init, reset, banner and completion', () => {
 });
 
 test('research pilot track is not affected by either public laundry mode', () => {
-  assert.match(publicSource, /function isLaundryRackGame\(\)\{[\s\S]{0,160}return state\.level === '67' && state\.theme === 'peg_laundry' && !research\.active;/);
+  assert.match(publicSource, /function isLaundryRackGame\(\)\{[\s\S]{0,160}return state\.level === '67' && state\.theme === 'peg_laundry' && !research\.active\n\s*&& state\.laundryPegStory === false;/);
 });
 
 /* ---------------- Behavioural: laundry order module ---------------- */
@@ -90,6 +90,7 @@ function makeOrderModule(opts = {}){
     level: '67',
     theme: 'peg_laundry',
     laundryDifficulty: 'complex',
+    laundryPegStory: false,   // v143: the rack game is the non-default layout
     running: true,
   }, opts.state);
   const research = Object.assign({active: false}, opts.research);
