@@ -224,8 +224,8 @@ test('other Level 3/4 scenes and the Level 5/6 laundry games are not rerouted', 
 test('release markers are v139', () => {
   const sw = readFileSync(path.join(root, 'service-worker.js'), 'utf8');
   const manifest = readFileSync(path.join(root, 'manifest.webmanifest'), 'utf8');
-  assert.match(html, /const LEVEL_APP_BUILD = "v143-20261126-simple-setup";/);
-  assert.match(html, /perf v143/);
-  assert.match(sw, /^const CACHE_VERSION = "fthue-rehab-v143-20261126-simple-setup";/);
-  assert.match(manifest, /v143-20261126-simple-setup/);
+  assert.match(html, /const LEVEL_APP_BUILD = "v144-20261126-hk-tour-cards";/);
+  assert.match(html, /perf v144/);
+  assert.match(sw, /^const CACHE_VERSION = "fthue-rehab-v144-20261126-hk-tour-cards";/);
+  assert.match(manifest, /v144-20261126-hk-tour-cards/);
 });

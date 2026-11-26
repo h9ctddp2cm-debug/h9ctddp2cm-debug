@@ -35,10 +35,10 @@ function lineConst(name){
 }
 
 test('release markers (current build)', () => {
-  assert.match(sw, /const CACHE_VERSION = "fthue-rehab-v143-20261126-simple-setup";/);
-  assert.match(manifest, /index\.html\?build=v143-20261126-simple-setup/);
-  assert.match(html, /const LEVEL_APP_BUILD = "v143-20261126-simple-setup";/);
-  assert.match(html, /perf v143 {2}/);
+  assert.match(sw, /const CACHE_VERSION = "fthue-rehab-v144-20261126-hk-tour-cards";/);
+  assert.match(manifest, /index\.html\?build=v144-20261126-hk-tour-cards/);
+  assert.match(html, /const LEVEL_APP_BUILD = "v144-20261126-hk-tour-cards";/);
+  assert.match(html, /perf v144 {2}/);
 });
 
 test('a new round starts only while the game runs and enough session time is left', () => {

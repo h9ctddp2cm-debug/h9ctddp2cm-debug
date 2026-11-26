@@ -2044,3 +2044,20 @@ Original prompt: Fix Level 6–7 interactions: make light clothes-peg press dete
   - Validation（第二輪）：Node 測試兩組 297 ＋ 508 ＝ 805：802 pass／3 skip／0 fail；`tools/checkjs.sh` 11 OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 223 files；dist 冇 `__qa`、載入冇 page error。
   - QA 對照表更新（同一個檔）：加入設定頁時間卡、麻雀放大＋牌型、Level 6 晾衫六格偵測示範同其餘步驟、筆電／直向。Level 6 晾衫偵測係新嘅；用測試假手部畫格，未喺真機／真衣夾試過。
   - 已知：設定頁 Level 6 頂部嗰句通用說明（「三指張開 → 輕捏拿起 → 移動 → 張開放下」）未改；故事入面如果手啱啱喺起點同目的地中間，可以唔點移手就完成一步（保持寬鬆，冇加限制）。
+
+## 2026-11-26 v144 — Level 3／4「香港遊」：舉起望遠鏡睇風景，集香港地標閃咭（77 張）
+- 治療師回饋：有病人話 Level 3「淨係遞手咋嘛」；治療師要求相片場景「起碼要有50張相，包括香港唔同嘅地標……仲要係造成好似Pokemon咁閃咭先得」，之後再提議「第一人視覺，去到香港某個地點，就落車？攞望遠鏡去望風景，攞住望遠鏡呢一下就可以開始叫個病人舉手咁樣有故事啲」。
+- 改動（只係 Level 3／4 公開版揀「荃灣街景相片」嗰格；格仔標題改做「香港遊」，封面 `img/advanced/hk_tour_thumb.jpg`）：
+  - 流程：到站（「第 N 站 · 呢度係邊度？」，前面風景矇查查）→ 病人舉手，畫面入面對望遠鏡跟住升上去 → 達標一次＝望遠鏡望清楚一忽（四忽，次序隨機）→ 第四次望晒，彈出一張閃咭（地標名、地區、1–3 粒星、編號，彩虹閃邊）→ 飛入相簿 → 坐車去下一站（「下一站：？？？」→「到站，落車！」）。
+  - 77 個地標（`HK_CARD_LIST`，`img/cards/<id>.jpg` 720×540），每轉洗牌，全部去過一次先會重複，唔會連續兩站一樣。包括荃灣（仁濟醫院、三棟屋、圓玄學院、西方寺、荃灣街市街等）同幾張舊相（珍寶海鮮舫 1985、舊立法會大樓 1987）。
+  - 成績頁多一句「香港遊：今次去咗 N 個地方，集到 N 張閃咭。」同今次集到嘅閃咭格（`#cardAlbumSummary`）。相簿只計今次訓練，冇儲存。
+  - 矇查查效果用細畫布縮放（冇用 canvas filter，舊 iPad 都得）。相未載入時用純色底，唔會卡住。
+- 相片來源：全部係 Wikimedia Commons 可公開使用授權（CC BY／CC BY-SA／CC0／公有領域），逐張記喺 `image-sources.json`（作者、授權、原圖連結、改動），網頁底「圖片來源」加咗攝影者名單。旅遊發展局網站嘅相要書面同意先用得，所以冇用。
+- 冇改：抬臂達標判定、`shoulderFlexionController`、重新準備規則（v137）、計分、時間、所有偵測設定。模組只讀 `shoulderFlexionState.progress` 嚟畫望遠鏡高度。冇任何嘢變嚴。Level 5「荃灣街景相片」配對遊戲同佢六張相原封不動；Level 6 筷子仍然 `gameType:'dwell'`。
+- 留意：每第四下（影到閃咭嗰下）動畫連坐車約 6 秒，期間唔計新一下，等於細休息；其餘三下約 1.3 秒。
+- 標記 → `v144-20261126-hk-tour-cards`（`CACHE_VERSION`、`LEVEL_APP_BUILD`、manifest `start_url`、`perf v144`）。離線包多咗約 6.5 MB 相片。
+- QA hook（公開版冇）：`__qa.photoCards`（`state/trigger/finish/setAnimElapsed/setCard/setLift/list/geometry`）。
+- Tests：新增 `tests/v144-hk-tour-cards.test.mjs`（7：≥50 張咭、每張有中英文名／地區／星級／細檔相；每張相有 Commons 來源同可用授權；四下影到一張咭、下一站唔同；動畫期間再觸發唔計；全部去過先重複；模組冇寫入控制器狀態、冇用 canvas filter；場景卡／成績頁／英文字接線）。`tsuenwan-photo-assets` 改為分開檢查原本六張相同閃咭相。18 個測試檔嘅版本標記更新。畫布文字全部經變數（配合 v138 英文對照測試）。
+- Validation：Node 測試兩組 297 ＋ 515 ＝ 812：809 pass／3 skip／0 fail；`tools/checkjs.sh` 11 OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 301 files（public index sanitized）；dist 冇 `__qa`、載入冇 page error，Level 3 揀遊戲頁見到「香港遊」同新封面。
+- QA 對照表 `ych_rehab_qa_artifacts/v144/v144-qa-contact-sheet.png`（iPad 橫向全流程、iPad 直向、部門筆電、手機、成績頁、新封面）。Playwright 測試假動作；未喺真機／真病人試過。
+- 未做：茶樓點心場景加到 30 款點心（下一版）。

@@ -14,10 +14,10 @@ const manifest = fs.readFileSync(path.join(root, 'manifest.webmanifest'), 'utf8'
 const pageUrl = pathToFileURL(path.join(root, 'index.html')).href;
 
 test('v122 release markers', () => {
-  assert.match(html, /const LEVEL_APP_BUILD = "v143-20261126-simple-setup";/);
-  assert.match(html, /perf v143/);
-  assert.match(sw, /^const CACHE_VERSION = "fthue-rehab-v143-20261126-simple-setup";/);
-  assert.match(manifest, /v143-20261126-simple-setup/);
+  assert.match(html, /const LEVEL_APP_BUILD = "v144-20261126-hk-tour-cards";/);
+  assert.match(html, /perf v144/);
+  assert.match(sw, /^const CACHE_VERSION = "fthue-rehab-v144-20261126-hk-tour-cards";/);
+  assert.match(manifest, /v144-20261126-hk-tour-cards/);
 });
 
 test('v122 sharp window constants: 50% padding, minimum side 45% of the canvas short side', () => {

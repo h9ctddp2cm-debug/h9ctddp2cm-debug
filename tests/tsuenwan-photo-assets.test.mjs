@@ -9,8 +9,9 @@ const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const sources=JSON.parse(fs.readFileSync(path.join(root,'image-sources.json'),'utf8'));
 
 test('six attributed Tsuen Wan photo-card assets are local and compact',()=>{
-  assert.equal(sources.images.length,6);
-  for(const image of sources.images){
+  const streetPhotos=sources.images.filter(image=>image.local_path.startsWith('img/advanced/'));
+  assert.equal(streetPhotos.length,6);
+  for(const image of streetPhotos){
     assert.match(image.local_path,/^img\/advanced\/tsuenwan_.*\.jpg$/);
     const file=path.join(root,image.local_path);
     assert.equal(fs.existsSync(file),true,image.local_path);

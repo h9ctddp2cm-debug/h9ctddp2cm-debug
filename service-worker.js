@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v143-20261126-simple-setup";
+const CACHE_VERSION = "fthue-rehab-v144-20261126-hk-tour-cards";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

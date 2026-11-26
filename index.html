@@ -756,6 +756,15 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
 }
 .result-card.research-mode{ max-width:720px; }
 .result-card h2{ font-size:22px; color:var(--teal-dark); margin:0 0 16px; }
+/* v144 完成頁：今次集到嘅香港地標閃咭 */
+.card-album{ display:grid; grid-template-columns:repeat(auto-fill,minmax(104px,1fr)); gap:10px; margin:10px 0 14px; }
+.card-album[hidden]{ display:none; }
+.album-card{ margin:0; padding:5px 5px 6px; border-radius:10px; background:linear-gradient(135deg,#A9C9E4,#EEF6FC 50%,#7FA6C9); box-shadow:0 2px 6px rgba(0,0,0,.18); text-align:center; }
+.album-card.stars-2{ background:linear-gradient(135deg,#F6D365,#FFF3C4 50%,#D9982B); }
+.album-card.stars-3{ background:linear-gradient(135deg,#FF6B9D,#FFC14D 25%,#7EE081 50%,#4DC9FF 75%,#B07CFF); }
+.album-card img{ display:block; width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:6px; background:#dfe9ee; }
+.album-card figcaption{ margin-top:4px; padding:2px 3px 0; border-radius:5px 5px 0 0; background:#FFFBEF; font-size:14px; font-weight:800; line-height:1.25; color:#3A2A12; }
+.album-card .album-stars{ display:block; padding:0 3px 2px; border-radius:0 0 5px 5px; background:#FFFBEF; font-size:13px; line-height:1.2; color:#C98A00; letter-spacing:1px; }
 .result-grid{
   display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:16px 0 20px;
 }
@@ -1629,6 +1638,11 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
         （Tsuen Wan downtown，CC0 1.0）；WiNG（Tsuen Wan skyline，CC BY-SA 3.0）；
         Wing1990hk（Tak Wah Park，CC BY 3.0）。完整來源及授權網址：
         <a href="image-sources.json">image-sources.json</a></p>
+        <p>香港地標相片（Level 3／4「香港遊」，共 77 張，全部來自 Wikimedia Commons，
+        授權為 CC0／公有領域／CC BY／CC BY-SA，相片經裁剪及縮細）攝影者：
+        Alexkom000、Mk2010、Diego Delso、LN9267、EditQ、Béria Lima de Rodríguez、Sparktour、Underwaterbuffalo、Wpcpey、Aethelfirth、Smallpei、Rehman Abubakr、Suicasmo、WiNG、Jan Kranendonk、Ank Kumar、姒姓賢寧、Deror_avi、Photo by TonySKTO、MyPlace2015 mm、Wing1990hk、Tusginewko、Katie Chan、Enochlau、Hankt、Kārlis Dambrāns from Latvia、Spielvogel (Spielvogel Archiv)、Bernard Spragg. NZ、Chong Fat、Yumeto、British Hker、Rob Young from United Kingdom、HK Arun、Minghong、Andrew Martin、Rutger van der Maar、Husyewl Lmsiuyu RAUOM、Lord Jaraxxus、xiquinhosilva、SH6188、N509FZ、Masanchuen、Qwer132477、Prosperity Horizons、Benh LIEU SONG (Flickr)、李家宇、User:Ahleong、Baycrest、C J B Scholten at English Wikipedia、FHKE (Flickr)、山民主義、Erc Chw、Krimuk2.0、hkgalbert、MAUOSREEGU DAVMUR。
+        每張相嘅標題、攝影者、授權及來源網址：
+        <a href="image-sources.json">image-sources.json</a></p>
       </details>
     </footer>
   </div>
@@ -2320,6 +2334,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
       </div>
       <p id="shoulderResultSummary" hidden style="margin:10px 0;padding:10px 12px;border-radius:12px;background:#edf7f3;font-weight:750;line-height:1.45;"></p>
       <p id="dealResultSummary" hidden style="margin:10px 0;padding:10px 12px;border-radius:12px;background:#fff6dc;border:2px solid #e6c15a;font-weight:800;font-size:19px;line-height:1.45;"></p>
+      <div id="cardAlbumSummary" class="card-album" hidden></div>
       <!-- PUBLIC_BUILD_REMOVE_START: movement video review panel (source/research build only) -->
       <section class="movement-review" id="movementReview" hidden
         data-testid="panel-movement-review" aria-labelledby="movementReviewTitle">
@@ -5740,8 +5755,580 @@ function drawDealTableScene(ctx,cw,ch){
   fxUpdateDraw(ctx);
   ctx.restore();
 }
+/* ==================== v144 香港遊：望遠鏡睇風景＋地標閃咭（Level 3/4 肩前屈） ====================
+   治療師回饋：病人話 Level 3「淨係遞手」。呢個場景用第一人視覺講一個故事：
+   坐車到站落車 → 前面嘅風景矇查查 → 每舉一下手＝舉起望遠鏡望清楚一忽 → 望晒四忽，
+   影到一張有名、有星級嘅閃咭，飛入相簿 → 上車去下一站（去邊度事前唔知）。
+   純視覺同音效獎勵層：只讀取 shoulderFlexionState 嘅進度／達標訊號，同 v138 牌局一樣
+   完全唔會改變抬臂達標判定，亦唔加任何新輸入。冇輸贏、冇扣分、冇限時。
+   相片全部係可以公開使用嘅授權相（來源同攝影者見 image-sources.json）。 */
+/*HK_CARD_LIST_START*/
+const HK_CARD_LIST = [
+  ['wishing_tree','林村許願樹','大埔','Lam Tsuen Wishing Tree','Tai Po',2],
+  ['ladies_market','女人街','旺角','Ladies Market','Mong Kok',2],
+  ['ten_thousand','萬佛寺','沙田','Ten Thousand Buddhas','Sha Tin',2],
+  ['hk_park','香港公園','金鐘','Hong Kong Park','Admiralty',1],
+  ['shek_o','石澳','南區','Shek O','Southern',1],
+  ['tw_skyline','荃灣天際線','荃灣','Tsuen Wan Skyline','Tsuen Wan',2],
+  ['bun_festival','長洲太平清醮','離島','Bun Festival','Outlying Islands',3],
+  ['cultural_centre','香港文化中心','尖沙咀','Cultural Centre','Tsim Sha Tsui',2],
+  ['pagoda','聚星樓','元朗','Tsui Sing Lau Pagoda','Yuen Long',1],
+  ['lion_rock','獅子山','九龍','Lion Rock','Kowloon',3],
+  ['wetland','濕地公園','天水圍','Wetland Park','Tin Shui Wai',1],
+  ['lei_yue_mun','鯉魚門','觀塘','Lei Yue Mun','Kwun Tong',1],
+  ['pottinger','石板街','中環','Pottinger Street','Central',1],
+  ['mei_ho','美荷樓','深水埗','Mei Ho House','Sham Shui Po',1],
+  ['kat_hing_wai','吉慶圍','元朗','Kat Hing Wai','Yuen Long',1],
+  ['star_ferry','天星小輪','維多利亞港','Star Ferry','Victoria Harbour',3],
+  ['airport','香港國際機場','赤鱲角','Hong Kong Airport','Chek Lap Kok',2],
+  ['jumbo','珍寶海鮮舫','香港仔','Jumbo Floating Restaurant','Aberdeen',3],
+  ['ngong_ping','昂坪纜車','大嶼山','Ngong Ping 360','Lantau',3],
+  ['ting_kau','汀九橋','荃灣','Ting Kau Bridge','Tsuen Wan',2],
+  ['sai_kung','西貢碼頭','西貢','Sai Kung','Sai Kung',2],
+  ['gold_coast','黃金海岸','屯門','Gold Coast','Tuen Mun',1],
+  ['shing_mun','城門水塘','荃灣','Shing Mun Reservoir','Tsuen Wan',1],
+  ['che_kung','車公廟','沙田','Che Kung Temple','Sha Tin',2],
+  ['tw_market_street','荃灣街市街','荃灣','Tsuen Wan Market Street','Tsuen Wan',1],
+  ['clock_tower','尖沙咀鐘樓','尖沙咀','Clock Tower','Tsim Sha Tsui',3],
+  ['zoo_garden','動植物公園','中環','Zoological and Botanical Gardens','Central',1],
+  ['east_dam','萬宜水庫東壩','西貢','High Island East Dam','Sai Kung',1],
+  ['hsbc','滙豐總行','中環','HSBC Main Building','Central',2],
+  ['nathan_road','彌敦道','九龍','Nathan Road','Kowloon',2],
+  ['peak_tram','山頂纜車','太平山','Peak Tram','The Peak',3],
+  ['science_museum','香港科學館','尖沙咀東','Science Museum','Tsim Sha Tsui East',1],
+  ['man_mo','文武廟','上環','Man Mo Temple','Sheung Wan',1],
+  ['temple_street','廟街夜市','油麻地','Temple Street','Yau Ma Tei',3],
+  ['symphony','幻彩詠香江','維多利亞港','Symphony of Lights','Victoria Harbour',3],
+  ['ferris_wheel','中環摩天輪','中環','Central Ferris Wheel','Central',2],
+  ['hkcec','會議展覽中心','灣仔','Convention Centre','Wan Chai',2],
+  ['ocean_park','海洋公園','黃竹坑','Ocean Park','Wong Chuk Hang',2],
+  ['nina_tower','如心廣場','荃灣','Nina Tower','Tsuen Wan',1],
+  ['palace_museum','香港故宮','西九龍','Palace Museum','West Kowloon',2],
+  ['peninsula','半島酒店','尖沙咀','The Peninsula','Tsim Sha Tsui',2],
+  ['chi_lin','志蓮淨苑','鑽石山','Chi Lin Nunnery','Diamond Hill',2],
+  ['happy_valley','跑馬地馬場','跑馬地','Happy Valley Racecourse','Happy Valley',2],
+  ['monster','怪獸大廈','鰂魚涌','Monster Building','Quarry Bay',2],
+  ['nan_lian','南蓮園池','鑽石山','Nan Lian Garden','Diamond Hill',2],
+  ['boc_tower','中銀大廈','中環','Bank of China Tower','Central',2],
+  ['bird_garden','雀仔街','旺角','Bird Garden','Mong Kok',1],
+  ['cheung_chau','長洲','離島','Cheung Chau','Outlying Islands',2],
+  ['big_buddha','天壇大佛','大嶼山','Tian Tan Buddha','Lantau',3],
+  ['tsang_tai_uk','曾大屋','沙田','Tsang Tai Uk','Sha Tin',1],
+  ['space_museum','香港太空館','尖沙咀','Space Museum','Tsim Sha Tsui',2],
+  ['tai_mo_shan','大帽山','荃灣','Tai Mo Shan','Tsuen Wan',1],
+  ['choi_hung','彩虹邨','彩虹','Choi Hung Estate','Choi Hung',2],
+  ['mplus','M+ 博物館','西九龍','M+ Museum','West Kowloon',2],
+  ['tw_downtown','荃灣市中心','荃灣','Tsuen Wan Town Centre','Tsuen Wan',1],
+  ['tram','叮叮電車','港島','Ding Ding Tram','Hong Kong Island',3],
+  ['tai_o','大澳棚屋','大嶼山','Tai O','Lantau',3],
+  ['tw_plaza','荃灣廣場','荃灣','Tsuen Wan Plaza','Tsuen Wan',1],
+  ['legco','舊立法會大樓','中環','Old LegCo Building','Central',2],
+  ['nam_sang_wai','南生圍','元朗','Nam Sang Wai','Yuen Long',1],
+  ['wong_tai_sin','黃大仙祠','黃大仙','Wong Tai Sin Temple','Wong Tai Sin',3],
+  ['stanley','赤柱美利樓','赤柱','Murray House, Stanley','Stanley',2],
+  ['victoria_harbour','維港夜景','維多利亞港','Victoria Harbour at Night','Victoria Harbour',3],
+  ['blue_house','藍屋','灣仔','Blue House','Wan Chai',2],
+  ['repulse_bay','淺水灣','南區','Repulse Bay','Southern',2],
+  ['escalator','半山扶手電梯','中環','Mid-Levels Escalator','Central',1],
+  ['yuen_yuen','圓玄學院','荃灣','Yuen Yuen Institute','Tsuen Wan',1],
+  ['aberdeen','香港仔避風塘','香港仔','Aberdeen Harbour','Aberdeen',2],
+  ['yan_chai','仁濟醫院','荃灣','Yan Chai Hospital','Tsuen Wan',3],
+  ['coliseum','紅館','紅磡','Hong Kong Coliseum','Hung Hom',2],
+  ['bauhinia','金紫荊廣場','灣仔','Golden Bauhinia Square','Wan Chai',2],
+  ['hzmb','港珠澳大橋','大嶼山','HK-Zhuhai-Macao Bridge','Lantau',2],
+  ['flower_market','花墟','旺角','Flower Market','Mong Kok',1],
+  ['tsing_ma','青馬大橋','青衣','Tsing Ma Bridge','Tsing Yi',3],
+  ['sam_tung_uk','三棟屋博物館','荃灣','Sam Tung Uk','Tsuen Wan',2],
+  ['peak_tower','凌霄閣','太平山','The Peak Tower','The Peak',2],
+  ['lui_seng_chun','雷生春','太子','Lui Seng Chun','Prince Edward',1],
+];
+/*HK_CARD_LIST_END*/
+const HK_CARDS = HK_CARD_LIST.map((c,i)=>({ id:c[0], zh:c[1], dist:c[2], en:c[3], distEn:c[4], stars:c[5], no:i+1, img:null, blur:null }));
+const HK_CARD_PIECES = 4, HK_CARD_RATIO = 1.16;
+const HK_LOOK_MS = 950, HK_CARD_TAIL_MS = 350, HK_CARD_NAME_MS = 2500, HK_CARD_FLY_MS = 700, HK_RIDE_MS = 1700;
+const photoCards = { order:[], pos:0, card:null, shown:[false,false,false,false], pieceOrder:[], revealed:0, collected:[], stop:0, previewLift:null,
+  anim:{ phase:'idle', startedMs:0, piece:-1, done:false, stage:0 } };
+function isPhotoCardTheme(){
+  return isShoulderFlexionLevel()&&!research.active&&state.theme==='tsuenwan'&&HK_CARDS.length>0;
+}
+function hkCardImage(card){
+  if(!card) return null;
+  if(!card.img){ card.img=new Image(); card.img.src='img/cards/'+card.id+'.jpg'; }
+  return card.img;
+}
+function hkCardImageReady(card){ const im=hkCardImage(card); return !!(im&&im.complete&&im.naturalWidth); }
+/* 矇查查版本：將張相縮到好細再放大（唔使用 canvas filter，舊 iPad 都得）。 */
+function hkCardBlur(card){
+  if(!hkCardImageReady(card)) return null;
+  if(!card.blur){
+    const c=document.createElement('canvas'); c.width=20; c.height=15;
+    const x=c.getContext('2d'); x.imageSmoothingEnabled=true;
+    x.drawImage(card.img,0,0,c.width,c.height);
+    card.blur=c;
+  }
+  return card.blur;
+}
+function hkCardShuffle(n){
+  const a=[]; for(let i=0;i<n;i++) a.push(i);
+  for(let i=n-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=a[i]; a[i]=a[j]; a[j]=t; }
+  return a;
+}
+function resetPhotoCardAnim(){
+  const a=photoCards.anim; a.phase='idle'; a.startedMs=0; a.piece=-1; a.done=false; a.stage=0;
+}
+function resetPhotoCards(){
+  photoCards.order=[]; photoCards.pos=0; photoCards.card=null; photoCards.shown=[false,false,false,false];
+  photoCards.pieceOrder=[]; photoCards.revealed=0; photoCards.collected=[]; photoCards.stop=0; photoCards.previewLift=null;
+  resetPhotoCardAnim();
+}
+function beginPhotoCard(){
+  if(photoCards.pos>=photoCards.order.length){
+    const last=photoCards.card?photoCards.card.id:'';
+    const o=hkCardShuffle(HK_CARDS.length);
+    if(o.length>1&&HK_CARDS[o[0]].id===last) o.push(o.shift()); // 唔好連續兩站一樣
+    photoCards.order=o; photoCards.pos=0;
+  }
+  photoCards.card=HK_CARDS[photoCards.order[photoCards.pos++]];
+  photoCards.shown=[false,false,false,false];
+  photoCards.pieceOrder=hkCardShuffle(HK_CARD_PIECES);
+  photoCards.revealed=0; photoCards.stop++;
+  resetPhotoCardAnim();
+  hkCardImage(photoCards.card);
+  if(photoCards.pos<photoCards.order.length) hkCardImage(HK_CARDS[photoCards.order[photoCards.pos]]); // 預先載入下一站
+}
+function ensurePhotoCard(){ if(!photoCards.card) beginPhotoCard(); }
+/* 抬臂達標一次：用望遠鏡望清楚一忽；第四忽望清楚就影到張咭。 */
+function startPhotoCardDraw(){
+  if(!isPhotoCardTheme()) return;
+  ensurePhotoCard();
+  const a=photoCards.anim;
+  if(a.phase!=='idle'||photoCards.revealed>=HK_CARD_PIECES) return;
+  a.piece=photoCards.pieceOrder[photoCards.revealed];
+  photoCards.revealed++;
+  a.phase='look'; a.startedMs=nowMs(); a.stage=0;
+  a.done=photoCards.revealed>=HK_CARD_PIECES;
+  if(a.done) photoCards.collected.push(photoCards.card.id);
+}
+function photoCardRewardMs(){
+  const a=photoCards.anim;
+  if(a.phase==='idle') return 0;
+  return HK_LOOK_MS+(a.done?HK_CARD_NAME_MS+HK_CARD_FLY_MS+HK_RIDE_MS+100:HK_CARD_TAIL_MS);
+}
+function finishPhotoCardDraw(){
+  const a=photoCards.anim;
+  if(a.phase==='idle') return;
+  const done=a.done;
+  if(a.piece>=0) photoCards.shown[a.piece]=true;
+  resetPhotoCardAnim();
+  if(done&&isPhotoCardTheme()) beginPhotoCard();
+}
+function hkCardName(card){ return card?dealText(card.zh,card.en):''; }
+function hkCardDistrict(card){ return card?dealText(card.dist,card.distEn):''; }
+function photoCardCollectedUnique(){
+  const seen={},out=[];
+  photoCards.collected.forEach(id=>{ if(!seen[id]){ seen[id]=1; const c=HK_CARDS.find(x=>x.id===id); if(c) out.push(c); } });
+  return out;
+}
+function photoCardSummaryText(){
+  if(!photoCards.card&&!photoCards.collected.length) return '';
+  const n=photoCards.collected.length;
+  if(n>0) return dealText('香港遊：今次去咗 '+n+' 個地方，集到 '+n+' 張閃咭。','Hong Kong tour: '+n+' places visited and '+n+' cards collected today.');
+  return dealText('香港遊：差少少就影到第一張閃咭，下次繼續。','Hong Kong tour: almost got the first card. Continue next time.');
+}
+function renderPhotoCardAlbumSummary(){
+  const box=document.getElementById('cardAlbumSummary');
+  if(!box) return;
+  while(box.firstChild) box.removeChild(box.firstChild);
+  const list=isPhotoCardTheme()?photoCardCollectedUnique().slice(-24):[];
+  box.hidden=!list.length;
+  list.forEach(card=>{
+    const fig=document.createElement('figure');
+    fig.className='album-card stars-'+card.stars;
+    const im=document.createElement('img');
+    im.src='img/cards/'+card.id+'.jpg'; im.alt=hkCardName(card); im.loading='lazy';
+    const cap=document.createElement('figcaption');
+    cap.textContent=hkCardName(card);
+    const st=document.createElement('span');
+    st.className='album-stars'; st.textContent='★'.repeat(card.stars);
+    fig.appendChild(im); fig.appendChild(cap); fig.appendChild(st);
+    box.appendChild(fig);
+  });
+}
+function photoCardGeometry(cw,ch){
+  const portrait=ch>cw;
+  const cssScale=cw/Math.max(1,gameCanvas.clientWidth||cw);
+  const top=(portrait?262:84)*cssScale;
+  const pad=16*cssScale;
+  const font=Math.round(Math.max(15*cssScale,Math.min(cw,ch)*0.042));
+  const stripH=portrait?Math.min(ch*0.16,176*cssScale):0;
+  const availH=Math.max(60,ch-top-pad-stripH);
+  const plateH=font*1.9;
+  const vw=Math.max(40,Math.min(cw*(portrait?0.94:0.60),(availH-plateH)*4/3));
+  const vh=vw*0.75;
+  const cx=cw/2, vy=top+plateH+(availH-plateH-vh)/2, vx=cx-vw/2;
+  const cardW=Math.min(vw*0.80,availH/HK_CARD_RATIO), cardH=cardW*HK_CARD_RATIO, cy=top+availH/2;
+  const slots=[];
+  let textX,textY,textW,countX,countY,countW;
+  if(portrait){
+    const stripTop=ch-stripH-pad*0.4;
+    const n=5, gap=pad*0.6;
+    const mh=Math.max(20,stripH-font*1.5-pad*0.4), mw=Math.min(mh/HK_CARD_RATIO,(cw*0.94-gap*(n-1))/n);
+    const total=mw*n+gap*(n-1);
+    for(let i=0;i<n;i++) slots.push({ x:cw/2-total/2+mw/2+i*(mw+gap), y:stripTop+font*1.5+mw*HK_CARD_RATIO/2, w:mw });
+    textX=cw*0.30; textY=stripTop+font*0.7; textW=cw*0.54;
+    countX=cw*0.80; countY=textY; countW=cw*0.34;
+  }else{
+    const sideW=(cw-vw)/2;
+    const colX=cx+vw/2+sideW/2;
+    const cols=2, gap=pad*0.6;
+    const mw=Math.max(16,Math.min((sideW-pad*2-gap)/cols,vw*0.20));
+    const mh=mw*HK_CARD_RATIO;
+    const gridTop=top+font*1.7;
+    const rows=Math.max(1,Math.min(4,Math.floor((ch-pad-gridTop+gap)/(mh+gap))));
+    for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
+      slots.push({ x:colX+(c-0.5)*(mw+gap), y:gridTop+mh/2+r*(mh+gap), w:mw });
+    }
+    countX=colX; countY=top+font*0.7; countW=sideW-pad*1.5;
+    textX=sideW/2; textY=Math.max(vy+vh*0.5,top+150*cssScale); textW=sideW-pad*1.5;
+  }
+  return { portrait, cssScale, top, pad, font, plateH, vx, vy, vw, vh, cx, cy, cardW, cardH, slots, textX, textY, textW, countX, countY, countW };
+}
+function hkViewPieceRect(g,i){
+  const pw=g.vw/2, ph=g.vh/2;
+  return { x:g.vx+(i%2)*pw, y:g.vy+Math.floor(i/2)*ph, w:pw, h:ph };
+}
+function hkStarPath(ctx,x,y,r){
+  ctx.beginPath();
+  for(let i=0;i<10;i++){
+    const ang=-Math.PI/2+i*Math.PI/5, rr=i%2?r*0.46:r;
+    if(i===0) ctx.moveTo(x+Math.cos(ang)*rr,y+Math.sin(ang)*rr); else ctx.lineTo(x+Math.cos(ang)*rr,y+Math.sin(ang)*rr);
+  }
+  ctx.closePath();
+}
+function drawHkCardHolo(ctx,x,y,w,h,tms,strength,seed){
+  ctx.save();
+  rrPath(ctx,x-w/2,y-h/2,w,h,w*0.055); ctx.clip();
+  ctx.globalCompositeOperation='lighter';
+  const ph=(tms%2100)/2100, gx=x-w*1.6+ph*w*3.2;
+  const grad=ctx.createLinearGradient(gx,y-h/2,gx+w*0.95,y+h/2);
+  const a=strength;
+  grad.addColorStop(0,'rgba(255,255,255,0)');
+  grad.addColorStop(0.28,'rgba(255,90,170,'+(a*0.55).toFixed(3)+')');
+  grad.addColorStop(0.40,'rgba(255,220,110,'+(a*0.70).toFixed(3)+')');
+  grad.addColorStop(0.50,'rgba(255,255,255,'+Math.min(0.9,a*1.5).toFixed(3)+')');
+  grad.addColorStop(0.60,'rgba(110,255,215,'+(a*0.70).toFixed(3)+')');
+  grad.addColorStop(0.72,'rgba(120,160,255,'+(a*0.55).toFixed(3)+')');
+  grad.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle=grad; ctx.fillRect(x-w/2,y-h/2,w,h);
+  // 閃粉：位置由咭號決定，逐粒一閃一閃
+  for(let i=0;i<14;i++){
+    const u=Math.abs(Math.sin((seed+1)*12.9898+i*78.233))%1, v=Math.abs(Math.sin((seed+1)*39.3468+i*11.135))%1;
+    const tw=Math.max(0,Math.sin(tms/230+i*1.9));
+    if(tw<=0.05) continue;
+    const sx=x-w/2+w*(0.06+0.88*u), sy=y-h/2+h*(0.06+0.88*v), r=w*0.028*tw;
+    ctx.fillStyle='rgba(255,255,255,'+(0.85*tw).toFixed(3)+')';
+    ctx.beginPath();
+    ctx.moveTo(sx,sy-r*2.2); ctx.quadraticCurveTo(sx,sy,sx+r*2.2,sy); ctx.quadraticCurveTo(sx,sy,sx,sy+r*2.2);
+    ctx.quadraticCurveTo(sx,sy,sx-r*2.2,sy); ctx.quadraticCurveTo(sx,sy,sx,sy-r*2.2); ctx.fill();
+  }
+  ctx.restore();
+}
+function hkDrawPhotoCover(ctx,src,sw0,sh0,x,y,w,h){
+  const sr=sw0/sh0, tr=w/h;
+  let sx=0,sy=0,sw=sw0,sh=sh0;
+  if(sr>tr){ sw=sh*tr; sx=(sw0-sw)/2; } else { sh=sw/tr; sy=(sh0-sh)/2; }
+  ctx.drawImage(src,sx,sy,sw,sh,x,y,w,h);
+}
+/* 畫一張閃咭（有名、地區、星級、編號）。o.holoT：閃光時間；o.starsShown：出咗幾多粒星。 */
+function drawHkCard(ctx,card,x,y,w,o){
+  o=o||{};
+  const h=w*HK_CARD_RATIO, left=x-w/2, topY=y-h/2, inset=w*0.04, headH=w*0.15;
+  const pw=w*0.88, ph=pw*0.75, px=x-pw/2, py=topY+inset+headH+w*0.015;
+  const fy=py+ph+(topY+h-inset-(py+ph))/2, stars=card.stars;
+  ctx.save();
+  ctx.fillStyle='rgba(0,0,0,0.30)'; rrPath(ctx,left+w*0.012,topY+w*0.022,w,h,w*0.055); ctx.fill();
+  const fr=ctx.createLinearGradient(left,topY,left+w,topY+h);
+  if(stars>=3){ fr.addColorStop(0,'#FF6B9D'); fr.addColorStop(0.25,'#FFC14D'); fr.addColorStop(0.5,'#7EE081'); fr.addColorStop(0.75,'#4DC9FF'); fr.addColorStop(1,'#B07CFF'); }
+  else if(stars===2){ fr.addColorStop(0,'#F6D365'); fr.addColorStop(0.5,'#FFF3C4'); fr.addColorStop(1,'#D9982B'); }
+  else { fr.addColorStop(0,'#A9C9E4'); fr.addColorStop(0.5,'#EEF6FC'); fr.addColorStop(1,'#7FA6C9'); }
+  ctx.fillStyle=fr; rrPath(ctx,left,topY,w,h,w*0.055); ctx.fill();
+  ctx.fillStyle='#FFFBEF'; rrPath(ctx,left+inset,topY+inset,w-inset*2,h-inset*2,w*0.035); ctx.fill();
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillStyle='#3A2A12';
+  ctx.font='900 '+Math.round(w*0.098)+'px "PingFang TC","Noto Sans TC",sans-serif';
+  ctx.fillText(hkCardName(card),x,topY+inset+headH*0.54,w*0.84);
+  if(hkCardImageReady(card)) hkDrawPhotoCover(ctx,card.img,card.img.naturalWidth,card.img.naturalHeight,px,py,pw,ph);
+  else { ctx.fillStyle='#BFE0F2'; ctx.fillRect(px,py,pw,ph); }
+  ctx.strokeStyle='rgba(58,42,18,0.55)'; ctx.lineWidth=Math.max(1.5,w*0.008); ctx.strokeRect(px,py,pw,ph);
+  const ff=Math.round(w*0.058);
+  ctx.font='800 '+ff+'px "PingFang TC","Noto Sans TC",sans-serif';
+  const dt=hkCardDistrict(card), dw=Math.min(w*0.36,ctx.measureText(dt).width+ff*1.1);
+  ctx.fillStyle='#1A6B5A'; rrPath(ctx,px,fy-ff*0.82,dw,ff*1.64,ff*0.82); ctx.fill();
+  ctx.fillStyle='#FFFFFF'; ctx.fillText(dt,px+dw/2,fy+ff*0.04,dw-ff*0.7);
+  ctx.textAlign='right'; ctx.fillStyle='#8A7A5C';
+  ctx.font='800 '+Math.round(w*0.036)+'px "PingFang TC","Noto Sans TC",sans-serif';
+  ctx.fillText('No.'+(card.no<10?'0':'')+card.no,px+pw,fy+ff*0.04);
+  const sr=w*0.05, sgap=sr*2.2, sx0=x+w*0.02, lit=o.starsShown==null?stars:Math.min(stars,o.starsShown);
+  for(let i=0;i<3;i++){
+    hkStarPath(ctx,sx0+i*sgap,fy,sr);
+    if(i<lit){ ctx.fillStyle='#FFC533'; ctx.fill(); ctx.strokeStyle='#A56A00'; ctx.lineWidth=Math.max(1.5,w*0.007); ctx.stroke(); }
+    else { ctx.fillStyle='rgba(138,122,92,0.20)'; ctx.fill(); }
+  }
+  ctx.restore();
+  if(o.holoT!=null) drawHkCardHolo(ctx,x,y,w,h,o.holoT,[0,0.24,0.34,0.46][stars]||0.24,card.no);
+}
+/* 第一人視覺嘅望遠鏡（由自己對手揸住，喺畫面下方升上嚟）。 */
+function drawHkBinoculars(ctx,x,y,w,alpha){
+  if(alpha<=0.01) return;
+  const bw=w*0.44, bh=w*0.66, gap=w*0.06;
+  ctx.save();
+  ctx.globalAlpha=alpha;
+  ctx.fillStyle='rgba(0,0,0,0.28)';
+  ctx.beginPath(); ctx.ellipse(x,y+bh*0.56,w*0.60,bh*0.10,0,0,Math.PI*2); ctx.fill();
+  // 一對手
+  [-1,1].forEach(s=>{
+    const hx=x+s*(gap/2+bw*1.02);
+    ctx.fillStyle='#F2C29B'; ctx.strokeStyle='#C98E63'; ctx.lineWidth=Math.max(2,w*0.012);
+    rrPath(ctx,hx-bw*0.24,y-bh*0.16,bw*0.48,bh*0.92,bw*0.22); ctx.fill(); ctx.stroke();
+  });
+  [-1,1].forEach(s=>{
+    const bx=x+s*(gap/2+bw/2);
+    const gr=ctx.createLinearGradient(bx-bw/2,0,bx+bw/2,0);
+    gr.addColorStop(0,'#1E2530'); gr.addColorStop(0.5,'#4A5565'); gr.addColorStop(1,'#1E2530');
+    ctx.fillStyle=gr; rrPath(ctx,bx-bw/2,y-bh/2,bw,bh,bw*0.26); ctx.fill();
+    ctx.fillStyle='#10151C'; rrPath(ctx,bx-bw*0.56,y-bh*0.56,bw*1.12,bh*0.20,bw*0.12); ctx.fill();
+    // 目鏡
+    ctx.fillStyle='#0C1016'; ctx.beginPath(); ctx.ellipse(bx,y+bh*0.40,bw*0.34,bw*0.20,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#5E7FA6'; ctx.beginPath(); ctx.ellipse(bx,y+bh*0.40,bw*0.22,bw*0.12,0,0,Math.PI*2); ctx.fill();
+    // 手指
+    ctx.fillStyle='#F2C29B'; ctx.strokeStyle='#C98E63'; ctx.lineWidth=Math.max(1.5,w*0.008);
+    for(let k=0;k<3;k++){
+      rrPath(ctx,bx+s*bw*0.10-(s<0?bw*0.46:0),y-bh*0.20+k*bh*0.19,bw*0.46,bh*0.15,bh*0.07); ctx.fill(); ctx.stroke();
+    }
+  });
+  ctx.fillStyle='#2B3340'; rrPath(ctx,x-gap*0.9,y-bh*0.22,gap*1.8,bh*0.30,gap*0.4); ctx.fill();
+  ctx.fillStyle='#C9A227'; ctx.beginPath(); ctx.arc(x,y-bh*0.07,gap*0.55,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+function hkLensPath(ctx,x,y,r){
+  ctx.beginPath();
+  ctx.arc(x-r*0.62,y,r,0,Math.PI*2); ctx.moveTo(x+r*1.62,y); ctx.arc(x+r*0.62,y,r,0,Math.PI*2);
+}
+/* 前面嘅風景：望清楚咗嗰忽係清嘅，其餘矇查查。 */
+function drawHkView(ctx,card,g,shown){
+  const blur=hkCardBlur(card);
+  ctx.save();
+  rrPath(ctx,g.vx,g.vy,g.vw,g.vh,g.vw*0.02); ctx.clip();
+  if(blur){
+    ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
+    ctx.drawImage(blur,g.vx,g.vy,g.vw,g.vh);
+    ctx.fillStyle='rgba(235,242,248,0.30)'; ctx.fillRect(g.vx,g.vy,g.vw,g.vh);
+  }else{
+    const pg=ctx.createLinearGradient(0,g.vy,0,g.vy+g.vh);
+    pg.addColorStop(0,'#BFD9EA'); pg.addColorStop(1,'#DDE8DD');
+    ctx.fillStyle=pg; ctx.fillRect(g.vx,g.vy,g.vw,g.vh);
+  }
+  if(hkCardImageReady(card)){
+    for(let i=0;i<HK_CARD_PIECES;i++){
+      if(!shown[i]) continue;
+      const r=hkViewPieceRect(g,i);
+      ctx.save(); ctx.beginPath(); ctx.rect(r.x,r.y,r.w,r.h); ctx.clip();
+      ctx.drawImage(card.img,g.vx,g.vy,g.vw,g.vh);
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+  ctx.strokeStyle='rgba(255,255,255,0.92)'; ctx.lineWidth=Math.max(3,g.vw*0.008);
+  rrPath(ctx,g.vx,g.vy,g.vw,g.vh,g.vw*0.02); ctx.stroke();
+}
+/* 坐車去下一站（第一人視覺：前面條路＋兩邊樓）。rq 0→1；到 1 即係到站停低。 */
+function drawHkRide(ctx,cw,ch,g,rq,now){
+  const top=g.top, hY=top+(ch-top)*0.46, moving=rq<1;
+  const sky=ctx.createLinearGradient(0,top,0,hY);
+  sky.addColorStop(0,'#6FB7E9'); sky.addColorStop(1,'#D8EEFA');
+  ctx.fillStyle=sky; ctx.fillRect(0,0,cw,hY);
+  ctx.fillStyle='#7C8FA3';
+  for(let i=0;i<14;i++){
+    const u=Math.abs(Math.sin(i*12.9898+5.3))%1, bwid=cw*(0.05+0.035*u), bh=(hY-top)*(0.28+0.50*((i*37)%10)/10);
+    ctx.fillRect(cw*(i/14)+cw*0.004,hY-bh,bwid,bh);
+  }
+  ctx.fillStyle='#8DB58A'; ctx.fillRect(0,hY,cw,ch-hY);
+  ctx.fillStyle='#4B5560';
+  ctx.beginPath(); ctx.moveTo(cw*0.46,hY); ctx.lineTo(cw*0.54,hY); ctx.lineTo(cw*0.98,ch); ctx.lineTo(cw*0.02,ch); ctx.closePath(); ctx.fill();
+  const off=moving?(now/420)%1:0.35;
+  ctx.fillStyle='#F4E9A6';
+  for(let k=0;k<7;k++){
+    const z0=(k+off)/7, z1=Math.min(1,z0+0.07);
+    const y0=hY+(ch-hY)*z0*z0, y1=hY+(ch-hY)*z1*z1, w0=cw*0.004+cw*0.020*z0*z0, w1=cw*0.004+cw*0.020*z1*z1;
+    ctx.beginPath(); ctx.moveTo(cw/2-w0,y0); ctx.lineTo(cw/2+w0,y0); ctx.lineTo(cw/2+w1,y1); ctx.lineTo(cw/2-w1,y1); ctx.closePath(); ctx.fill();
+  }
+  // 車頭欄杆
+  const railY=ch-(ch-top)*0.13;
+  ctx.fillStyle='#1F7A68'; ctx.fillRect(0,railY,cw,ch-railY);
+  ctx.fillStyle='#E9C46A'; ctx.fillRect(0,railY-(ch-top)*0.022,cw,(ch-top)*0.022);
+  // 路牌：下一站未知
+  const sw=Math.min(cw*0.56,g.font*15), sh=g.font*2.6, sx=cw/2-sw/2, sy=top+g.pad*1.2;
+  ctx.fillStyle='#145246'; rrPath(ctx,sx,sy,sw,sh,sh*0.22); ctx.fill();
+  ctx.strokeStyle='#FFFFFF'; ctx.lineWidth=Math.max(3,g.font*0.12); rrPath(ctx,sx+g.font*0.2,sy+g.font*0.2,sw-g.font*0.4,sh-g.font*0.4,sh*0.16); ctx.stroke();
+  ctx.fillStyle='#FFFFFF'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.font='900 '+Math.round(g.font*1.25)+'px "PingFang TC","Noto Sans TC",sans-serif';
+  const rideText=moving?dealText('下一站：？？？','Next stop: ???'):dealText('到站，落車！','We have arrived!');
+  ctx.fillText(rideText,cw/2,sy+sh*0.53,sw-g.font);
+}
+function updatePhotoCardSounds(g,cw,ch,t){
+  const a=photoCards.anim;
+  if(a.phase==='idle') return;
+  if(a.stage<1){ a.stage=1; playDealClack(); }
+  if(a.stage<2&&t>=HK_LOOK_MS*0.62){
+    a.stage=2;
+    if(!a.done){
+      playDealChime(false);
+      const r=hkViewPieceRect(g,a.piece);
+      fxBurst(r.x+r.w/2,r.y+r.h/2,{count:16});
+    }
+  }
+  if(a.done&&a.stage<3&&t>=HK_LOOK_MS){
+    a.stage=3;
+    playDealChime(true); playApplauseSound();
+    speakCantonese(hkCardName(photoCards.card)+'！');
+    fxBurst(g.cx,g.cy,{count:46,speed:6.5});
+  }
+  if(a.done&&a.stage<4&&t>=HK_LOOK_MS+700){ a.stage=4; fxBurst(cw*0.26,ch*0.42,{count:30,speed:5.5}); }
+  if(a.done&&a.stage<5&&t>=HK_LOOK_MS+1400){ a.stage=5; fxBurst(cw*0.74,ch*0.42,{count:30,speed:5.5}); }
+  if(a.done&&a.stage<6&&t>=HK_LOOK_MS+HK_CARD_NAME_MS+HK_CARD_FLY_MS){ a.stage=6; playDealChime(false); }
+}
+function drawPhotoCardScene(ctx,cw,ch){
+  ensurePhotoCard();
+  const g=photoCardGeometry(cw,ch), a=photoCards.anim, now=nowMs();
+  const t=a.phase==='idle'?0:now-a.startedMs;
+  updatePhotoCardSounds(g,cw,ch,t);
+  const card=photoCards.card;
+  const flyStart=HK_LOOK_MS+HK_CARD_NAME_MS, total=flyStart+HK_CARD_FLY_MS;
+  const finale=a.done&&a.phase!=='idle';
+  const riding=finale&&t>=total;
+  const uniq=photoCardCollectedUnique();
+  const settled=(finale&&t<total)?uniq.filter(c=>c!==card):uniq;
+  const K=g.slots.length, visible=settled.slice(-K);
+  ctx.save();
+  ctx.beginPath(); ctx.rect(0,0,cw,ch); ctx.clip();
+  if(riding){
+    drawHkRide(ctx,cw,ch,g,clamp01((t-total)/HK_RIDE_MS),now);
+  }else{
+    // 背景：成個畫面都係矇查查嘅遠景
+    const blur=hkCardBlur(card);
+    if(blur){
+      ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
+      hkDrawPhotoCover(ctx,blur,blur.width,blur.height,0,0,cw,ch);
+      ctx.fillStyle='rgba(16,28,48,0.50)'; ctx.fillRect(0,0,cw,ch);
+    }else{
+      const bg=ctx.createLinearGradient(0,0,0,ch);
+      bg.addColorStop(0,'#2C4A7C'); bg.addColorStop(1,'#14213D');
+      ctx.fillStyle=bg; ctx.fillRect(0,0,cw,ch);
+    }
+    const shown=photoCards.shown.slice();
+    if(a.phase!=='idle'&&t>=HK_LOOK_MS&&a.piece>=0) shown[a.piece]=true;
+    drawHkView(ctx,card,g,finale&&t>=HK_LOOK_MS?[true,true,true,true]:shown);
+    // 名牌：未望晒之前唔知係邊度
+    const pw=Math.min(g.vw*0.62,g.font*13), ph=g.plateH*0.84, py=g.vy-g.plateH+g.plateH*0.06;
+    ctx.fillStyle='rgba(20,82,70,0.94)'; rrPath(ctx,g.cx-pw/2,py,pw,ph,ph/2); ctx.fill();
+    ctx.fillStyle='#FFFFFF'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.font='900 '+Math.round(g.font*1.02)+'px "PingFang TC","Noto Sans TC",sans-serif';
+    const plateText=finale&&t>=HK_LOOK_MS?hkCardName(card)
+      :dealText('第 '+photoCards.stop+' 站 · 呢度係邊度？','Stop '+photoCards.stop+' · Where is this?');
+    ctx.fillText(plateText,g.cx,py+ph*0.54,pw-g.font);
+    if(a.phase==='idle'){
+      const next=photoCards.revealed<HK_CARD_PIECES?photoCards.pieceOrder[photoCards.revealed]:-1;
+      if(next>=0){
+        const r=hkViewPieceRect(g,next), p=photoCards.previewLift!=null?clamp01(photoCards.previewLift)
+          :(shoulderRewardCycle.active?0:clamp01(Number(shoulderFlexionState.progress)||0));
+        const qx=r.x+r.w/2, qy=r.y+r.h/2, pulse=0.5+0.5*Math.sin(now/170), lr=r.h*0.30;
+        ctx.save();
+        ctx.setLineDash([Math.max(8,lr*0.22),Math.max(6,lr*0.14)]);
+        ctx.lineWidth=Math.max(4,g.vw*0.009);
+        ctx.strokeStyle='rgba(255,226,122,'+(0.70+0.30*pulse).toFixed(3)+')';
+        hkLensPath(ctx,qx,qy,lr); ctx.stroke();
+        ctx.restore();
+        // 望遠鏡跟住隻手升上去
+        const bw=g.vw*0.30, restY=ch-bw*0.10, e=1-Math.pow(1-p,1.6);
+        drawHkBinoculars(ctx,g.cx+(qx-g.cx)*e,restY+(qy+bw*0.10-restY)*e,bw,1);
+      }
+    }else if(t<HK_LOOK_MS){
+      // 由望遠鏡望出去：四周暗，兩個圓圈入面清晒，再擴大到成忽都清
+      const q=t/HK_LOOK_MS, r=hkViewPieceRect(g,a.piece), qx=r.x+r.w/2, qy=r.y+r.h/2;
+      const dark=0.62*Math.min(1,q/0.18)*(q>0.70?Math.max(0,1-(q-0.70)/0.30):1);
+      const lr=r.h*0.30+(q>0.58?(q-0.58)/0.42*r.w*1.1:0);
+      ctx.save();
+      ctx.fillStyle='rgba(0,0,0,'+dark.toFixed(3)+')'; ctx.fillRect(0,0,cw,ch);
+      ctx.beginPath(); ctx.rect(r.x,r.y,r.w,r.h); ctx.clip();
+      hkLensPath(ctx,qx,qy,lr); ctx.clip();
+      if(hkCardImageReady(card)) ctx.drawImage(card.img,g.vx,g.vy,g.vw,g.vh);
+      ctx.restore();
+      if(q<0.80){
+        ctx.save();
+        ctx.beginPath(); ctx.rect(r.x,r.y,r.w,r.h); ctx.clip();
+        ctx.globalAlpha=Math.max(0,1-Math.max(0,q-0.58)/0.22);
+        ctx.lineWidth=Math.max(6,g.vw*0.016); ctx.strokeStyle='#0C1016';
+        hkLensPath(ctx,qx,qy,lr); ctx.stroke();
+        ctx.restore();
+      }
+      drawHkBinoculars(ctx,qx,qy+g.vw*0.03+q*g.vw*0.10,g.vw*0.30,Math.max(0,1-q/0.16));
+    }else if(finale&&t<flyStart){
+      const tt=t-HK_LOOK_MS, q=tt/HK_CARD_NAME_MS;
+      // 影相「咔嚓」一閃，然後張閃咭彈出嚟
+      ctx.fillStyle='rgba(8,14,26,'+(0.55*Math.min(1,tt/200)).toFixed(3)+')'; ctx.fillRect(0,0,cw,ch);
+      const grow=Math.min(1,tt/260), pop=(0.55+0.45*grow)*(1+0.07*Math.sin(Math.min(1,q*3.2)*Math.PI));
+      const glow=0.35+0.25*Math.sin(now/160);
+      ctx.fillStyle='rgba(255,226,122,'+glow.toFixed(3)+')';
+      rrPath(ctx,g.cx-g.cardW*pop*0.54,g.cy-g.cardH*pop*0.53,g.cardW*pop*1.08,g.cardH*pop*1.06,g.cardW*0.08); ctx.fill();
+      drawHkCard(ctx,card,g.cx,g.cy,g.cardW*pop,{ holoT:now, starsShown:Math.floor((tt-350)/260)+1 });
+      if(tt<170){ ctx.fillStyle='rgba(255,255,255,'+(0.9*(1-tt/170)).toFixed(3)+')'; ctx.fillRect(0,0,cw,ch); }
+    }else if(finale&&t<total){
+      const q=clamp01((t-flyStart)/HK_CARD_FLY_MS), e=1-Math.pow(1-q,2.4);
+      ctx.fillStyle='rgba(8,14,26,'+(0.55*(1-q)).toFixed(3)+')'; ctx.fillRect(0,0,cw,ch);
+      const slot=g.slots[Math.min(K,uniq.length)-1]||g.slots[0];
+      drawHkCard(ctx,card,g.cx+(slot.x-g.cx)*e,g.cy+(slot.y-g.cy)*e-Math.sin(q*Math.PI)*g.cardH*0.06,
+        g.cardW+(slot.w-g.cardW)*e,{ holoT:now });
+    }
+  }
+  // 相簿：已集嘅咭
+  g.slots.forEach((s,i)=>{
+    const c=visible[i];
+    if(c) drawHkCard(ctx,c,s.x,s.y,s.w,{});
+    else{
+      ctx.save();
+      ctx.fillStyle='rgba(10,20,40,0.30)'; rrPath(ctx,s.x-s.w/2,s.y-s.w*HK_CARD_RATIO/2,s.w,s.w*HK_CARD_RATIO,s.w*0.055); ctx.fill();
+      ctx.setLineDash([Math.max(5,s.w*0.08),Math.max(4,s.w*0.06)]);
+      ctx.lineWidth=Math.max(2,s.w*0.025); ctx.strokeStyle='rgba(255,255,255,0.45)';
+      rrPath(ctx,s.x-s.w/2,s.y-s.w*HK_CARD_RATIO/2,s.w,s.w*HK_CARD_RATIO,s.w*0.055); ctx.stroke();
+      ctx.restore();
+    }
+  });
+  // 文字：只留一句提示＋「已集幾張」
+  const left=Math.max(0,HK_CARD_PIECES-photoCards.revealed);
+  ctx.save();
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.shadowColor='rgba(0,0,0,0.65)'; ctx.shadowBlur=8;
+  if(left>0&&!riding){
+    ctx.fillStyle='#FFE27A'; ctx.font='900 '+Math.round(g.font*1.15)+'px "PingFang TC","Noto Sans TC",sans-serif';
+    const liftBoth=dealText('舉起望遠鏡 · 仲差 '+left+' 次','Lift the binoculars · '+left+' to go');
+    const liftText=dealText('舉起望遠鏡','Lift the binoculars'), leftText=dealText('仲差 '+left+' 次',left+' to go');
+    if(g.portrait) ctx.fillText(liftBoth,g.textX,g.textY,g.textW);
+    else{
+      ctx.fillText(liftText,g.textX,g.textY-g.font*0.85,g.textW);
+      ctx.fillStyle='#FFFFFF'; ctx.font='800 '+Math.round(g.font*0.95)+'px "PingFang TC","Noto Sans TC",sans-serif';
+      ctx.fillText(leftText,g.textX,g.textY+g.font*0.75,g.textW);
+    }
+  }
+  ctx.fillStyle='#FFFFFF'; ctx.font='800 '+Math.round(g.font*0.95)+'px "PingFang TC","Noto Sans TC",sans-serif';
+  const countText=dealText('已集 '+settled.length+' 張','Cards: '+settled.length);
+  ctx.fillText(countText,g.countX,g.countY,g.countW);
+  ctx.restore();
+  fxUpdateDraw(ctx);
+  ctx.restore();
+}
 function drawShoulderFlexionGuide(ctx,cw,ch){
   if(!isShoulderFlexionLevel()) return;
+  if(isPhotoCardTheme()){ drawPhotoCardScene(ctx,cw,ch); return; } // v144 香港遊：望遠鏡＋閃咭
   if(isDealTableTheme()){ drawDealTableScene(ctx,cw,ch); return; } // v138 麻雀／啤牌牌局
   if(state.theme==='bowlinglane'){ drawBowlingAlleyScene(ctx,cw,ch); return; }
   if(state.theme==='basketball'){ drawBasketballCourtScene(ctx,cw,ch); return; }
@@ -8013,8 +8600,10 @@ function renderActivityLibrary(){
     const goalText = (isShoulderFlexionLevel() && th.shoulderGoal) || th.goal;
     btn.querySelector('.ac-goal').textContent = goalText;
     const img = btn.querySelector('.ac-visual img');
-    img.src = th.thumbnail;
-    img.alt = th.thumbnailAlt;
+    // v144：同一個主題喺 Level 3/4 可以有自己嘅封面圖
+    const shoulderCover = isShoulderFlexionLevel() && !research.active && th.shoulderThumbnail;
+    img.src = shoulderCover ? th.shoulderThumbnail : th.thumbnail;
+    img.alt = shoulderCover ? (th.shoulderThumbnailAlt || th.thumbnailAlt) : th.thumbnailAlt;
     img.addEventListener('error', ()=> btn.querySelector('.ac-visual').remove());
     btn.setAttribute('aria-label', themeShownTitle(th) + '：' + goalText);
     btn.addEventListener('click', ()=> selectActivity(id));
@@ -12527,6 +13116,9 @@ function level4ScenarioGif(themeId = state.theme){
 const THEMES = {
   tsuenwan: mkTheme({
     id:'tsuenwan',title:'荃灣街景相片',goal:'把荃灣街景相片送到同名的大型相片目標',
+    shoulderTitle:'香港遊', // v144 Level 3／4：坐車到站，舉起望遠鏡睇風景，集地標閃咭
+    shoulderGoal:'到站落車，舉起望遠鏡睇風景，望清楚就影到一張閃咭',
+    shoulderThumbnail:'img/advanced/hk_tour_thumb.jpg',shoulderThumbnailAlt:'望遠鏡同三張香港地標閃咭',
     itemWord:'街景相片',difficulty:'容易至中等',targetStyle:'panel',
     thumbnail:'img/advanced/tsuenwan_market_street.jpg',thumbnailAlt:'荃灣街市街真實街景相片',
     categoriesFor(){return TSUEN_WAN_PHOTOS.map(photo=>({
@@ -13682,6 +14274,10 @@ function shoulderRewardDurationMs(){
   if(isTeahouseDimsumMode()){
     return Math.max(SHOULDER_REWARD_MIN_MS,TEAHOUSE_FLY_MS+TEAHOUSE_STEAM_MS+900);
   }
+  if(isPhotoCardTheme()){
+    // v144 香港遊：望遠鏡望清楚＋（望晒四忽）影咭、入相簿、坐車去下一站都播完先再接受下一次抬手
+    return Math.max(SHOULDER_REWARD_MIN_MS,photoCardRewardMs());
+  }
   if(state.theme==='tsuenwan') return SHOULDER_PHOTO_REWARD_MS;
   if(isLaundryStoryTheme()){
     // v139：動畫＋跟住嘅過場（洗衣機轉／太陽晒衫）都蓋住，等過場完先再接受下一次抬手
@@ -13695,7 +14291,7 @@ function shoulderRewardDurationMs(){
 }
 function startShoulderRewardCycle(){
   if(shoulderRewardCycle.active) return;
-  if(isDealTableTheme())startDealTableDraw(); // v138 牌局：先摸／揭牌，定好今次動畫長度
+  if(isDealTableTheme())startDealTableDraw(); if(isPhotoCardTheme())startPhotoCardDraw(); // v138 牌局／v144 香港遊：先行一步，定好今次動畫長度
   const started=nowMs();
   shoulderRewardCycle.active=true;
   shoulderRewardCycle.startedMs=started;
@@ -13715,6 +14311,7 @@ function finishShoulderRewardCycle(){
   foods=[];
   spawnInitialFoods();
   finishDealTableDraw(); // v138 牌局：收起動畫；啱啱食糊就開新一鋪
+  finishPhotoCardDraw(); // v144 香港遊：收起動畫；啱啱影到一張咭就去下一站
   shoulderFlexionCycleAwarded=false;
   shoulderRewardCycle.reset();
   // Research sessions re-arm from the participant-specific zero only after the
@@ -14084,6 +14681,7 @@ function playApplauseSound(){
 function showFeedback(correct){
   // v139 洗衫晾衫：件衫入機／上竹本身就係即時回饋；中央大剔號會遮住畫面，只保留「叮」聲
   if(correct&&(isLaundryStoryTheme()||isLaundryPegStoryGame())) return;
+  if(correct&&isPhotoCardTheme()) return; // v144 香港遊：風景變清本身就係即時回饋，大剔號會遮住風景
   const el = document.getElementById('feedbackOverlay');
   el.textContent = correct ? '✓' : '✕';
   el.classList.toggle('correct-feedback',correct);
@@ -14180,6 +14778,7 @@ function initGame(){
   heldItem = null; foods = []; targets = []; resetBowlingStrike(); resetBasketballShot(); resetTeahouseServe();
   resetSupermarketStory(); // v125 超市故事狀態一併清齊
   resetDealTable();        // v138 麻雀／啤牌牌局狀態一併清齊
+  resetPhotoCards();       // v144 香港地標閃咭狀態一併清齊
   resetLaundryStory();     // v139 洗衫晾衫故事狀態一併清齊
   resetDimsumOrderGame();  // v69 筷子點心落單狀態一併清齊
   resetLaundryOrderGame(); // v71 晾衫單狀態一併清齊
@@ -14458,6 +15057,7 @@ function setupTargets(){
   }
   if(isShoulderFlexionLevel()){
     if(isDealTableTheme()){ targets=[]; return; } // v138 牌局：牌位由場景直接繪畫
+    if(isPhotoCardTheme()){ targets=[]; return; } // v144 閃咭：張咭由場景直接繪畫
     if(isLaundryStoryTheme()){ targets=[]; return; } // v139 洗衫晾衫：全部由場景直接繪畫
     if(state.theme==='bowlinglane'||state.theme==='basketball'||state.theme==='supermarket'||isTeahouseDimsumMode()){
       // v73 保齡球／v74 模擬茶樓／v125 超市：目標由場景直接繪畫，唔使用通用目標盤
@@ -15165,7 +15765,7 @@ function updateFramePerfOverlay(now){
     framePerf.overlayEl = el;
   }
   const p = framePerfSnapshot();
-  el.textContent = `perf v143  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
+  el.textContent = `perf v144  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
     + `鏡頭 ${p.video[0]}×${p.video[1]}  畫布 ${p.canvas[0]}×${p.canvas[1]}  dpr ${p.dpr}  手模型 ${p.handDelegate || '-'}\n`
     + `手 ${p.hand.hands} 隻  標籤 ${p.hand.label || '-'} ${p.hand.score}  接納 ${p.hand.path || '-'}  嚴格 ${p.hand.strict} 連續 ${p.hand.continuity} 單手 ${p.hand.lone} 拒絕 ${p.hand.rejected}\n`
     + `左右手檢查 ${p.hand.check === 'off' ? '關' : '開'}  鎖定手形 ${p.hand.lockSize || '-'}  大小拒絕 ${p.hand.sizeRejected}  遠處拒絕 ${p.hand.farRejected}`
@@ -18254,6 +18854,8 @@ function renderGame(){
     if(isSupermarketTheme()) continue;
     // v138 牌局：牌全部由場景層繪畫
     if(isDealTableTheme()) continue;
+    // v144 閃咭：張咭全部由場景層繪畫
+    if(isPhotoCardTheme()) continue;
     // v139 洗衫晾衫：衫全部由場景層繪畫
     if(isLaundryStoryTheme()) continue;
     // v74 模擬茶樓：點心飛入蒸籠／蒸緊嗰陣由場景層接手畫，避免出現兩件點心
@@ -18535,7 +19137,11 @@ function endGame(endReason){
     // v141 自動再玩：超市／煮蛋炒飯完成咗幾多轉
     const roundLine=isSupermarketTheme()?shopStorySummaryText():(isLevel6DigiflexTask()?cookRoundSummaryText():'');
     if(roundLine){ dealSummary.hidden=false; dealSummary.textContent=roundLine; }
+    // v144 香港地標閃咭：今次集到幾多張
+    const cardLine=isPhotoCardTheme()?photoCardSummaryText():'';
+    if(cardLine){ dealSummary.hidden=false; dealSummary.textContent=cardLine; }
   }
+  renderPhotoCardAlbumSummary(); // v144 完成頁：今次集到嘅咭
 
   /* PUBLIC_BUILD_REMOVE_START: research result DOM and export controls */
   const rr = document.getElementById('researchResult');
@@ -24786,6 +25392,30 @@ window.__qa = {
       return dimsumPlateContents.length;
     },
   },
+  photoCards:{
+    // v144 QA：閃咭狀態；trigger() 模擬一次抬臂達標（跳過姿勢追蹤），finish() 收起動畫
+    state(){
+      return { active:isPhotoCardTheme(), total:HK_CARDS.length, card:photoCards.card?photoCards.card.id:null,
+        name:hkCardName(photoCards.card), stars:photoCards.card?photoCards.card.stars:0,
+        shown:photoCards.shown.slice(), revealed:photoCards.revealed, pieceOrder:photoCards.pieceOrder.slice(),
+        collected:photoCards.collected.slice(), anim:{ phase:photoCards.anim.phase, piece:photoCards.anim.piece, done:photoCards.anim.done },
+        rewardMs:photoCardRewardMs(), summary:photoCardSummaryText(),
+        stop:photoCards.stop, imageReady:hkCardImageReady(photoCards.card) };
+    },
+    trigger(){
+      if(!isPhotoCardTheme()) return null;
+      startPhotoCardDraw();
+      return window.__qa.photoCards.state();
+    },
+    finish(){ finishPhotoCardDraw(); return window.__qa.photoCards.state(); },
+    setAnimElapsed(ms){ if(photoCards.anim.phase!=='idle') photoCards.anim.startedMs=nowMs()-Math.max(0,Number(ms)||0); return photoCards.anim.phase; },
+    setLift(v){ photoCards.previewLift=(v==null?null:Number(v)); return photoCards.previewLift; }, // 只供畫面檢查：預覽望遠鏡升到邊
+    setCard(id){ const c=HK_CARDS.find(x=>x.id===id); if(!c) return null; ensurePhotoCard(); photoCards.card=c; hkCardImage(c); return c.id; },
+    list(){ return HK_CARDS.map(c=>({ id:c.id, zh:c.zh, dist:c.dist, en:c.en, distEn:c.distEn, stars:c.stars })); },
+    geometry(){ const g=photoCardGeometry(gameCanvas.width,gameCanvas.height);
+      return { top:g.top, cardW:g.cardW, cardH:g.cardH, cx:g.cx, cy:g.cy, vx:g.vx, vy:g.vy, vw:g.vw, vh:g.vh, portrait:g.portrait, cssScale:g.cssScale, cw:gameCanvas.width, ch:gameCanvas.height,
+        slots:g.slots.map(s=>({x:s.x,y:s.y,w:s.w})) }; },
+  },
   dealTable:{
     // v138 QA：牌局狀態；trigger() 模擬一次抬臂達標（跳過姿勢追蹤），finish() 收起動畫
     state(){
@@ -25572,7 +26202,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v143-20261126-simple-setup";
+  const LEVEL_APP_BUILD = "v144-20261126-hk-tour-cards";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

@@ -1,54 +1,748 @@
 {
-  "retrieved": "2026-08-25",
-  "purpose": "Offline photo-card objects and matching targets in FTHUE Levels 2–4",
-  "images": [
-    {
-      "local_path": "img/advanced/tsuenwan_chuen_lung.jpg",
-      "title": "Chuen Lung Street (Tsuen Wan, Hong Kong)",
-      "author": "Mk2010",
-      "license": "CC BY-SA 3.0",
-      "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
-      "source_url": "https://commons.wikimedia.org/wiki/File:Chuen_Lung_Street_(Tsuen_Wan,_Hong_Kong).jpg"
-    },
-    {
-      "local_path": "img/advanced/tsuenwan_market_street.jpg",
-      "title": "Tsuen Wan Market Street in February 2024",
-      "author": "姒姓賢寧",
-      "license": "CC BY-SA 4.0",
-      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
-      "source_url": "https://commons.wikimedia.org/wiki/File:Tsuen_Wan_Market_Street_in_February_2024.jpg"
-    },
-    {
-      "local_path": "img/advanced/tsuenwan_downtown.jpg",
-      "title": "Tsuen Wan downtown street scene, December 2023",
-      "author": "MAUOSREEGU DAVMUR",
-      "license": "CC0 1.0",
-      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "source_url": "https://commons.wikimedia.org/wiki/File:HK_TW_%E8%8D%83%E7%81%A3_Tsuen_Wan_%E5%B8%82%E5%8D%80_downtown_city_%E8%A1%97%E6%99%AF_scene_December_2023_R12S_17.jpg"
-    },
-    {
-      "local_path": "img/advanced/tsuenwan_skyline.jpg",
-      "title": "Tsuen Wan Skyline 2010",
-      "author": "WiNG",
-      "license": "CC BY-SA 3.0",
-      "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
-      "source_url": "https://commons.wikimedia.org/wiki/File:Tsuen_Wan_Skyline_2010.jpg"
-    },
-    {
-      "local_path": "img/advanced/tsuenwan_plaza.jpg",
-      "title": "Tsuen Wan Plaza (Hong Kong)",
-      "author": "Mk2010",
-      "license": "CC BY-SA 3.0",
-      "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
-      "source_url": "https://commons.wikimedia.org/wiki/File:Tsuen_Wan_Plaza_(Hong_Kong).jpg"
-    },
-    {
-      "local_path": "img/advanced/tsuenwan_tak_wah_park.jpg",
-      "title": "Tak Wah Park 201106",
-      "author": "Wing1990hk",
-      "license": "CC BY 3.0",
-      "license_url": "https://creativecommons.org/licenses/by/3.0/",
-      "source_url": "https://commons.wikimedia.org/wiki/File:Tak_Wah_Park_201106.jpg"
-    }
-  ]
+ "retrieved": "2026-08-25",
+ "purpose": "Offline photo-card objects and matching targets in FTHUE Levels 2–4; Hong Kong landmark cards in Levels 3–4",
+ "images": [
+  {
+   "local_path": "img/advanced/tsuenwan_chuen_lung.jpg",
+   "title": "Chuen Lung Street (Tsuen Wan, Hong Kong)",
+   "author": "Mk2010",
+   "license": "CC BY-SA 3.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Chuen_Lung_Street_(Tsuen_Wan,_Hong_Kong).jpg"
+  },
+  {
+   "local_path": "img/advanced/tsuenwan_market_street.jpg",
+   "title": "Tsuen Wan Market Street in February 2024",
+   "author": "姒姓賢寧",
+   "license": "CC BY-SA 4.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Tsuen_Wan_Market_Street_in_February_2024.jpg"
+  },
+  {
+   "local_path": "img/advanced/tsuenwan_downtown.jpg",
+   "title": "Tsuen Wan downtown street scene, December 2023",
+   "author": "MAUOSREEGU DAVMUR",
+   "license": "CC0 1.0",
+   "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:HK_TW_%E8%8D%83%E7%81%A3_Tsuen_Wan_%E5%B8%82%E5%8D%80_downtown_city_%E8%A1%97%E6%99%AF_scene_December_2023_R12S_17.jpg"
+  },
+  {
+   "local_path": "img/advanced/tsuenwan_skyline.jpg",
+   "title": "Tsuen Wan Skyline 2010",
+   "author": "WiNG",
+   "license": "CC BY-SA 3.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Tsuen_Wan_Skyline_2010.jpg"
+  },
+  {
+   "local_path": "img/advanced/tsuenwan_plaza.jpg",
+   "title": "Tsuen Wan Plaza (Hong Kong)",
+   "author": "Mk2010",
+   "license": "CC BY-SA 3.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Tsuen_Wan_Plaza_(Hong_Kong).jpg"
+  },
+  {
+   "local_path": "img/advanced/tsuenwan_tak_wah_park.jpg",
+   "title": "Tak Wah Park 201106",
+   "author": "Wing1990hk",
+   "license": "CC BY 3.0",
+   "license_url": "https://creativecommons.org/licenses/by/3.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Tak_Wah_Park_201106.jpg"
+  },
+  {
+   "local_path": "img/cards/star_ferry.jpg",
+   "title": "2024-12-27 A Star Ferry crosses Victoria Harbour 2",
+   "author": "Alexkom000",
+   "license": "CC BY 4.0",
+   "license_url": "https://creativecommons.org/licenses/by/4.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:2024-12-27_A_Star_Ferry_crosses_Victoria_Harbour_2.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/clock_tower.jpg",
+   "title": "Former Kowloon-Canton Railway Clock Tower, Tsim Sha Tsui (Hong Kong)",
+   "author": "Mk2010",
+   "license": "CC BY-SA 4.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Former_Kowloon-Canton_Railway_Clock_Tower,_Tsim_Sha_Tsui_(Hong_Kong).jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/victoria_harbour.jpg",
+   "title": "Vista del Puerto de Victoria desde Sky100, Hong Kong, 2013-08-09, DD 11",
+   "author": "Diego Delso",
+   "license": "CC BY-SA 3.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Vista_del_Puerto_de_Victoria_desde_Sky100,_Hong_Kong,_2013-08-09,_DD_11.JPG",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/peak_tram.jpg",
+   "title": "Peak Tram(Green light) 10-09-2022(2)",
+   "author": "LN9267",
+   "license": "CC BY-SA 4.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Peak_Tram(Green_light)_10-09-2022(2).jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/peak_tower.jpg",
+   "title": "Peak Tower, Hong Kong",
+   "author": "EditQ",
+   "license": "CC0",
+   "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Peak_Tower,_Hong_Kong.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/big_buddha.jpg",
+   "title": "Tian Tan Buddha by Beria",
+   "author": "Béria Lima de Rodríguez",
+   "license": "CC BY-SA 3.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Tian_Tan_Buddha_by_Beria.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/ngong_ping.jpg",
+   "title": "Ngong Ping 360 Cable Car and HKG 2021-09",
+   "author": "Sparktour",
+   "license": "CC BY-SA 4.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Ngong_Ping_360_Cable_Car_and_HKG_2021-09.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/wong_tai_sin.jpg",
+   "title": "Confucian Hall (Wong Tai Sin Temple, Hong Kong) 03",
+   "author": "Underwaterbuffalo",
+   "license": "CC BY-SA 4.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Confucian_Hall_(Wong_Tai_Sin_Temple,_Hong_Kong)_03.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/che_kung.jpg",
+   "title": "Che Kung Temple 201810",
+   "author": "Wpcpey",
+   "license": "CC BY-SA 4.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Che_Kung_Temple_201810.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/man_mo.jpg",
+   "title": "Man Mo temple interiors (Hong Kong)",
+   "author": "Aethelfirth",
+   "license": "CC BY-SA 4.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Man_Mo_temple_interiors_(Hong_Kong).jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/tsing_ma.jpg",
+   "title": "Tsing Ma Bridge night view",
+   "author": "Smallpei",
+   "license": "CC BY-SA 4.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Tsing_Ma_Bridge_night_view.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/bauhinia.jpg",
+   "title": "Golden Bauhinia Square 21-11-2019",
+   "author": "LN9267",
+   "license": "CC BY-SA 4.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Golden_Bauhinia_Square_21-11-2019.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/hkcec.jpg",
+   "title": "Aerial view of the Hong Kong Convention and Exhibition Centre",
+   "author": "Rehman Abubakr",
+   "license": "CC BY-SA 4.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Aerial_view_of_the_Hong_Kong_Convention_and_Exhibition_Centre.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/boc_tower.jpg",
+   "title": "HSBC Building & Bank of China Tower 20170808",
+   "author": "Suicasmo",
+   "license": "CC BY-SA 4.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:HSBC_Building_%26_Bank_of_China_Tower_20170808.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/hsbc.jpg",
+   "title": "HK HSBC Main Building 2008",
+   "author": "WiNG",
+   "license": "CC BY 3.0",
+   "license_url": "https://creativecommons.org/licenses/by/3.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:HK_HSBC_Main_Building_2008.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/legco.jpg",
+   "title": "Chater Road and the Court of Final Appeal in Hong Kong in 1987",
+   "author": "Jan Kranendonk",
+   "license": "CC BY-SA 4.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Chater_Road_and_the_Court_of_Final_Appeal_in_Hong_Kong_in_1987.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/tram.jpg",
+   "title": "Hong Kong Tramways Double Decker Tram (Ank Kumar) 08",
+   "author": "Ank Kumar",
+   "license": "CC BY-SA 4.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Hong_Kong_Tramways_Double_Decker_Tram_(Ank_Kumar)_08.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/escalator.jpg",
+   "title": "Central-Mid-Levels Escalator and Walkway System 15-07-2015(13)",
+   "author": "LN9267",
+   "license": "CC BY-SA 4.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Central-Mid-Levels_Escalator_and_Walkway_System_15-07-2015(13).jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/pottinger.jpg",
+   "title": "Pottinger Street, Central in July 2024",
+   "author": "姒姓賢寧",
+   "license": "CC BY 4.0",
+   "license_url": "https://creativecommons.org/licenses/by/4.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Pottinger_Street,_Central_in_July_2024.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/temple_street.jpg",
+   "title": "Hong Kong Temple Street night market IMG 4777",
+   "author": "Deror_avi",
+   "license": "CC BY-SA 3.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Hong_Kong_Temple_Street_night_market_IMG_4777.JPG",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/ladies_market.jpg",
+   "title": "Kowloon Tung Choi Street",
+   "author": "Photo by TonySKTO",
+   "license": "CC BY-SA 2.5",
+   "license_url": "https://creativecommons.org/licenses/by-sa/2.5/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Kowloon_Tung_Choi_Street.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/flower_market.jpg",
+   "title": "HK MongKok Flower Market Road shop red roses April 2015 RedMi",
+   "author": "MyPlace2015 mm",
+   "license": "CC BY-SA 4.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:HK_MongKok_Flower_Market_Road_shop_red_roses_April_2015_RedMi.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/bird_garden.jpg",
+   "title": "Yuen Po Street Bird Garden Entrance 2012",
+   "author": "Wing1990hk",
+   "license": "CC BY 3.0",
+   "license_url": "https://creativecommons.org/licenses/by/3.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Yuen_Po_Street_Bird_Garden_Entrance_2012.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/nathan_road.jpg",
+   "title": "HK Jordan night Nathan Road shop signs Mar-2013",
+   "author": "Tusginewko",
+   "license": "CC BY-SA 3.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:HK_Jordan_night_Nathan_Road_shop_signs_Mar-2013.JPG",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/cultural_centre.jpg",
+   "title": "Star Ferry's Harbour Tour 12",
+   "author": "Katie Chan",
+   "license": "CC BY-SA 3.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Star_Ferry%27s_Harbour_Tour_12.JPG",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/space_museum.jpg",
+   "title": "Hong Kong Space Museum 23-11-2023(1)",
+   "author": "LN9267",
+   "license": "CC BY-SA 4.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Hong_Kong_Space_Museum_23-11-2023(1).jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/peninsula.jpg",
+   "title": "The Peninsula, Hong Kong (Ank Kumar, Infosys Limited)",
+   "author": "Ank Kumar",
+   "license": "CC BY-SA 4.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:The_Peninsula,_Hong_Kong_(Ank_Kumar,_Infosys_Limited).jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/ocean_park.jpg",
+   "title": "Ocean Park cable car",
+   "author": "Enochlau",
+   "license": "CC BY-SA 3.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Ocean_Park_cable_car.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/repulse_bay.jpg",
+   "title": "Repulse Bay 201501",
+   "author": "Wing1990hk",
+   "license": "CC BY 3.0",
+   "license_url": "https://creativecommons.org/licenses/by/3.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Repulse_Bay_201501.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/stanley.jpg",
+   "title": "Murray House Stanley Hong Kong",
+   "author": "Hankt",
+   "license": "CC BY 3.0",
+   "license_url": "https://creativecommons.org/licenses/by/3.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Murray_House_Stanley_Hong_Kong.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/aberdeen.jpg",
+   "title": "Hong Kong (26985095745)",
+   "author": "Kārlis Dambrāns from Latvia",
+   "license": "CC BY 2.0",
+   "license_url": "https://creativecommons.org/licenses/by/2.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Hong_Kong_(26985095745).jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/jumbo.jpg",
+   "title": "1985 in Hong Kong. Jumbo Floating Restaurant. Spielvogel Archiv (cropped)",
+   "author": "Spielvogel (Spielvogel Archiv)",
+   "license": "CC0",
+   "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:1985_in_Hong_Kong._Jumbo_Floating_Restaurant._Spielvogel_Archiv_(cropped).jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/tai_o.jpg",
+   "title": "Tai O stilt houses 03",
+   "author": "Underwaterbuffalo",
+   "license": "CC BY-SA 4.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Tai_O_stilt_houses_03.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/cheung_chau.jpg",
+   "title": "Cheung Chau. Fishing boats. (13141396995)",
+   "author": "Bernard Spragg. NZ",
+   "license": "CC0",
+   "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Cheung_Chau._Fishing_boats._(13141396995).jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/bun_festival.jpg",
+   "title": "HK CheungChauBunFestival 2010",
+   "author": "Chong Fat",
+   "license": "CC BY-SA 3.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:HK_CheungChauBunFestival_2010.JPG",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/sai_kung.jpg",
+   "title": "Sai Kung Wholesale Fish Market (52262728922)",
+   "author": "Bernard Spragg. NZ",
+   "license": "Public domain",
+   "license_url": "https://creativecommons.org/publicdomain/mark/1.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Sai_Kung_Wholesale_Fish_Market_(52262728922).jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/east_dam.jpg",
+   "title": "20260308 High Island Reservoir (130147)",
+   "author": "Yumeto",
+   "license": "CC BY-SA 4.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:20260308_High_Island_Reservoir_(130147).jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/lion_rock.jpg",
+   "title": "CX8100 B-LXI and Lion Rock 2025-03-30",
+   "author": "British Hker",
+   "license": "CC BY 4.0",
+   "license_url": "https://creativecommons.org/licenses/by/4.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:CX8100_B-LXI_and_Lion_Rock_2025-03-30.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/chi_lin.jpg",
+   "title": "Chi Lin Nunnery (2037672635)",
+   "author": "Rob Young from United Kingdom",
+   "license": "CC BY 2.0",
+   "license_url": "https://creativecommons.org/licenses/by/2.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Chi_Lin_Nunnery_(2037672635).jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/nan_lian.jpg",
+   "title": "Nan Lian Garden (2042518177)",
+   "author": "Rob Young from United Kingdom",
+   "license": "CC BY 2.0",
+   "license_url": "https://creativecommons.org/licenses/by/2.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Nan_Lian_Garden_(2042518177).jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/hk_park.jpg",
+   "title": "Hong Kong Park 3",
+   "author": "HK Arun",
+   "license": "CC BY-SA 3.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Hong_Kong_Park_3.JPG",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/happy_valley.jpg",
+   "title": "Happy Valley Racecourse 1",
+   "author": "Minghong",
+   "license": "CC BY-SA 4.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Happy_Valley_Racecourse_1.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/ten_thousand.jpg",
+   "title": "Ten Thousand Buddhas Monastery, Hong Kong - panoramio",
+   "author": "Andrew Martin",
+   "license": "CC BY 3.0",
+   "license_url": "https://creativecommons.org/licenses/by/3.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Ten_Thousand_Buddhas_Monastery,_Hong_Kong_-_panoramio.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/tsang_tai_uk.jpg",
+   "title": "Tsang Tai Uk 002",
+   "author": "Rutger van der Maar",
+   "license": "CC BY 2.0",
+   "license_url": "https://creativecommons.org/licenses/by/2.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Tsang_Tai_Uk_002.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/kat_hing_wai.jpg",
+   "title": "HK KamTin KatHingWai 2014 (brighter version)",
+   "author": "Chong Fat",
+   "license": "CC BY-SA 3.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:HK_KamTin_KatHingWai_2014_(brighter_version).jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/pagoda.jpg",
+   "title": "HK TSW 天水圍 Tin Shui Wai 屏山文物徑 Ping Shan Heritage Trail 聚星樓 Tsui Sing Lau Pagoda November 2023 R12S 01",
+   "author": "Husyewl Lmsiuyu RAUOM",
+   "license": "CC0",
+   "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:HK_TSW_%E5%A4%A9%E6%B0%B4%E5%9C%8D_Tin_Shui_Wai_%E5%B1%8F%E5%B1%B1%E6%96%87%E7%89%A9%E5%BE%91_Ping_Shan_Heritage_Trail_%E8%81%9A%E6%98%9F%E6%A8%93_Tsui_Sing_Lau_Pagoda_November_2023_R12S_01.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/wishing_tree.jpg",
+   "title": "Lam Tsuen Wishing Tree 22-01-2023(5)",
+   "author": "LN9267",
+   "license": "CC BY-SA 4.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Lam_Tsuen_Wishing_Tree_22-01-2023(5).jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/mplus.jpg",
+   "title": "WKCD M+, 2021.11",
+   "author": "Lord Jaraxxus",
+   "license": "CC BY-SA 4.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:WKCD_M%2B,_2021.11.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/palace_museum.jpg",
+   "title": "Hong Kong Palace Museum 2022",
+   "author": "xiquinhosilva",
+   "license": "CC BY 2.0",
+   "license_url": "https://creativecommons.org/licenses/by/2.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Hong_Kong_Palace_Museum_2022.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/airport.jpg",
+   "title": "Hong Kong International Airport Terminal 2",
+   "author": "SH6188",
+   "license": "CC BY-SA 4.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Hong_Kong_International_Airport_Terminal_2.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/hzmb.jpg",
+   "title": "West section of Hong Kong-Zhuhai-Macau Bridge (20180902174105)",
+   "author": "N509FZ",
+   "license": "CC BY-SA 4.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:West_section_of_Hong_Kong-Zhuhai-Macau_Bridge_(20180902174105).jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/lei_yue_mun.jpg",
+   "title": "HK Lei Yue Mun Praya Road West Seafood Restaurant Wa",
+   "author": "Masanchuen",
+   "license": "CC BY-SA 3.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:HK_Lei_Yue_Mun_Praya_Road_West_Seafood_Restaurant_Wa.JPG",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/coliseum.jpg",
+   "title": "Hong Kong Coliseum 2022 05 part1",
+   "author": "Qwer132477",
+   "license": "CC BY-SA 4.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Hong_Kong_Coliseum_2022_05_part1.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/blue_house.jpg",
+   "title": "Blue House, Hong Kong",
+   "author": "Prosperity Horizons",
+   "license": "CC BY-SA 4.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Blue_House,_Hong_Kong.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/monster.jpg",
+   "title": "Looking upward at the Yick Cheong Building, 13 June 2019",
+   "author": "Benh LIEU SONG (Flickr)",
+   "license": "CC BY-SA 4.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Looking_upward_at_the_Yick_Cheong_Building,_13_June_2019.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/choi_hung.jpg",
+   "title": "Choi Hung Estate 2018",
+   "author": "Wpcpey",
+   "license": "CC BY-SA 4.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Choi_Hung_Estate_2018.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/mei_ho.jpg",
+   "title": "Shek Kip Mei Estate 2013 part6",
+   "author": "Qwer132477",
+   "license": "CC BY-SA 3.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Shek_Kip_Mei_Estate_2013_part6.JPG",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/lui_seng_chun.jpg",
+   "title": "2012年4月25日開幕當日的雷生春",
+   "author": "李家宇",
+   "license": "CC BY-SA 3.0 tw",
+   "license_url": "https://creativecommons.org/licenses/by-sa/3.0/tw/deed.en/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:2012%E5%B9%B44%E6%9C%8825%E6%97%A5%E9%96%8B%E5%B9%95%E7%95%B6%E6%97%A5%E7%9A%84%E9%9B%B7%E7%94%9F%E6%98%A5.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/sam_tung_uk.jpg",
+   "title": "Sam Tung Uk Museum 202007",
+   "author": "Wpcpey",
+   "license": "CC BY 4.0",
+   "license_url": "https://creativecommons.org/licenses/by/4.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Sam_Tung_Uk_Museum_202007.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/yuen_yuen.jpg",
+   "title": "Yuen Yuen Institute",
+   "author": "User:Ahleong",
+   "license": "CC BY-SA 3.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Yuen_Yuen_Institute.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/ting_kau.jpg",
+   "title": "Ting Kau Bridge 0604",
+   "author": "Baycrest",
+   "license": "CC BY-SA 2.5",
+   "license_url": "https://creativecommons.org/licenses/by-sa/2.5/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Ting_Kau_Bridge_0604.JPG",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/shing_mun.jpg",
+   "title": "Shing Mun Reservoir 1",
+   "author": "Minghong",
+   "license": "CC BY-SA 4.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Shing_Mun_Reservoir_1.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/tai_mo_shan.jpg",
+   "title": "R38943400718 Tai Mo Shan Road (大帽山道), and Tai Mo Shan peak in distance",
+   "author": "C J B Scholten at English Wikipedia",
+   "license": "CC BY 2.5",
+   "license_url": "https://creativecommons.org/licenses/by/2.5/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:R38943400718_Tai_Mo_Shan_Road_(%E5%A4%A7%E5%B8%BD%E5%B1%B1%E9%81%93),_and_Tai_Mo_Shan_peak_in_distance.JPG",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/yan_chai.jpg",
+   "title": "HK YanChaiHospital BlkB",
+   "author": "Chong Fat",
+   "license": "CC BY-SA 3.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:HK_YanChaiHospital_BlkB.JPG",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/nina_tower.jpg",
+   "title": "HK Nina Tower 200803",
+   "author": "WiNG",
+   "license": "CC BY 3.0",
+   "license_url": "https://creativecommons.org/licenses/by/3.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:HK_Nina_Tower_200803.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/gold_coast.jpg",
+   "title": "Hong Kong Gold Coast Hotel 2006",
+   "author": "WiNG",
+   "license": "CC BY 3.0",
+   "license_url": "https://creativecommons.org/licenses/by/3.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Hong_Kong_Gold_Coast_Hotel_2006.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/nam_sang_wai.jpg",
+   "title": "Nam Sang Wai 200808",
+   "author": "FHKE (Flickr)",
+   "license": "CC BY-SA 2.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/2.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Nam_Sang_Wai_200808.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/wetland.jpg",
+   "title": "Hong Kong Wetland Park overview1 201612",
+   "author": "Wpcpey",
+   "license": "CC BY-SA 4.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Hong_Kong_Wetland_Park_overview1_201612.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/shek_o.jpg",
+   "title": "DragonBack1",
+   "author": "山民主義",
+   "license": "CC BY-SA 4.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:DragonBack1.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/science_museum.jpg",
+   "title": "HKScienceMuseumview",
+   "author": "WiNG",
+   "license": "CC BY 3.0",
+   "license_url": "https://creativecommons.org/licenses/by/3.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:HKScienceMuseumview.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/ferris_wheel.jpg",
+   "title": "Hong Kong Observation Wheel Sept 2018",
+   "author": "Erc Chw",
+   "license": "CC BY-SA 4.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Hong_Kong_Observation_Wheel_Sept_2018.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/symphony.jpg",
+   "title": "Hong Kong, A Symphony of Lights (2)",
+   "author": "Krimuk2.0",
+   "license": "CC BY-SA 4.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Hong_Kong,_A_Symphony_of_Lights_(2).jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/zoo_garden.jpg",
+   "title": "Hong Kong Zoological and Botanical Gardens Main Gate",
+   "author": "hkgalbert",
+   "license": "Public domain",
+   "license_url": "https://creativecommons.org/publicdomain/mark/1.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Hong_Kong_Zoological_and_Botanical_Gardens_Main_Gate.JPG",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/tw_market_street.jpg",
+   "title": "Tsuen Wan Market Street in February 2024",
+   "author": "姒姓賢寧",
+   "license": "CC BY-SA 4.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Tsuen_Wan_Market_Street_in_February_2024.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/tw_downtown.jpg",
+   "title": "Tsuen Wan downtown street scene, December 2023",
+   "author": "MAUOSREEGU DAVMUR",
+   "license": "CC0 1.0",
+   "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:HK_TW_%E8%8D%83%E7%81%A3_Tsuen_Wan_%E5%B8%82%E5%8D%80_downtown_city_%E8%A1%97%E6%99%AF_scene_December_2023_R12S_17.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/tw_skyline.jpg",
+   "title": "Tsuen Wan Skyline 2010",
+   "author": "WiNG",
+   "license": "CC BY-SA 3.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Tsuen_Wan_Skyline_2010.jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  },
+  {
+   "local_path": "img/cards/tw_plaza.jpg",
+   "title": "Tsuen Wan Plaza (Hong Kong)",
+   "author": "Mk2010",
+   "license": "CC BY-SA 3.0",
+   "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+   "source_url": "https://commons.wikimedia.org/wiki/File:Tsuen_Wan_Plaza_(Hong_Kong).jpg",
+   "changes": "Cropped to 4:3 and resized to 720x540"
+  }
+ ],
+ "retrieved_cards": "2026-11-26"
 }
