@@ -107,6 +107,31 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; text-align:right;
 }
 
+/* v143 簡易設定頁：畫面只留患側（Level 3／4 加目標角度）；其餘收入「進階設定（治療師用）」 */
+.card.simple-card h2{ font-size:20px; display:flex; justify-content:space-between; align-items:center; }
+.card.simple-card .selected-preview{ font-size:15px; color:var(--muted); font-weight:700; }
+.card.simple-card .card-body{ margin-top:12px; }
+.card.simple-card .option-btn{ min-height:72px; font-size:24px; font-weight:800; justify-content:center; }
+#shoulderTargetOptions{ display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; }
+#shoulderTargetOptions .option-btn{ min-width:0; padding:10px 4px; }
+#shoulderTargetOptions:not(.show-all) .option-btn.angle-more{ display:none; }
+.angle-more-toggle{ margin-top:10px; border:0; background:none; color:var(--teal-dark); font-weight:800; font-size:15px;
+  text-decoration:underline; cursor:pointer; min-height:44px; padding:6px 8px; }
+.angle-more-toggle[hidden]{ display:none; }
+.advanced-settings{ width:100%; max-width:480px; box-sizing:border-box; margin:6px auto 14px; border:2px dashed var(--border); border-radius:16px; padding:0 12px; background:rgba(255,255,255,.55); }
+.advanced-settings > summary{ cursor:pointer; list-style:none; display:flex; align-items:center; justify-content:space-between; gap:10px;
+  min-height:52px; padding:6px 4px; font-weight:800; font-size:16px; color:var(--muted); }
+.advanced-settings > summary::-webkit-details-marker{ display:none; }
+.advanced-settings > summary span{ white-space:nowrap; }
+.advanced-settings > summary small{ font-weight:600; font-size:13px; flex:1; min-width:0; text-align:right; }
+.advanced-settings > summary::after{ content:'▼'; font-size:12px; transform:rotate(-90deg); transition:transform .2s; }
+.advanced-settings[open] > summary::after{ transform:none; }
+.advanced-settings .advanced-body{ padding:4px 0 12px; }
+.advanced-settings .card{ max-width:none; }
+.advanced-settings .dimsum-mode-bar{ padding:10px 12px; gap:8px; }
+.advanced-settings .dimsum-mode-bar .dm-label{ flex:1 0 100%; }
+#sceneOptionSlot .dimsum-mode-bar{ margin-bottom:12px; }
+#sceneOptionSlot:empty{ display:none; }
 .option-row{ display:flex; gap:10px; flex-wrap:wrap; }
 #targetHoldOptions[hidden],#dwellOptions[hidden]{ display:none !important; }
 .option-btn{
@@ -539,6 +564,11 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
   font-size:clamp(19px,2vw,25px); line-height:1.2;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
+/* v143 病人畫面精簡字眼 */
+.game-stage.simple-words .patient-game-instruction{ display:none !important; }
+.game-stage.simple-words.public-clean-hud.patient-card-instruction .adv-panel{ display:none !important; }
+.game-stage.simple-words .adaptive-streak{ display:none !important; }
+.game-stage.simple-words.patient-shoulder-hud .hud-item:nth-child(-n+2){ display:none; }
 .patient-game-instruction{
   display:none; position:absolute; left:14px; top:14px; z-index:31;
   max-width:44vw; padding:9px 14px; border-radius:14px;
@@ -1801,7 +1831,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
       <figcaption id="level4ScenarioDemoCaption">動作示範</figcaption>
     </figure>
 
-    <div class="card collapsible" data-accordion="affected-side">
+    <div class="card simple-card" data-accordion="affected-side">
       <h2><span>患側方向</span><span class="selected-preview" id="preview-affected-side">請選擇</span></h2>
       <div class="card-body">
         <div class="option-row" id="affectedSideOptions">
@@ -1809,17 +1839,25 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
           <button class="option-btn" data-side="right" data-testid="button-affected-right">右患側</button>
         </div>
         <p id="affectedSideError" style="min-height:20px;margin:8px 0 0;color:#a1261b;font-weight:800;text-align:center;"></p>
-        <div id="handCheckBlock" hidden>
-          <p class="settings-sub-label" style="margin:6px 0 6px;font-weight:800;">左右手檢查</p>
-          <div class="option-row" id="handCheckOptions" role="group" aria-label="左右手檢查">
-            <button class="option-btn selected" data-check="on" data-testid="button-handcheck-on" aria-pressed="true">開（預設）</button>
-            <button class="option-btn" data-check="off" data-testid="button-handcheck-off" aria-pressed="false">關</button>
-          </div>
-          <p id="handCheckNote" data-testid="text-handcheck-note" style="margin:8px 0 0;font-size:14px;line-height:1.5;color:#4a4a4a;"></p>
-        </div>
       </div>
     </div>
-    <div class="card collapsible" id="shoulderExerciseModeCard" data-accordion="shoulder-exercise-mode" hidden>
+    <div class="card simple-card" id="shoulderTargetCard" data-accordion="shoulder-target" hidden>
+      <h2><span>肩屈曲目標</span>
+        <span class="selected-preview" id="preview-shoulder-target">目標 40°</span></h2>
+      <div class="card-body">
+        <div class="option-row" id="shoulderTargetOptions"></div>
+        <button type="button" class="angle-more-toggle" id="shoulderTargetMore" data-testid="button-more-angles" hidden>更多角度</button>
+        <details class="setup-therapist-details" style="margin-top:10px;color:#555;">
+          <summary style="font-weight:800;">治療師詳情</summary>
+          <p style="margin:6px 0 0;font-weight:700;">相機角度只供遊戲控制，並非量角器 ROM，亦不作診斷或自動 FTHUE 分級。</p>
+        </details>
+      </div>
+    </div>
+    <details class="advanced-settings" id="advancedSettings" data-testid="details-advanced-settings">
+      <summary><span>進階設定（治療師用）</span><small>時間、難度等，一般唔使改</small></summary>
+      <div class="advanced-body">
+    <div id="sceneOptionSlot" data-testid="slot-scene-options"></div>
+    <div class="card collapsible collapsed" id="shoulderExerciseModeCard" data-accordion="shoulder-exercise-mode" hidden>
       <h2><span>訓練方式</span>
         <span class="selected-preview" id="preview-shoulder-exercise-mode">患臂主動</span></h2>
       <div class="card-body">
@@ -1838,19 +1876,17 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
         </p>
       </div>
     </div>
-    <div class="card collapsible" id="shoulderTargetCard" data-accordion="shoulder-target" hidden>
-      <h2><span>肩屈曲目標</span>
-        <span class="selected-preview" id="preview-shoulder-target">目標 40°</span></h2>
+    <div class="card collapsible collapsed" id="handCheckBlock" hidden data-accordion="hand-check">
+      <h2><span>左右手檢查</span><span class="selected-preview" id="preview-hand-check">開</span></h2>
       <div class="card-body">
-        <p style="font-weight:850;margin:12px 0 6px;">目標</p>
-        <div class="option-row" id="shoulderTargetOptions"></div>
-        <details class="setup-therapist-details" style="margin-top:10px;color:#555;">
-          <summary style="font-weight:800;">治療師詳情</summary>
-          <p style="margin:6px 0 0;font-weight:700;">相機角度只供遊戲控制，並非量角器 ROM，亦不作診斷或自動 FTHUE 分級。</p>
-        </details>
+          <div class="option-row" id="handCheckOptions" role="group" aria-label="左右手檢查">
+            <button class="option-btn selected" data-check="on" data-testid="button-handcheck-on" aria-pressed="true">開（預設）</button>
+            <button class="option-btn" data-check="off" data-testid="button-handcheck-off" aria-pressed="false">關</button>
+          </div>
+          <p id="handCheckNote" data-testid="text-handcheck-note" style="margin:8px 0 0;font-size:14px;line-height:1.5;color:#4a4a4a;"></p>
       </div>
     </div>
-    <div class="card collapsible" id="laundryDifficultyCard" data-accordion="laundry-difficulty" hidden>
+    <div class="card collapsible collapsed" id="laundryDifficultyCard" data-accordion="laundry-difficulty" hidden>
       <h2><span>晾衫難度</span>
         <span class="selected-preview" id="preview-laundry-difficulty">基本</span></h2>
       <div class="card-body">
@@ -1878,7 +1914,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
         </div>
       </div>
     </div>
-    <div class="card collapsible" id="fridgeDifficultyCard" data-accordion="fridge-difficulty" hidden>
+    <div class="card collapsible collapsed" id="fridgeDifficultyCard" data-accordion="fridge-difficulty" hidden>
       <h2><span>雪櫃難度</span>
         <span class="selected-preview" id="preview-fridge-difficulty">基本</span></h2>
       <div class="card-body">
@@ -1894,7 +1930,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
         </div>
       </div>
     </div>
-    <div class="card collapsible" id="cookSqueezeCard" data-accordion="cook-squeeze" hidden>
+    <div class="card collapsible collapsed" id="cookSqueezeCard" data-accordion="cook-squeeze" hidden>
       <h2><span>煮飯：握力器揸幾多下</span>
         <span class="selected-preview" id="preview-cook-squeeze">中（44 下）</span></h2>
       <div class="card-body">
@@ -1914,7 +1950,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
         </div>
       </div>
     </div>
-    <div class="card collapsible" id="dimsumDifficultyCard" data-accordion="dimsum-difficulty" hidden>
+    <div class="card collapsible collapsed" id="dimsumDifficultyCard" data-accordion="dimsum-difficulty" hidden>
       <h2><span>筷子點心難度</span>
         <span class="selected-preview" id="preview-dimsum-difficulty">基本</span></h2>
       <div class="card-body">
@@ -1946,12 +1982,12 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
     </div>
 
     <div class="card collapsible collapsed" data-accordion="duration">
-      <h2><span>遊戲時間</span><span class="selected-preview" id="preview-duration">5 分鐘</span></h2>
+      <h2><span>遊戲時間</span><span class="selected-preview" id="preview-duration">15 分鐘</span></h2>
       <div class="card-body">
       <div class="option-row" id="durationOptions">
-        <button class="option-btn selected" data-duration="300">5 分鐘</button>
+        <button class="option-btn" data-duration="300">5 分鐘</button>
         <button class="option-btn" data-duration="600">10 分鐘</button>
-        <button class="option-btn" data-duration="900">15 分鐘</button>
+        <button class="option-btn selected" data-duration="900">15 分鐘</button>
       </div>
       </div>
     </div>
@@ -1992,6 +2028,9 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
       </div>
       </div>
     </div>
+
+      </div>
+    </details>
 
     <p id="goCalibError" data-testid="text-go-calib-error" style="min-height:22px;margin:0 0 6px;color:#a1261b;font-weight:800;font-size:17px;text-align:center;"></p>
     <button class="btn-primary" id="btnGoCalib">相機校準</button>
@@ -2723,7 +2762,7 @@ const state = {
   shopListSize: 'medium', // v125 Level 3/4 超市購物單長度：short（2 樣）| medium（4 樣）| long（6 樣）；v126 預設中單
   dimsumSceneMode: 'teahouse', // Level 3/4 點心顯示模式：teahouse（模擬茶樓）| camera（看到自己＝原有鏡頭畫面）
   mode: 'single',       // single | dual
-  duration: 300,        // total seconds
+  duration: 900,        // total seconds；v143 預設 15 分鐘（最長），病人攰可以隨時停
   labelFont: 36,        // label font size px
   dwellMs: 1000,        // dwell threshold ms
   stream: null,
@@ -3061,6 +3100,13 @@ function publicLevel5DimsumFreeSlot(existingFoods,cw,ch,r){
       r + otherR + geometry.visibleGap - 0.5;
   })) || geometry.slots[activeFoods.length % geometry.slots.length];
 }
+/* v143 病人畫面精簡字眼：正常訓練只留一句短指示同必要數字（角度照顯示），
+   規則句、副標題、階段／番數說明一律唔出。玩法、偵測、計分完全唔變。 */
+function simpleScreenText(){ return !research.active; }
+function simpleBannerMain(text){
+  if(!simpleScreenText()) return text;
+  return String(text||'').replace(/^抬高手，/,'');
+}
 function isPublicSideCardGame(){
   return !research.active && (state.level === '5' || state.level === '67') &&
     (state.theme === 'cards' || state.theme === 'mahjong');
@@ -3092,7 +3138,7 @@ function level5PatientInstructionText(){
 }
 function updatePatientGameInstruction(){
   const el = document.getElementById('patientGameInstruction');
-  if(el) el.textContent = level5PatientInstructionText();
+  if(el) el.textContent = simpleScreenText() ? '' : level5PatientInstructionText(); // v143 唔再長期顯示規則句
 }
 function affectedSelectionZone(){
   const cw = gameCanvas.width, ch = gameCanvas.height;
@@ -4083,6 +4129,7 @@ function drawShopCrate(ctx,c){
   ctx.restore();
 }
 function drawShopBanner(ctx,cw,g,text,sub){
+  if(simpleScreenText()){ text=simpleBannerMain(text); sub=''; } // v143 一句短指示
   const font=g.bannerFont;
   ctx.save();
   ctx.font='800 '+font+'px "PingFang TC","Noto Sans TC",sans-serif';
@@ -4786,6 +4833,7 @@ function drawLaundryTable(ctx,tb){
 }
 // 橫額：同超市橫額一樣嘅樣，但闊度會照顧埋細字（細字長過主句都唔會出界）
 function drawLaundryBanner(ctx,cw,g,text,sub,region){
+  if(simpleScreenText()){ text=simpleBannerMain(text); sub=''; } // v143 一句短指示
   const maxW=region?Math.max(120,region.x1-region.x0):(g.portrait?cw-24:cw-g.panelRight*2-24);
   const cx=region?(region.x0+region.x1)/2:cw/2;
   let font=g.bannerFont, subFont=Math.round(font*0.62), lines=[text];
@@ -5462,7 +5510,15 @@ function drawDealTableScene(ctx,cw,ch){
     ctx.textAlign='center';
     ctx.font='800 '+g.infoFont+'px "PingFang TC","Noto Sans TC",sans-serif';
     ctx.fillStyle='#FFE27A';
-    ctx.fillText(line1+' · '+line2+(line3?' · '+line3:''),cw/2,g.infoY,cw*0.94);
+    // v143 直向：大橫額「食糊！」出緊就唔再畫多一句細字「食糊！」
+    if(!(simpleScreenText()&&winning)) ctx.fillText(simpleScreenText()?line2:line1+' · '+line2+(line3?' · '+line3:''),cw/2,g.infoY,cw*0.94);
+  }else if(!winning&&simpleScreenText()){ // v143 只留一句「仲差幾隻」；「一副順子！」橫額出緊就唔畫，避免疊字
+    if(!(a.phase!=='idle'&&t>=landed&&a.group>=0&&t<landed+DEAL_GROUP_MS)){
+    const midY=(g.rackBottom+ch)/2;
+    ctx.textAlign='center';
+    ctx.fillStyle='#FFE27A';ctx.font='900 '+Math.round(g.infoFont*1.15)+'px "PingFang TC","Noto Sans TC",sans-serif';
+    ctx.fillText(line2,cw*0.20,midY,cw*0.5-g.drawW*0.5-cw*0.07);
+    }
   }else if(!winning){ // 食糊橫額出現時唔畫兩邊文字，避免疊字
     const midY=(g.rackBottom+ch)/2;
     const sideW=cw*0.5-g.drawW*0.5-cw*0.07;
@@ -5533,9 +5589,10 @@ function drawDealTableScene(ctx,cw,ch){
     const bannerY=(g.laneTop+g.laneBottom)/2;
     if(a.handDone){
       const font=Math.round(Math.min(cw,ch)*(g.portrait?0.095:0.115));
-      if(g.mj) drawDealBanner(ctx,cw,bannerY,font,dealText('自摸！食糊！','Self-drawn win!'),dealMahjongFanText(dealTable.result),'#B3262B');
+      const simple=simpleScreenText(); // v143 贏咗只出一句大字
+      if(g.mj) drawDealBanner(ctx,cw,bannerY,font,simple?dealText('食糊！','Win!'):dealText('自摸！食糊！','Self-drawn win!'),simple?'':dealMahjongFanText(dealTable.result),'#B3262B');
       else drawDealBanner(ctx,cw,bannerY,font,dealText(dealTable.result.zh+'！',dealTable.result.en+'!'),
-        dealText(dealTable.result.subZh,dealTable.result.subEn),'#B3262B');
+        simple?'':dealText(dealTable.result.subZh,dealTable.result.subEn),'#B3262B');
     }else if(a.group>=0&&t<landed+DEAL_GROUP_MS){
       const grp=dealTable.groups[a.group];
       const font=Math.round(Math.min(cw,ch)*(g.portrait?0.07:0.085));
@@ -7387,6 +7444,7 @@ function applyInteractionModeForLevel(){
     ? level67ToolProfile().gameType
     : (state.level === '67' ? level6TaskProfile().gameType : currentLevel().gameType);
 }
+const SHOULDER_TARGET_COMMON_L4=[60,90,120,150,180];
 function renderShoulderTargetSettings(){
   const card=document.getElementById('shoulderTargetCard');
   const box=document.getElementById('shoulderTargetOptions');
@@ -7401,10 +7459,19 @@ function renderShoulderTargetSettings(){
     :Array.from({length:13},(_,index)=>60+index*10);
   const defaultDeg=state.level==='3'?40:60;
   if(!values.includes(Number(state.shoulderTargetDeg))) state.shoulderTargetDeg=defaultDeg;
+  // v143 簡易設定：Level 4 先顯示幾個常用角度，其餘按「更多角度」先出（全部 13 個仍然喺度）
+  const common=state.level==='4'?SHOULDER_TARGET_COMMON_L4:values;
+  const more=document.getElementById('shoulderTargetMore');
+  if(!common.includes(Number(state.shoulderTargetDeg))) box.classList.add('show-all');
+  box.style.gridTemplateColumns='repeat('+Math.min(5,common.length)+',minmax(0,1fr))';
+  if(more){
+    more.hidden=common.length===values.length;
+    more.textContent=box.classList.contains('show-all')?'只顯示常用角度':'更多角度';
+  }
   box.innerHTML='';
   values.forEach(value=>{
     const button=document.createElement('button');
-    button.type='button';button.className='option-btn'+(value===state.shoulderTargetDeg?' selected':'');
+    button.type='button';button.className='option-btn'+(value===state.shoulderTargetDeg?' selected':'')+(common.includes(value)?'':' angle-more');
     button.dataset.shoulderTarget=String(value);button.textContent=value+'°';
     button.setAttribute('aria-label',(state.level==='4'?'Level 4 60 degrees or above ':'Level 3 ')+'camera-estimated target '+value+' degrees');
     box.appendChild(button);
@@ -7730,9 +7797,7 @@ function selectActivity(themeId){
   // gameplay. No setup control is allowed to rewrite the task/theme pair.
   if(state.level === '67' && !lockLevel6Activity(themeId)) return;
   const th = getTheme();
-  document.getElementById('settingsTitle').textContent = themeShownTitle(th)
-    + (themeId==='dimsum'&&(state.level==='3'||state.level==='4')
-      ? (state.dimsumSceneMode==='teahouse'?'（模擬茶樓）':'（看到自己）') : '');
+  renderSettingsTitle();
   document.getElementById('settingsContext').textContent =
     currentLevel().tag + ' · ' + themeShownTitle(th) + ' · ' + th.actionLabelFor(state.level)
     + (shoulderExerciseModeAvailable() ? ' · ' + shoulderExerciseProfile().label : '');
@@ -7752,6 +7817,11 @@ function selectActivity(themeId){
   renderCookSqueezeSettings();
   renderDimsumDifficultySettings();
   renderTimingSettings();
+  renderSceneOptionBars();
+  const advancedSettings=document.getElementById('advancedSettings');
+  if(advancedSettings) advancedSettings.open=false;
+  const targetBox=document.getElementById('shoulderTargetOptions');
+  if(targetBox){ targetBox.classList.remove('show-all'); renderShoulderTargetSettings(); }
   const go=document.getElementById('btnGoCalib');
   if(go) go.textContent=isShoulderFlexionLevel()
     ? '開始追蹤'
@@ -7804,63 +7874,78 @@ function renderActivityLibrary(){
     btn.setAttribute('aria-label', themeShownTitle(th) + '：' + goalText);
     btn.addEventListener('click', ()=> selectActivity(id));
     grid.appendChild(btn);
-    if(id==='dimsum'&&(state.level==='3'||state.level==='4')){
-      // v74 點心顯示模式選擇框：模擬茶樓（唔顯示鏡頭影像）｜看到自己（原有版本）
-      const bar=document.createElement('div');
-      bar.className='dimsum-mode-bar';
-      bar.innerHTML='<span class="dm-label">點心遊戲顯示模式</span>'
-        +'<button type="button" class="dm-btn" data-dimsum-mode="teahouse">模擬茶樓</button>'
-        +'<button type="button" class="dm-btn" data-dimsum-mode="camera">看到自己</button>';
-      const syncBar=()=>bar.querySelectorAll('.dm-btn').forEach(b=>b.classList.toggle('selected',b.dataset.dimsumMode===state.dimsumSceneMode));
-      bar.addEventListener('click',e=>{
-        const b=e.target.closest('[data-dimsum-mode]');
-        if(!b)return;
-        e.stopPropagation();
-        state.dimsumSceneMode=b.dataset.dimsumMode;
-        syncBar();
-      });
-      syncBar();
-      grid.appendChild(bar);
-    }
-    if(id==='supermarket'&&(state.level==='3'||state.level==='4')){
-      // v125 超市購物單長度：短（3 樣）／中（5 樣）／長（7 樣）；決定故事總抬手次數
-      const bar=document.createElement('div');
-      bar.className='dimsum-mode-bar';
-      bar.dataset.shopListBar='1';
-      bar.innerHTML='<span class="dm-label">購物單長度</span>'
-        +Object.keys(SHOP_LIST_SIZES).map(k=>'<button type="button" class="dm-btn" data-shop-list="'+k+'">'+SHOP_LIST_LABELS[k]
-          +'<small style="display:block;font-weight:600;font-size:12px">約 '+shopRepCount(buildShopSteps(buildShopList(k)))+' 次抬手</small></button>').join('');
-      const syncBar=()=>bar.querySelectorAll('.dm-btn').forEach(b=>b.classList.toggle('selected',b.dataset.shopList===shopListSizeKey()));
-      bar.addEventListener('click',e=>{
-        const b=e.target.closest('[data-shop-list]');
-        if(!b)return;
-        e.stopPropagation();
-        if(SHOP_LIST_SIZES[b.dataset.shopList]) state.shopListSize=b.dataset.shopList;
-        syncBar();
-      });
-      syncBar();
-      grid.appendChild(bar);
-    }
-    if(id==='laundry'&&(state.level==='3'||state.level==='4')&&!research.active){
-      // v139 洗衫晾衫：今次洗幾多件衫（少／中／多）；決定故事總抬手次數
-      const bar=document.createElement('div');
-      bar.className='dimsum-mode-bar';
-      bar.dataset.laundryLoadBar='1';
-      bar.innerHTML='<span class="dm-label">衫量</span>'
-        +Object.keys(LAUNDRY_LOAD_SIZES).map(k=>'<button type="button" class="dm-btn" data-laundry-load="'+k+'">'+LAUNDRY_LOAD_LABELS[k]
-          +'<small style="display:block;font-weight:600;font-size:12px">約 '+laundryRepCount(buildLaundrySteps(buildLaundryList(k)))+' 次抬手</small></button>').join('');
-      const syncBar=()=>bar.querySelectorAll('.dm-btn').forEach(b=>b.classList.toggle('selected',b.dataset.laundryLoad===laundryLoadSizeKey()));
-      bar.addEventListener('click',e=>{
-        const b=e.target.closest('[data-laundry-load]');
-        if(!b)return;
-        e.stopPropagation();
-        if(LAUNDRY_LOAD_SIZES[b.dataset.laundryLoad]) state.laundryLoadSize=b.dataset.laundryLoad;
-        syncBar();
-      });
-      syncBar();
-      grid.appendChild(bar);
-    }
   });
+}
+/* v143 揀遊戲頁只留遊戲卡；購物單長度／點心顯示模式／衫量搬入設定頁嘅
+   「進階設定（治療師用）」。預設值不變，所以助理唔使理。 */
+function renderSceneOptionBars(){
+  const slot=document.getElementById('sceneOptionSlot');
+  if(!slot) return;
+  slot.innerHTML='';
+  const id=state.theme;
+  if(id==='dimsum'&&(state.level==='3'||state.level==='4')){
+    // v74 點心顯示模式選擇框：模擬茶樓（唔顯示鏡頭影像）｜看到自己（原有版本）
+    const bar=document.createElement('div');
+    bar.className='dimsum-mode-bar';
+    bar.innerHTML='<span class="dm-label">點心遊戲顯示模式</span>'
+      +'<button type="button" class="dm-btn" data-dimsum-mode="teahouse">模擬茶樓</button>'
+      +'<button type="button" class="dm-btn" data-dimsum-mode="camera">看到自己</button>';
+    const syncBar=()=>bar.querySelectorAll('.dm-btn').forEach(b=>b.classList.toggle('selected',b.dataset.dimsumMode===state.dimsumSceneMode));
+    bar.addEventListener('click',e=>{
+      const b=e.target.closest('[data-dimsum-mode]');
+      if(!b)return;
+      e.stopPropagation();
+      state.dimsumSceneMode=b.dataset.dimsumMode;
+      syncBar();
+      renderSettingsTitle();
+    });
+    syncBar();
+    slot.appendChild(bar);
+  }
+  if(id==='supermarket'&&(state.level==='3'||state.level==='4')){
+    // v125 超市購物單長度：短（3 樣）／中（5 樣）／長（7 樣）；決定故事總抬手次數
+    const bar=document.createElement('div');
+    bar.className='dimsum-mode-bar';
+    bar.dataset.shopListBar='1';
+    bar.innerHTML='<span class="dm-label">購物單長度</span>'
+      +Object.keys(SHOP_LIST_SIZES).map(k=>'<button type="button" class="dm-btn" data-shop-list="'+k+'">'+SHOP_LIST_LABELS[k]
+        +'<small style="display:block;font-weight:600;font-size:12px">約 '+shopRepCount(buildShopSteps(buildShopList(k)))+' 次抬手</small></button>').join('');
+    const syncBar=()=>bar.querySelectorAll('.dm-btn').forEach(b=>b.classList.toggle('selected',b.dataset.shopList===shopListSizeKey()));
+    bar.addEventListener('click',e=>{
+      const b=e.target.closest('[data-shop-list]');
+      if(!b)return;
+      e.stopPropagation();
+      if(SHOP_LIST_SIZES[b.dataset.shopList]) state.shopListSize=b.dataset.shopList;
+      syncBar();
+    });
+    syncBar();
+    slot.appendChild(bar);
+  }
+  if(id==='laundry'&&(state.level==='3'||state.level==='4')&&!research.active){
+    // v139 洗衫晾衫：今次洗幾多件衫（少／中／多）；決定故事總抬手次數
+    const bar=document.createElement('div');
+    bar.className='dimsum-mode-bar';
+    bar.dataset.laundryLoadBar='1';
+    bar.innerHTML='<span class="dm-label">衫量</span>'
+      +Object.keys(LAUNDRY_LOAD_SIZES).map(k=>'<button type="button" class="dm-btn" data-laundry-load="'+k+'">'+LAUNDRY_LOAD_LABELS[k]
+        +'<small style="display:block;font-weight:600;font-size:12px">約 '+laundryRepCount(buildLaundrySteps(buildLaundryList(k)))+' 次抬手</small></button>').join('');
+    const syncBar=()=>bar.querySelectorAll('.dm-btn').forEach(b=>b.classList.toggle('selected',b.dataset.laundryLoad===laundryLoadSizeKey()));
+    bar.addEventListener('click',e=>{
+      const b=e.target.closest('[data-laundry-load]');
+      if(!b)return;
+      e.stopPropagation();
+      if(LAUNDRY_LOAD_SIZES[b.dataset.laundryLoad]) state.laundryLoadSize=b.dataset.laundryLoad;
+      syncBar();
+    });
+    syncBar();
+    slot.appendChild(bar);
+  }
+}
+function renderSettingsTitle(){
+  const th=getTheme();
+  document.getElementById('settingsTitle').textContent = themeShownTitle(th)
+    + (state.theme==='dimsum'&&(state.level==='3'||state.level==='4')
+      ? (state.dimsumSceneMode==='teahouse'?'（模擬茶樓）':'（看到自己）') : '');
 }
 
 document.getElementById('durationOptions').addEventListener('click', e=>{
@@ -7923,6 +8008,8 @@ function renderHandCheckSettings(){
     b.classList.toggle('selected', selected);
     b.setAttribute('aria-pressed', selected ? 'true' : 'false');
   });
+  const handPreview = document.getElementById('preview-hand-check');
+  if(handPreview) handPreview.textContent = on ? '開' : '關';
   const note = document.getElementById('handCheckNote');
   if(note){
     note.textContent = on ? HAND_CHECK_NOTE_ON : HAND_CHECK_NOTE_OFF;
@@ -7937,6 +8024,10 @@ document.getElementById('handCheckOptions').addEventListener('click', e=>{
   const btn = e.target.closest('.option-btn');
   if(!btn) return;
   setHandednessCheck(btn.dataset.check !== 'off');
+});
+document.getElementById('shoulderTargetMore').addEventListener('click',()=>{
+  document.getElementById('shoulderTargetOptions').classList.toggle('show-all');
+  renderShoulderTargetSettings();
 });
 document.getElementById('shoulderTargetOptions').addEventListener('click',e=>{
   const button=e.target.closest('[data-shoulder-target]');
@@ -13990,6 +14081,7 @@ function initGame(){
   if(gameStage) gameStage.classList.toggle('patient-shoulder-hud',
     !research.active && isShoulderFlexionLevel());
   if(gameStage) gameStage.classList.toggle('public-clean-hud', !research.active);
+  if(gameStage) gameStage.classList.toggle('simple-words', simpleScreenText());
   if(gameStage) gameStage.classList.toggle('patient-card-instruction',
     isPublicSideCardGame());
   if(gameStage) gameStage.classList.toggle('patient-level5-instruction',
@@ -14914,7 +15006,7 @@ function updateFramePerfOverlay(now){
     framePerf.overlayEl = el;
   }
   const p = framePerfSnapshot();
-  el.textContent = `perf v142  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
+  el.textContent = `perf v143  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
     + `鏡頭 ${p.video[0]}×${p.video[1]}  畫布 ${p.canvas[0]}×${p.canvas[1]}  dpr ${p.dpr}  手模型 ${p.handDelegate || '-'}\n`
     + `手 ${p.hand.hands} 隻  標籤 ${p.hand.label || '-'} ${p.hand.score}  接納 ${p.hand.path || '-'}  嚴格 ${p.hand.strict} 連續 ${p.hand.continuity} 單手 ${p.hand.lone} 拒絕 ${p.hand.rejected}\n`
     + `左右手檢查 ${p.hand.check === 'off' ? '關' : '開'}  鎖定手形 ${p.hand.lockSize || '-'}  大小拒絕 ${p.hand.sizeRejected}  遠處拒絕 ${p.hand.farRejected}`
@@ -18660,6 +18752,10 @@ function buildAdvDom(){
 .reward-prog{width:min(560px,92%);margin-top:12px;}
 .reward-prog .lbl{font-size:13px;font-weight:700;color:#CFEFE4;margin-bottom:5px;}
 .reward-auto{margin-top:12px;font-size:16px;font-weight:800;color:#FFD166;}
+.reward-overlay.simple .reward-tier,.reward-overlay.simple .reward-detail,.reward-overlay.simple .reward-prog,.reward-overlay.simple .reward-auto{display:none;}
+.reward-overlay.simple .reward-title{font-size:clamp(40px,8vw,72px);margin:0 0 10px;}
+.reward-overlay.simple .reward-sub{font-size:clamp(20px,3.4vw,30px);}
+.reward-overlay.simple .reward-sub:empty{display:none;}
 .keepsake{position:absolute;inset:0;z-index:62;background:#F7F4EE;display:none;
   flex-direction:column;align-items:center;padding:14px 14px 18px;overflow:auto;}
 .keepsake.show{display:flex;}
@@ -18835,12 +18931,17 @@ function rewardSmall(o){
   if(research.active && research.visitKind === 'assess') return;
   const d = buildAdvDom();
   const t = d.toast;
-  t.innerHTML = '<span>🎉 ' + (o.achievement || '完成') + '</span>' +
-    (o.detail ? '<small>' + o.detail + '</small>' : '') +
-    (o.progressLabel ? '<small>' + o.progressLabel + '</small>' : '');
-  t.classList.add('show');
+  // v143 病人畫面：提示只出一行；畫面已有計數嘅（simpleHide）連字都唔出，只留聲同彩紙
+  const simple = simpleScreenText();
+  t.innerHTML = '<span>🎉 ' + ((simple && o.simple) || o.achievement || '完成') + '</span>' +
+    (o.detail && !simple ? '<small>' + o.detail + '</small>' : '') +
+    (o.progressLabel && !simple ? '<small>' + o.progressLabel + '</small>' : '');
   clearTimeout(window._advToastTimer);
-  window._advToastTimer = setTimeout(()=>{ t.classList.remove('show'); }, 2200);
+  if(simple && o.simpleHide){ t.classList.remove('show'); }
+  else {
+    t.classList.add('show');
+    window._advToastTimer = setTimeout(()=>{ t.classList.remove('show'); }, 2200);
+  }
   if(o.x != null){ fxBurst(o.x, o.y, { count: o.big ? 34 : 20 }); fxRing(o.x, o.y); }
   if(!o.silent){ playCorrectSound(); }
   if(o.tts !== false){ speakCantonese(o.tts || nextEncourage()); }
@@ -18858,15 +18959,18 @@ function rewardBig(o){
     return;
   }
   const d = buildAdvDom();
-  document.getElementById('rwTier').textContent = o.tier || '';
+  // v143 病人畫面：慶祝畫面只留大標題＋圖（最多一句短字），階段／番數說明、進度條、細字全部唔出
+  const simple = simpleScreenText();
+  d.reward.classList.toggle('simple', simple);
+  document.getElementById('rwTier').textContent = simple ? '' : (o.tier || '');
   document.getElementById('rwTitle').textContent = o.title || '';
-  document.getElementById('rwSub').textContent = o.sub || '';
-  document.getElementById('rwDetail').innerHTML = o.detail || '';
-  document.getElementById('rwProgLbl').textContent = o.progressLabel || '';
+  document.getElementById('rwSub').textContent = simple ? (o.simpleSub || '') : (o.sub || '');
+  document.getElementById('rwDetail').innerHTML = simple ? '' : (o.detail || '');
+  document.getElementById('rwProgLbl').textContent = simple ? '' : (o.progressLabel || '');
   document.getElementById('rwProgBar').style.width =
     Math.round(Math.max(0, Math.min(1, o.progressPct || 0)) * 100) + '%';
   document.getElementById('rwAuto').textContent =
-    o.onContinue ? '稍後自動繼續' : '完成畫面會自動關閉';
+    o.onContinue ? '稍後自動繼續' : '完成畫面會自動關閉'; // v143 病人畫面用 CSS 收埋
   const cv = document.getElementById('rwCanvas');
   if(o.draw){
     cv.style.display = 'block';
@@ -19012,14 +19116,19 @@ function advDrawHeldReleasePrompt(ctx, held){
       : (isPegMode() ? '已夾住 · 請放鬆夾仔' : '已拿住 · 請張開手放下'));
   ctx.save();
   ctx.font = 'bold 18px "PingFang TC","Noto Sans TC",sans-serif';
-  const w = Math.min(360, ctx.measureText(text).width + 30);
+  const w = Math.min(360, ctx.measureText(advHeldPromptShown(text)).width + 30);
   const x = Math.max(w/2 + 8, Math.min(gameCanvas.width - w/2 - 8, labelAt.x));
   const y = Math.max(46, labelAt.y - 66);
   ctx.fillStyle = 'rgba(18,86,74,0.96)';
   rrPath(ctx, x-w/2, y-21, w, 42, 12); ctx.fill();
   ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText(text, x, y);
+  ctx.fillText(advHeldPromptShown(text), x, y);
   ctx.restore();
+}
+/* v143 拿住之後嘅提示只留動作（例如「請張開手放下」「移到放牌區」），唔再講前半句同規則 */
+function advHeldPromptShown(text){
+  if(!simpleScreenText()) return text;
+  return String(text).replace(/^已[拿夾捏]住 · /,'').replace(/，停住自動放低$/,'');
 }
 
 function nearestItem(items){
@@ -19723,7 +19832,7 @@ function cookDetect(){
       playCorrectSound();
       rewardSmall({ achievement:'第 ' + (cook.idx+1) + ' 步 · ' + cook.reps + '/' + cookStepNeed(st),
         detail: cookStepGoal(st), x: cursorX > 0 ? cursorX : gameCanvas.width/2,
-        y: cursorY > 0 ? cursorY : gameCanvas.height/2, silent:true, tts:false });
+        y: cursorY > 0 ? cursorY : gameCanvas.height/2, silent:true, tts:false, simpleHide:true });
     }
     return true;
   };
@@ -20096,6 +20205,7 @@ function cookAdvance(earned){
     rewardBig({
       tier:'完成整道菜',
       title:'蛋炒飯完成！',
+      simpleSub: cook.rounds > 1 ? '第 ' + cook.rounds + ' 碟' : '',
       sub:(cook.rounds > 1 ? '第 ' + cook.rounds + ' 碟 · ' : '') + '12 / 12 步全部完成 · 成就：一人一鍋蛋炒飯',
       // v142 握力器版：只講返真正做咗嘅動作（揸實 → 放鬆），唔再列舊手勢版嘅動作
       detail: isLevel6DigiflexTask()
@@ -20127,6 +20237,7 @@ function cookAdvance(earned){
   if(earned){
     rewardSmall({
       achievement:'完成第 ' + nextIdx + ' 步 · ' + st.text.slice(0, 12),
+      simple:'完成第 ' + nextIdx + ' 步',
       detail:'下一步：' + COOK_STEPS[nextIdx].text,
       progressLabel:'進度 ' + nextIdx + ' / ' + total + '，仲有 ' + (total - nextIdx) + ' 步',
       x: cursorX > 0 ? cursorX : gameCanvas.width/2,
@@ -20793,6 +20904,7 @@ function cookRenderDigiflex(ctx){
   drawCookDigiflexBadge(ctx, g, now);
 }
 function drawCookDigiflexBanner(ctx, cw, g, text, sub){
+  if(simpleScreenText()) sub=''; // v143 唔出「揸實 → 放鬆 ＝ 1 下」規則句
   const font = g.bannerFont;
   ctx.save();
   ctx.font = '800 ' + font + 'px "PingFang TC","Noto Sans TC",sans-serif';
@@ -21213,6 +21325,7 @@ function mjWinRound(res){
     tier: tier.label + ' · ' + res.fan + ' 番',
     title:'和牌！',
     sub: res.names.join('　'),
+    simpleSub: res.names.join('　'),
     detail,
     progressLabel: nextTierFan
       ? '累積 ' + mj.fanTotal + ' 番 → 下一個目標 ' + nextTierFan + ' 番'
@@ -21262,7 +21375,7 @@ function mjDrawWinHand(c, w, h, res){
   c.fillStyle = '#fff';
   c.font = 'bold 18px "PingFang TC","Noto Sans TC",sans-serif';
   c.textAlign = 'center'; c.textBaseline = 'top';
-  c.fillText(res.names.join(' + ') + '　' + res.fan + '番', w/2, y + th/2 + 16);
+  if(!simpleScreenText()) c.fillText(res.names.join(' + ') + '　' + res.fan + '番', w/2, y + th/2 + 16);
 }
 
 /* ---------- 麻雀場景排版 / 繪製 ---------- */
@@ -21983,6 +22096,7 @@ function laundryUpdate(){
         rewardBig({
           tier:'升級 · Tier ' + laundry.tier,
           title:'分類升級！',
+          simpleSub:'現在 ' + laundry.colors.length + ' 種顏色',
           sub:'成就：顏色分類 ×' + laundry.correct + ' 件 · 現在 ' + laundry.colors.length + ' 種顏色',
           detail:'新階段：' + laundry.colors.map(c=>LAUNDRY_COLORS[c].name).join('、') +
             '，衣物款式增加，顏色提示會減弱，但顏色名稱一直保留。',
@@ -24181,6 +24295,7 @@ window.__qa = {
   state(){ return {
     screen: currentScreen, level: state.level, sessionMode: state.sessionMode, theme: state.theme, gameType: state.gameType,
     level6Task: state.level6Task, level6LockedTheme: state.level6LockedTheme,
+    duration: state.duration, shoulderTargetDeg: state.shoulderTargetDeg, shopListSize: state.shopListSize, laundryLoadSize: state.laundryLoadSize,
     score, correctCount, grabCount, wrongCount:totalWrong, timeLeft,
     running:!!state.running, handDetected, detectionHeldGrace,
     held: heldItem ? heldItem.label : null,
@@ -25278,7 +25393,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v142-20261125-story-rotate";
+  const LEVEL_APP_BUILD = "v143-20261126-simple-setup";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

@@ -35,10 +35,10 @@ function lineConst(name){
 }
 
 test('release markers (current build)', () => {
-  assert.match(sw, /const CACHE_VERSION = "fthue-rehab-v142-20261125-story-rotate";/);
-  assert.match(manifest, /index\.html\?build=v142-20261125-story-rotate/);
-  assert.match(html, /const LEVEL_APP_BUILD = "v142-20261125-story-rotate";/);
-  assert.match(html, /perf v142 {2}/);
+  assert.match(sw, /const CACHE_VERSION = "fthue-rehab-v143-20261126-simple-setup";/);
+  assert.match(manifest, /index\.html\?build=v143-20261126-simple-setup/);
+  assert.match(html, /const LEVEL_APP_BUILD = "v143-20261126-simple-setup";/);
+  assert.match(html, /perf v143 {2}/);
 });
 
 test('a new round starts only while the game runs and enough session time is left', () => {
@@ -285,7 +285,7 @@ test('Level 6 cooking e2e: dish 1 → celebration → dish 2 by itself with the 
     assert.equal(out.second.scoreGained, out.second.perStep);         // and score the same as in dish 1
     assert.equal(out.second.summary, '煮蛋炒飯：今次煮好 1 碟，第 2 碟做到第 2 步，下次繼續。');
     assert.equal(out.dish2.rounds, 2); assert.equal(out.dish2.auto, '完成畫面會自動關閉');
-    assert.match(out.dish2.sub, /^第 2 碟 · 12 \/ 12 步全部完成/);
+    assert.equal(out.dish2.sub, '第 2 碟');   // v143: the celebration keeps one short line
     assert.deepEqual(out.after, { idx: 11, done: true, rounds: 2, screen: 'game' });   // stays finished, as before
     assert.deepEqual(out.end, { screen: 'result', hidden: false, text: '煮蛋炒飯：今次煮好 2 碟。' });
   } finally { await context.close(); }

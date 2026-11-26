@@ -46,10 +46,11 @@ test('state defaults to teahouse mode; camera mode preserved as option', () => {
   assert.match(publicSource, /data-dimsum-mode="camera">看到自己<\/button>/);
 });
 
-test('mode selection bar only renders under the dim sum card on Levels 3/4', () => {
+test('mode selection bar only renders for the dim sum game on Levels 3/4', () => {
   assert.match(publicSource, /if\(id==='dimsum'&&\(state\.level==='3'\|\|state\.level==='4'\)\)\{/);
   // clicking the bar must not activate the surrounding activity flow
-  const bar = slice("if(id==='dimsum'&&(state.level==='3'||state.level==='4')){", 'grid.appendChild(bar);');
+  // v143: the bar is drawn in the advanced section of the setup page
+  const bar = slice("if(id==='dimsum'&&(state.level==='3'||state.level==='4')){", 'slot.appendChild(bar);');
   assert.match(bar, /stopPropagation\(\)/);
 });
 

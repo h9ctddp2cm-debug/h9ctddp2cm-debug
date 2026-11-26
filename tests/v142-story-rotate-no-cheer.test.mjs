@@ -47,10 +47,10 @@ const laundry = new Function([
 const ids = list => list.map(l => l.id);
 
 test('v142 release markers', () => {
-  assert.match(sw, /const CACHE_VERSION = "fthue-rehab-v142-20261125-story-rotate";/);
-  assert.match(manifest, /index\.html\?build=v142-20261125-story-rotate/);
-  assert.match(html, /const LEVEL_APP_BUILD = "v142-20261125-story-rotate";/);
-  assert.match(html, /perf v142 {2}/);
+  assert.match(sw, /const CACHE_VERSION = "fthue-rehab-v143-20261126-simple-setup";/);
+  assert.match(manifest, /index\.html\?build=v143-20261126-simple-setup/);
+  assert.match(html, /const LEVEL_APP_BUILD = "v143-20261126-simple-setup";/);
+  assert.match(html, /perf v143 {2}/);
 });
 
 test('storyRoundPick walks through the pool round by round and wraps around', () => {

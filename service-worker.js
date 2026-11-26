@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v142-20261125-story-rotate";
+const CACHE_VERSION = "fthue-rehab-v143-20261126-simple-setup";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

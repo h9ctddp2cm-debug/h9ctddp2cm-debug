@@ -143,6 +143,10 @@ test('v99 setup: the handedness switch is visible for Level 5 and 6 only and def
     assert.deepEqual(visibility, { '3': false, '4': false, '5': true, '67': true });
     await page.evaluate(() => { window.__qa.selectLevel('5'); window.__qa.selectActivity('dimsum'); });
     assert.equal(await page.getAttribute('[data-testid="button-handcheck-on"]', 'aria-pressed'), 'true');
+    // v143: the switch sits inside the closed 「進階設定（治療師用）」 section, as its own card
+    assert.equal(await page.evaluate(() => document.getElementById('advancedSettings').open), false);
+    await page.click('#advancedSettings > summary');
+    await page.click('#handCheckBlock h2');
     await page.click('[data-testid="button-handcheck-off"]');
     assert.equal(await page.getAttribute('[data-testid="button-handcheck-off"]', 'aria-pressed'), 'true');
     assert.equal(await page.evaluate(() => window.__qa.state().handednessCheck), false);

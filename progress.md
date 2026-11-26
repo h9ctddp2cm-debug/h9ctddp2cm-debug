@@ -2014,3 +2014,23 @@ Original prompt: Fix Level 6–7 interactions: make light clothes-peg press dete
 - Tests：新增 `tests/v142-story-scene-fit.test.mjs`（15：畫法接線；手機橫向乾貨企喺枱面；iPad 橫向／直向／筆電 × 中單／長單，每件貨都企喺圖入面嘅層板、喺櫃／雪櫃範圍入面、冇被橫額遮住；三個畫面太陽成個喺竹上面、喺畫面入面、喺頂部按鈕下面）。
 - Validation：Node 測試兩組前景跑 297 ＋ 485 ＝ 782：779 pass／3 skip／0 fail；`tools/checkjs.sh` 11 OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 223 files；`rg -c "__qa" dist/public/index.html` → 0；dist 載入冇 page error。標記不變（`v142-20261125-story-rotate`，未推送過）。
 - QA 對照表更新 `ych_rehab_qa_artifacts/v142/v142-qa-contact-sheet.png`（加咗三項修正嘅前後對比）。Playwright 測試假動作；未喺真機／真病人試過。
+
+## 2026-11-26 v143 — 設定頁簡化（助理只需揀患側／目標角度）；遊戲畫面字句大減
+- 治療師回饋：「我啲助理話setting太多parameters好難操作, 唔知個病人要玩啲乜嘢」；時間「直接做長嘅就OK，因為其實唔需要短嘅，因為攰嘅話病人自己都會識停」；「遊戲版面都太多規則同埋無謂嘅字眼，病人都睇唔晒，唔使show出嚟 (但係show角度係OK嘅)」；「尤其係麻雀遊戲，一贏咗就好似太多字眼」。
+- A. 設定頁 `#screen-start`：
+  - 一入去只見「患側方向」大掣；Level 3／4 加「肩屈曲目標」。Level 4 只顯示 60／90／120／150／180（`SHOULDER_TARGET_COMMON_L4`），撳「更多角度」先見晒 13 個；Level 3 照舊 30／40／50／60。
+  - 其餘全部收入 `<details id="advancedSettings">`「進階設定（治療師用）」，預設摺埋，每次揀遊戲都會自動摺返：訓練方式、左右手檢查（獨立一張卡 `#handCheckBlock`）、晾衫／雪櫃／煮飯／筷子難度、訓練模式、遊戲時間、目標保持／物件停留、字體大小。
+  - 購物單長度、衫量、點心顯示模式三條掣由「揀遊戲」頁搬入進階設定（`renderSceneOptionBars()` → `#sceneOptionSlot`），預設值冇變（中單／中／模擬茶樓）。揀遊戲頁而家只有遊戲卡。
+  - 遊戲時間預設由 5 分鐘改做 15 分鐘（`state.duration: 900`）。5／10 分鐘仍然喺進階設定入面。停止／休息／暫停掣照舊。
+- B／C. 病人畫面字句（`simpleScreenText()`；遊戲台 class `simple-words`、慶祝畫面 class `simple`）：
+  - Level 3／4：頂部只留「完成次數」「時間」同角度面板（連細字「相機估算，只供參考」）；「得分」「正確」收埋。故事橫額（超市、洗衫晾衫）只留一句動作（冇「抬高手，」、冇第二行）。麻雀／啤牌枱邊只留一行（「仲差 N 隻食糊」／「仲有 N 張未揭」），贏咗只出「食糊！」／牌型名，冇番數行。
+  - Level 5／6：左上角指示句、麻雀／啤牌說明面板、「有效連續成功 n/15」唔顯示；提示泡只留第一行；煮蛋炒飯每揸一下嗰個提示泡唔出（下面「已揸 n / N 下」照舊）；手揸住嘢時只留動作字。
+  - 慶祝畫面：大標題＋圖＋最多一行短句（麻雀：牌型同番數；晾衫：「現在 N 種顏色」；煮飯第二碟起：「第 N 碟」）。升級層名、說明段落、進度條、「稍後自動繼續」唔顯示。煮蛋炒飯完成畫面嘅說明句同免責細字因此唔顯示；同一句免責聲明仍然喺開始前嘅安全畫面。
+  - 語音提示冇改。
+- 冇改：所有偵測設定同門檻、計分、時間計算、升級規則、每轉換款／自動再嚟、成績頁、記錄內容。Level 5 玩法冇掂；Level 6 筷子仍然 `gameType:'dwell'`。冇任何嘢變嚴。
+- 標記 → `v143-20261126-simple-setup`（`CACHE_VERSION`、`LEVEL_APP_BUILD`、manifest `start_url`、`perf v143`）。
+- Tests：新增 `tests/v143-simple-setup.test.mjs`（14，包 4 個 Playwright 實跑）。更新三個舊測試去配合新版面：`v74-teahouse`（模式掣喺進階設定）、`v99-hand-check-lock-privacy`（先打開進階設定）、`v141-story-auto-repeat`（慶祝畫面短句）。17 個測試檔嘅標記由 v142 改 v143。
+- 直向麻雀／啤牌：大橫額「食糊！」出緊時，上面嗰句細字唔再重複畫（淨係畫面）。
+- Validation：Node 測試兩組前景跑 297 ＋ 500 ＝ 797：794 pass／3 skip／0 fail；`tools/checkjs.sh` 11 OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 223 files；`rg -c "__qa" dist/public/index.html` → 0；dist 載入冇 page error，設定頁喺 dist 一樣只得兩張卡。
+- QA 對照表 `ych_rehab_qa_artifacts/v143/v143-qa-contact-sheet.png`（前後對比：設定頁、揀遊戲頁、故事橫額、麻雀／啤牌、慶祝畫面；iPad 橫向／直向、部門筆電、手機設定頁）。Playwright 測試假動作；未喺真機／真病人試過。
+- 未做（等治療師確認）：Level 6 晾衫改用 Level 3–4「洗衫晾衫」故事版面、玩法改做夾衣夾。
