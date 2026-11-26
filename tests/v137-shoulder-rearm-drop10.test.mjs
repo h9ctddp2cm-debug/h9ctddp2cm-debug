@@ -172,8 +172,8 @@ test('index.html: public Level 3/4 prompts carry no degree figures; live readout
 test('v137 release markers', () => {
   const sw = readFileSync(path.join(root, 'service-worker.js'), 'utf8');
   const manifest = readFileSync(path.join(root, 'manifest.webmanifest'), 'utf8');
-  assert.match(html, /const LEVEL_APP_BUILD = "v144-20261126-hk-tour-cards";/);
-  assert.match(html, /perf v144/);
-  assert.match(sw, /^const CACHE_VERSION = "fthue-rehab-v144-20261126-hk-tour-cards";/);
-  assert.match(manifest, /v144-20261126-hk-tour-cards/);
+  assert.match(html, /const LEVEL_APP_BUILD = "v145-20261127-yum-cha";/);
+  assert.match(html, /perf v145/);
+  assert.match(sw, /^const CACHE_VERSION = "fthue-rehab-v145-20261127-yum-cha";/);
+  assert.match(manifest, /v145-20261127-yum-cha/);
 });

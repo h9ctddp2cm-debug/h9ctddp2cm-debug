@@ -148,6 +148,8 @@
     '香港遊':'Hong Kong Tour',
     '到站落車，舉起望遠鏡睇風景，望清楚就影到一張閃咭':'Arrive, lift the binoculars to see the view, and collect a shiny landmark card.',
     '望遠鏡同三張香港地標閃咭':'Binoculars and three Hong Kong landmark cards',
+    '揭開緊嘅蒸籠同五籠點心':'A steamer being opened and five baskets of dim sum',
+    '舉手揭蒸籠，睇下今籠係咩點心；同屋企人剔滿點心紙就埋單':'Lift to open each steamer and see which dim sum it is. Tick off the order sheet with your family, then pay the bill.',
     '洗衫、晾衫、摺衫、入衣櫃，每舉一下做一件':'Wash, hang, fold and store. Each lift handles one garment.',
     '衫量':'Load size',
     '少（3 件）':'Small (3 garments)',

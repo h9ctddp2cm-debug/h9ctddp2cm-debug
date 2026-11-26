@@ -764,6 +764,8 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
 .album-card.stars-3{ background:linear-gradient(135deg,#FF6B9D,#FFC14D 25%,#7EE081 50%,#4DC9FF 75%,#B07CFF); }
 .album-card img{ display:block; width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:6px; background:#dfe9ee; }
 .album-card figcaption{ margin-top:4px; padding:2px 3px 0; border-radius:5px 5px 0 0; background:#FFFBEF; font-size:14px; font-weight:800; line-height:1.25; color:#3A2A12; }
+.album-card.dish-card{ background:linear-gradient(135deg,#F3D9A4,#FFF6DF 50%,#E2B56A); }
+.album-card.dish-card img{ object-fit:contain; background:#FFFBEF; }
 .album-card .album-stars{ display:block; padding:0 3px 2px; border-radius:0 0 5px 5px; background:#FFFBEF; font-size:13px; line-height:1.2; color:#C98A00; letter-spacing:1px; }
 .result-grid{
   display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:16px 0 20px;
@@ -1643,6 +1645,8 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
         Alexkom000、Mk2010、Diego Delso、LN9267、EditQ、Béria Lima de Rodríguez、Sparktour、Underwaterbuffalo、Wpcpey、Aethelfirth、Smallpei、Rehman Abubakr、Suicasmo、WiNG、Jan Kranendonk、Ank Kumar、姒姓賢寧、Deror_avi、Photo by TonySKTO、MyPlace2015 mm、Wing1990hk、Tusginewko、Katie Chan、Enochlau、Hankt、Kārlis Dambrāns from Latvia、Spielvogel (Spielvogel Archiv)、Bernard Spragg. NZ、Chong Fat、Yumeto、British Hker、Rob Young from United Kingdom、HK Arun、Minghong、Andrew Martin、Rutger van der Maar、Husyewl Lmsiuyu RAUOM、Lord Jaraxxus、xiquinhosilva、SH6188、N509FZ、Masanchuen、Qwer132477、Prosperity Horizons、Benh LIEU SONG (Flickr)、李家宇、User:Ahleong、Baycrest、C J B Scholten at English Wikipedia、FHKE (Flickr)、山民主義、Erc Chw、Krimuk2.0、hkgalbert、MAUOSREEGU DAVMUR。
         每張相嘅標題、攝影者、授權及來源網址：
         <a href="image-sources.json">image-sources.json</a></p>
+        <p>Level 3／4「茶樓飲茶」嘅 30 款點心、蒸籠同四位屋企人插圖（img/dimsum/）全部係電腦生成圖像，
+        唔係真實相片，亦唔係真人。</p>
       </details>
     </footer>
   </div>
@@ -3469,6 +3473,497 @@ function drawTeahouseScene(ctx,cw,ch){
     ctx.fillText('目標 '+target+'°',g.laneX,Math.max(20,topY-10));
     ctx.restore();
   }
+}
+/* ==================== v145 茶樓飲茶：揭蒸籠＋點心紙＋屋企人（Level 3/4 肩前屈） ====================
+   純視覺同音效獎勵層：只讀取 shoulderFlexionState 嘅進度／達標訊號，
+   完全唔加任何手部接觸、拾起停留、握力或放開訊號，亦唔會改變達標判定。
+   每舉一下揭開一籠（揭之前唔知係邊款）→ 送畀一位屋企人 → 點心紙剔一格；
+   六格剔滿就「埋單」，再開新一枱。三十款點心輪流出，出晒先會重複。
+   圖片喺 img/dimsum/，全部係電腦生成插圖（唔係真實相片，亦唔係真人）。 */
+/*YUM_CHA_LIST_START*/
+const YUM_CHA_LIST = [
+  ['hargau','蝦餃','Shrimp dumplings'],
+  ['siumai','燒賣','Siu mai'],
+  ['charsiu_bao','叉燒包','BBQ pork buns'],
+  ['lotus_rice','糯米雞','Sticky rice in lotus leaf'],
+  ['chicken_feet','鳳爪','Chicken feet'],
+  ['spare_ribs','排骨','Spare ribs'],
+  ['beef_balls','牛肉球','Beef balls'],
+  ['cheung_fun','腸粉','Rice noodle rolls'],
+  ['turnip_cake','蘿蔔糕','Turnip cake'],
+  ['sponge_cake','馬拉糕','Sponge cake'],
+  ['egg_tart','蛋撻','Egg tarts'],
+  ['custard_bun','奶黃包','Custard buns'],
+  ['lava_bun','流沙包','Lava custard buns'],
+  ['spring_roll','春卷','Spring rolls'],
+  ['ham_sui_gok','鹹水角','Fried dumplings'],
+  ['taro_puff','芋角','Taro puffs'],
+  ['sesame_ball','煎堆','Sesame balls'],
+  ['fun_gor','潮州粉果','Chiu Chow dumplings'],
+  ['beancurd_roll','鮮竹卷','Bean curd rolls'],
+  ['tripe','金錢肚','Beef tripe'],
+  ['xiao_long_bao','小籠包','Xiao long bao'],
+  ['soup_dumpling','灌湯餃','Soup dumpling'],
+  ['chicken_fish_maw','棉花雞','Chicken with fish maw'],
+  ['layer_cake','千層糕','Layer cake'],
+  ['mango_pudding','芒果布甸','Mango pudding'],
+  ['tofu_pudding','豆腐花','Tofu pudding'],
+  ['charsiu_puff','叉燒酥','BBQ pork puffs'],
+  ['potsticker','鍋貼','Potstickers'],
+  ['chicken_bundle','雞扎','Chicken bundles'],
+  ['water_chestnut_cake','馬蹄糕','Water chestnut cake'],
+];
+/*YUM_CHA_LIST_END*/
+const YUM_CHA_DISHES = YUM_CHA_LIST.map((d,i)=>({ id:d[0], zh:d[1], en:d[2], no:i+1 }));
+const YUM_CHA_FAMILY = [
+  { id:'grandma', file:'fam_grandma', says:[['好味！','Yummy!'],['多謝你！','Thank you!'],['好香呀！','Smells good!']] },
+  { id:'grandpa', file:'fam_grandpa', says:[['正！','Lovely!'],['夠晒熱！','Nice and hot!'],['好嘢！','Great!']] },
+  { id:'mum', file:'fam_mum', says:[['多謝！','Thanks!'],['我最鍾意！','My favourite!'],['好靚呀！','Looks great!']] },
+  { id:'boy', file:'fam_boy', says:[['我要食！','I want some!'],['好好味！','So yummy!'],['好嘢！','Yay!']] },
+];
+const YUM_CHA_PER_TABLE = 6;
+const YC_OPEN_MS = 1050, YC_PASS_MS = 650, YC_REACT_MS = 800, YC_TAIL_MS = 200, YC_BILL_MS = 2600, YC_ARRIVE_MS = 420;
+const yumCha = { bag:[], bagPos:0, table:[], order:[], served:0, ticks:[], delivered:[], eaten:[], bills:0, tableNo:0,
+  previewLift:null, arrivedMs:0, anim:{ phase:'idle', startedMs:0, slot:-1, member:-1, done:false, stage:0, say:0 } };
+const yumChaImgs = {};
+function isYumChaTheme(){ return isTeahouseDimsumMode()&&YUM_CHA_DISHES.length>=YUM_CHA_PER_TABLE; }
+function yumChaImage(name){
+  let im=yumChaImgs[name];
+  if(!im){ im=new Image(); im.src='img/dimsum/'+name+'.png'; yumChaImgs[name]=im; }
+  return im;
+}
+function yumChaImageReady(name){ const im=yumChaImage(name); return !!(im&&im.complete&&im.naturalWidth); }
+function yumChaDishName(dish){ return dish?dealText(dish.zh,dish.en):''; }
+function resetYumChaAnim(){
+  const a=yumCha.anim; a.phase='idle'; a.startedMs=0; a.slot=-1; a.member=-1; a.done=false; a.stage=0; a.say=0;
+}
+function resetYumCha(){
+  yumCha.bag=[]; yumCha.bagPos=0; yumCha.table=[]; yumCha.order=[]; yumCha.served=0; yumCha.ticks=[]; yumCha.delivered=[];
+  yumCha.eaten=[]; yumCha.bills=0; yumCha.tableNo=0; yumCha.previewLift=null; yumCha.arrivedMs=0;
+  resetYumChaAnim();
+}
+/* 開新一枱：由三十款嘅「袋」入面攞六款；個袋攞晒先至重新洗過，所以三十款出齊先會重複。 */
+function beginYumChaTable(){
+  if(yumCha.bagPos+YUM_CHA_PER_TABLE>yumCha.bag.length){
+    const last={}; yumCha.table.forEach(d=>{ last[d.id]=1; });
+    const o=hkCardShuffle(YUM_CHA_DISHES.length);
+    // 啱啱食過嗰枱嘅點心排到最尾，唔好連續兩枱一樣
+    yumCha.bag=o.filter(i=>!last[YUM_CHA_DISHES[i].id]).concat(o.filter(i=>last[YUM_CHA_DISHES[i].id]));
+    yumCha.bagPos=0;
+  }
+  yumCha.table=yumCha.bag.slice(yumCha.bagPos,yumCha.bagPos+YUM_CHA_PER_TABLE).map(i=>YUM_CHA_DISHES[i]);
+  yumCha.bagPos+=YUM_CHA_PER_TABLE;
+  yumCha.order=hkCardShuffle(YUM_CHA_PER_TABLE); // 點心紙寫明今枱叫咗乜，但邊籠先到就唔知
+  yumCha.served=0; yumCha.ticks=yumCha.table.map(()=>false); yumCha.delivered=[]; yumCha.tableNo++;
+  yumCha.arrivedMs=nowMs();
+  resetYumChaAnim();
+  yumCha.table.forEach(d=>yumChaImage(d.id));
+  YUM_CHA_FAMILY.forEach(f=>yumChaImage(f.file));
+  yumChaImage('steamer_closed'); yumChaImage('steamer_lid');
+  // 預先載入下一枱
+  yumCha.bag.slice(yumCha.bagPos,yumCha.bagPos+YUM_CHA_PER_TABLE).forEach(i=>yumChaImage(YUM_CHA_DISHES[i].id));
+}
+function ensureYumChaTable(){ if(!yumCha.table.length) beginYumChaTable(); }
+/* 抬臂達標一次：揭開一籠。動畫播緊嗰陣再嚟嘅訊號唔會重複計。 */
+function startYumChaServe(){
+  if(!isYumChaTheme()) return;
+  ensureYumChaTable();
+  const a=yumCha.anim;
+  if(a.phase!=='idle'||yumCha.served>=YUM_CHA_PER_TABLE) return;
+  a.slot=yumCha.order[yumCha.served];
+  a.member=yumCha.served%YUM_CHA_FAMILY.length;
+  a.say=Math.floor(yumCha.eaten.length/YUM_CHA_FAMILY.length)%3;
+  yumCha.served++;
+  a.phase='serve'; a.startedMs=nowMs(); a.stage=0;
+  a.done=yumCha.served>=YUM_CHA_PER_TABLE;
+  yumCha.eaten.push(yumCha.table[a.slot].id);
+  if(a.done) yumCha.bills++;
+}
+function yumChaRewardMs(){
+  const a=yumCha.anim;
+  if(a.phase==='idle') return 0;
+  return YC_OPEN_MS+YC_PASS_MS+YC_REACT_MS+(a.done?YC_BILL_MS:YC_TAIL_MS);
+}
+function finishYumChaServe(){
+  const a=yumCha.anim;
+  if(a.phase==='idle') return;
+  const done=a.done;
+  if(a.slot>=0){ yumCha.ticks[a.slot]=true; yumCha.delivered.push({ slot:a.slot, member:a.member }); }
+  resetYumChaAnim();
+  yumCha.arrivedMs=nowMs();
+  if(done&&isYumChaTheme()) beginYumChaTable();
+}
+function yumChaEatenUnique(){
+  const seen={},out=[];
+  yumCha.eaten.forEach(id=>{ if(!seen[id]){ seen[id]=1; const d=YUM_CHA_DISHES.find(x=>x.id===id); if(d) out.push(d); } });
+  return out;
+}
+function yumChaSummaryText(){
+  if(!yumCha.table.length&&!yumCha.eaten.length) return '';
+  const n=yumCha.eaten.length, m=yumCha.bills;
+  if(n>0&&m>0) return dealText('飲茶：今次同屋企人食咗 '+n+' 籠點心，埋咗 '+m+' 次單。','Yum cha: '+n+' baskets of dim sum shared and '+m+(m>1?' bills':' bill')+' paid today.');
+  if(n>0) return dealText('飲茶：今次同屋企人食咗 '+n+' 籠點心。','Yum cha: '+n+(n>1?' baskets':' basket')+' of dim sum shared today.');
+  return dealText('飲茶：差少少就揭到第一籠，下次繼續。','Yum cha: almost opened the first basket. Continue next time.');
+}
+/* 完成頁：今次食過嘅點心（用返閃咭相簿個格仔位） */
+function renderYumChaSummary(){
+  const box=document.getElementById('cardAlbumSummary');
+  if(!box||!isYumChaTheme()) return;
+  while(box.firstChild) box.removeChild(box.firstChild);
+  const list=yumChaEatenUnique().slice(-24);
+  box.hidden=!list.length;
+  list.forEach(dish=>{
+    const fig=document.createElement('figure');
+    fig.className='album-card dish-card';
+    const im=document.createElement('img');
+    im.src='img/dimsum/'+dish.id+'.png'; im.alt=yumChaDishName(dish); im.loading='lazy';
+    const cap=document.createElement('figcaption');
+    cap.textContent=yumChaDishName(dish);
+    fig.appendChild(im); fig.appendChild(cap);
+    box.appendChild(fig);
+  });
+}
+function yumChaMemberQuota(member){
+  let n=0;
+  for(let s=0;s<YUM_CHA_PER_TABLE;s++) if(s%YUM_CHA_FAMILY.length===member) n++;
+  return n;
+}
+function yumChaGeometry(cw,ch){
+  const portrait=ch>cw;
+  const cssScale=cw/Math.max(1,gameCanvas.clientWidth||cw);
+  const cssW=cw/cssScale, cssH=ch/cssScale;
+  // 手機直向：右下角有一個細細嘅鏡頭預覽窗（CSS 定位），點心紙要讓開佢
+  const phone=portrait&&cssW<=600;
+  const top=(portrait?176:84)*cssScale; // 直向：讓開上面兩行按鈕同角度面板
+  const pad=16*cssScale;
+  const font=Math.round(Math.max(15*cssScale,Math.min(cw,ch)*0.042));
+  let sheet, sw=cw, sceneBottom=ch-pad*0.4;
+  if(phone){
+    const pipW=(Math.min(cssW*0.40,168)+22)*cssScale, pipH=(Math.min(cssH*0.25,210)+22)*cssScale;
+    sheet={ x:pad*0.5, y:ch-pipH-pad*0.4, w:cw-pipW-pad*0.5, h:pipH, cols:1, rows:YUM_CHA_PER_TABLE };
+    sceneBottom=sheet.y-pad*0.5;
+  }else if(portrait){
+    const sheetH=Math.min(ch*0.20,236*cssScale);
+    sheet={ x:pad*0.6, y:ch-sheetH-pad*0.5, w:cw-pad*1.2, h:sheetH, cols:3, rows:2 };
+    sceneBottom=sheet.y-pad*0.5;
+  }else{
+    const sheetW=Math.max(font*7.2,Math.min(cw*0.25,font*10.5));
+    sheet={ x:cw-sheetW-pad, y:top+pad*0.2, w:sheetW, h:ch-top-pad*1.2, cols:1, rows:YUM_CHA_PER_TABLE };
+    sw=sheet.x-pad*0.6;
+  }
+  const sx=0, scx=sx+sw/2, sh=sceneBottom-top;
+  const plateH=font*1.9;
+  const n=YUM_CHA_FAMILY.length;
+  const slotW=sw*0.92/n;
+  const fh=Math.max(30,Math.min(sh*0.36,slotW*0.95/0.76));
+  const tableTop=top+plateH+fh*0.88;
+  const ds=Math.max(20,Math.min(slotW*0.60,fh*0.52));
+  // 圓枱：枱邊係一條弧線，坐兩邊嘅屋企人同佢哋面前嘅點心都跟住條弧線低少少
+  const tableRx=sw*0.80, tableRy=Math.max(40,(ch-tableTop)*0.92), tableCy=tableTop+tableRy;
+  const edgeY=x=>tableCy-tableRy*Math.sqrt(Math.max(0,1-Math.pow((x-scx)/tableRx,2)));
+  const memberX=i=>sx+sw*0.04+slotW*(i+0.5);
+  let spotMax=tableTop;
+  for(let i=0;i<n;i++) spotMax=Math.max(spotMax,edgeY(memberX(i))+ds*0.60);
+  const bigTop=spotMax+ds*0.5+pad*0.2;
+  const bigH=Math.max(40,Math.min(sceneBottom-bigTop-pad*0.2,sw*0.46*0.92));
+  const bigW=bigH/0.92;
+  const bigX=scx, bigY=sceneBottom-pad*0.2-bigH/2;
+  const members=[];
+  for(let i=0;i<n;i++){
+    const x=memberX(i), e=edgeY(x);
+    members.push({ x, bottom:e+fh*0.08, h:fh, spotY:e+ds*0.50 });
+  }
+  return { portrait, cssScale, top, pad, font, sheet, sx, sw, scx, sh, sceneBottom, plateH, slotW, fh, tableTop, ds,
+    tableRx, tableRy, tableCy, bigW, bigH, bigX, bigY, members };
+}
+function yumChaSpot(g,member,k){
+  const m=g.members[member];
+  const two=yumChaMemberQuota(member)>1;
+  return { x:m.x+(two?(k===0?-0.25:0.25)*g.ds:0), y:m.spotY+(two&&k>0?g.ds*0.10:0) };
+}
+function yumChaSprite(ctx,name,cx,cy,w,alpha){
+  if(!yumChaImageReady(name)) return false;
+  const im=yumChaImage(name), h=w*im.naturalHeight/im.naturalWidth;
+  if(alpha<1){ ctx.save(); ctx.globalAlpha=Math.max(0,alpha); ctx.drawImage(im,cx-w/2,cy-h/2,w,h); ctx.restore(); }
+  else ctx.drawImage(im,cx-w/2,cy-h/2,w,h);
+  return true;
+}
+function drawYumChaSteam(ctx,cx,cy,w,strength,now){
+  if(strength<=0.02) return;
+  ctx.save();
+  for(let i=0;i<5;i++){
+    const ph=((now/1400)+i*0.2)%1;
+    const x=cx+(i-2)*w*0.16+Math.sin(now/500+i*1.7)*w*0.04;
+    ctx.fillStyle='rgba(255,255,255,'+(0.42*strength*(1-ph)).toFixed(3)+')';
+    ctx.beginPath(); ctx.arc(x,cy-ph*w*0.55,w*(0.07+ph*0.09),0,Math.PI*2); ctx.fill();
+  }
+  ctx.restore();
+}
+/* 未揭嘅蒸籠。o.lift：個蓋升起幾多（0–1 跟隻手）；升起嗰陣只見到一片蒸氣，睇唔到入面係乜。 */
+function drawYumChaSteamer(ctx,cx,cy,w,o){
+  o=o||{};
+  const baseAlpha=o.baseAlpha==null?1:o.baseAlpha, lidAlpha=o.lidAlpha==null?1:o.lidAlpha;
+  const lift=Math.max(0,o.lift||0), now=o.now||0;
+  const ready=yumChaImageReady('steamer_closed');
+  const base=yumChaImage('steamer_closed');
+  const h=ready?w*base.naturalHeight/base.naturalWidth:w*0.9, x=cx-w/2, y=cy-h/2;
+  ctx.save();
+  ctx.globalAlpha=Math.max(0,baseAlpha);
+  if(ready) ctx.drawImage(base,x,y,w,h);
+  else{
+    ctx.fillStyle='#D9A45B'; ctx.beginPath(); ctx.ellipse(cx,cy,w*0.5,h*0.42,0,0,Math.PI*2); ctx.fill();
+  }
+  if(lift>0.01&&yumChaImageReady('steamer_lid')){
+    const ocx=cx, ocy=y+h*0.345, rx=w*0.435, ry=h*0.30;
+    ctx.fillStyle='#3C2412'; ctx.beginPath(); ctx.ellipse(ocx,ocy,rx,ry,0,0,Math.PI*2); ctx.fill();
+    const fog=ctx.createRadialGradient(ocx,ocy,0,ocx,ocy,rx);
+    fog.addColorStop(0,'rgba(255,255,255,0.97)'); fog.addColorStop(0.7,'rgba(250,246,238,0.90)'); fog.addColorStop(1,'rgba(235,225,210,0.70)');
+    ctx.fillStyle=fog; ctx.beginPath(); ctx.ellipse(ocx,ocy,rx*0.93,ry*0.90,0,0,Math.PI*2); ctx.fill();
+    const lid=yumChaImage('steamer_lid'), lw=w*0.94, lh=lw*lid.naturalHeight/lid.naturalWidth;
+    const wob=Math.sin(now/90)*Math.min(1,lift)*w*0.006;
+    ctx.globalAlpha=Math.max(0,baseAlpha*lidAlpha);
+    ctx.drawImage(lid,cx-lw/2+wob+(o.lidDx||0),y-h*0.005-lift*h*0.30,lw,lh);
+    ctx.globalAlpha=1;
+    drawYumChaSteam(ctx,cx,y+h*0.30-lift*h*0.10,w*0.8,Math.min(1,lift)*baseAlpha,now);
+  }
+  ctx.restore();
+}
+function drawYumChaRoom(ctx,cw,ch,g){
+  const wallH=g.tableTop+g.fh*0.10;
+  const wall=ctx.createLinearGradient(0,0,0,wallH);
+  wall.addColorStop(0,'#F4E6C8'); wall.addColorStop(1,'#E6CFA4');
+  ctx.fillStyle=wall; ctx.fillRect(0,0,cw,wallH);
+  if(imgTeahouseBg.complete&&imgTeahouseBg.naturalWidth>0){
+    // 只用背景圖最上面嗰截牆身（木窗花、竹），唔要原圖張枱
+    const iw=imgTeahouseBg.naturalWidth, srcH=imgTeahouseBg.naturalHeight*0.235;
+    const sc=Math.max(cw/iw,wallH/srcH), dw=iw*sc, dh=srcH*sc;
+    ctx.drawImage(imgTeahouseBg,0,0,iw,srcH,(cw-dw)/2,wallH-dh,dw,dh);
+  }
+  ctx.fillStyle='rgba(60,30,10,0.10)'; ctx.fillRect(0,0,cw,wallH);
+  const floor=ctx.createLinearGradient(0,wallH,0,ch);
+  floor.addColorStop(0,'#7C2F25'); floor.addColorStop(1,'#4F1D17');
+  ctx.fillStyle=floor; ctx.fillRect(0,wallH,cw,ch-wallH);
+}
+function drawYumChaTable(ctx,cw,ch,g){
+  const rx=g.tableRx, ry=g.tableRy, cy=g.tableCy;
+  ctx.save();
+  ctx.fillStyle='rgba(0,0,0,0.22)'; ctx.beginPath(); ctx.ellipse(g.scx,cy+g.pad*0.5,rx*1.02,ry,0,0,Math.PI*2); ctx.fill();
+  const cloth=ctx.createLinearGradient(0,g.tableTop,0,ch);
+  cloth.addColorStop(0,'#F3E6CF'); cloth.addColorStop(0.25,'#FFF8EA'); cloth.addColorStop(1,'#F6EAD3');
+  ctx.fillStyle=cloth; ctx.beginPath(); ctx.ellipse(g.scx,cy,rx,ry,0,0,Math.PI*2); ctx.fill();
+  ctx.lineWidth=Math.max(2,g.font*0.10); ctx.strokeStyle='rgba(176,142,92,0.55)';
+  ctx.beginPath(); ctx.ellipse(g.scx,cy,rx,ry,0,0,Math.PI*2); ctx.stroke();
+  // 中間玻璃轉盤
+  ctx.fillStyle='rgba(190,214,214,0.30)'; ctx.strokeStyle='rgba(120,150,150,0.40)';
+  ctx.beginPath(); ctx.ellipse(g.bigX,g.bigY+g.bigH*0.10,g.bigW*0.78,g.bigH*0.52,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+  ctx.restore();
+}
+function drawYumChaTick(ctx,bx,by,b,scale){
+  ctx.save();
+  ctx.translate(bx+b/2,by+b/2); ctx.scale(scale,scale); ctx.translate(-b/2,-b/2);
+  ctx.lineCap='round'; ctx.lineJoin='round'; ctx.lineWidth=Math.max(3,b*0.17); ctx.strokeStyle='#D0312D';
+  ctx.beginPath(); ctx.moveTo(b*0.14,b*0.52); ctx.lineTo(b*0.42,b*0.80); ctx.lineTo(b*0.94,b*0.10); ctx.stroke();
+  ctx.restore();
+}
+/* 點心紙：今枱叫咗嘅六款，食到一款剔一格 */
+function drawYumChaSheet(ctx,g,t,active){
+  const s=g.sheet, a=yumCha.anim, f=g.font;
+  const tReact=YC_OPEN_MS+YC_PASS_MS;
+  const wide=s.cols>1; // 橫排（平板直向）：「仲差幾籠」放喺標題行
+  const headH=f*(wide?1.5:(g.portrait?1.45:1.8)), footH=wide?0:f*(g.portrait?1.3:1.5);
+  let ticked=0;
+  yumCha.table.forEach((d,i)=>{ if(yumCha.ticks[i]||(active&&a.slot===i&&t>=tReact)) ticked++; });
+  const left=Math.max(0,YUM_CHA_PER_TABLE-ticked);
+  const titleText=dealText('點心紙','Order sheet');
+  const tableText=dealText('第 '+yumCha.tableNo+' 枱','Table '+yumCha.tableNo);
+  const leftText=left>0?dealText('仲差 '+left+' 籠',left+' to go'):dealText('食齊喇！','All served!');
+  ctx.save();
+  ctx.shadowColor='rgba(0,0,0,0.35)'; ctx.shadowBlur=f*0.5; ctx.shadowOffsetY=f*0.12;
+  ctx.fillStyle='#FFFDF4'; rrPath(ctx,s.x,s.y,s.w,s.h,f*0.45); ctx.fill();
+  ctx.shadowColor='transparent'; ctx.shadowBlur=0; ctx.shadowOffsetY=0;
+  ctx.save();
+  rrPath(ctx,s.x,s.y,s.w,s.h,f*0.45); ctx.clip();
+  ctx.fillStyle='#B3261E'; ctx.fillRect(s.x,s.y,s.w,headH);
+  ctx.restore();
+  ctx.textBaseline='middle'; ctx.fillStyle='#FFFFFF';
+  ctx.font='900 '+Math.round(f*0.98)+'px "PingFang TC","Noto Sans TC",sans-serif';
+  ctx.textAlign='left'; ctx.fillText(titleText,s.x+f*0.6,s.y+headH*0.54,s.w*0.42);
+  ctx.font='800 '+Math.round(f*0.82)+'px "PingFang TC","Noto Sans TC",sans-serif';
+  if(wide){
+    ctx.textAlign='center'; ctx.fillText(tableText,s.x+s.w*0.52,s.y+headH*0.54,s.w*0.24);
+    ctx.textAlign='right'; ctx.fillStyle='#FFE27A'; ctx.fillText(leftText,s.x+s.w-f*0.6,s.y+headH*0.54,s.w*0.30);
+  }else{
+    ctx.textAlign='right'; ctx.fillText(tableText,s.x+s.w-f*0.6,s.y+headH*0.54,s.w*0.44);
+  }
+  const gridY=s.y+headH, gridH=s.h-headH-footH;
+  const cellW=s.w/s.cols, cellH=gridH/s.rows;
+  yumCha.table.forEach((d,i)=>{
+    const col=i%s.cols, row=Math.floor(i/s.cols);
+    const x=s.x+col*cellW, y=gridY+row*cellH;
+    const isNow=active&&a.slot===i;
+    const tick=yumCha.ticks[i]||(isNow&&t>=tReact);
+    if(isNow&&t>=YC_OPEN_MS*0.14&&!yumCha.ticks[i]){
+      ctx.fillStyle='rgba(255,226,122,0.55)'; ctx.fillRect(x+f*0.15,y+cellH*0.06,cellW-f*0.3,cellH*0.88);
+    }
+    ctx.strokeStyle='rgba(120,90,60,0.28)'; ctx.lineWidth=Math.max(1,f*0.04);
+    { ctx.beginPath(); ctx.moveTo(x+f*0.4,y+cellH); ctx.lineTo(x+cellW-f*0.4,y+cellH); ctx.stroke(); }
+    const b=Math.min(cellH*0.62,f*1.25), bx=x+f*0.55, by=y+(cellH-b)/2;
+    ctx.fillStyle='#FFFFFF'; ctx.strokeStyle='#8A6A45'; ctx.lineWidth=Math.max(2,f*0.08);
+    rrPath(ctx,bx,by,b,b,b*0.16); ctx.fill(); ctx.stroke();
+    if(tick){
+      const pop=isNow?clamp01((t-tReact)/200):1;
+      drawYumChaTick(ctx,bx,by,b,isNow?(1.6-0.6*pop):1);
+    }
+    const nameText=yumChaDishName(d);
+    ctx.textAlign='left'; ctx.fillStyle=tick?'#8B8072':'#3A2A12';
+    ctx.font='800 '+Math.round(Math.min(f*0.98,cellH*0.52))+'px "PingFang TC","Noto Sans TC",sans-serif';
+    ctx.fillText(nameText,bx+b+f*0.4,y+cellH*0.53,Math.max(10,cellW-b-f*1.5));
+  });
+  if(!wide){
+    ctx.textAlign='center'; ctx.fillStyle='#B3261E';
+    ctx.font='900 '+Math.round(f*0.95)+'px "PingFang TC","Noto Sans TC",sans-serif';
+    ctx.fillText(leftText,s.x+s.w/2,s.y+s.h-footH*0.52,s.w-f);
+  }
+  ctx.restore();
+}
+function updateYumChaSounds(g,cw,ch,t){
+  const a=yumCha.anim;
+  if(a.phase==='idle') return;
+  const tReact=YC_OPEN_MS+YC_PASS_MS, tBill=tReact+YC_REACT_MS;
+  if(a.stage<1){ a.stage=1; playDealClack(); }
+  if(a.stage<2&&t>=YC_OPEN_MS*0.14){
+    a.stage=2;
+    playDealChime(false);
+    speakCantonese(yumChaDishName(yumCha.table[a.slot])+'！');
+    fxBurst(g.bigX,g.bigY-g.bigH*0.15,{count:18});
+  }
+  if(a.stage<3&&t>=tReact){ a.stage=3; playDealClack(); }
+  if(a.done&&a.stage<4&&t>=tBill){
+    a.stage=4;
+    playDealChime(true); playApplauseSound();
+    speakCantonese(dealText('食飽喇，埋單！','All done. Bill, please!'));
+    fxBurst(g.scx,g.bigY-g.bigH*0.3,{count:46,speed:6.5});
+  }
+  if(a.done&&a.stage<5&&t>=tBill+700){ a.stage=5; fxBurst(g.sx+g.sw*0.24,g.tableTop,{count:30,speed:5.5}); }
+  if(a.done&&a.stage<6&&t>=tBill+1400){ a.stage=6; fxBurst(g.sx+g.sw*0.76,g.tableTop,{count:30,speed:5.5}); }
+}
+function drawYumChaScene(ctx,cw,ch){
+  ensureYumChaTable();
+  const g=yumChaGeometry(cw,ch), a=yumCha.anim, now=nowMs();
+  const active=a.phase!=='idle';
+  const t=active?now-a.startedMs:0;
+  updateYumChaSounds(g,cw,ch,t);
+  const tPass=YC_OPEN_MS, tReact=tPass+YC_PASS_MS, tBill=tReact+YC_REACT_MS;
+  const dish=active?yumCha.table[a.slot]:null;
+  const billing=active&&a.done&&t>=tBill;
+  const fontFace='px "PingFang TC","Noto Sans TC",sans-serif';
+  ctx.save();
+  ctx.beginPath(); ctx.rect(0,0,cw,ch); ctx.clip();
+  ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
+  drawYumChaRoom(ctx,cw,ch,g);
+  // 屋企人：收到點心嗰位跳一跳；埋單就全家一齊開心
+  YUM_CHA_FAMILY.forEach((f,i)=>{
+    const m=g.members[i];
+    let hop=0;
+    if(billing) hop=Math.abs(Math.sin((t-tBill)/240+i*0.8))*m.h*0.05;
+    else if(active&&a.member===i&&t>=tReact){
+      const q=clamp01((t-tReact)/YC_REACT_MS);
+      hop=Math.abs(Math.sin(q*Math.PI*2))*m.h*0.07*(1-q*0.4);
+    }
+    if(yumChaImageReady(f.file)){
+      const im=yumChaImage(f.file), w=m.h*im.naturalWidth/im.naturalHeight;
+      ctx.drawImage(im,m.x-w/2,m.bottom-m.h-hop,w,m.h);
+    }
+  });
+  drawYumChaTable(ctx,cw,ch,g);
+  // 已經送到屋企人面前嘅點心
+  const counts=YUM_CHA_FAMILY.map(()=>0);
+  yumCha.delivered.forEach(d=>{
+    const s=yumChaSpot(g,d.member,counts[d.member]++), dd=yumCha.table[d.slot];
+    if(dd) yumChaSprite(ctx,dd.id,s.x,s.y,g.ds,1);
+  });
+  if(!active){
+    if(yumCha.served<YUM_CHA_PER_TABLE){
+      // 新一籠由左邊推過嚟；個蓋跟住隻手升起
+      const p=yumCha.previewLift!=null?clamp01(yumCha.previewLift)
+        :(shoulderRewardCycle.active?0:clamp01(Number(shoulderFlexionState.progress)||0));
+      const arrive=clamp01((now-yumCha.arrivedMs)/YC_ARRIVE_MS), ae=1-Math.pow(1-arrive,2.2);
+      const pulse=0.5+0.5*Math.sin(now/200);
+      ctx.save();
+      ctx.strokeStyle='rgba(255,196,60,'+(0.45+0.40*pulse).toFixed(3)+')'; ctx.lineWidth=Math.max(4,g.bigW*0.02);
+      ctx.setLineDash([Math.max(8,g.bigW*0.06),Math.max(6,g.bigW*0.04)]);
+      ctx.beginPath(); ctx.ellipse(g.bigX,g.bigY+g.bigH*0.10,g.bigW*0.62,g.bigH*0.44,0,0,Math.PI*2); ctx.stroke();
+      ctx.restore();
+      drawYumChaSteamer(ctx,g.bigX-(1-ae)*(g.bigX+g.bigW),g.bigY,g.bigW,{ lift:p, now });
+    }
+  }else if(dish){
+    const k=counts[a.member]||0, spot=yumChaSpot(g,a.member,k);
+    if(t<tPass){
+      // 揭蓋：個蓋飛走，蒸氣散開，點心彈出嚟
+      const q=t/YC_OPEN_MS, lidQ=clamp01(q/0.40), dishQ=clamp01((q-0.12)/0.30);
+      if(dishQ<1) drawYumChaSteamer(ctx,g.bigX,g.bigY,g.bigW,{ lift:1+lidQ*3.2, lidAlpha:1-lidQ, lidDx:lidQ*g.bigW*0.18, baseAlpha:1-dishQ, now });
+      if(dishQ>0){
+        const pop=(0.86+0.14*dishQ)*(1+0.07*Math.sin(clamp01((q-0.12)/0.55)*Math.PI));
+        yumChaSprite(ctx,dish.id,g.bigX,g.bigY,g.bigW*pop,dishQ);
+        drawYumChaSteam(ctx,g.bigX,g.bigY-g.bigH*0.12,g.bigW*0.8,Math.max(0,1-q*0.7),now);
+      }
+    }else if(t<tReact){
+      const q=clamp01((t-tPass)/YC_PASS_MS), e=1-Math.pow(1-q,2.2);
+      yumChaSprite(ctx,dish.id,g.bigX+(spot.x-g.bigX)*e,g.bigY+(spot.y-g.bigY)*e-Math.sin(q*Math.PI)*g.bigH*0.12,
+        g.bigW+(g.ds-g.bigW)*e,1);
+    }else{
+      const q=clamp01((t-tReact)/240);
+      yumChaSprite(ctx,dish.id,spot.x,spot.y,g.ds*(1+0.12*Math.sin(q*Math.PI)),1);
+      if(!billing){
+        // 屋企人講一句
+        const m=g.members[a.member], say=YUM_CHA_FAMILY[a.member].says[a.say]||YUM_CHA_FAMILY[a.member].says[0];
+        const sayText=dealText(say[0],say[1]);
+        ctx.save();
+        ctx.font='900 '+Math.round(g.font*0.95)+fontFace;
+        const bw=Math.max(g.font*3.4,ctx.measureText(sayText).width+g.font*1.3), bh=g.font*1.9;
+        const bx=Math.max(g.sx+bw/2+g.pad*0.3,Math.min(g.sx+g.sw-bw/2-g.pad*0.3,m.x)), by=m.bottom-m.h*0.24;
+        const sc=0.6+0.4*q;
+        ctx.translate(bx,by); ctx.scale(sc,sc);
+        ctx.fillStyle='#FFFFFF'; ctx.strokeStyle='#1A6B5A'; ctx.lineWidth=Math.max(3,g.font*0.12);
+        ctx.beginPath(); ctx.moveTo(-g.font*0.45,-bh/2+1); ctx.lineTo(0,-bh/2-g.font*0.55); ctx.lineTo(g.font*0.45,-bh/2+1); ctx.closePath(); ctx.fill(); ctx.stroke();
+        rrPath(ctx,-bw/2,-bh/2,bw,bh,bh*0.42); ctx.fill(); ctx.stroke();
+        ctx.fillStyle='#FFFFFF'; ctx.fillRect(-g.font*0.36,-bh/2-1,g.font*0.72,g.font*0.2);
+        ctx.fillStyle='#B3402A'; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText(sayText,0,bh*0.04,bw-g.font*0.6);
+        ctx.restore();
+      }
+    }
+  }
+  // 頂部一句：未揭「今籠係咩？」；揭開就出點心名；剔滿就「埋單」
+  const pw=Math.min(g.sw*0.86,g.font*13.5), ph=g.plateH*0.84, py=g.top+g.plateH*0.08;
+  const named=active&&t>=YC_OPEN_MS*0.14;
+  const plateText=billing?dealText('食飽喇，埋單！','All done. Bill, please!')
+    :named?yumChaDishName(dish)+dealText('！','!')
+    :dealText('舉手揭蒸籠 · 今籠係咩？','Lift to open · What is inside?');
+  ctx.fillStyle=named||billing?'rgba(179,38,30,0.95)':'rgba(20,82,70,0.94)';
+  rrPath(ctx,g.scx-pw/2,py,pw,ph,ph/2); ctx.fill();
+  ctx.fillStyle='#FFFFFF'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.font='900 '+Math.round(g.font*(named||billing?1.14:1.02))+fontFace;
+  ctx.fillText(plateText,g.scx,py+ph*0.54,pw-g.font);
+  drawYumChaSheet(ctx,g,t,active);
+  if(billing){
+    // 「埋單」紅印
+    const q=clamp01((t-tBill)/260), sc=1.7-0.7*q;
+    const stampText=dealText('埋單','PAID');
+    const w=Math.min(g.sw*0.62,g.font*8.5), h=w*0.46;
+    ctx.save();
+    ctx.translate(g.scx,g.bigY-g.bigH*0.05); ctx.rotate(-0.16); ctx.scale(sc,sc);
+    ctx.globalAlpha=q;
+    ctx.fillStyle='rgba(255,253,244,0.90)'; rrPath(ctx,-w/2,-h/2,w,h,h*0.16); ctx.fill();
+    ctx.strokeStyle='#D0312D'; ctx.lineWidth=Math.max(5,w*0.035); rrPath(ctx,-w/2,-h/2,w,h,h*0.16); ctx.stroke();
+    ctx.lineWidth=Math.max(2,w*0.012); rrPath(ctx,-w/2+w*0.05,-h/2+w*0.05,w-w*0.10,h-w*0.10,h*0.10); ctx.stroke();
+    ctx.fillStyle='#D0312D'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.font='900 '+Math.round(h*0.56)+fontFace;
+    ctx.fillText(stampText,0,h*0.04,w*0.8);
+    ctx.restore();
+  }
+  fxUpdateDraw(ctx);
+  ctx.restore();
 }
 /* ==================== v73 保齡球場景（Level 3/4 肩前屈） ====================
    純視覺同音效獎勵層：只讀取 shoulderFlexionState 嘅進度／達標訊號。
@@ -6334,6 +6829,7 @@ function drawShoulderFlexionGuide(ctx,cw,ch){
   if(state.theme==='basketball'){ drawBasketballCourtScene(ctx,cw,ch); return; }
   if(state.theme==='supermarket'){ drawSupermarketScene(ctx,cw,ch); return; }
   if(isLaundryStoryTheme()){ drawLaundryStoryScene(ctx,cw,ch); return; } // v139 洗衫晾衫故事
+  if(isYumChaTheme()){ drawYumChaScene(ctx,cw,ch); return; } // v145 飲茶：揭蒸籠＋點心紙
   if(isTeahouseDimsumMode()){ drawTeahouseScene(ctx,cw,ch); return; }
   const x=cw*(ch>cw?.68:.58),bottom=ch*.80,top=ch*.32;
   const target=shoulderFlexionState.selectedTargetDeg??'—';
@@ -8597,15 +9093,17 @@ function renderActivityLibrary(){
       '<div class="ac-visual"><img loading="eager" decoding="async"></div>';
     btn.querySelector('h3').textContent = themeShownTitle(th);
     // v138 Level 3／4 麻雀／啤牌改為牌局玩法，卡片目標句跟住改
+    const yumChaCardOff = th.id==='dimsum' && (research.active || state.dimsumSceneMode!=='teahouse'); // v145：只有模擬茶樓先係揭蒸籠玩法
     const goalText = (isShoulderFlexionLevel() && th.shoulderGoal) || th.goal;
-    btn.querySelector('.ac-goal').textContent = goalText;
+    const cardGoal = yumChaCardOff ? th.goal : goalText;
+    btn.querySelector('.ac-goal').textContent = cardGoal;
     const img = btn.querySelector('.ac-visual img');
     // v144：同一個主題喺 Level 3/4 可以有自己嘅封面圖
-    const shoulderCover = isShoulderFlexionLevel() && !research.active && th.shoulderThumbnail;
+    const shoulderCover = isShoulderFlexionLevel() && !research.active && !yumChaCardOff && th.shoulderThumbnail;
     img.src = shoulderCover ? th.shoulderThumbnail : th.thumbnail;
     img.alt = shoulderCover ? (th.shoulderThumbnailAlt || th.thumbnailAlt) : th.thumbnailAlt;
     img.addEventListener('error', ()=> btn.querySelector('.ac-visual').remove());
-    btn.setAttribute('aria-label', themeShownTitle(th) + '：' + goalText);
+    btn.setAttribute('aria-label', themeShownTitle(th) + '：' + cardGoal);
     btn.addEventListener('click', ()=> selectActivity(id));
     grid.appendChild(btn);
   });
@@ -13200,6 +13698,8 @@ const THEMES = {
   }),
   dimsum: mkTheme({
     id:'dimsum', title:'茶樓飲茶', goal:'基本前伸：將手穩定送到目標',
+    shoulderGoal:'舉手揭蒸籠，睇下今籠係咩點心；同屋企人剔滿點心紙就埋單', // v145 Level 3／4 飲茶
+    shoulderThumbnail:'img/dimsum/yum_cha_thumb.jpg',shoulderThumbnailAlt:'揭開緊嘅蒸籠同五籠點心',
     itemWord:'點心', difficulty:'容易', targetStyle:'steamer',
     thumbnail:'img/siumai.png', thumbnailAlt:'燒賣點心',
     categoriesFor(level){
@@ -14271,6 +14771,10 @@ function shoulderRewardDurationMs(){
     // v125：動畫＋跟住嘅過場（行去下一個貨架／睇購物單）都蓋住，等過場完先再接受下一次抬手
     return Math.max(SHOULDER_REWARD_MIN_MS,shopStory.rewardMs);
   }
+  if(isYumChaTheme()){
+    // v145 茶樓飲茶：揭蒸籠＋送畀屋企人＋（剔滿點心紙）埋單都播完先再接受下一次抬手
+    return Math.max(SHOULDER_REWARD_MIN_MS,yumChaRewardMs());
+  }
   if(isTeahouseDimsumMode()){
     return Math.max(SHOULDER_REWARD_MIN_MS,TEAHOUSE_FLY_MS+TEAHOUSE_STEAM_MS+900);
   }
@@ -14291,7 +14795,7 @@ function shoulderRewardDurationMs(){
 }
 function startShoulderRewardCycle(){
   if(shoulderRewardCycle.active) return;
-  if(isDealTableTheme())startDealTableDraw(); if(isPhotoCardTheme())startPhotoCardDraw(); // v138 牌局／v144 香港遊：先行一步，定好今次動畫長度
+  if(isDealTableTheme())startDealTableDraw(); if(isPhotoCardTheme())startPhotoCardDraw(); if(isYumChaTheme())startYumChaServe(); // v138 牌局／v144 香港遊／v145 飲茶：先行一步，定好今次動畫長度
   const started=nowMs();
   shoulderRewardCycle.active=true;
   shoulderRewardCycle.startedMs=started;
@@ -14312,6 +14816,7 @@ function finishShoulderRewardCycle(){
   spawnInitialFoods();
   finishDealTableDraw(); // v138 牌局：收起動畫；啱啱食糊就開新一鋪
   finishPhotoCardDraw(); // v144 香港遊：收起動畫；啱啱影到一張咭就去下一站
+  finishYumChaServe();   // v145 飲茶：收起動畫；啱啱埋單就開新一枱
   shoulderFlexionCycleAwarded=false;
   shoulderRewardCycle.reset();
   // Research sessions re-arm from the participant-specific zero only after the
@@ -14682,6 +15187,7 @@ function showFeedback(correct){
   // v139 洗衫晾衫：件衫入機／上竹本身就係即時回饋；中央大剔號會遮住畫面，只保留「叮」聲
   if(correct&&(isLaundryStoryTheme()||isLaundryPegStoryGame())) return;
   if(correct&&isPhotoCardTheme()) return; // v144 香港遊：風景變清本身就係即時回饋，大剔號會遮住風景
+  if(correct&&isYumChaTheme()) return; // v145 飲茶：揭開蒸籠本身就係即時回饋，大剔號會遮住點心
   const el = document.getElementById('feedbackOverlay');
   el.textContent = correct ? '✓' : '✕';
   el.classList.toggle('correct-feedback',correct);
@@ -14779,6 +15285,7 @@ function initGame(){
   resetSupermarketStory(); // v125 超市故事狀態一併清齊
   resetDealTable();        // v138 麻雀／啤牌牌局狀態一併清齊
   resetPhotoCards();       // v144 香港地標閃咭狀態一併清齊
+  resetYumCha();           // v145 飲茶點心紙狀態一併清齊
   resetLaundryStory();     // v139 洗衫晾衫故事狀態一併清齊
   resetDimsumOrderGame();  // v69 筷子點心落單狀態一併清齊
   resetLaundryOrderGame(); // v71 晾衫單狀態一併清齊
@@ -15058,6 +15565,7 @@ function setupTargets(){
   if(isShoulderFlexionLevel()){
     if(isDealTableTheme()){ targets=[]; return; } // v138 牌局：牌位由場景直接繪畫
     if(isPhotoCardTheme()){ targets=[]; return; } // v144 閃咭：張咭由場景直接繪畫
+    if(isYumChaTheme()){ targets=[]; return; } // v145 飲茶：蒸籠、點心紙全部由場景直接繪畫
     if(isLaundryStoryTheme()){ targets=[]; return; } // v139 洗衫晾衫：全部由場景直接繪畫
     if(state.theme==='bowlinglane'||state.theme==='basketball'||state.theme==='supermarket'||isTeahouseDimsumMode()){
       // v73 保齡球／v74 模擬茶樓／v125 超市：目標由場景直接繪畫，唔使用通用目標盤
@@ -15765,7 +16273,7 @@ function updateFramePerfOverlay(now){
     framePerf.overlayEl = el;
   }
   const p = framePerfSnapshot();
-  el.textContent = `perf v144  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
+  el.textContent = `perf v145  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
     + `鏡頭 ${p.video[0]}×${p.video[1]}  畫布 ${p.canvas[0]}×${p.canvas[1]}  dpr ${p.dpr}  手模型 ${p.handDelegate || '-'}\n`
     + `手 ${p.hand.hands} 隻  標籤 ${p.hand.label || '-'} ${p.hand.score}  接納 ${p.hand.path || '-'}  嚴格 ${p.hand.strict} 連續 ${p.hand.continuity} 單手 ${p.hand.lone} 拒絕 ${p.hand.rejected}\n`
     + `左右手檢查 ${p.hand.check === 'off' ? '關' : '開'}  鎖定手形 ${p.hand.lockSize || '-'}  大小拒絕 ${p.hand.sizeRejected}  遠處拒絕 ${p.hand.farRejected}`
@@ -18856,6 +19364,8 @@ function renderGame(){
     if(isDealTableTheme()) continue;
     // v144 閃咭：張咭全部由場景層繪畫
     if(isPhotoCardTheme()) continue;
+    // v145 飲茶：點心全部由場景層繪畫
+    if(isYumChaTheme()) continue;
     // v139 洗衫晾衫：衫全部由場景層繪畫
     if(isLaundryStoryTheme()) continue;
     // v74 模擬茶樓：點心飛入蒸籠／蒸緊嗰陣由場景層接手畫，避免出現兩件點心
@@ -19140,8 +19650,12 @@ function endGame(endReason){
     // v144 香港地標閃咭：今次集到幾多張
     const cardLine=isPhotoCardTheme()?photoCardSummaryText():'';
     if(cardLine){ dealSummary.hidden=false; dealSummary.textContent=cardLine; }
+    // v145 飲茶：今次食咗幾多籠、埋咗幾多次單
+    const yumLine=isYumChaTheme()?yumChaSummaryText():'';
+    if(yumLine){ dealSummary.hidden=false; dealSummary.textContent=yumLine; }
   }
   renderPhotoCardAlbumSummary(); // v144 完成頁：今次集到嘅咭
+  renderYumChaSummary();         // v145 完成頁：今次食過嘅點心
 
   /* PUBLIC_BUILD_REMOVE_START: research result DOM and export controls */
   const rr = document.getElementById('researchResult');
@@ -25392,6 +25906,31 @@ window.__qa = {
       return dimsumPlateContents.length;
     },
   },
+  yumCha:{
+    // v145 QA：飲茶狀態；trigger() 模擬一次抬臂達標（跳過姿勢追蹤），finish() 收起動畫
+    state(){
+      return { active:isYumChaTheme(), total:YUM_CHA_DISHES.length, tableNo:yumCha.tableNo,
+        table:yumCha.table.map(d=>d.id), order:yumCha.order.slice(), served:yumCha.served, ticks:yumCha.ticks.slice(),
+        delivered:yumCha.delivered.map(d=>({ slot:d.slot, member:d.member })), eaten:yumCha.eaten.slice(), bills:yumCha.bills,
+        anim:{ phase:yumCha.anim.phase, slot:yumCha.anim.slot, member:yumCha.anim.member, done:yumCha.anim.done },
+        rewardMs:yumChaRewardMs(), summary:yumChaSummaryText(),
+        imagesReady:yumCha.table.every(d=>yumChaImageReady(d.id))&&YUM_CHA_FAMILY.every(f=>yumChaImageReady(f.file))
+          &&yumChaImageReady('steamer_closed')&&yumChaImageReady('steamer_lid') };
+    },
+    trigger(){
+      if(!isYumChaTheme()) return null;
+      startYumChaServe();
+      return window.__qa.yumCha.state();
+    },
+    finish(){ finishYumChaServe(); return window.__qa.yumCha.state(); },
+    setAnimElapsed(ms){ if(yumCha.anim.phase!=='idle') yumCha.anim.startedMs=nowMs()-Math.max(0,Number(ms)||0); return yumCha.anim.phase; },
+    setLift(v){ yumCha.previewLift=(v==null?null:Number(v)); return yumCha.previewLift; }, // 只供畫面檢查：預覽個蓋升到邊
+    settle(){ yumCha.arrivedMs=nowMs()-YC_ARRIVE_MS; return true; },
+    list(){ return YUM_CHA_DISHES.map(d=>({ id:d.id, zh:d.zh, en:d.en })); },
+    geometry(){ const g=yumChaGeometry(gameCanvas.width,gameCanvas.height);
+      return { top:g.top, sw:g.sw, tableTop:g.tableTop, fh:g.fh, ds:g.ds, bigW:g.bigW, bigH:g.bigH, bigX:g.bigX, bigY:g.bigY, sceneBottom:g.sceneBottom,
+        portrait:g.portrait, cssScale:g.cssScale, cw:gameCanvas.width, ch:gameCanvas.height, sheet:{ x:g.sheet.x, y:g.sheet.y, w:g.sheet.w, h:g.sheet.h } }; },
+  },
   photoCards:{
     // v144 QA：閃咭狀態；trigger() 模擬一次抬臂達標（跳過姿勢追蹤），finish() 收起動畫
     state(){
@@ -26202,7 +26741,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v144-20261126-hk-tour-cards";
+  const LEVEL_APP_BUILD = "v145-20261127-yum-cha";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

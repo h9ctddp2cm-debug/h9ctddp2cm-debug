@@ -2061,3 +2061,20 @@ Original prompt: Fix Level 6–7 interactions: make light clothes-peg press dete
 - Validation：Node 測試兩組 297 ＋ 515 ＝ 812：809 pass／3 skip／0 fail；`tools/checkjs.sh` 11 OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 301 files（public index sanitized）；dist 冇 `__qa`、載入冇 page error，Level 3 揀遊戲頁見到「香港遊」同新封面。
 - QA 對照表 `ych_rehab_qa_artifacts/v144/v144-qa-contact-sheet.png`（iPad 橫向全流程、iPad 直向、部門筆電、手機、成績頁、新封面）。Playwright 測試假動作；未喺真機／真病人試過。
 - 未做：茶樓點心場景加到 30 款點心（下一版）。
+
+## 2026-11-27 v145 — Level 3／4「茶樓飲茶」：舉手揭蒸籠，30 款點心，同屋企人剔滿點心紙就埋單
+- 治療師回饋：病人話「Level three拼圖同點心會改嘅，最後都係冇改到」；治療師要求「點心都起碼有30款啦，否則食嚟食去都係嗰幾味」，並指示「下一版加入30款點心，玩法照之前傾好嘅做」（點心紙＋屋企人：有後果、有懸念、有終點）。
+- 改動（只係 Level 3／4 公開版「茶樓飲茶」嘅「模擬茶樓」畫面；新封面 `img/dimsum/yum_cha_thumb.jpg`）：
+  - 流程：圓枱後面坐住嫲嫲、爺爺、媽媽、細路（冇名牌）；點心紙列出今枱六款 → 一籠蓋住嘅蒸籠上枱（「舉手揭蒸籠 · 今籠係咩？」）→ 病人舉手，蓋跟住升，入面只見蒸氣 → 達標一次＝蓋揭開，睇到今籠係咩點心（讀出點心名）→ 點心轉去一位屋企人面前，佢講一句（「好味！」「夠晒熱！」「我最鍾意！」「我要食！」等，四個人輪流）→ 點心紙剔一格 → 六格剔晒：「食飽喇，埋單！」紅色「埋單」印 → 第 2 枱，六款新點心。
+  - 30 款點心（`YUM_CHA_LIST`，`img/dimsum/<id>.png`）：蝦餃、燒賣、叉燒包、糯米雞、鳳爪、排骨、牛肉球、腸粉、蘿蔔糕、馬拉糕、蛋撻、奶黃包、流沙包、春卷、鹹水角、芋角、煎堆、潮州粉果、鮮竹卷、金錢肚、小籠包、灌湯餃、棉花雞、千層糕、芒果布甸、豆腐花、叉燒酥、鍋貼、雞扎、馬蹄糕。每枱六款，洗牌後派；30 款出齊先會重複，重新洗牌後第一枱亦唔會同上一枱重複。（原本想加「山竹牛肉」，但同「牛肉球」係同一款，改做「馬蹄糕」。）
+  - 成績頁多一句「飲茶：今次同屋企人食咗 N 籠點心，埋咗 M 次單。」同今次食過嘅點心格（沿用 `#cardAlbumSummary`）。只計今次訓練，冇儲存。
+  - 直向畫面：點心紙喺下面（iPad 兩行三格）；手機直向因為右下角有鏡頭小窗，點心紙放左邊一行六格。
+- 圖片：`img/dimsum/` 37 個檔（30 款點心＋蒸籠＋蓋＋四位屋企人＋封面），共約 2.1 MB，全部係電腦生成插圖（其中蝦餃／燒賣／叉燒包／糯米雞係原有 `img/advanced/steamer_*.png` 縮細）。唔係真實食物或真人相；網頁底「圖片來源」已寫明。
+- 冇改：抬臂達標判定、`shoulderFlexionController`、重新準備規則（v137）、計分、時間、所有偵測設定。模組只讀 `shoulderFlexionState.progress` 嚟畫蓋升幾高。冇任何嘢變嚴。「看到自己」鏡頭畫面嘅點心遊戲、Level 5 茶樓點心、Level 6 筷子（仍然 `gameType:'dwell'`）原封不動。舊 `drawTeahouseScene` 程式保留（唔再畫出嚟）。
+- 留意：每籠動畫約 2.7 秒（揭蓋 1.05 ＋ 遞 0.65 ＋ 反應 0.8 ＋ 0.2）；每枱第六籠連埋單約 5.1 秒，期間唔計新一下，等於細休息。點心名同「食飽喇，埋單！」會讀出聲（跟返網頁原有語音設定）。
+- 標記 → `v145-20261127-yum-cha`（`CACHE_VERSION`、`LEVEL_APP_BUILD`、manifest `start_url`、`perf v145`）。離線包多咗約 2.1 MB。
+- QA hook（公開版冇）：`__qa.yumCha`（`state/trigger/finish/setAnimElapsed/setLift/settle/list/geometry`）。
+- Tests：新增 `tests/v145-yum-cha.test.mjs`（8：30 款唔重複、中英文名、細檔圖；蒸籠／屋企人／封面檔齊、資料夾冇多餘檔、圖片來源有寫明；六下完成一枱、屋企人輪流、埋單後新一枱唔重複；動畫期間再觸發唔計；30 款出齊先重複（連續三轉）；「看到自己」唔會啟動；模組冇寫入控制器狀態、冇用 canvas filter、畫布文字經變數；封面／成績頁／英文字接線）。18 個測試檔嘅版本標記更新。揀遊戲頁卡片保留 v138 嘅 `goalText` 一行，另加 `cardGoal`。
+- Validation：Node 測試兩組 297 ＋ 523 ＝ 820：817 pass／3 skip／0 fail；`tools/checkjs.sh` 11 OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 338 files（public index sanitized）；dist 冇 `__qa`、載入冇 page error，Level 3 揀遊戲頁見到新封面。
+- QA 對照表 `ych_rehab_qa_artifacts/v145/v145-qa-contact-sheet.png`（iPad 橫向全流程、iPad 直向、手機、部門筆電、成績頁、新封面）同 `v145-all-dimsum.jpg`（30 款點心一覽）。Playwright 測試假動作；未喺真機／真病人試過。
+- 已知：手機直向畫面細，點心紙字較細；屋企人冇名牌；封面圖喺揀遊戲頁比較細。

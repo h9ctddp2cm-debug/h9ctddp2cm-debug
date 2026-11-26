@@ -34,10 +34,10 @@ const advanced = setup.slice(setup.indexOf('<details class="advanced-settings" i
 const beforeAdvanced = setup.slice(0, setup.indexOf('<details class="advanced-settings" id="advancedSettings"'));
 
 test('v143 release markers', () => {
-  assert.match(sw, /const CACHE_VERSION = "fthue-rehab-v144-20261126-hk-tour-cards";/);
-  assert.match(manifest, /index\.html\?build=v144-20261126-hk-tour-cards/);
-  assert.match(html, /const LEVEL_APP_BUILD = "v144-20261126-hk-tour-cards";/);
-  assert.match(html, /perf v144 {2}/);
+  assert.match(sw, /const CACHE_VERSION = "fthue-rehab-v145-20261127-yum-cha";/);
+  assert.match(manifest, /index\.html\?build=v145-20261127-yum-cha/);
+  assert.match(html, /const LEVEL_APP_BUILD = "v145-20261127-yum-cha";/);
+  assert.match(html, /perf v145 {2}/);
 });
 
 test('game time defaults to the longest choice; the shorter ones stay available', () => {
