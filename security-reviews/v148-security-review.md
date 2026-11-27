@@ -28,9 +28,16 @@ patient.
 7. Pause after repeated mistakes. One short sentence; the screen shows exactly what is read. In
    the order game the sentence names the dim sum on the order, never the one just misplaced, so
    the patient is not told to repeat the mistake.
-8. Tracking prompts T1–T9. A small chip at the bottom of the game plus one spoken sentence when
+8. Tracking prompts T1–T9. A small chip in the top row of the game plus one spoken sentence when
    the hand or shoulder is not seen, the patient is too close / too far, the other hand is used,
    the picture is unstable or the camera stalls. After 15 s the prompt asks for the therapist.
+   The therapist asked for the chip to cover nothing, so it is placed in the row of the buttons
+   (landscape) or the row above them (portrait), as near the middle as the free space allows. It
+   measures the buttons, the numbers on the left, the language button, the cooking step label and
+   the dim sum picture strip, and takes the nearest free place; if the row is too short the text
+   gets slightly smaller (never below 18 px) or, in the cooking game, the chip goes right under
+   the step label. The chip is display only (`pointer-events:none`), reads layout only, and the
+   placement runs when the chip appears and at most twice a second while it is shown.
 9. Step repeat. A step instruction is read again after 10 s with no movement, at most twice.
 10. Voice note. The calibration page tells the therapist when the device has no Cantonese voice.
 
@@ -66,7 +73,7 @@ patient.
   `dist/public/index.html`.
 
 ## Verification
-- `tests/v148-wording-tracking.test.mjs` (27): markers; start lines for every setting combination
+- `tests/v148-wording-tracking.test.mjs` (29): markers; start lines for every setting combination
   (agreed verbs, length, retired words); English entries; speech order and the waiting correction;
   spoken numbers; the nine prompts in both languages; timing rules of the prompts (3 s, 15 s, two
   sentences, help after 15 s, recovery sentence only after a spoken prompt, immediate stall,
@@ -76,7 +83,9 @@ patient.
   strip or on the plate (laptop 1413×653, tablet landscape and portrait, 1024×768); pause overlay
   text equals the spoken sentence, and in the order game it names the dim sum on the order rather
   than the one just misplaced; live prompt sequence in a running game
-  with score and mistake count unchanged; "use the other hand" rules for hand and pose; chip
+  with score and mistake count unchanged; the chip covers no button, number, step label or
+  picture strip in six games at four screen sizes and its text is never cut; "use the other
+  hand" rules for hand and pose; chip
   geometry; voice note.
 - Updated for this change: the wording and marker assertions of the earlier test files (see
   `progress.md`).

@@ -656,7 +656,7 @@ test('browser: tracking chip and prompts in a running game (hand lost → help �
     q.trackPrompt('manual', { cond: 'T1', ok: false });
     for(let i = 0; i < 35; i++){ window.advanceTime(100, 1); q.trackPromptTick(); }
     const chip = document.getElementById('trackChip').getBoundingClientRect();
-    const boxes = Array.from(document.querySelectorAll('#game button, #gameScreen button, .hud button'))
+    const boxes = Array.from(document.querySelectorAll('#screen-game button'))
       .map(b => b.getBoundingClientRect()).filter(b => b.width > 0 && b.height > 0);
     out.chipBox = { w: chip.width, h: chip.height, top: chip.top, left: chip.left, right: chip.right, vw: innerWidth };
     out.overlaps = boxes.filter(b => !(b.right <= chip.left || b.left >= chip.right || b.bottom <= chip.top || b.top >= chip.bottom)).length;
@@ -681,8 +681,74 @@ test('browser: tracking chip and prompts in a running game (hand lost → help �
   assert.deepEqual(r.unchanged, [true, true, true, true], 'a prompt never scores, counts a mistake or pauses');
   assert.ok(r.chipBox.w > 40 && r.chipBox.h > 20, 'chip is visible');
   assert.ok(r.chipBox.left >= 0 && r.chipBox.right <= r.chipBox.vw, 'chip stays on screen');
+  assert.ok(r.buttons >= 5, 'the game buttons were found');
   assert.equal(r.overlaps, 0, 'chip does not cover a button (' + r.buttons + ' checked)');
+  assert.ok(r.chipBox.top < 90, 'chip sits in the top row, not at the bottom');
   assert.equal(r.offHidden, true);
+});
+
+test('tracking chip: finds the free place nearest the middle of the top row', () => {
+  const body = html.slice(html.indexOf('function trackChipFreeSlot('), html.indexOf('function trackChipDomObstacles('));
+  const slot = vm.runInNewContext(body + '; trackChipFreeSlot');
+  assert.deepEqual({ ...slot(10, 1170, 180, 590, []) }, { centre: 590, fits: true, room: 1160 }, 'nothing in the way: the middle');
+  // tablet landscape: numbers on the left, buttons from 633
+  let r = slot(10, 1170, 180, 590, [[-5, 240], [633, 1180]]);
+  assert.equal(r.fits, true); assert.equal(r.centre, 543, 'pushed left until it clears the buttons');
+  // portrait order game: the picture strip is in the middle → the nearer side that is wide enough
+  r = slot(10, 810, 180, 410, [[237, 568]]);
+  assert.equal(r.fits, true); assert.equal(r.centre, 658, 'both sides fit: the one nearer the middle');
+  r = slot(10, 810, 180, 410, [[237, 568], [735, 820]]);
+  assert.equal(r.centre, 147, 'the right side is too narrow, so the left side');
+  // nowhere wide enough: report the widest gap so the caller can shrink the text
+  r = slot(10, 500, 300, 250, [[100, 200], [380, 500]]);
+  assert.equal(r.fits, false); assert.equal(r.room, 180); assert.equal(r.centre, 290);
+  // overlapping obstacles are merged
+  r = slot(0, 1000, 100, 520, [[300, 600], [550, 700]]);
+  assert.equal(r.centre, 750);
+});
+
+test('browser: the tracking chip sits in the top row and covers nothing (buttons, numbers, step label, picture strip)', async t => {
+  if(!browser){ t.skip('Playwright is not available'); return; }
+  const games = [
+    ['L3 supermarket', { level: '3', theme: 'supermarket', shoulderTargetDeg: 40 }, 'T2'],
+    ['L5 cards', { level: '5', theme: 'cards' }, 'T1'],
+    ['L6 flowers', { level: '67', theme: 'flowers' }, 'T1'],
+    ['L6 dim sum order', { level: '67', theme: 'chopstick_dimsum' }, 'T8', 'complex'],
+    ['L6 cooking', { level: '67', theme: 'cooking' }, 'T1'],
+    ['L6 peg story', { level: '67', theme: 'peg_laundry' }, 'T6'],
+  ];
+  for(const viewport of [{ width: 1180, height: 820 }, { width: 820, height: 1180 }, { width: 1413, height: 653 }, { width: 1024, height: 768 }]){
+    for(const [name, start, code, pre] of games){
+      const { context, page, errors } = await openPage(viewport);
+      const r = await page.evaluate(async ([start, code, pre]) => {
+        const q = window.__qa;
+        if(pre === 'complex'){ q.rulesFor(start); document.querySelector('#dimsumDifficultyOptions [data-dimsum-difficulty="complex"]').click(); }
+        q.startGame({ duration: 600, affectedSide: 'left', ...start });
+        await new Promise(res => setTimeout(res, 300)); window.advanceTime(2500, 30);
+        q.trackPrompt('manual', { cond: code, ok: false });
+        for(let i = 0; i < 35; i++){ window.advanceTime(100, 1); q.trackPromptTick(); }
+        await new Promise(res => setTimeout(res, 120));
+        q.trackChipPlace();
+        const o = q.trackChipObstacles();
+        const el = document.getElementById('trackChip');
+        return { ...o, text: el.textContent, clipped: el.scrollWidth > el.clientWidth + 1 };
+      }, [start, code, pre || '']);
+      await context.close();
+      const where = name + ' ' + viewport.width + '×' + viewport.height;
+      assert.deepEqual(errors, [], where);
+      assert.ok(r.text.length >= 2, where + ': chip shown');
+      const c = r.chip;
+      const hit = o => !(o.right <= c.left || o.left >= c.right || o.bottom <= c.top || o.top >= c.bottom);
+      assert.equal(r.dom.filter(hit).length, 0, where + ': covers no button, number or panel');
+      assert.equal(r.canvas.filter(hit).length, 0, where + ': covers no step label or picture strip');
+      assert.ok(c.left >= 0 && c.right <= r.stage.width && c.top >= 0, where + ': on screen');
+      assert.ok(c.bottom <= r.stage.height * 0.2, where + ': in the top part of the screen (bottom ' + Math.round(c.bottom) + ')');
+      assert.ok(r.font >= 18, where + ': text not smaller than 18px (' + r.font + ')');
+      assert.equal(r.clipped, false, where + ': the whole text is visible');
+      if(name === 'L6 dim sum order') assert.equal(r.canvas.length, 1, where + ': the picture strip was taken into account');
+      if(name === 'L6 cooking') assert.equal(r.canvas.length, 1, where + ': the step label was taken into account');
+    }
+  }
 });
 
 test('browser: "use the other hand" needs a confident label and can be switched off; never in two-hand mode', async t => {

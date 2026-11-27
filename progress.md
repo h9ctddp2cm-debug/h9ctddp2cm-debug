@@ -2153,16 +2153,21 @@ Original prompt: Fix Level 6–7 interactions: make light clothes-peg press dete
 - 鏡頭追蹤提示 T1–T9（`/* v148-tracking-prompts */` 純計算＋`/* v148-tracking-runtime */` 接駁）：
   - T1 睇唔到隻手／T2 睇唔到膊頭／T3 太近／T4 太遠／T5 試吓用返左（右）手／T6 鏡頭睇得唔清楚／T7 鏡頭重新連接緊／T8 請姑娘幫手校返個鏡頭／T9 見到喇，繼續。
   - 規則：情況連續 3 秒先出（T7 即刻）；同一句最少隔 15 秒；同一次最多讀兩句，之後只留畫面短字；由問題開始計 15 秒改出 T8；有讀過提示先會讀 T9。開局頭 5 秒、暫停、獎勵畫面、休息場景唔出。
-  - 畫面：遊戲底部中間一粒黃色短字牌 `#trackChip`（撳唔到、唔遮 HUD 掣）。位置喺最底中間，出現嗰陣會短暫遮住插花嘅一兩個花名、晾衫故事嘅階段牌、煮蛋炒飯嘅進度點。
+  - 畫面：一粒黃色短字牌 `#trackChip`（撳唔到）。治療師睇完對照表之後揀咗「搬去上面」，唔可以遮住任何嘢，所以由最底中間改去最頂嗰行（`/* v148-track-chip-place */`）：
+    - 橫向同按鈕同一行，盡量靠正中間，按鈕佔咗位就貼住「返回」按鈕左邊；直向喺按鈕上面嗰行。部門筆電 1413×653 係正中間。
+    - 每次出現（同之後每半秒）量一次嗰行有乜嘢：按鈕、左上角數字、語言掣（DOM），加埋畫喺 canvas 嘅煮蛋炒飯步驟牌同落單版點心圖示；`trackChipFreeSlot()` 搵最近中間而又夠闊嘅空位。
+    - 唔夠位：字細少少（最細 18px）；煮蛋炒飯就擺喺步驟牌正下方（嗰度係牆身）。
+    - 字體由 24–36px 改做 22–26px（要同按鈕一樣高先放得入嗰行）。
+    - 21 個遊戲 × iPad 橫向／直向／筆電／1024×768 逐個截圖睇過：冇遮按鈕、數字、指示牌、花名、階段牌、進度點、點心、啤牌。
   - 只係提示：唔扣分、唔計錯、唔停遊戲、唔影響揀邊隻手，亦冇改任何偵測門檻。
   - 初始值（未現場調）：手太近／太遠＝開局手掌大細嘅 2.2 倍／0.40 倍；膊頭 1.5 倍／0.6 倍；T5 要「患側檢查」開住，而且左右標籤信心 ≥0.80（另一隻手已經玩得到嗰陣 ≥0.90）；舉棍版唔會出 T5。
 - 步驟指示重讀：`stepSay()` 記低最新一句，10 秒冇動作／冇進度先再讀，最多兩次；休息、暫停、有追蹤提示嗰陣唔重讀。
 - 語音提示：校準頁 `#voiceWarning`——部機有語音表但冇廣東話語音，顯示「提提姑娘：呢部機搵唔到廣東話語音，指示可能會用其他語音讀出。」（英文版唔出）。
 - 冇改：所有偵測同判定門檻、計分、Level 6 筷子停留式玩法、衣夾攞起／放低判斷、啤牌放錯牌收走同扣分、麻雀玩法、Level 3／4 洗衫晾衫開機步。`numHands:2`、信心值 0.20／0.18／0.18、`runningMode:"VIDEO"`、`PUBLIC_GAME_WORK_INTERVAL_MS=1000/30`、`PUBLIC_CANVAS_MAX_EDGE=1600`、Level 5／6 冇平滑、Level 6 筷子 `gameType:'dwell'` 全部不變。
 - 標記 → `v148-20261127-wording`（`CACHE_VERSION`、`LEVEL_APP_BUILD`、manifest `start_url`、`perf v148`、速度顯示「速度 v148」）。儲存鍵 `fthue.detectBox.v147`／`fthue.speedDisplay.v147` 冇改（唔使病人重新設定）。
-- QA hook（公開版冇）：`__qa.trackPrompt(mode,input)`、`trackPromptTick()`、`trackPromptSnapshot()`、`trackPromptSkipGrace()`、`trackPoseCondition()`、`trackHandCondition()`、`recoveryPause()`、`level67Layout().dimsumOrder.strip`、`recoverySentence()`、`speech()`、`say()`、`stepSay()`、`voiceWarning()`、`cook.totals()`。
-- Tests：新增 `tests/v148-wording-tracking.test.mjs`（27）。因應字句／次數／流程改動更新：`v69`、`v71`、`v76`、`v77`、`v78`、`v81`、`v101`、`v123`、`v129`、`v130`、`v131`、`v141`、`v142`、`v143-peg-laundry-story`、`v143-simple-setup`、`v144`、`v146`、`v147`；只改標記：`adaptive-progression`、`language-switch`、`shoulder-flexion-levels`、`tracking-regression`、`v82`、`v83`、`v102`、`v114`、`v119`、`v121`、`v122`、`v137`、`v138`、`v139`。
-- Validation：Node tests 分兩組——第一組 297（294 pass／3 skip／0 fail），第二組 580（580 pass／0 fail），合共 877、0 fail；`tools/checkjs.sh` 11 個 block 全部 OK；`node --check service-worker.js localization.js` OK；`git diff --check` clean；`./scripts/build-dist.sh` → 338 files，`dist/public/index.html` 冇 `__qa`，字眼檢查只有 `localization.js`（同以前一樣）；build 之後再跑 `v114-public-no-keepsake` 同 `v148-wording-tracking`（32 pass）。Playwright 對照表喺 iPad 橫向 1180×820／直向 820×1180／筆電 1413×653 截圖。
+- QA hook（公開版冇）：`__qa.trackPrompt(mode,input)`、`trackPromptTick()`、`trackChipPlace()`、`trackChipFreeSlot()`、`trackChipObstacles()`、`trackPromptSnapshot()`、`trackPromptSkipGrace()`、`trackPoseCondition()`、`trackHandCondition()`、`recoveryPause()`、`level67Layout().dimsumOrder.strip`、`recoverySentence()`、`speech()`、`say()`、`stepSay()`、`voiceWarning()`、`cook.totals()`。
+- Tests：新增 `tests/v148-wording-tracking.test.mjs`（29）。因應字句／次數／流程改動更新：`v69`、`v71`、`v76`、`v77`、`v78`、`v81`、`v101`、`v123`、`v129`、`v130`、`v131`、`v141`、`v142`、`v143-peg-laundry-story`、`v143-simple-setup`、`v144`、`v146`、`v147`；只改標記：`adaptive-progression`、`language-switch`、`shoulder-flexion-levels`、`tracking-regression`、`v82`、`v83`、`v102`、`v114`、`v119`、`v121`、`v122`、`v137`、`v138`、`v139`。
+- Validation：Node tests 分兩組——第一組 297（294 pass／3 skip／0 fail），第二組 582（582 pass／0 fail），合共 879、0 fail；`tools/checkjs.sh` 11 個 block 全部 OK；`node --check service-worker.js localization.js` OK；`git diff --check` clean；`./scripts/build-dist.sh` → 338 files，`dist/public/index.html` 冇 `__qa`，字眼檢查只有 `localization.js`（同以前一樣）；build 之後再跑 `v114-public-no-keepsake` 同 `v148-wording-tracking`（34 pass）。Playwright 對照表喺 iPad 橫向 1180×820／直向 820×1180／筆電 1413×653／1024×768 截圖。
 - QA 對照表：`ych_rehab_qa_artifacts/v148/v148-qa-contact-sheet.png`。
 - 已知／未做：
   - 未喺部門平板、大電視手提電腦或者病人身上試過；追蹤提示全部用注入嘅手／姿勢資料同虛擬時鐘測試，唔係真鏡頭。
