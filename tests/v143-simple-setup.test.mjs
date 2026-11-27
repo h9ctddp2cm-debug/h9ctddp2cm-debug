@@ -34,10 +34,10 @@ const advanced = setup.slice(setup.indexOf('<details class="advanced-settings" i
 const beforeAdvanced = setup.slice(0, setup.indexOf('<details class="advanced-settings" id="advancedSettings"'));
 
 test('v143 release markers', () => {
-  assert.match(sw, /const CACHE_VERSION = "fthue-rehab-v147-20261127-detect-box";/);
-  assert.match(manifest, /index\.html\?build=v147-20261127-detect-box/);
-  assert.match(html, /const LEVEL_APP_BUILD = "v147-20261127-detect-box";/);
-  assert.match(html, /perf v147 {2}/);
+  assert.match(sw, /const CACHE_VERSION = "fthue-rehab-v148-20261127-wording";/);
+  assert.match(manifest, /index\.html\?build=v148-20261127-wording/);
+  assert.match(html, /const LEVEL_APP_BUILD = "v148-20261127-wording";/);
+  assert.match(html, /perf v148 {2}/);
 });
 
 test('game time defaults to the longest choice; the shorter ones stay available', () => {
@@ -117,7 +117,9 @@ test('held prompt keeps the action words only', () => {
   const s = shown(() => true);
   assert.equal(s('已拿住 · 請張開手放下'), '打開隻手');   // v146 colloquial wording
   assert.equal(s('已拿住 · 移到放牌區，停住自動放低'), '擺去放牌區');
-  assert.equal(s('已夾住 · 請放鬆夾仔'), '放鬆衣夾');
+  assert.equal(s('已夾住 · 請放鬆夾仔'), '擺過去，放鬆衣夾');   // v148: move first, then relax
+  assert.equal(s('已夾住 · 鬆開衣夾放下'), '擺過去，放鬆衣夾');
+  assert.equal(s('已拿住 · 移到花瓶，停住自動放低'), '擺去花瓶');
   assert.equal(s('已捏住 · 請張開三指放下'), '請張開三指放下');
   assert.equal(shown(() => false)('已拿住 · 請張開手放下'), '已拿住 · 請張開手放下');
 });

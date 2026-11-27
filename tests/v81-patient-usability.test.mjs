@@ -14,7 +14,9 @@ test('patient game HUD removes the small right-middle gesture emoji area', () =>
 });
 
 test('voice coaching says 揸拳頭 near an ungrasped object and 打開隻手 near the target', () => {
-  assert.match(source, /if\(phase === 'contact'\) return state\.level === '5' \? '揸拳頭' : '夾住';/);
+  assert.match(source, /if\(phase === 'contact'\) return state\.level === '5' \? '揸拳頭' : \(isLevel6Chopsticks\(\) \? PLAIN_VERB_CHOPSTICK_HOLD : PLAIN_VERB_PINCH_HOLD\);/);
+  assert.match(source, /const PLAIN_VERB_PINCH_HOLD = '捏住'/);
+  assert.match(source, /const PLAIN_VERB_CHOPSTICK_HOLD = '夾住'/);
   assert.match(source, /if\(state\.level === '5'\) return '打開隻手';/);
   assert.match(source, /const voiceMargin = isLaundryRackGame\(\) \? 260 : \(isFridgeGame\(\)\?250:150\);/);
   assert.match(source, /phase !== 'target' &&[\s\S]{0,100}PUBLIC_PATIENT_VOICE_COOLDOWN_MS/);

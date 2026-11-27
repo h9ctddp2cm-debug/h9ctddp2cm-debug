@@ -22,7 +22,7 @@ test('v131 source wiring: task profile, routing, constants, calibration copy', (
   assert.match(src, /cooking:\{\n\s*id:'cooking', theme:'cooking',\n\s*gameType:'grasp',/);
   assert.match(src, /if\(theme === 'cooking' && isLevel6DigiflexTask\(\)\) return true;\n[^\n]*\n\s*if\(theme === 'peg_laundry' && isLaundryPegStoryGame\(\)\) return true;\n\s*return !isGrossTabletop\(\) && isAdvTheme\(theme\);/);
   // progressive counts and the therapist amount setting
-  assert.match(src, /const COOK_DIGIFLEX_NEED = \[3,4,4,3,5,2,2,3,4,5,1,8\];/);
+  assert.match(src, /const COOK_DIGIFLEX_NEED = \[2,2,2,2,2,1,1,2,2,2,1,3\];/);
   assert.match(src, /const COOK_SQUEEZE_AMOUNTS = \{ less:0\.5, normal:1, more:1\.5 \};/);
   assert.match(src, /cookSqueezeAmount: 'normal',/);
   assert.match(src, /id="cookSqueezeCard"/);
@@ -45,20 +45,20 @@ test('v131 source wiring: task profile, routing, constants, calibration copy', (
   assert.match(src, /imgCookKitchenBg\.src = 'img\/cook_kitchen_bg\.jpg'/);
   assert.match(src, /imgCookDigiflex\.src = 'img\/cook_digiflex_relax\.png'/);
   assert.match(src, /imgCookSpatula\.src = 'img\/cook_spatula\.png'/);
-  assert.match(src, /'買完餸返到屋企，而家煮蛋炒飯！'/);
+  assert.match(src, /'返到屋企喇，而家煮蛋炒飯！'/);
   // disclaimer: no tool identification, no force measurement
   assert.match(src, /tail:'網頁只睇手指開合，唔識別器材，亦唔量度握力。'/);
   // research track untouched: isLevel6() already excludes research.active
   assert.match(src, /function isLevel6\(\)\{ return !research\.active && state\.level === '67'; \}/);
 });
 
-test('v131 totals: 少 25 / 中 44 / 多 69 squeezes (per-step minimum 1)', () => {
-  const need = [3,4,4,3,5,2,2,3,4,5,1,8];
+test('v131 totals (v148 counts): 少 13 / 中 22 / 多 35 squeezes (per-step minimum 1)', () => {
+  const need = [2,2,2,2,2,1,1,2,2,2,1,3];
   const total = m => need.reduce((s, n) => s + Math.max(1, Math.round(n * m)), 0);
-  assert.equal(total(0.5), 25);
-  assert.equal(total(1), 44);
-  assert.equal(total(1.5), 69);
-  assert.match(src, /less:'少（25 下）', normal:'中（44 下）', more:'多（69 下）'/);
+  assert.equal(total(0.5), 13);
+  assert.equal(total(1), 22);
+  assert.equal(total(1.5), 35);
+  assert.match(src, /less:'少（13 下）', normal:'中（22 下）', more:'多（35 下）'/);
 });
 
 let browser = null;
@@ -88,23 +88,23 @@ async function withPage(fn){
   }
 }
 
-test('Level 6 cooking e2e: grasp type, 12-step module, three squeeze→relax cycles advance step 1 (抓鬆冷飯, 3 下)', async t => {
+test('Level 6 cooking e2e: grasp type, 12-step module, two squeeze→relax cycles advance step 1 (抓鬆冷飯, 2 次)', async t => {
   if(!browser) return t.skip('playwright unavailable');
   const r = await withPage(page => page.evaluate(() => {
     window.__qa.startGame({ level: '67', level6Task: 'cooking', duration: 300, affectedSide: 'right' });
     const out = { gameType: window.__qa.state().gameType, game: window.__qa.adv.game(), first: window.__qa.cook.step() };
     out.after = [];
-    for(let i = 0; i < 3; i++) out.after.push(window.__qa.cook.squeeze());
+    for(let i = 0; i < 2; i++) out.after.push(window.__qa.cook.squeeze());
     return out;
   }));
   assert.equal(r.gameType, 'grasp');
   assert.equal(r.game, 'cooking');
   assert.equal(r.first.idx, 0);
-  assert.equal(r.first.need, 3);
+  assert.equal(r.first.need, 2);
   assert.equal(r.first.digiflex, true);
-  assert.deepEqual(r.after.map(s => [s.idx, s.reps]), [[0, 1], [0, 2], [1, 0]]);
+  assert.deepEqual(r.after.map(s => [s.idx, s.reps]), [[0, 1], [1, 0]]);
   // the squeeze/relax prompt shows the patient what to do next
-  assert.match(r.after[0].prompt, /揸實/);
+  assert.match(r.after[0].prompt, /揸一下/);
 });
 
 test('Level 6 cooking e2e: a small squeeze (relative rise over the relaxed level, below the calibrated threshold) still counts', async t => {
@@ -118,7 +118,7 @@ test('Level 6 cooking e2e: a small squeeze (relative rise over the relaxed level
     return { a: [a.idx, a.reps], b: [b.idx, b.reps], baseline: a.baseline };
   }));
   assert.deepEqual(r.a, [0, 1]);
-  assert.deepEqual(r.b, [0, 2]);
+  assert.deepEqual(r.b, [1, 0]);   // v148: step 1 needs two
   assert.ok(r.baseline > 0.2 && r.baseline < 0.45, 'relaxed baseline is tracked');
 });
 
@@ -140,19 +140,19 @@ test('Level 6 cooking e2e: a 60 ms blip is not a squeeze; an unfinished squeeze 
   assert.deepEqual(r.next, [1, 0]);
 });
 
-test('Level 6 cooking e2e: 少 setting halves the counts (step 1 needs 2) and the card is only shown for Level 6 cooking', async t => {
+test('Level 6 cooking e2e: 少 setting halves the counts (step 1 needs 1) and the card is only shown for Level 6 cooking', async t => {
   if(!browser) return t.skip('playwright unavailable');
   const r = await withPage(page => page.evaluate(() => {
     window.__qa.startGame({ level: '67', level6Task: 'cooking', duration: 300, affectedSide: 'right', cookSqueezeAmount: 'less' });
     const need = window.__qa.cook.step().need;
     const totals = window.__qa.cook.totals();
-    const sq = [window.__qa.cook.squeeze(), window.__qa.cook.squeeze()].map(s => [s.idx, s.reps]);
+    const sq = [window.__qa.cook.squeeze()].map(s => [s.idx, s.reps]);
     return { need, totals, sq };
   }));
-  assert.equal(r.need, 2);
-  assert.deepEqual([r.totals.less, r.totals.normal, r.totals.more], [25, 44, 69]);
+  assert.equal(r.need, 1);
+  assert.deepEqual([r.totals.less, r.totals.normal, r.totals.more], [13, 22, 35]);
   assert.equal(r.totals.amount, 'less');
-  assert.deepEqual(r.sq, [[0, 1], [1, 0]]);
+  assert.deepEqual(r.sq, [[1, 0]]);
 });
 
 test('Level 6 cooking e2e: calibration copy speaks of relaxing / squeezing the exerciser', async t => {
@@ -173,6 +173,6 @@ test('Level 6 cooking e2e: calibration copy speaks of relaxing / squeezing the e
     return out;
   }));
   assert.equal(r.cardHidden, false);
-  assert.equal(r.preview, '中（44 下）');
+  assert.equal(r.preview, '中（22 下）');
   assert.equal(r.hiddenForOthers, true);
 });

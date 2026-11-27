@@ -89,7 +89,7 @@ function makeOrderModule(opts = {}){
   const end = publicSource.indexOf('let level3RoundVariant');
   assert.ok(start > 0 && end > start, 'order module not found in index.html');
   const code = publicSource.slice(start, end);
-  const calls = {speak: [], applause: 0, timeouts: [], ensure: 0};
+  const calls = {speak: [], steps: [], stepCleared: 0, applause: 0, timeouts: [], ensure: 0};
   const state = Object.assign({level: '67', theme: 'chopstick_dimsum', dimsumDifficulty:'complex', running: true}, opts.state);
   const research = Object.assign({active: false}, opts.research);
   const rng = opts.random || (() => 0.5);
@@ -98,8 +98,9 @@ function makeOrderModule(opts = {}){
     'state', 'research', 'foods', 'ensureFoodCount', 'speakCantonese',
     'playApplauseSound', 'nowMs', 'setTimeout', 'clearTimeout',
     'imgBeefballReal', 'imgHargau', 'imgSiumai', 'Math',
+    'stepSay', 'stepRepeatClear', 'dealText', 'enName',
     code + `
-return {isDimsumOrderGame, resetDimsumOrderGame, newDimsumOrder, dimsumOrderText,
+return {isDimsumOrderGame, resetDimsumOrderGame, newDimsumOrder, dimsumOrderText, dimsumOrderTextEn,
   dimsumOrderAccepts, dimsumOrderPlace, dimsumOrderLineFor,
   get order(){ return dimsumOrder; },
   get plate(){ return dimsumPlateContents; },
@@ -115,6 +116,10 @@ return {isDimsumOrderGame, resetDimsumOrderGame, newDimsumOrder, dimsumOrderText
     () => {},
     {id: 'beefball'}, {id: 'hargau'}, {id: 'siumai'},
     fakeMath,
+    (text) => { calls.speak.push(text); calls.steps.push(text); },   // v148: the order is read as a step instruction
+    () => { calls.stepCleared++; },
+    (zh) => zh,
+    (zh, n) => ({'牛肉球': n > 1 ? 'beef balls' : 'beef ball', '蝦餃': 'har gow', '燒賣': 'siu mai'})[zh] || '',
   );
   return {mod, calls, state, research};
 }
@@ -126,27 +131,28 @@ test('gate: order mode only for public level 67 chopstick theme', () => {
   assert.equal(makeOrderModule({state: {theme: 'peg_laundry'}}).mod.isDimsumOrderGame(), false);
 });
 
-test('a new order asks for two distinct dim sum types, 2-4 pieces each', () => {
+test('v148: a new order asks for ONE dim sum type, 2-4 pieces', () => {
   for(const r of [0.0, 0.31, 0.62, 0.99]){
     const {mod, calls} = makeOrderModule({random: () => r});
     const order = mod.newDimsumOrder();
-    assert.equal(order.lines.length, 2);
-    assert.notEqual(order.lines[0].type, order.lines[1].type);
+    assert.equal(order.lines.length, 1);
     for(const line of order.lines){
       assert.ok(line.need >= 2 && line.need <= 4, `need out of range: ${line.need}`);
       assert.equal(line.placed, 0);
     }
     // The order is spoken aloud in Cantonese and shown via dimsumOrderText.
     assert.equal(calls.speak.length, 1);
-    assert.match(calls.speak[0], /^我想食\d個[^，]+，\d個[^。]+。$/);
+    assert.match(calls.speak[0], /^我想食\d個[^，。]+。$/);
     assert.equal(calls.speak[0], mod.dimsumOrderText());
+    assert.equal(calls.steps.length, 1, 'read as a step instruction (so it can be repeated)');
+    assert.match(mod.dimsumOrderTextEn(), /^I would like \d (beef balls|har gow|siu mai)\.$/);
   }
 });
 
 test('placement counts toward the order and appears on the plate', () => {
   const {mod} = makeOrderModule();
   const order = mod.newDimsumOrder();
-  const [a, b] = order.lines;
+  const [a] = order.lines;
   const itemA = {targetType: a.type};
   assert.equal(mod.dimsumOrderAccepts(itemA), true);
   mod.dimsumOrderPlace(itemA);
@@ -155,7 +161,7 @@ test('placement counts toward the order and appears on the plate', () => {
   assert.ok(Number.isFinite(mod.plate[0].fx) && Number.isFinite(mod.plate[0].fy));
   // A type not on the order is rejected.
   const offMenu = ['chop_beefball', 'chop_hargau', 'chop_siumai']
-    .find(t => t !== a.type && t !== b.type);
+    .find(t => t !== a.type);
   assert.equal(mod.dimsumOrderAccepts({targetType: offMenu}), false);
 });
 
@@ -178,7 +184,8 @@ test('completing the whole order applauds, praises and schedules the next order'
   assert.equal(mod.completed, 1);
   assert.equal(calls.applause, 1);
   assert.ok(mod.celebrateUntil > 100000);
-  assert.ok(calls.speak.some(t => t.includes('上齊點心')));
+  assert.ok(calls.speak.includes('上齊喇，多謝晒！'));
+  assert.equal(calls.stepCleared, 1, 'the finished order is not read again');
   assert.equal(calls.timeouts.length, 1);
   assert.equal(calls.timeouts[0].ms, 2600);
   // The scheduled callback starts a fresh order while the game is running...

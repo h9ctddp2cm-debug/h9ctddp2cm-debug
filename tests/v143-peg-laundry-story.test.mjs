@@ -97,7 +97,7 @@ test('v143 e2e: Level 6 peg laundry starts as the picture story with pinch detec
     assert.equal(r.gameType, 'pinch');
     assert.equal(r.task, 'peg');
     assert.equal(r.active, true);
-    assert.equal(r.reps, 25);                 // 4 garments: 6 moves each + one squeeze for the start button
+    assert.equal(r.reps, 24);                 // 4 garments: 6 moves each (v148: the washer starts by itself)
     assert.match(r.text, /advGame=peg_laundry/);
     assert.deepEqual(h.errors, []);
   }finally{ await h.close(); }
@@ -164,7 +164,7 @@ test('v143 e2e: a squeezed hand that comes to rest on the garment picks it up; t
   }finally{ await h.close(); }
 });
 
-test('v143 e2e: the washer start button needs one squeeze, and a whole round takes 25 squeezes', async t => {
+test('v143 e2e (v148): no washer start step — the washer starts by itself and a whole round takes 24 moves', async t => {
   const h = await open(t); if(!h) return;
   try{
     const r = await h.page.evaluate(() => {
@@ -187,12 +187,12 @@ test('v143 e2e: the washer start button needs one squeeze, and a whole round tak
       const ls = window.__qa.laundryStory.state();
       return { seq, press, peg: window.__qa.laundryPeg.state(), repsDone: ls.repsDone, completed: ls.completed, rounds: ls.rounds };
     });
-    assert.deepEqual(r.press, { hasDst: false, anim: 'fly', carrying: false });
-    assert.equal(r.seq.length, 25, r.seq.join(' '));
-    assert.deepEqual([...new Set(r.seq)], ['load', 'press', 'unload', 'hang', 'collect', 'fold', 'store']);
-    assert.equal(r.peg.placed, 25);
-    assert.equal(r.peg.score, 250);
-    assert.equal(r.repsDone, 25);
+    assert.equal(r.press, null);              // the press step no longer exists in the peg story
+    assert.equal(r.seq.length, 24, r.seq.join(' '));
+    assert.deepEqual([...new Set(r.seq)], ['load', 'unload', 'hang', 'collect', 'fold', 'store']);
+    assert.equal(r.peg.placed, 24);
+    assert.equal(r.peg.score, 240);
+    assert.equal(r.repsDone, 24);
     assert.equal(r.completed, true);
     assert.deepEqual(h.errors, []);
   }finally{ await h.close(); }

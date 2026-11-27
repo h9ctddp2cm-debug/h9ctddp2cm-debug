@@ -136,5 +136,5 @@ test('v101 L6 card sorting shows a big two-pile chip and a matching instruction 
   assert.match(html, /drawFridgeOrderBanner\(ctx, cw, ch\);\s*drawLevel6CardsChip\(ctx, cw, ch\);/);
   const text = functionSource('level5PatientInstructionText');
   assert.doesNotMatch(text, /拿起啤牌，放到相同花色牌堆/);
-  assert.match(text, /return '拿起' \+ suit \+ '牌，放到' \+ side \+ '收牌區。';/);
+  assert.match(text, /return '拿起' \+ suit \+ '牌，放到' \+ side \+ '放牌區。';/);
 });

@@ -27,10 +27,10 @@ const require = createRequire(import.meta.url);
 const api = require(path.join(root, 'shoulder-flexion-controller.js'));
 
 test('release markers', () => {
-  assert.match(sw, /const CACHE_VERSION = "fthue-rehab-v147-20261127-detect-box";/);
-  assert.match(html, /const LEVEL_APP_BUILD = "v147-20261127-detect-box";/);
-  assert.match(manifest, /"start_url": "\.\/index\.html\?build=v147-20261127-detect-box"/);
-  assert.match(html, /perf v147/);
+  assert.match(sw, /const CACHE_VERSION = "fthue-rehab-v148-20261127-wording";/);
+  assert.match(html, /const LEVEL_APP_BUILD = "v148-20261127-wording";/);
+  assert.match(manifest, /"start_url": "\.\/index\.html\?build=v148-20261127-wording"/);
+  assert.match(html, /perf v148/);
 });
 
 test('detection thresholds and frame pacing are untouched', () => {
@@ -429,8 +429,8 @@ test('speed display: off by default, simple three numbers when on, remembered on
     assert.equal(r.on, true);
     assert.equal(r.stored, 'on');
     assert.equal(r.previewOn, '開');
-    assert.equal(r.text, '速度 v147  每秒 28 幀\n追蹤 34 毫秒  鏡頭 640×360');
-    assert.match(r.onTick.text, /^速度 v147 {2}每秒 \d+ 幀\n追蹤 \d+ 毫秒 {2}鏡頭 \d+×\d+$/);
+    assert.equal(r.text, '速度 v148  每秒 28 幀\n追蹤 34 毫秒  鏡頭 640×360');
+    assert.match(r.onTick.text, /^速度 v148 {2}每秒 \d+ 幀\n追蹤 \d+ 毫秒 {2}鏡頭 \d+×\d+$/);
     assert.equal(r.onTick.display, 'block');
     assert.deepEqual(r.offAgain, { on: false, display: 'none' });
     assert.equal(r.poseDelegate, 'GPU');
@@ -452,7 +452,7 @@ test('the switch survives a reload, and ?perf=1 still shows the detailed box', a
       q.startGame({ level: '3', theme: 'bowlinglane', duration: 600, affectedSide: 'right', shoulderTargetDeg: 30, dwellMs: 0 });
       return { tick: q.speedDisplay.tick(), pose: q.speedDisplay.poseDelegate(), cam: q.detectBox.camera() };
     });
-    assert.match(r.tick.text, /^perf v147 {2}/);
+    assert.match(r.tick.text, /^perf v148 {2}/);
     assert.match(r.tick.text, /姿勢模型/);
     assert.match(r.tick.text, /偵測框 .*主角鎖定 .*路人拒絕 \d+/);
     assert.equal(r.pose, 'CPU');

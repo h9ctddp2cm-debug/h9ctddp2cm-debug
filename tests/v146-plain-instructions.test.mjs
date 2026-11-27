@@ -29,10 +29,10 @@ const BANNED = /[→（）()\[\]【】°·]|治療師|患側|患手|相機|鏡�
 const hasEnglish = zh => localization.includes("'" + zh + "':'");
 
 test('release markers', () => {
-  assert.match(sw, /const CACHE_VERSION = "fthue-rehab-v147-20261127-detect-box";/);
-  assert.match(html, /const LEVEL_APP_BUILD = "v147-20261127-detect-box";/);
-  assert.match(manifest, /"start_url": "\.\/index\.html\?build=v147-20261127-detect-box"/);
-  assert.match(html, /perf v147/);
+  assert.match(sw, /const CACHE_VERSION = "fthue-rehab-v148-20261127-wording";/);
+  assert.match(html, /const LEVEL_APP_BUILD = "v148-20261127-wording";/);
+  assert.match(manifest, /"start_url": "\.\/index\.html\?build=v148-20261127-wording"/);
+  assert.match(html, /perf v148/);
 });
 
 // ---- the start-line builder, run on its own with every setting combination ----
@@ -133,8 +133,8 @@ test('the other flow keeps its own wording', () => {
 test('short spoken lines while playing have English entries', () => {
   // sentences the page puts together from a short head and the place to go
   const built = [
-    '攞住喇，擺去收牌區。', '攞住喇，擺去放牌區。', '攞住喇，擺去花盤。',
-    '攞住喇。擺去收牌區，打開隻手。', '攞住喇。擺去放牌區，打開隻手。', '攞住喇。擺入花瓶，打開隻手。',
+    '攞住喇，擺去放牌區。', '攞住喇，擺去花瓶。',          // v148: one name for the drop area and the vase
+    '攞住喇。擺去放牌區，打開隻手。', '攞住喇。擺入花瓶，打開隻手。',
     '攞住喇。擺入同色嘅籃，打開隻手。', '攞住喇。擺過去，打開隻手。',
   ];
   for(const line of built){
@@ -144,9 +144,9 @@ test('short spoken lines while playing have English entries', () => {
   assert.match(html, /if\(level6AutoPlaceEnabled\(\)\) return '攞住喇，' \+ plainHeldWhere\(\) \+ '。';/);
   assert.match(html, /return '攞住喇。' \+ plainHeldWhere\(\) \+ '，打開隻手。';/);
   const lines = [
-    '夾住喇，擺去衫架。', '夾住喇，擺過去。',
-    '做得好！', '好準呀！', '好穩陣！', '好叻呀！', '好嘢！',
-    '食糊！', '新一局。揀一組牌，砌到食糊。', '完成一輪，升級喇！', '將件衫放入同色嘅籃。', '未放入籃，再試過。',
+    '攞住喇，擺去衫架。', '攞住喇，擺過去。',
+    '做得好！', '手勢好準！', '好穩陣！', '夠晒力！', '師傅級喎！', '好嘢！',
+    '食糊！', '新一局。揀一組牌，擺去放牌區。', '完成一輪，升級喇！', '將件衫放入同色嘅籃。', '未放入籃，再試過。',
     '將枝花插入花瓶。', '插好喇，好靚！', '舉高啲，停住。', '舉住唔好放。', '有動物阻住，搬開佢。', '蛋炒飯煮好喇！好叻呀！',
   ];
   for(const line of lines){
@@ -154,15 +154,16 @@ test('short spoken lines while playing have English entries', () => {
     assert.ok(hasEnglish(line), 'English entry for 「' + line + '」');
     for(const part of line.split(/[。！]/).filter(Boolean)) assert.ok(cjk(part) <= MAX_LINE, '「' + part + '」 is short');
   }
-  assert.match(html, /const ENCOURAGE_PLAIN = \['做得好！','好準呀！','好穩陣！','好叻呀！','好嘢！'\];/);
+  assert.match(html, /const ENCOURAGE_PLAIN = \['做得好！','手勢好準！','好穩陣！','夠晒力！','師傅級喎！','好嘢！'\];/);
 });
 
 test('cards: a wrong card that is put down is taken away (source)', () => {
   const at = html.indexOf("adaptiveNoteTrial('cards_place', 'failure', {reason:'wrong_suit'});");
   assert.ok(at > 0);
-  const branch = html.slice(at, at + 520);
+  const branch = html.slice(at, at + 900);
   assert.match(branch, /if\(!research\.active\)\{ c\.gone = true; fxRing\(c\.x, c\.y\); \}/);
-  assert.match(branch, /speakCantonese\('呢張係' \+ CARD_SUIT_NAME\[c\.suit\] \+ '。要揀' \+ CARD_SUIT_NAME\[cards\.suit\] \+ '。'\);/);
+  // v148: one correcting step only — say which suit to pick
+  assert.match(branch, /speakCantonese\(plainSay\(dealText\('要揀' \+ CARD_SUIT_NAME\[cards\.suit\] \+ '。', pickEn\), '呢張係' \+ CARD_SUIT_NAME\[c\.suit\] \+ '。要揀' \+ CARD_SUIT_NAME\[cards\.suit\] \+ '。'\)/);
 });
 
 test('cards: letting go outside the collecting area still returns the card (unchanged)', () => {
@@ -268,6 +269,8 @@ test('cards (Level 5 and Level 6): a wrong card disappears, the round can still 
         const rightBefore = before.field.filter(c => c.suit === before.suit).length;
         window.__said.length = 0;
         const afterWrong = q.cards.place(false);          // carried into the collecting area and put down
+        // v148: a reminder never cuts a step instruction — it is read right after that sentence ends
+        await new Promise(r => setTimeout(r, 700));
         const said = window.__said.slice();
         const stillThere = afterWrong.field.some(c => c.id === afterWrong.cardId);
         const rightAfter = afterWrong.field.filter(c => c.suit === afterWrong.suit).length;
@@ -282,7 +285,7 @@ test('cards (Level 5 and Level 6): a wrong card disappears, the round can still 
       assert.equal(r.rightAfter, r.rightBefore, label + ': wanted cards are untouched');
       assert.ok(r.rightAfter >= r.need, label + ': enough wanted cards remain');
       assert.equal(r.got, 0, label + ': a wrong card is not counted');
-      assert.ok(r.said.some(x => /^呢張係.+。要揀.+。$/.test(x)), label + ': the short reminder is spoken');
+      assert.ok(r.said.some(x => /^要揀.+。$/.test(x)), label + ': the short reminder is spoken ' + JSON.stringify(r.said));
       assert.equal(r.rounds1, r.rounds0 + 1, label + ': the round can still be finished');
       assert.deepEqual(errors, []);
     } finally { await context.close(); }

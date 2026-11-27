@@ -32,8 +32,8 @@ test('v129 source wiring: auto-hang constant, gate, releasing, resets, prompts',
   // patient-facing wording: no release instruction at the rack
   assert.match(src, /if\(key === 'carry'\) return '舉高去衣架';/);
   assert.match(src, /return '對準衣架，自動掛上';/);
-  assert.match(src, /if\(isLevel6Peg\(\)\) return \(laundryAutoHangEnabled\(\) \|\| isLaundryPegStoryGame\(\)\) \? '停住' : '放手';/);
-  assert.match(src, /actionCue:'鬆開衣夾 → 揸實拿起 → 舉高到衣架 → 停住自動掛上'/);
+  assert.match(src, /if\(isLevel6Peg\(\)\) return \(laundryAutoHangEnabled\(\) \|\| isLaundryPegStoryGame\(\)\) \? '等一等' : '放手';/);
+  assert.match(src, /actionCue:'鬆開衣夾 → 捏住衣夾攞起 → 舉高到衣架 → 等一等自動掛上'/);
   // next pick-up still needs a positively opened hand (unchanged)
   assert.match(src, /const openPrep = isLevel6ToolGestureTask\(\) \? handOpenPrep/);
 });
@@ -167,10 +167,10 @@ test('v129 source wiring: Level 6 carrier auto-place', () => {
   assert.match(src, /if\(releaseZone && level6AutoPlaceEnabled\(\) && pointInsideZone\(cursorX, cursorY, releaseZone\)\)\{/);
   assert.match(src, /this\.postReleaseOpenStart=0;\n\s*this\.autoPlaceStart=0; this\.arriveId=null; this\.arriveStart=0; this\.arriveArmed=false;\n\s*this\.sqId=null; this\.sqStart=0;\n\s*\},/);   // v136 adds the arrival fields, v140 the squeeze-rest fields
   // wording
-  assert.match(src, /setActionPrompt\(level6AutoPlaceEnabled\(\) \? '移到目標停住' : \(isGrasping \? '保持揸住' : '張開手放低'\), ''\);/);
+  assert.match(src, /setActionPrompt\(level6AutoPlaceEnabled\(\) \? '移到目標，等一等' : \(isGrasping \? '保持捏住' : '打開隻手放低'\), ''\);/);
   assert.match(src, /'已拿住 · 移到放牌區，停住自動放低'/);
-  assert.match(src, /'已拿住 · 移到花盤，停住自動放低'/);
-  assert.match(src, /if\(level6AutoPlaceEnabled\(\)\) return '停住';/);
+  assert.match(src, /'已拿住 · 移到花瓶，停住自動放低'/);
+  assert.match(src, /if\(level6AutoPlaceEnabled\(\)\) return '等一等';/);
   // Level 5 keeps its own rule: the gate requires isLevel6()
   assert.match(src, /function isLevel6\(\)\{ return !research\.active && state\.level === '67'; \}/);
 });

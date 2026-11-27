@@ -164,7 +164,11 @@ test('public gameplay hides technical prose and sentence panels', () => {
   assert.match(html, /\.game-stage\.public-clean-hud\.patient-simple-hud \.action-copy\{ display:none !important; \}/);
   assert.match(html, /\.game-stage\.public-clean-hud\.patient-simple-hud \.status-bar\{[\s\S]*?background:transparent/);
   assert.match(html, /Math\.round\(shoulder\.estimatedAngle\)\+'\u00b0' : '\u2014'/);
-  for(const fn of ['drawDimsumOrderBanner','drawLaundryOrderBanner','drawFridgeOrderBanner']){
+  // v148: the dim sum order is always shown as a small picture strip (picture + number + boxes, no sentence)
+  const strip = html.slice(html.indexOf('function drawDimsumOrderBanner'), html.indexOf('function drawDimsumOrderBanner') + 2600);
+  assert.doesNotMatch(strip.slice(0, 420), /if\(!research\.active\)\{/);
+  assert.match(strip, /line\.need/);
+  for(const fn of ['drawLaundryOrderBanner','drawFridgeOrderBanner']){
     const start = html.indexOf(`function ${fn}`);
     const body = html.slice(start, start + 420);
     assert.match(body, /if\(!research\.active\)\{/);

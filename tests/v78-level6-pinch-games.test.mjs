@@ -240,16 +240,17 @@ test('audio-only patient phrase mapping follows Level 5 and each Level 6 tool re
       };
       return {
         level5:run({level:'5',theme:'dimsum'},'打開隻手'),
-        chopsticks:run({level:'67',level6Task:'chopsticks'},'打開筷子'),
-        peg:run({level:'67',level6Task:'peg',laundryPegStory:false},'停住'), // v129: the garment hangs itself at the rack
-        flowers:run({level:'67',level6Task:'flowers'},'停住'), // v129: flowers / cards / mahjong place themselves on the target
-        cards:run({level:'67',level6Task:'cards'},'停住'),
-        mahjong:run({level:'67',level6Task:'mahjong'},'停住'),
+        chopsticks:run({level:'67',level6Task:'chopsticks'},'鬆開筷子'),   // v148 wording
+        peg:run({level:'67',level6Task:'peg',laundryPegStory:false},'等一等'), // v129: the garment hangs itself at the rack
+        flowers:run({level:'67',level6Task:'flowers'},'等一等'), // v129: flowers / cards / mahjong place themselves on the target
+        cards:run({level:'67',level6Task:'cards'},'等一等'),
+        mahjong:run({level:'67',level6Task:'mahjong'},'等一等'),
       };
     });
     assert.deepEqual(result.level5,{contact:'揸拳頭',target:'打開隻手',expectedTarget:'打開隻手'});
     for(const [name,value] of Object.entries(result).filter(([key])=>key!=='level5')){
-      assert.equal(value.contact,'夾住',`${name} uses the short Level 6 pickup cue`);
+      // v148: chopsticks keep 夾住; three fingers and the clothes peg say 捏住
+      assert.equal(value.contact,name==='chopsticks'?'夾住':'捏住',`${name} uses the short Level 6 pickup cue`);
       assert.equal(value.target,value.expectedTarget,`${name} uses its release cue`);
     }
   });
@@ -314,7 +315,7 @@ test('raise-hand cue requires a stalled bottom-to-top hold and excludes side or 
         targetBelow:stalled({level:'67',level6Task:'flowers'},760,695),
       };
     });
-    assert.equal(result.vertical.phrase,'舉高手');
+    assert.equal(result.vertical.phrase,'舉高隻手');
     assert.equal(result.progressed.phrase,'','meaningful upward progress suppresses the cue');
     assert.equal(result.side.phrase,'','side-target cards never ask for upward movement');
     assert.equal(result.side.targetAbove,false);

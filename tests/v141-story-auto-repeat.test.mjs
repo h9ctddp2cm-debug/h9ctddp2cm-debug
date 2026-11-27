@@ -35,10 +35,10 @@ function lineConst(name){
 }
 
 test('release markers (current build)', () => {
-  assert.match(sw, /const CACHE_VERSION = "fthue-rehab-v147-20261127-detect-box";/);
-  assert.match(manifest, /index\.html\?build=v147-20261127-detect-box/);
-  assert.match(html, /const LEVEL_APP_BUILD = "v147-20261127-detect-box";/);
-  assert.match(html, /perf v147 {2}/);
+  assert.match(sw, /const CACHE_VERSION = "fthue-rehab-v148-20261127-wording";/);
+  assert.match(manifest, /index\.html\?build=v148-20261127-wording/);
+  assert.match(html, /const LEVEL_APP_BUILD = "v148-20261127-wording";/);
+  assert.match(html, /perf v148 {2}/);
 });
 
 test('a new round starts only while the game runs and enough session time is left', () => {
@@ -94,7 +94,7 @@ test('laundry: the closing scene restarts the story, later rounds are labelled, 
   assert.match(fnSource('updateLaundryStoryAction'), /laundryStory\.completed=true; laundryStory\.rounds\+\+; playApplauseSound\(\);/);
   assert.match(fnSource('resetLaundryStory'), /laundryStory\.rounds=0;/);
   assert.match(fnSource('restartLaundryRound'), /beginLaundryStory\(laundryStory\.rounds\);/);
-  assert.match(fnSource('beginLaundryStory'), /laundryStory\.steps=buildLaundrySteps\(laundryStory\.list,laundryStory\.rounds\+1\);/);
+  assert.match(fnSource('beginLaundryStory'), /laundryStory\.steps=buildLaundrySteps\(laundryStory\.list,laundryStory\.rounds\+1,\{autoWash:isLaundryPegStoryGame\(\)\}\);/);
   const m = new Function([
     lineConst('LAUNDRY_LOAD_SIZES'), lineConst('LAUNDRY_STORY_POOL'), lineConst('LAUNDRY_WASH_MS'), lineConst('LAUNDRY_SUN_MS'),
     fnSource('buildLaundryList'), fnSource('buildLaundrySteps'), 'return { buildLaundryList, buildLaundrySteps };',
@@ -129,7 +129,7 @@ test('laundry: result line names the rounds and how far the unfinished one got',
 });
 
 test('cooking: a finished dish starts the next one after the celebration when time is left', () => {
-  assert.match(html, /const COOK_REPEAT_MIN_LEFT_S = 15;/);
+  assert.match(html, /const COOK_REPEAT_MIN_LEFT_S = 40;/);
   const adv = fnSource('cookAdvance');
   assert.match(adv, /cook\.done = true;\s*cook\.idx = total - 1;\s*cook\.rounds\+\+;/);
   assert.match(adv, /const again = !research\.active && !!state\.running && timeLeft >= COOK_REPEAT_MIN_LEFT_S;/);
@@ -140,15 +140,15 @@ test('cooking: a finished dish starts the next one after the celebration when ti
   assert.doesNotMatch(resetBody, /rounds/);
 });
 
-test('cooking: the next dish keeps the learnt relaxed-hand baseline (detection unchanged)', () => {
+test('cooking: the next dish starts with a rest and keeps the learnt relaxed-hand baseline (detection unchanged)', () => {
   const calls = [];
   const cook = {
-    done: true, idx: 11, reps: 3, rounds: 1, introUntil: 0, readyAt: 0, announceAt: 0,
+    done: true, idx: 11, reps: 3, rounds: 1, introUntil: 0, readyAt: 77, announceAt: 0, rest: { phase: '', until: 0 },
     digi: { hist: [1, 2], base: [0.3], baseline: 0.33, peak: 0.6, squeezing: true, rise: 0.05, level: 0.4, animAt: 99 },
     reset(){ this.idx = 0; this.reps = 0; this.done = false; this.digi = { hist: [], base: [], baseline: null, peak: 0, squeezing: false }; },
   };
   const run = (advCurrent, state) => new Function('cook', 'advCurrent', 'state', 'nowMs', 'cookLayout', 'isLevel6DigiflexTask', 'cookRenderPanel', 'speakCantonese', 'setActionPrompt', 'cookAnnounce',
-    fnSource('cookStartNextRound') + '\ncookStartNextRound();')(cook, advCurrent, state, () => 1000, () => ({ ok: 1 }), () => true,
+    [lineConst('COOK_REST_MS'), lineConst('COOK_REST_SAY'), lineConst('COOK_REST_BANNER'), fnSource('cookStartNextRound')].join('\n') + '\ncookStartNextRound();')(cook, advCurrent, state, () => 1000, () => ({ ok: 1 }), () => true,
     () => calls.push('panel'), t => calls.push('say:' + t), a => calls.push('prompt:' + a), () => calls.push('announce'));
   run('mahjong', { running: true }); assert.equal(cook.done, true);       // not the cooking game → nothing
   run('cooking', { running: false }); assert.equal(cook.done, true);      // game already over → nothing
@@ -157,10 +157,10 @@ test('cooking: the next dish keeps the learnt relaxed-hand baseline (detection u
   assert.equal(cook.rounds, 1);
   assert.equal(cook.digi.baseline, 0.33); assert.deepEqual(cook.digi.base, [0.3]); assert.equal(cook.digi.rise, 0.05);
   assert.equal(cook.digi.squeezing, false); assert.deepEqual(cook.digi.hist, []); assert.equal(cook.digi.peak, 0);
-  assert.equal(cook.introUntil, 3600); assert.equal(cook.readyAt, 4000); assert.equal(cook.announceAt, 3200);
-  assert.deepEqual(calls, ['panel', 'say:做得好，再煮多一碟蛋炒飯。', 'prompt:揸實']);
-  // the opening banner of a later dish
-  assert.match(html, /再煮多一碟蛋炒飯！/);
+  // v148: the next plate does not start by itself — a 20 s rest comes first
+  assert.deepEqual(cook.rest, { phase: 'rest', until: 21000 }); assert.equal(cook.readyAt, 0);
+  assert.deepEqual(calls, ['panel', 'say:煮好一碟喇，放鬆隻手，休息一陣。', 'prompt:休息一陣']);
+  assert.doesNotMatch(html, /再煮多一碟蛋炒飯/);
 });
 
 test('cooking: result line counts the finished dishes', () => {
@@ -252,7 +252,7 @@ for(const [theme, key, level] of [['supermarket', 'shopStory', '3'], ['supermark
   });
 }
 
-test('Level 6 cooking e2e: dish 1 → celebration → dish 2 by itself with the same baseline → no dish 3 when time is nearly up', async t => {
+test('Level 6 cooking e2e: dish 1 → celebration → rest → the patient starts dish 2 with the same baseline → no dish 3 when time is nearly up', async t => {
   if(!browser) return t.skip('playwright unavailable');
   const { context, page, errors } = await openGame({ level: '67', level6Task: 'cooking', duration: 300, affectedSide: 'right' });
   try{
@@ -266,6 +266,12 @@ test('Level 6 cooking e2e: dish 1 → celebration → dish 2 by itself with the 
       const scoreDish1 = qa.state().score;
       qa.closeReward();
       const r2 = qa.cook.step(); o.round2 = { idx: r2.idx, done: r2.done, rounds: r2.rounds, baseline: r2.baseline, reward: r2.reward, screen: qa.state().screen };
+      // v148: a 20 s rest; squeezing during the rest neither counts nor starts the plate
+      o.rest = r2.rest;
+      const early = qa.cook.squeeze(); o.early = [early.idx, early.reps, early.rest];
+      window.advanceTime(20500, 400);
+      o.waiting = qa.cook.step().rest;
+      const go = qa.cook.squeeze(); o.go = [go.idx, go.reps, go.rest];   // this squeeze only starts the plate
       const b = squeezeStep(); o.second = { idx: b.idx, summary: b.summary, scoreGained: qa.state().score - scoreDish1, perStep: scoreAfterStep1 };
       qa.setTimeLeft(10);
       const d2 = finish(); o.dish2 = { done: d2.done, rounds: d2.rounds, auto: document.getElementById('rwAuto').textContent, sub: document.getElementById('rwSub').textContent };
@@ -281,6 +287,8 @@ test('Level 6 cooking e2e: dish 1 → celebration → dish 2 by itself with the 
     assert.equal(out.round2.idx, 0); assert.equal(out.round2.done, false); assert.equal(out.round2.rounds, 1);
     assert.equal(out.round2.reward, false); assert.equal(out.round2.screen, 'game');
     assert.equal(out.round2.baseline, out.first.baseline);            // same relaxed-hand baseline
+    assert.equal(out.rest, 'rest'); assert.deepEqual(out.early, [0, 0, 'rest']);
+    assert.equal(out.waiting, 'wait'); assert.deepEqual(out.go, [0, 0, '']);
     assert.equal(out.second.idx, 1);                                  // real squeezes count again
     assert.equal(out.second.scoreGained, out.second.perStep);         // and score the same as in dish 1
     assert.equal(out.second.summary, '煮蛋炒飯：今次煮好 1 碟，第 2 碟做到第 2 步，下次繼續。');

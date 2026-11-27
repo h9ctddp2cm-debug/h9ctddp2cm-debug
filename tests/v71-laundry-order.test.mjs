@@ -80,12 +80,16 @@ test('research pilot track is not affected by either public laundry mode', () =>
 
 /* ---------------- Behavioural: laundry order module ---------------- */
 
+const EN_NAMES = {'恤衫': ['shirt', 'shirts'], '孖煙通': ['pair of boxer shorts', 'pairs of boxer shorts'],
+  '牛仔褲': ['pair of jeans', 'pairs of jeans'], '半截裙': ['skirt', 'skirts'], '底衫': ['vest', 'vests'], '襪': ['pair of socks', 'pairs of socks'],
+  '上衣': 'tops', '褲': 'trousers', '裙': 'skirts', '內衣襪': 'underwear and socks', '上身': 'upper body', '下身': 'lower body'};
+
 function makeOrderModule(opts = {}){
   const start = publicSource.indexOf('const LAUNDRY_ORDER_MENU');
   const end = publicSource.indexOf('let level3RoundVariant');
   assert.ok(start > 0 && end > start, 'laundry order module not found in index.html');
   const code = publicSource.slice(start, end);
-  const calls = {speak: [], applause: 0, timeouts: [], ensure: 0};
+  const calls = {speak: [], steps: [], applause: 0, timeouts: [], ensure: 0};
   const state = Object.assign({
     level: '67',
     theme: 'peg_laundry',
@@ -101,10 +105,11 @@ function makeOrderModule(opts = {}){
   const fn = new Function(
     'state', 'research', 'foods', 'ensureFoodCount', 'speakCantonese',
     'playApplauseSound', 'nowMs', 'setTimeout', 'clearTimeout', 'Math', 'isPortrait',
+    'stepSay', 'stepRepeatClear', 'dealText', 'enName',
     ...imgNames,
     code + `
 return {isLaundryOrderGame, isLaundryBasicGame, isLaundryZoneGame, isLaundrySortGame, laundryDifficultyMode,
-  resetLaundryOrderGame, newLaundryOrder, laundryOrderText, laundrySortRackFor,
+  resetLaundryOrderGame, newLaundryOrder, laundryOrderText, laundryOrderTextEn, laundrySortRackFor,
   laundryOrderAccepts, laundryOrderPlace, laundryOrderLineFor, laundryBasicPlace, laundryRackPlace,
   laundryRackAccepts, laundryRackRejectedWithoutPenalty, laundryRackCount,
   laundryRackPlaceDirect(rackIndex){ laundryFourRackHang({targetType:'laundry_shirt'}, rackIndex); },
@@ -127,6 +132,10 @@ return {isLaundryOrderGame, isLaundryBasicGame, isLaundryZoneGame, isLaundrySort
     () => {},
     fakeMath,
     () => false,
+    (text) => { calls.speak.push(text); calls.steps.push(text); },   // v148: the order is read as a step instruction
+    () => {},
+    (zh) => zh,
+    (zh, n) => EN_NAMES[zh] ? (Array.isArray(EN_NAMES[zh]) ? EN_NAMES[zh][n > 1 ? 1 : 0] : EN_NAMES[zh]) : '',
     ...imgNames.map(id => ({id})),
   );
   return {mod, calls, state, research};
@@ -149,8 +158,10 @@ test('v123 zones: every order asks for exactly one garment and lights one of the
     assert.ok(mod.litRack >= 0 && mod.litRack <= 3, `lit rack index: ${mod.litRack}`);
     // The instruction is spoken aloud in Cantonese and shown via laundryOrderText.
     assert.equal(calls.speak.length, 1);
-    assert.match(calls.speak[0], /^將[^。]+夾去閃燈嗰個架。$/);   // v146 shorter wording
+    assert.match(calls.speak[0], /^將[^。]+擺去着燈嗰個架。$/);   // v148 wording: 着燈, and no 夾 for the peg game
     assert.equal(calls.speak[0], mod.laundryOrderText());
+    assert.equal(calls.steps.length, 1, 'read as a step instruction (so it can be repeated)');
+    assert.match(mod.laundryOrderTextEn(), /^Put the [a-z ]+ on the lit rack\.$/);
   }
 });
 
@@ -230,7 +241,7 @@ test('v123 zones: clipping to a non-lit rack is rejected and remembered without 
   const wrong = [0,1,2,3].find(i => i !== mod.litRack);
   assert.equal(mod.laundryRackAccepts({targetType: order.lines[0].type}, {rackIndex: wrong}), false);
   assert.equal(mod.wrongRack, wrong);
-  assert.equal(calls.speak[calls.speak.length - 1], '要夾喺閃燈嗰個架呀。');
+  assert.equal(calls.speak[calls.speak.length - 1], '擺去着燈嗰個架。');
   assert.equal(mod.order.done, false);
   assert.equal(mod.rack.length, 0);
   assert.equal(mod.laundryRackRejectedWithoutPenalty(), true);
@@ -274,7 +285,7 @@ test('v123 two-rack ladder: zones2 lights one of two racks and sort2 uses 上身
     assert.equal(s.mod.laundryRackAccepts({targetType: type}, {rackIndex: idx}), true);
     assert.equal(s.mod.laundryRackAccepts({targetType: type, label: 'X'}, {rackIndex: 1 - idx}), false);
   }
-  assert.match(s.calls.speak[s.calls.speak.length - 1], /要夾喺「(上身|下身)」嗰個架呀。$/);
+  assert.match(s.calls.speak[s.calls.speak.length - 1], /^X要擺去「(上身|下身)」架。$/);
 });
 
 test('v123 zones: the lit rack skips racks whose hanging slots are already full', () => {
@@ -296,7 +307,7 @@ test('v123 sort: garments go to the category rack (上衣／褲／裙／內衣�
     const wrong = (idx + 1) % 4;
     assert.equal(mod.laundryRackAccepts({targetType: type, label: 'X'}, {rackIndex: wrong}), false);
   }
-  assert.match(calls.speak[calls.speak.length - 1], /要夾喺「[^」]+」嗰個架呀。$/);
+  assert.match(calls.speak[calls.speak.length - 1], /^X要擺去「[^」]+」架。$/);
   mod.laundryRackPlace({targetType: 'laundry_jeans'}, {rackIndex: 1});
   assert.equal(mod.rack.length, 1);
   assert.equal(mod.rack[0].rack, 1);

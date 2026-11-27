@@ -595,6 +595,20 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
 .game-stage.simple-words.public-clean-hud.patient-card-instruction .adv-panel{ display:none !important; }
 .game-stage.simple-words .adaptive-streak{ display:none !important; }
 .game-stage.simple-words.patient-shoulder-hud .hud-item:nth-child(-n+2){ display:none; }
+.track-chip{
+  position:absolute; left:50%; bottom:16px; transform:translateX(-50%); z-index:34;
+  max-width:92%; padding:10px 24px; border-radius:999px;
+  background:#FFF3C4; color:#5B3A00; border:3px solid #E0A100;
+  box-shadow:0 4px 14px rgba(0,0,0,.20);
+  font:900 clamp(24px,2.8vw,36px)/1.2 "PingFang TC","Noto Sans TC",sans-serif;
+  white-space:nowrap; pointer-events:none;
+}
+.track-chip[hidden]{ display:none; }
+.voice-warning{
+  margin:8px 0; padding:9px 12px; border-radius:10px; border:2px solid #E0A100;
+  background:#FFF8DC; color:#5B3A00; font-weight:700; font-size:15px; line-height:1.4; text-align:left;
+}
+.voice-warning[hidden]{ display:none; }
 .patient-game-instruction{
   display:none; position:absolute; left:14px; top:14px; z-index:31;
   max-width:44vw; padding:9px 14px; border-radius:14px;
@@ -1955,11 +1969,11 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
           </button>
           <button class="option-btn" type="button" data-laundry-difficulty="zones2">
             着燈兩架
-            <small>進階一：左右兩個架，夾到閃燈嗰個架先算啱</small>
+            <small>進階一：左右兩個架，擺到着燈嗰個架先算啱</small>
           </button>
           <button class="option-btn" type="button" data-laundry-difficulty="zones">
             着燈四架
-            <small>進階二：四個架（2×2），夾到閃燈嗰個架先算啱</small>
+            <small>進階二：四個架（2×2），擺到着燈嗰個架先算啱</small>
           </button>
           <button class="option-btn" type="button" data-laundry-difficulty="sort2">
             分類兩架
@@ -1990,19 +2004,19 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
     </div>
     <div class="card collapsible collapsed" id="cookSqueezeCard" data-accordion="cook-squeeze" hidden>
       <h2><span>煮飯：握力器揸幾多下</span>
-        <span class="selected-preview" id="preview-cook-squeeze">中（44 下）</span></h2>
+        <span class="selected-preview" id="preview-cook-squeeze">中（22 下）</span></h2>
       <div class="card-body">
         <div class="option-row" id="cookSqueezeOptions">
           <button class="option-btn" type="button" data-cook-squeeze="less">
-            少（25 下）
+            少（13 下）
             <small>每步次數約減半（最少 1 下），適合手較易攰嘅病人</small>
           </button>
           <button class="option-btn selected" type="button" data-cook-squeeze="normal">
-            中（44 下）
+            中（22 下）
             <small>抓鬆飯 3 → 打蛋 4 → 拌蛋 4 → 洗蔥 3 → 切蔥 5 → 熱鍋 2 → 落油 2 → 倒飯 3 → 落鹽 4 → 落蔥花 5 → 熄火 1 → 上碟 8</small>
           </button>
           <button class="option-btn" type="button" data-cook-squeeze="more">
-            多（69 下）
+            多（35 下）
             <small>每步次數約 ×1.5</small>
           </button>
         </div>
@@ -2179,6 +2193,7 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
           <button type="button" class="secondary" id="btnCameraReturn" data-testid="button-camera-return">返回上一頁</button>
         </div>
       </div>
+      <div id="voiceWarning" class="voice-warning" role="note" hidden data-testid="note-voice-warning"></div>
       <button class="btn-primary" id="btnStartGame" disabled>開始遊戲 ▶</button>
       <!-- v121: therapist demonstrated with their own hand and the tracker locked
            onto it — restart the calibration on this screen without leaving it. -->
@@ -2217,6 +2232,8 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
       <canvas id="gameCanvas"></canvas>
       <div id="patientGameInstruction" class="patient-game-instruction"
         role="status" aria-live="polite"></div>
+      <div id="trackChip" class="track-chip" role="status" aria-live="polite" hidden
+        data-testid="status-tracking-prompt"></div>
       <div class="cook-motion-guide" id="cookMotionGuide" aria-hidden="true"
         data-testid="panel-cooking-motion-guide">
         <img id="cookMotionGif" alt="">
@@ -3191,13 +3208,13 @@ function level5PatientInstructionText(){
   if(state.theme === 'dimsum') return '拿起點心，放到上方同款蒸籠。';
   if(state.theme === 'flowers') return '拿起花朵，放到上方花盆。';
   if(state.theme === 'cards'){
-    // v123：Level 6 啤牌改用 Level 5 同一介面（收集指定花色到患側收牌區）。
+    // v123：Level 6 啤牌改用 Level 5 同一介面（收集指定花色到患側放牌區）。
     const suit = (typeof cards !== 'undefined' && cards.suit) ? CARD_SUIT_NAME[cards.suit] : '';
     if(isSideCardGame){
       const side = activeAffectedSide() === 'right' ? '右邊' : '左邊';
-      return '拿起' + suit + '牌，放到' + side + '收牌區。';
+      return '拿起' + suit + '牌，放到' + side + '放牌區。';
     }
-    return '拿起' + suit + '牌，放到上方收牌區。';
+    return '拿起' + suit + '牌，放到上方放牌區。';
   }
   if(state.theme === 'mahjong'){
     if(isSideCardGame){
@@ -4397,7 +4414,7 @@ function buildShopSteps(list,round){
   list.forEach(line=>{
     const it=SHOP_ITEMS[line.id];
     for(let k=0;k<line.need;k++){
-      steps.push({ kind:'rep', scene:'cashier', item:line.id, action:'unload', text:'抬高手，將'+it.label+'由車攞出放上收銀枱', prompt:'攞出'+it.label });
+      steps.push({ kind:'rep', scene:'cashier', item:line.id, action:'unload', text:'抬高手，放'+it.label+'上收銀枱', prompt:'攞出'+it.label });
     }
   });
   steps.push({ kind:'rep', scene:'cashier', action:'octopus', text:'抬高手，用八達通拍卡', prompt:'拍卡' });
@@ -4481,7 +4498,7 @@ function updateSupermarketStory(){
   const cur=shopCurrentStep();
   if(cur&&cur.kind==='rep'&&shopStory.spokenIdx!==shopStory.idx&&shopStory.anim.phase==='idle'){
     shopStory.spokenIdx=shopStory.idx;
-    try{ speakCantonese(storySay(cur.text)); }catch(e){}
+    try{ stepSay(storySay(cur.text)); }catch(e){}
   }
 }
 // 抬臂達標：執行而家呢個 rep 步驟嘅動畫（如果而家仲喺 scene，就跳去下一個 rep）
@@ -4980,8 +4997,9 @@ function buildLaundryList(sizeKey,round){
   return Math.max(1,round||1)>1?storyRoundPick(LAUNDRY_STORY_POOL,n,round):LAUNDRY_STORY_POOL.slice(0,n);
 }
 // 故事劇本：scene 步驟自動播放（唔使抬手）；rep 步驟要抬臂達標一次。
-function buildLaundrySteps(list,round){
-  const steps=[], n=list.length, r=Math.max(1,round||1);
+function buildLaundrySteps(list,round,opts){
+  // v148 opts.autoWash（Level 6 衣夾故事）：冇「開機」呢一步，最後一件衫入機之後洗衣機自己開
+  const steps=[], n=list.length, r=Math.max(1,round||1), autoWash=!!(opts&&opts.autoWash);
   const rep=(scene,action,stage,item,k,text,en)=>steps.push({ kind:'rep', scene, action, stage, item, k, n, text, en });
   steps.push(r>1
     ? { kind:'scene', scene:'wash', cut:'intro', stage:0, ms:2200,
@@ -4989,15 +5007,15 @@ function buildLaundrySteps(list,round){
     : { kind:'scene', scene:'wash', cut:'intro', stage:0, ms:2200,
         text:'今日要洗衫', en:'Laundry day', sub:'一籃污糟衫，逐件放入洗衣機', subEn:'Put the clothes into the washer one by one' });
   list.forEach((id,k)=>rep('wash','load',0,id,k,'抬高手，將衫放入洗衣機','Lift your arm: put a garment into the washer'));
-  rep('wash','press',1,null,0,'抬高手，撳掣開機','Lift your arm: press the start button');
+  if(!autoWash) rep('wash','press',1,null,0,'抬高手，撳掣開機','Lift your arm: press the start button');
   steps.push({ kind:'scene', scene:'wash', cut:'washing', stage:1, ms:LAUNDRY_WASH_MS,
-    text:'洗緊衫，休息一陣', en:'Washing. Take a rest', sub:'洗衣機轉緊', subEn:'The washer is spinning' });
-  list.forEach((id,k)=>rep('wash','unload',1,id,k,'抬高手，將衫由洗衣機攞出嚟','Lift your arm: take a garment out of the washer'));
+    text:'洗緊衫，放低隻手休息一陣', en:'Washing. Lower your arm and rest', sub:'洗衣機轉緊', subEn:'The washer is spinning' });
+  list.forEach((id,k)=>rep('wash','unload',1,id,k,'抬高手，攞出洗衣機啲衫','Lift your arm: take the clothes out of the washer'));
   steps.push({ kind:'scene', scene:'balcony', cut:'walk', stage:2, ms:2100,
     text:'洗好喇，攞去露台晾', en:'Washed. Out to the balcony', sub:'濕衫要晾上竹', subEn:'Wet clothes go on the pole' });
   list.forEach((id,k)=>rep('balcony','hang',2,id,k,'抬高手，將衫晾上竹','Lift your arm: hang a garment on the pole'));
   steps.push({ kind:'scene', scene:'balcony', cut:'sun', stage:3, ms:LAUNDRY_SUN_MS,
-    text:'太陽出嚟喇，休息一陣', en:'The sun is out. Take a rest', sub:'等太陽晒乾啲衫', subEn:'Let the sun dry the clothes' });
+    text:'太陽出嚟喇，放低隻手休息一陣', en:'The sun is out. Lower your arm and rest', sub:'等太陽晒乾啲衫', subEn:'Let the sun dry the clothes' });
   list.forEach((id,k)=>rep('balcony','collect',4,id,k,'抬高手，將衫收落嚟','Lift your arm: take a garment down'));
   steps.push({ kind:'scene', scene:'room', cut:'walk', stage:5, ms:2100,
     text:'收晒衫，入房摺衫', en:'All collected. Inside to fold', sub:'逐件摺好', subEn:'Fold them one by one' });
@@ -5023,7 +5041,7 @@ function beginLaundryStory(roundsDone){
   laundryStory.rounds=Math.max(0,roundsDone||0);
   laundryStory.loadSize=laundryLoadSizeKey();
   laundryStory.list=buildLaundryList(laundryStory.loadSize,laundryStory.rounds+1);
-  laundryStory.steps=buildLaundrySteps(laundryStory.list,laundryStory.rounds+1);
+  laundryStory.steps=buildLaundrySteps(laundryStory.list,laundryStory.rounds+1,{autoWash:isLaundryPegStoryGame()});
   laundryStory.basket=laundryStory.list.slice();
   laundryStory.pole=laundryStory.list.map(()=>null);
   laundryStory.shelf=laundryStory.list.map(()=>null);
@@ -5059,6 +5077,7 @@ function laundryGoToStep(i){
   laundryStory.stepStartedMs=nowMs();
   const cur=laundryCurrentStep();
   if(cur) laundryStory.stage=cur.stage;
+  if(cur&&cur.cut==='washing') laundryStory.washOn=true;   // v148 入到洗衫畫面，洗衣機一定係開咗
 }
 // 每幀：scene 步驟時間到就自動行落一步；完場步驟時間到就結束遊戲
 function updateLaundryStory(){
@@ -5083,7 +5102,11 @@ function updateLaundryStory(){
     if(key&&laundryStory.spokenKey!==key){
       laundryStory.spokenKey=key;
       const pegSay=isLaundryPegStoryGame()&&cur.kind==='rep'&&LAUNDRY_PEG_TEXT[cur.action];
-      try{ speakCantonese(pegSay?pegSay.say:storySay(cur.text)); }catch(e){}
+      // v148 做動作嗰步：10 秒冇動作會再讀；休息畫面（洗緊衫／晒緊衫）唔會重讀
+      try{
+        if(cur.kind==='rep') stepSay(pegSay?pegSay.say:storySay(cur.text));
+        else { stepRepeatClear(); speakCantonese(storySay(cur.text)); }
+      }catch(e){}
     }
   }
 }
@@ -5666,13 +5689,12 @@ function drawLaundryStoryScene(ctx,cw,ch){
    夾起嘅偵測同 Level 6 啤牌／麻雀（v140）共用同一個 picker：手形浮標一直顯示、紅圈＝鏡頭見到隻手、
    揸實衣夾停喺件衫上面都夾得起。夾起之後唔使一直揸實（鬆咗手件衫都跟住），冇扣分、冇限時。 */
 const LAUNDRY_PEG_TEXT = {
-  load:   { pick:'夾起一件衫', place:'放入洗衣機', say:'夾起一件衫，放入洗衣機', pickEn:'Clip a garment', placeEn:'Put it into the washer' },
-  press:  { pick:'去開機掣，夾一下', place:'', say:'去開機掣度，夾一下開機', pickEn:'Squeeze at the start button', placeEn:'' },
-  unload: { pick:'夾起洗衣機入面件衫', place:'放返入衫籃', say:'夾起洗衣機入面件衫，放返入衫籃', pickEn:'Clip a garment in the washer', placeEn:'Put it back into the basket' },
-  hang:   { pick:'夾起一件衫', place:'晾上竹', say:'夾起一件衫，晾上竹', pickEn:'Clip a garment', placeEn:'Hang it on the pole' },
-  collect:{ pick:'夾起竹上面件衫', place:'收入衫籃', say:'夾起竹上面件衫，收入衫籃', pickEn:'Clip a garment on the pole', placeEn:'Put it into the basket' },
-  fold:   { pick:'夾起一件衫', place:'放上枱摺好', say:'夾起一件衫，放上枱摺好', pickEn:'Clip a garment', placeEn:'Put it on the table to fold' },
-  store:  { pick:'夾起摺好嘅衫', place:'放入衣櫃', say:'夾起摺好嘅衫，放入衣櫃', pickEn:'Clip a folded garment', placeEn:'Put it into the wardrobe' },
+  load:   { pick:'攞起一件衫', place:'放入洗衣機', say:'攞起一件衫，放入洗衣機', pickEn:'Pick up a garment', placeEn:'Put it into the washer' },
+  unload: { pick:'攞起洗衣機入面件衫', place:'放返入衫籃', say:'攞起洗衣機入面件衫，放返入衫籃', pickEn:'Pick up a garment in the washer', placeEn:'Put it back into the basket' },
+  hang:   { pick:'攞起一件衫', place:'晾上竹', say:'攞起一件衫，晾上竹', pickEn:'Pick up a garment', placeEn:'Hang it on the pole' },
+  collect:{ pick:'攞起竹上面件衫', place:'收入衫籃', say:'攞起竹上面件衫，收入衫籃', pickEn:'Pick up a garment on the pole', placeEn:'Put it into the basket' },
+  fold:   { pick:'攞起一件衫', place:'放上枱摺好', say:'攞起一件衫，放上枱摺好', pickEn:'Pick up a garment', placeEn:'Put it on the table to fold' },
+  store:  { pick:'攞起摺好嘅衫', place:'放入衣櫃', say:'攞起摺好嘅衫，放入衣櫃', pickEn:'Pick up a folded garment', placeEn:'Put it into the wardrobe' },
 };
 const laundryPeg = { carrying:false, stepIdx:-1, stayStart:0, pct:0, dropFrom:null, placed:0 };
 function isLaundryPegStoryGame(){
@@ -6474,8 +6496,8 @@ function photoCardCollectedUnique(){
 function photoCardSummaryText(){
   if(!photoCards.card&&!photoCards.collected.length) return '';
   const n=photoCards.collected.length;
-  if(n>0) return dealText('香港遊：今次去咗 '+n+' 個地方，集到 '+n+' 張閃咭。','Hong Kong tour: '+n+' places visited and '+n+' cards collected today.');
-  return dealText('香港遊：差少少就影到第一張閃咭，下次繼續。','Hong Kong tour: almost got the first card. Continue next time.');
+  if(n>0) return dealText('香港遊：今次去咗 '+n+' 個地方，集到 '+n+' 張風景卡。','Hong Kong tour: '+n+' places visited and '+n+' scenery cards collected today.');
+  return dealText('香港遊：差少少就影到第一張風景卡，下次繼續。','Hong Kong tour: almost got the first scenery card. Continue next time.');
 }
 function renderPhotoCardAlbumSummary(){
   const box=document.getElementById('cardAlbumSummary');
@@ -7570,7 +7592,7 @@ function noteReleaseAttemptEnd(succeeded){
       sessionSafety.repeatedReleaseDifficulty++;
       safetyLog('repeated_release_difficulty', { consecutive: consecutiveReleaseDifficulty });
       consecutiveReleaseDifficulty = 0;
-      showSafetyPause('放手比較困難，先停一停',
+      showSafetyPause('放手比較困難，先休息一陣',
         '連續幾次放手都比較慢或未能放開。請放下物件、張開手、放鬆，並由治療師重新評估手部繃緊程度，'
         + '需要時改用更大的物件或更短距離。',
         { reason: 'repeated_release_difficulty' });
@@ -8505,8 +8527,8 @@ const LEVEL6_TASKS = {
     id:'flowers', theme:'flowers',
     gameType:'pinch',
     label:'插花', labelEn:'Flower Arranging',
-    hint:'患手三指張開，輕捏拿起花材，移到花盤停住，就會自動放下（張開三指亦可放下）；返到花材處先張開三指再捏下一枝',
-    actionCue:'三指張開 → 輕捏拿起 → 移到花盤 → 停住自動放下',
+    hint:'患手三指張開，輕捏拿起花材，移到花瓶等一等，就會自動放下（張開三指亦可放下）；返到花材處先張開三指再捏下一枝',
+    actionCue:'三指張開 → 輕捏拿起 → 移到花瓶 → 等一等自動放下',
   },
   chopsticks:{
     id:'chopsticks', theme:'chopstick_dimsum',
@@ -8519,29 +8541,29 @@ const LEVEL6_TASKS = {
     id:'peg', theme:'peg_laundry',
     gameType:'pinch',
     label:'衣夾晾衫', labelEn:'Cloth-Peg Laundry',
-    hint:'患手揸住真衣夾。揸實衣夾拿起衣物，舉高移到晾衫架停住，就會自動掛上（放鬆衣夾亦可放下）；返到衫籃先鬆開衣夾再夾下一件',
-    actionCue:'鬆開衣夾 → 揸實拿起 → 舉高到衣架 → 停住自動掛上',
+    hint:'患手揸住真衣夾。捏住衣夾攞起衣物，舉高移到晾衫架等一等，就會自動掛上（放鬆衣夾亦可放下）；返到衫籃先鬆開衣夾再攞下一件',
+    actionCue:'鬆開衣夾 → 捏住衣夾攞起 → 舉高到衣架 → 等一等自動掛上',
   },
   cards:{
     id:'cards', theme:'cards',
     gameType:'pinch',
     label:'啤牌', labelEn:'Playing Cards',
-    hint:'患手三指張開，輕捏拿起指定花色嘅啤牌，移到患側收牌區停住，就會自動放下（張開三指亦可放下）；先張開三指再捏下一張',
-    actionCue:'三指張開 → 輕捏拿起 → 移到收牌區 → 停住自動放下',
+    hint:'患手三指張開，輕捏拿起指定花色嘅啤牌，移到患側放牌區等一等，就會自動放下（張開三指亦可放下）；先張開三指再捏下一張',
+    actionCue:'三指張開 → 輕捏拿起 → 移到放牌區 → 等一等自動放下',
   },
   mahjong:{
     id:'mahjong', theme:'mahjong',
     gameType:'pinch',
     label:'麻雀', labelEn:'Mahjong',
-    hint:'患手三指張開，輕捏拿起一組麻雀，移到患側放牌區停住，就會自動放下（張開三指亦可放下）；先張開三指再捏下一組',
-    actionCue:'三指張開 → 輕捏拿起 → 移到放牌區 → 停住自動放下',
+    hint:'患手三指張開，輕捏拿起一組麻雀，移到患側放牌區等一等，就會自動放下（張開三指亦可放下）；先張開三指再捏下一組',
+    actionCue:'三指張開 → 輕捏拿起 → 移到放牌區 → 等一等自動放下',
   },
   cooking:{
     id:'cooking', theme:'cooking',
     gameType:'grasp',
     label:'煮蛋炒飯', labelEn:'Cook Egg Fried Rice',
-    hint:'患手揸住握力器（Digi-Flex），成隻手揸實再放鬆計一下；每一步揸夠次數就煮到',
-    actionCue:'揸實握力器 → 放鬆 ＝ 1 下',
+    hint:'患手揸住握力器（Digi-Flex），成隻手揸一下再放鬆計一次；每一步揸夠次數就煮到',
+    actionCue:'揸一下握力器 → 放鬆 ＝ 1 次',
   },
 };
 function level6TaskProfile(){
@@ -8549,8 +8571,8 @@ function level6TaskProfile(){
   // v143: public peg laundry on the 洗衫晾衫 story layout — move the hand, then clip
   if(task.id==='peg'&&!research.active&&state.laundryPegStory!==false){
     return Object.assign({},task,{
-      hint:'患手揸住真衣夾。手移到着燈位置，揸實衣夾夾起件衫；移到目的地停一停，就會自動放低',
-      actionCue:'移手到着燈位置 → 揸實衣夾夾起 → 移到目的地 → 停住自動放低',
+      hint:'患手揸住真衣夾。手移到着燈位置，捏住衣夾攞起件衫；移到目的地等一等，就會自動放低',
+      actionCue:'移手到着燈位置 → 捏住衣夾攞起 → 移到目的地 → 等一等自動放低',
     });
   }
   if(task.id!=='chopsticks')return task;
@@ -9497,12 +9519,12 @@ const ADV_RULES = {
   },
   cooking_digiflex:{
     lines:[
-      '揸住握力器，每一步揸實再放鬆，揸夠次數就煮到（共 12 步）',
+      '揸住握力器，每一步揸一下再放鬆，揸夠次數就煮到（共 12 步）',
       '每揸一下，畫面即時有動作：切蔥、落油、兜炒',
       '如有需要，可以按「跳過這一步」',
     ],
     tail:'網頁只睇手指開合，唔識別器材，亦唔量度握力。',
-    tts:'煮飯。揸住握力器，每一步揸實再放鬆，揸夠次數就煮到。總共十二步。',
+    tts:'煮飯。揸住握力器，每一步揸一下再放鬆，揸夠次數就煮到。總共十二步。',
   },
   mahjong:{
     lines:[
@@ -9524,12 +9546,12 @@ const ADV_RULES = {
   },
   peg_laundry:{
     lines:[
-      '手移到着燈位置，揸實衣夾夾起',
-      '移到目的地停一停，就會自動放低',
+      '手移到着燈位置，捏住衣夾攞起',
+      '移到目的地等一等，就會自動放低',
       '由洗衫、晾衫、摺衫做到放入衣櫃',
     ],
     tail:'網頁不識別實體工具，亦不量度握力或捏力。',
-    tts:'洗衫晾衫。手移到着燈位置，揸實衣夾夾起。移到目的地停一停，就會自動放低。',
+    tts:'洗衫晾衫。手移到着燈位置，捏住衣夾攞起。移到目的地等一等，就會自動放低。',
   },
   laundry:{
     lines:[
@@ -9560,6 +9582,10 @@ const PLAIN_SHOULDER_DO = {
   laundry:'洗衫晾衫', cards:'揭牌', mahjong:'摸牌',
 };
 const PLAIN_TAIL = '慢慢嚟，唔使急';
+// v148 動作動詞集中寫喺呢度：真機試聽讀音唔啱，可以一次過換
+const PLAIN_VERB_PINCH_HOLD = '捏住';       // 三隻手指、衣夾：手到物件上面
+const PLAIN_VERB_PINCH_UP = '捏起';         // 三隻手指攞起
+const PLAIN_VERB_CHOPSTICK_HOLD = '夾住';   // 筷子：手到點心上面
 // 公開版用口語短句（plain）；另一條流程保留原有標準字句（formal）
 function plainSay(plain, formal){ return research.active ? formal : plain; }
 // 故事步驟讀出嚟同開局指示用同一個講法：「舉高隻手，……」
@@ -9576,28 +9602,28 @@ function plainStartLines(){
       ? (isTeahouseDimsumMode() ? '揭開蒸籠' : '攞點心')
       : (PLAIN_SHOULDER_DO[theme] || ('攞'+item));
     return state.shoulderExerciseMode === 'assisted-stick'
-      ? ['兩隻手揸住支棍', '一齊舉高，'+act, '放低支棍，再嚟過']
-      : ['舉高隻手，'+act, '放低隻手，再嚟過'];
+      ? ['兩隻手揸住支棍', '一齊舉高支棍', '放低支棍，再嚟下一個']
+      : ['舉高隻手，'+act, '放低隻手，再嚟下一個'];
   }
   if(state.level === '67'){
     const task = state.level6Task;
-    if(task === 'cooking') return ['揸實握力器', '再放鬆', '咁就計一下'];
+    if(task === 'cooking') return ['揸一下握力器', '再放鬆隻手', '咁就計一次'];
     if(task === 'chopsticks'){
       return state.dimsumDifficulty === 'complex'
-        ? ['聽清楚要邊款點心', '筷子尖指住佢，停一停', '夾去隻碟，停一停']
-        : ['筷子尖指住點心', '停一停，就夾起', '夾去隻碟，停一停'];
+        ? ['睇上面要邊款點心', '筷子尖指住佢，等一等', '夾去隻碟，等一等']
+        : ['筷子尖指住點心', '等一等，就夾起', '夾去隻碟，等一等'];
     }
     if(task === 'peg'){
       return state.laundryPegStory !== false
-        ? ['隻手去着燈嗰度', '揸實衣夾，夾起', '擺到目的地，停一停']
-        : ['揸實衣夾，夾起件衫', '舉高，擺去衫架', '停一停，就掛好'];
+        ? ['隻手去着燈嗰度', '捏住衣夾，攞起件衫', '擺到目的地，等一等']
+        : ['捏住衣夾，攞起件衫', '舉高，擺去衫架', '等一等，就掛好'];
     }
-    if(task === 'cards') return ['睇上面要邊隻花', '三隻手指，揸起張牌', '擺去收牌區，停一停'];
-    if(task === 'mahjong') return ['揀一組牌', '三隻手指，揸起佢', '擺去放牌區，停一停'];
-    return ['三隻手指，揸起枝花', '擺去花盤', '停一停，就放低'];
+    if(task === 'cards') return ['睇上面要邊隻花', '三隻手指，捏起張牌', '擺去放牌區，等一等'];
+    if(task === 'mahjong') return ['揀一組牌', '三隻手指，捏起佢', '擺去放牌區，等一等'];
+    return ['三隻手指，捏起枝花', '擺去花瓶', '等一等，就放低'];
   }
   // Level 5：揸拳頭攞起 → 擺過去 → 打開隻手（玩法冇變，只係改字）
-  if(theme === 'cards') return ['睇上面要邊隻花', '揸拳頭，攞起張牌', '擺去收牌區，打開隻手'];
+  if(theme === 'cards') return ['睇上面要邊隻花', '揸拳頭，攞起張牌', '擺去放牌區，打開隻手'];
   if(theme === 'mahjong') return ['揀一組牌', '揸拳頭，攞起佢', '擺去放牌區，打開隻手'];
   if(theme === 'flowers') return ['揸拳頭，攞起枝花', '擺入花瓶', '打開隻手，放低'];
   if(theme === 'laundry') return ['揸拳頭，攞起件衫', '擺入同色嘅籃', '打開隻手，放低'];
@@ -9926,14 +9952,374 @@ document.getElementById('btnCalibForceStart').addEventListener('click', ()=>{
 });
 
 /* ==================== 廣東話 TTS ==================== */
+/* v148-speech-core:start */
+/* 讀出先後次序：步驟指示 ＞ 糾正提示 ＞ 追蹤提示 ＞ 讚好。
+   低優先嘅句子唔可以截斷正在讀緊嘅高優先句子（會直接唔讀）；
+   同級或者更高級嘅新句子照舊會頂走舊句。冇寫 priority 嘅一律當步驟指示。 */
+const SPEECH_RANK = { step:4, correct:3, track:2, praise:1 };
+const SPEECH_RATE_ZH = 0.85, SPEECH_RATE_ZH_NUMBER = 0.82, SPEECH_RATE_EN = 0.92;
+let speechNow = { rank:0, token:0, until:0 };
+let speechWaiting = null;            // 一句等緊讀嘅糾正提示：唔截斷步驟指示，等佢讀完先補讀
+const SPEECH_WAIT_MAX_MS = 5000;     // 等超過呢個時間就唔再補讀（已經過時）
+const SPEECH_WAIT_GAP_MS = 250;      // 上一句讀完之後停一停先補讀
+function speechRankOf(opts){ return SPEECH_RANK[opts && opts.priority] || SPEECH_RANK.step; }
+function speechBusyRank(now){
+  const t = Number.isFinite(now) ? now : performance.now();
+  if(!speechNow.rank) return 0;
+  if(t > speechNow.until){ speechNow.rank = 0; return 0; }   // 有啲裝置唔回報「讀完」：以字數估算做後備
+  return speechNow.rank;
+}
+function speechCanSay(priority, now){ return speechRankOf({priority}) >= speechBusyRank(now); }
+function speechEstimateMs(text, rate){
+  return 900 + String(text || '').replace(/\s/g, '').length * 330 / Math.max(0.5, rate || SPEECH_RATE_ZH);
+}
+/* 讀出用中文數字（畫面照用阿拉伯數字）：「做 2 次」讀「做兩次」，「第 2 碟」讀「第二碟」。 */
+const CANTO_DIGITS = ['零','一','二','三','四','五','六','七','八','九','十'];
+function cantoNumber(n, measure){
+  n = Math.round(Number(n));
+  if(!Number.isFinite(n) || n < 0 || n > 99) return String(n);
+  if(n === 2 && measure) return '兩';
+  if(n <= 10) return CANTO_DIGITS[n];
+  const tens = Math.floor(n / 10), ones = n % 10;
+  return (tens > 1 ? CANTO_DIGITS[tens] : '') + '十' + (ones ? CANTO_DIGITS[ones] : '');
+}
+function cantoSpokenNumbers(text){
+  return String(text == null ? '' : text).replace(/([^\d\s]?)(\s*)(\d+)(\s*)(?=(.?))/g, (m, before, sp1, digits, sp2, after)=>{
+    const cjkBefore = /[\u3400-\u9fff]/.test(before), cjkAfter = /[\u3400-\u9fff]/.test(after);
+    if(digits.length > 2 || (!cjkBefore && !cjkAfter)) return m;   // 大數目、英文／型號入面嘅數字唔郁
+    const measure = cjkAfter && before !== '第';               // 後面跟量詞先用「兩」
+    return before + cantoNumber(digits, measure);
+  });
+}
+function speechHasNumber(text){ return /\d/.test(String(text || '')); }
+/* 英文版用嘅物件名（落單、糾正句會填入）。搵唔到就用通用句，唔會出半中半英。 */
+const EN_ITEM_NAMES = {
+  '牛肉球':['beef ball','beef balls'], '蝦餃':'har gow', '燒賣':'siu mai',
+  '恤衫':['shirt','shirts'], '孖煙通':['pair of boxer shorts','pairs of boxer shorts'],
+  '牛仔褲':['pair of jeans','pairs of jeans'], '半截裙':['skirt','skirts'],
+  '底衫':['vest','vests'], '襪':['pair of socks','pairs of socks'],
+  '上衣':'tops', '褲':'trousers', '裙':'skirts', '內衣襪':'underwear and socks', '上身':'upper body', '下身':'lower body',
+  '黑桃':'spades', '紅心':'hearts', '紅磚':'diamonds', '梅花':'clubs',
+  '紅色':'red', '藍色':'blue', '黃色':'yellow', '綠色':'green',
+};
+const EN_GARMENT_NAMES = {   // [英文名, 係咪眾數]
+  '襪':['socks',true], '短褲':['shorts',true], '背心':['vest',false], 'T恤':['T-shirt',false], '外套':['jacket',false], '長褲':['trousers',true],
+};
+function enName(zh, n){
+  const v = EN_ITEM_NAMES[zh];
+  if(!v) return '';
+  return Array.isArray(v) ? v[(Number(n) || 1) > 1 ? 1 : 0] : v;
+}
+/* v148-speech-core:end */
+/* v148-tracking-prompts:start */
+/* 鏡頭追蹤異常提示（T1–T9）。只係提示：唔扣分、唔計錯、唔停遊戲、唔改任何偵測門檻。
+   規則：情況連續 3 秒先出；同一句最少隔 15 秒先再讀；同一次最多讀兩次，之後只留畫面短字；
+   回復正常讀一句「見到喇，繼續。」。呢段係純計算（冇用畫面、冇用聲），方便自動測試。 */
+const TRACK_PROMPTS = {
+  T1:{ say:'鏡頭睇唔到隻手，放返入畫面中間。', chip:'睇唔到隻手',
+       en:'The camera cannot see your hand. Bring it back to the middle of the screen.', chipEn:'Hand not seen' },
+  T2:{ say:'鏡頭睇唔到膊頭，坐返正中間。', chip:'睇唔到膊頭',
+       en:'The camera cannot see your shoulder. Sit back in the middle.', chipEn:'Shoulder not seen' },
+  T3:{ say:'太近鏡頭喇，坐後少少。', chip:'太近',
+       en:'You are too close to the camera. Move back a little.', chipEn:'Too close' },
+  T4:{ say:'太遠喇，坐近少少。', chip:'太遠',
+       en:'You are too far from the camera. Move a little closer.', chipEn:'Too far' },
+  T5:{ say:'試吓用返{side}手。', chip:'用{side}手',
+       en:'Try using your {side} hand.', chipEn:'Use {side} hand' },
+  T6:{ say:'鏡頭睇得唔清楚，隻手定住，等一等。', chip:'鏡頭對緊',
+       en:'The camera is not seeing clearly. Keep your hand still and wait a moment.', chipEn:'Camera adjusting' },
+  T7:{ say:'鏡頭重新連接緊，等一等。', chip:'重新連接緊',
+       en:'The camera is reconnecting. Please wait a moment.', chipEn:'Reconnecting' },
+  T8:{ say:'請姑娘幫手校返個鏡頭。', chip:'請叫姑娘',
+       en:'Please ask your therapist to adjust the camera.', chipEn:'Ask your therapist' },
+  T9:{ say:'見到喇，繼續。', chip:'',
+       en:'I can see you now. Carry on.', chipEn:'' },
+};
+const TRACK_HOLD_MS = 3000;        // 情況連續幾耐先出提示
+const TRACK_COOLDOWN_MS = 15000;   // 同一句最少隔幾耐先再讀
+const TRACK_ESCALATE_MS = 15000;   // 持續幾耐就請姑娘幫手（T8）
+const TRACK_MAX_SPOKEN = 2;        // 同一次最多讀幾句
+const TRACK_DROP_WINDOW_MS = 3000; // 「斷續」嘅觀察時間
+const TRACK_DROP_COUNT = 3;        // 觀察時間內斷幾多次當係唔穩定（T6）
+const TRACK_CLEAR_MS = 1200;       // 回復正常幾耐先收起提示
+function trackPromptText(code, side){
+  const p = TRACK_PROMPTS[code];
+  if(!p) return { say:'', chip:'', en:'', chipEn:'' };
+  const zh = side === 'left' ? '左' : '右', en = side === 'left' ? 'left' : 'right';
+  const fill = (t, word)=>String(t).split('{side}').join(word);
+  return { say:fill(p.say, zh), chip:fill(p.chip, zh), en:fill(p.en, en), chipEn:fill(p.chipEn, en) };
+}
+function trackPromptNewState(){
+  return { cond:'', condSince:0, active:'', episodeAt:0, spoken:0, clearSince:0, lastSaid:{}, drops:[], wasOk:true };
+}
+/* input：{ cond:'T1'…'T7' 或 ''（而家見到嘅情況）, ok:訊號有冇, suppressed:而家唔應該出提示, canSpeak:而家可唔可以讀 }
+   回傳：{ chip:畫面短字用邊句（'' 即係收起）, say:而家要讀邊句（'' 即係唔讀） } */
+function trackPromptStep(st, input, now){
+  const out = { chip:'', say:'' };
+  const inp = input || {};
+  if(inp.suppressed){
+    st.cond = ''; st.condSince = 0; st.active = ''; st.episodeAt = 0; st.spoken = 0; st.clearSince = 0;
+    st.drops.length = 0; st.wasOk = true;
+    return out;
+  }
+  const ok = inp.ok !== false, canSpeak = inp.canSpeak !== false;
+  if(st.wasOk && !ok) st.drops.push(now);
+  st.wasOk = ok;
+  while(st.drops.length && now - st.drops[0] > TRACK_DROP_WINDOW_MS) st.drops.shift();
+  const cond = TRACK_PROMPTS[inp.cond] ? inp.cond : '';
+  if(cond !== st.cond){ st.cond = cond; st.condSince = now; }
+  let active = '';
+  if(cond === 'T7') active = 'T7';                                   // 畫面停頓：即刻出
+  else if(cond && now - st.condSince >= TRACK_HOLD_MS) active = cond; // 其他：連續 3 秒先出
+  else if(st.drops.length >= TRACK_DROP_COUNT) active = 'T6';        // 3 秒內斷續三次
+  if(active){
+    if(!st.episodeAt){ st.episodeAt = Math.max(1, (active === cond && active !== 'T7') ? st.condSince : now); st.spoken = 0; }
+    st.active = active; st.clearSince = 0;
+  }else if(st.episodeAt){
+    if(!cond && ok){
+      if(!st.clearSince) st.clearSince = now;
+      if(now - st.clearSince >= TRACK_CLEAR_MS){
+        const spoke = st.spoken > 0;
+        st.episodeAt = 0; st.active = ''; st.clearSince = 0; st.spoken = 0;
+        const last = st.lastSaid.T9;
+        if(spoke && canSpeak && (last == null || now - last >= TRACK_COOLDOWN_MS)){ st.lastSaid.T9 = now; out.say = 'T9'; }
+        return out;
+      }
+    }else{
+      st.clearSince = 0;
+    }
+  }
+  if(!st.episodeAt) return out;
+  const target = (st.active !== 'T7' && now - st.episodeAt >= TRACK_ESCALATE_MS) ? 'T8' : st.active;
+  out.chip = target;
+  const lastSaid = st.lastSaid[target];
+  if(active && canSpeak && st.spoken < TRACK_MAX_SPOKEN && (lastSaid == null || now - lastSaid >= TRACK_COOLDOWN_MS)){
+    st.lastSaid[target] = now; st.spoken++; out.say = target;
+  }
+  return out;
+}
+/* 步驟指示重讀：10 秒冇動作先再讀一次，最多兩次。呢段都係純計算。 */
+const STEP_REPEAT_IDLE_MS = 10000, STEP_REPEAT_MAX = 2;
+function stepRepeatNewState(){ return { text:'', opts:null, at:0, count:0 }; }
+function stepRepeatStep(st, input, now){
+  const inp = input || {};
+  if(!st.text) return false;
+  if(inp.suppressed || inp.moved || inp.speaking){ st.at = now; return false; }
+  if(st.count >= STEP_REPEAT_MAX || now - st.at < STEP_REPEAT_IDLE_MS) return false;
+  st.count++; st.at = now;
+  return true;
+}
+/* v148-tracking-prompts:end */
+/* v148-tracking-runtime:start */
+/* 將上面嘅計算接駁落遊戲：每個畫面更新睇一次鏡頭情況，出畫面短字同讀出。 */
+const TRACK_GRACE_MS = 5000;              // 開局頭 5 秒唔出提示
+const TRACK_SNAP_STALE_MS = 1500;         // 手部資料太舊就當冇資料
+const TRACK_REF_SAMPLES = 12;             // 開局攞幾多個樣本做「正常大細」
+const TRACK_HAND_NEAR_RATIO = 2.2;        // 隻手比開局大幾多倍當太近（初始值，真機再調）
+const TRACK_HAND_FAR_RATIO = 0.40;        // 隻手比開局細到幾多當太遠（初始值，真機再調）
+const TRACK_SHOULDER_NEAR_RATIO = 1.5;    // 兩邊膊頭距離比開局闊幾多倍當太近
+const TRACK_SHOULDER_FAR_RATIO = 0.6;     // 兩邊膊頭距離比開局窄到幾多當太遠
+const TRACK_OPPOSITE_SCORE = 0.80;        // 另一邊手：左右標籤要幾肯定先提
+const TRACK_OPPOSITE_LONE_SCORE = 0.90;   // 另一邊手已經玩得到嗰陣，要更加肯定先提
+let trackPromptState = trackPromptNewState();
+let trackHandSnap = { at:0, hands:0, present:false, span:NaN, opposite:false, sizeDir:0 };
+let trackRef = { hand:[], handRef:NaN, handAt:0, shoulder:[], shoulderRef:NaN };
+let trackGameStartedAt = 0;
+let trackQa = { mode:'off', input:null };
+let trackPromptLog = [];
+let stepRepeat = stepRepeatNewState();
+let stepRepeatRef = null;
+// 每次手部偵測完記低結果（只係記錄，唔影響揀邊隻手）
+function trackNoteHandFrame(results, selectedIndex){
+  const lms = Array.isArray(results && results.landmarks) ? results.landmarks : [];
+  const snap = { at:nowMs(), hands:lms.length, present:selectedIndex >= 0, span:NaN, opposite:false, sizeDir:0 };
+  if(lms.length){
+    const d = handAdmitDiag, affected = activeAffectedSide();
+    snap.span = handSpanOf(lms[selectedIndex >= 0 ? selectedIndex : 0]);
+    const otherSide = (d.label === 'left' || d.label === 'right') && d.label !== affected && d.check === 'on';
+    snap.opposite = otherSide && ((d.path === 'rejected' && d.score >= TRACK_OPPOSITE_SCORE)
+      || (d.path === 'lone' && d.score >= TRACK_OPPOSITE_LONE_SCORE));
+    if(selectedIndex < 0 && d.path === 'size' && Number.isFinite(snap.span) && d.lockSize > 0){
+      snap.sizeDir = snap.span > d.lockSize ? 1 : -1;
+    }
+  }
+  trackHandSnap = snap;
+}
+function trackHandCondition(now){
+  const s = trackHandSnap;
+  if(!s.at || now - s.at > TRACK_SNAP_STALE_MS) return { cond:'', ok:true };
+  if(!s.hands) return { cond:'T1', ok:false };
+  if(s.opposite) return { cond:'T5', ok:s.present };
+  if(s.present && Number.isFinite(s.span)){
+    if(!Number.isFinite(trackRef.handRef)){
+      if(s.at !== trackRef.handAt){
+        trackRef.handAt = s.at; trackRef.hand.push(s.span);
+        if(trackRef.hand.length >= TRACK_REF_SAMPLES) trackRef.handRef = level4Median(trackRef.hand);
+      }
+    }else{
+      const ratio = s.span / trackRef.handRef;
+      if(ratio >= TRACK_HAND_NEAR_RATIO) return { cond:'T3', ok:true };
+      if(ratio <= TRACK_HAND_FAR_RATIO) return { cond:'T4', ok:true };
+    }
+  }
+  if(s.sizeDir) return { cond:s.sizeDir > 0 ? 'T3' : 'T4', ok:false };
+  return { cond:s.present ? '' : 'T6', ok:s.present };
+}
+// 上臂離開「垂直向下」幾多度（0＝垂低，90＝平舉）
+function trackArmRaiseDeg(shoulder, elbow, aspect){
+  if(!level4PosePointUsable(shoulder) || !level4PosePointUsable(elbow)) return NaN;
+  const dx = (elbow.x - shoulder.x) * (aspect || 1), dy = elbow.y - shoulder.y;
+  return Math.atan2(Math.abs(dx), dy) * 180 / Math.PI;
+}
+function trackPoseCondition(lm, opts){
+  const o = opts || {};
+  if(!Array.isArray(lm) || !affectedPoseArm(lm)) return { cond:'T2', ok:false };
+  const aspect = o.aspect || 1, left = activeAffectedSide() === 'left';
+  const a = lm[11], b = lm[12];
+  if(level4PosePointUsable(a) && level4PosePointUsable(b)){
+    const width = Math.hypot((a.x - b.x) * aspect, a.y - b.y);
+    if(!Number.isFinite(trackRef.shoulderRef)){
+      trackRef.shoulder.push(width);
+      if(trackRef.shoulder.length >= TRACK_REF_SAMPLES) trackRef.shoulderRef = level4Median(trackRef.shoulder);
+    }else if(trackRef.shoulderRef > 0){
+      const ratio = width / trackRef.shoulderRef;
+      if(ratio > TRACK_SHOULDER_NEAR_RATIO) return { cond:'T3', ok:true };
+      if(ratio < TRACK_SHOULDER_FAR_RATIO) return { cond:'T4', ok:true };
+    }
+  }
+  const target = Number(o.targetDeg);
+  if(!o.bothHands && Number.isFinite(target) && target > 0){
+    const mine = trackArmRaiseDeg(lm[left ? 11 : 12], lm[left ? 13 : 14], aspect);
+    const other = trackArmRaiseDeg(lm[left ? 12 : 11], lm[left ? 14 : 13], aspect);
+    if(Number.isFinite(mine) && Number.isFinite(other) && other >= target && mine < target / 2){
+      return { cond:'T5', ok:true };
+    }
+  }
+  return { cond:'', ok:true };
+}
+function trackRestSceneActive(){
+  try{
+    if(typeof cook === 'object' && cook.active && cook.rest && cook.rest.phase) return true;
+    if(laundryStory.active){ const st = laundryCurrentStep(); if(st && st.kind === 'scene') return true; }
+    if(shopStory.active){ const st = shopCurrentStep(); if(st && st.kind === 'scene') return true; }
+  }catch(_e){}
+  return false;
+}
+function trackPromptSuppressed(now){
+  if(!state.running || state.paused || recoveryPauseActive) return true;
+  if(now - trackGameStartedAt < TRACK_GRACE_MS) return true;
+  try{ if(rewardIsOpen()) return true; }catch(_e){}
+  return trackRestSceneActive();
+}
+function trackPromptLiveInput(now){
+  const suppressed = trackPromptSuppressed(now);
+  let c = { cond:'', ok:true };
+  if(!suppressed){
+    const stalled = !state.qaMode && publicCameraStall.lastFreshAt
+      && (publicCameraStall.busy || performance.now() - publicCameraStall.lastFreshAt >= PUBLIC_CAMERA_STALL_PLAY_MS);
+    if(stalled) c = { cond:'T7', ok:true };
+    else if(isShoulderFlexionLevel()){
+      c = trackPoseCondition(level4SelectedOverlayPose, {
+        aspect:level4VideoAspect(gameVideo),
+        targetDeg:shoulderFlexionState && shoulderFlexionState.selectedTargetDeg,
+        bothHands:state.shoulderExerciseMode === 'assisted-stick',
+      });
+    }else if(state.level === '5' || state.level === '67') c = trackHandCondition(now);
+  }
+  return { cond:c.cond, ok:c.ok, suppressed, canSpeak:speechCanSay('track') };
+}
+function trackPromptShow(code){
+  const el = document.getElementById('trackChip');
+  if(!el) return;
+  if(!code){ if(!el.hidden){ el.hidden = true; el.textContent = ''; el.dataset.code = ''; } return; }
+  if(el.dataset.code === code && !el.hidden) return;
+  const t = trackPromptText(code, activeAffectedSide());
+  el.textContent = dealText(t.chip, t.chipEn);
+  el.dataset.code = code; el.hidden = false;
+}
+function trackPromptTick(){
+  const now = nowMs();
+  const input = (trackQa.mode === 'manual' && trackQa.input) ? trackQa.input : trackPromptLiveInput(now);
+  const out = trackPromptStep(trackPromptState, input, now);
+  trackPromptShow(out.chip);
+  if(out.say){
+    const t = trackPromptText(out.say, activeAffectedSide());
+    trackPromptLog.push({ code:out.say, at:Math.round(now), text:t.say });
+    if(trackPromptLog.length > 30) trackPromptLog.shift();
+    try{ speakCantonese(dealText(t.say, t.en), { priority:'track' }); }catch(_e){}
+  }
+  stepRepeatTick(now, !!input.suppressed || !!trackPromptState.episodeAt);
+  return out;
+}
+function trackPromptReset(startGame){
+  trackPromptState = trackPromptNewState();
+  trackHandSnap = { at:0, hands:0, present:false, span:NaN, opposite:false, sizeDir:0 };
+  if(startGame){
+    trackRef = { hand:[], handRef:NaN, handAt:0, shoulder:[], shoulderRef:NaN };
+    trackGameStartedAt = nowMs(); trackPromptLog = [];
+    stepRepeat = stepRepeatNewState(); stepRepeatRef = null;
+  }
+  trackPromptShow('');
+}
+// 讀一句步驟指示，並記低佢；之後 10 秒冇動作先會再讀（最多兩次）
+function stepSay(text, opts){
+  stepRepeat = stepRepeatNewState();
+  stepRepeat.text = String(text || ''); stepRepeat.opts = opts || null; stepRepeat.at = nowMs();
+  stepRepeatRef = null;
+  return speakCantonese(text, opts);
+}
+function stepRepeatClear(){ stepRepeat.text = ''; }
+function stepRepeatMoved(){
+  let cw = 1, ch = 1;
+  try{ cw = gameCanvas.width || 1; ch = gameCanvas.height || 1; }catch(_e){}
+  const cur = {
+    x:cursorX >= 0 ? cursorX / cw : -1, y:cursorY >= 0 ? cursorY / ch : -1,
+    p:Number(shoulderFlexionState && shoulderFlexionState.progress) || 0,
+    n:score + '|' + correctCount + '|' + grabCount + '|' + (heldItem ? 1 : 0) + '|' + ((typeof cook === 'object' && cook.reps) || 0),
+  };
+  const ref = stepRepeatRef;
+  if(!ref){ stepRepeatRef = cur; return false; }
+  const moved = cur.n !== ref.n || Math.abs(cur.p - ref.p) > 0.10
+    || (cur.x >= 0 && ref.x >= 0 ? Math.hypot(cur.x - ref.x, cur.y - ref.y) > 0.06 : (cur.x >= 0) !== (ref.x >= 0));
+  if(moved) stepRepeatRef = cur;
+  return moved;
+}
+function stepRepeatTick(now, suppressed){
+  if(!stepRepeat.text) return false;
+  const again = stepRepeatStep(stepRepeat, { suppressed, moved:stepRepeatMoved(), speaking:speechBusyRank() > 0 }, now);
+  if(again){ try{ speakCantonese(stepRepeat.text, stepRepeat.opts); }catch(_e){} }
+  return again;
+}
+/* v148-tracking-runtime:end */
+function speechFlushWaiting(){
+  const w = speechWaiting;
+  if(!w) return;
+  if(performance.now() > w.expires){ speechWaiting = null; return; }
+  if(speechRankOf(w.opts) < speechBusyRank()) return;   // 仲有高優先嘅句子讀緊，等佢讀完再嚟
+  speechWaiting = null;
+  speakCantonese(w.text, w.opts);
+}
 function speakCantonese(text, opts){
   if(!('speechSynthesis' in window)){
     if(opts && opts.onerror) setTimeout(opts.onerror, 0);
     return null;
   }
+  const rank = speechRankOf(opts);
+  if(rank < speechBusyRank()){
+    // 高優先嘅句子讀緊：呢句唔截斷人哋。糾正提示會等佢讀完先補讀；追蹤提示同讚好就唔讀。
+    if(opts && opts.priority === 'correct'){
+      speechWaiting = { text, opts, expires: performance.now() + SPEECH_WAIT_MAX_MS };
+      setTimeout(speechFlushWaiting, Math.max(60, speechNow.until - performance.now() + 60));
+      return null;
+    }
+    if(opts && opts.onend) setTimeout(opts.onend, 0);
+    return null;
+  }
   try{ window.speechSynthesis.cancel(); }catch(e){}
   const english = !!(window.YCHLanguage && window.YCHLanguage.isEnglish());
-  const spokenText = english ? window.YCHLanguage.translateToEnglish(text) : window.YCHLanguage?.text(text) || text;
+  const numbered = !english && speechHasNumber(text);
+  const spokenText = english ? window.YCHLanguage.translateToEnglish(text)
+    : cantoSpokenNumbers(window.YCHLanguage?.text(text) || text);
   const u = new SpeechSynthesisUtterance(spokenText);
   const voices = window.speechSynthesis.getVoices();
   const englishVoice = english
@@ -9948,11 +10334,19 @@ function speakCantonese(text, opts){
   const selectedVoice = english ? englishVoice : yueVoice;
   if(selectedVoice) u.voice = selectedVoice;
   u.lang = selectedVoice ? selectedVoice.lang : (english ? 'en-US' : 'zh-HK');
-  u.rate = (opts && opts.rate) || (english ? 0.92 : 0.85);
+  // v148：有數目嘅句子讀慢少少（0.82），其餘廣東話 0.85
+  u.rate = (opts && opts.rate) || (english ? SPEECH_RATE_EN : (numbered ? SPEECH_RATE_ZH_NUMBER : SPEECH_RATE_ZH));
   u.pitch = (opts && opts.pitch) || 1.0;
   u.volume = 1.0;
-  if(opts && opts.onend) u.onend = opts.onend;
-  if(opts && opts.onerror) u.onerror = opts.onerror;
+  const token = speechNow.token + 1;
+  speechNow = { rank, token, until: performance.now() + speechEstimateMs(spokenText, u.rate) };
+  const finished = ()=>{
+    if(speechNow.token !== token) return;
+    speechNow.rank = 0;
+    if(speechWaiting) setTimeout(speechFlushWaiting, SPEECH_WAIT_GAP_MS);
+  };
+  u.onend = ev=>{ finished(); if(opts && opts.onend) opts.onend(ev); };
+  u.onerror = ev=>{ finished(); if(opts && opts.onerror) opts.onerror(ev); };
   window.speechSynthesis.speak(u);
   return u;
 }
@@ -10102,16 +10496,67 @@ function showLevelUpBanner(){
   window._lvlBannerTimer = setTimeout(()=>{ setPromptSlot('rules'); }, 5000);
 }
 
+/* v148：部機有語音但冇廣東話語音 → 喺校準頁提治療師一句（唔好靜靜雞用其他語音讀） */
+const VOICE_WARNING_TEXT = '提提姑娘：呢部機搵唔到廣東話語音，指示可能會用其他語音讀出。';
+const VOICE_WARNING_TEXT_EN = 'Note for therapist: no Cantonese voice was found on this device. Instructions may be read in another voice.';
+function cantoneseVoiceMissing(voices, english){
+  const list = Array.isArray(voices) ? voices : [];
+  if(english || !list.length) return false;   // 英文版唔使；語音表未載入就唔好亂提
+  return !list.some(v=>/yue|zh[-_]HK/i.test(String(v && v.lang || '')) || /Cantonese|廣東|粵/i.test(String(v && v.name || '')));
+}
+function updateVoiceWarning(){
+  const el = document.getElementById('voiceWarning');
+  if(!el) return false;
+  let missing = false;
+  try{
+    if('speechSynthesis' in window){
+      missing = cantoneseVoiceMissing(Array.from(window.speechSynthesis.getVoices() || []),
+        !!(window.YCHLanguage && window.YCHLanguage.isEnglish()));
+    }
+  }catch(_e){ missing = false; }
+  el.textContent = dealText(VOICE_WARNING_TEXT, VOICE_WARNING_TEXT_EN);
+  el.hidden = !missing;
+  return missing;
+}
 if('speechSynthesis' in window){
-  window.speechSynthesis.onvoiceschanged = ()=>{};
+  window.speechSynthesis.onvoiceschanged = ()=>{ try{ updateVoiceWarning(); }catch(_e){} };
 }
 
 // 連續 5 錯：自動暫停 + 對簡單規則伸広東話提醒
 let recoveryPauseActive = false;
+let lastWrongItemType = '';   // v148 啱啱放錯嗰款（冇記錄就用第一款）
+function recoveryPlainSentence(tier, cat){
+  if(tier !== 0) return dealText('慢慢嚟，先搬開隻動物。', 'Take your time. First, move the animal away.');
+  let item = (cat && cat.itemLabel) || '';
+  const target = (cat && cat.targetLabel) || '';
+  // 落單版筷子點心：放錯即係夾咗張單冇嘅點心，所以要講返張單要嗰款（唔係啱啱放錯嗰款）。
+  if(isDimsumOrderGame() && dimsumOrder && dimsumOrder.lines[0]) item = dimsumOrder.lines[0].label;
+  const tr = t=>{
+    const named = enName(t, 1);
+    if(named) return named;
+    const out = (window.YCHLanguage && window.YCHLanguage.translateToEnglish) ? String(window.YCHLanguage.translateToEnglish(t) || '') : '';
+    return (!out || /^Follow the/.test(out) || /[\u3400-\u9fff]/.test(out)) ? '' : out.toLowerCase();
+  };
+  const itemEn = tr(item), targetEn = tr(target);
+  const generic = 'Take your time. First, put one item in its matching place.';
+  // 物件同目的地同名（例如叉燒包 → 叉燒包蒸籠）：跟返規則頁講「同款嗰籠／同款嗰度」。
+  if(item && item === target){
+    const steamer = state.theme === 'dimsum';
+    return dealText('慢慢嚟，先將' + item + '放去同款嗰' + (steamer ? '籠' : '度') + '。',
+      itemEn ? 'Take your time. First, put the ' + itemEn + ' in the matching ' + (steamer ? 'steamer' : 'place') + '.' : generic);
+  }
+  if(isDimsumOrderGame()){
+    return dealText('慢慢嚟，先將' + item + '放去' + target + '。',
+      itemEn ? 'Take your time. First, put the ' + itemEn + ' on the plate.' : 'Take your time. First, check the dim sum shown at the top.');
+  }
+  return dealText('慢慢嚟，先將' + item + '放去' + target + '。',
+    (itemEn && targetEn) ? 'Take your time. First, put the ' + itemEn + ' in the ' + targetEn + '.' : generic);
+}
 function triggerRecoveryPause(){
   if(recoveryPauseActive) return;
   recoveryPauseActive = true;
   state.running = false;  // 暫停遊戲邏輯
+  try{ trackPromptReset(false); }catch(_e){}
 
   const tier = getDistractorCount();
   let simpleMsg = '';
@@ -10133,8 +10578,10 @@ function triggerRecoveryPause(){
     simpleCanto = `慢慢來。只拿${itemWordR}。就係${fAR}和${fBR}。大象、貓、狗、都不要拿。`;
   }
   if(!research.active){
-    // v146：公開版用短句口語；動物只係阻路，可以搬開
-    simpleCanto = `慢慢嚟。${fAR}放去${tAR}。${fBR}放去${tBR}。` + (tier === 0 ? '' : '動物阻住就搬開佢。');
+    // v148：一次只講一個糾正步驟；暫停畫面嘅字同讀出係同一句
+    const wrongCat = catsR.find(c=>c && c.type === lastWrongItemType) || catsR[0];
+    simpleCanto = recoveryPlainSentence(tier, wrongCat);
+    simpleMsg = '<div style="font-size:34px; line-height:1.55; font-weight:800; max-width:20em;">' + simpleCanto + '</div>';
   }
 
   // 建立全螢幕 recovery 遮罩
@@ -10156,7 +10603,7 @@ function triggerRecoveryPause(){
     try{ window.speechSynthesis.cancel(); }catch(e){}
     overlay.style.display = 'none';
     recoveryPauseActive = false;
-    wrongStreak = 0;
+    wrongStreak = 0; lastWrongItemType = '';
     // Reset 偵測 及 held item state，避免 recovery 之前的 stale state 獸留
     heldItem = null;
     gripActive = false;
@@ -11395,6 +11842,7 @@ function interpretHandResults(results, inputMirrored=false, videoEl=null){
     // Hand Landmarker. Keep inference mirroring explicit so display settings
     // can never swap the selected anatomical hand.
     const selectedHandIndex = selectedAffectedHandIndex(results, inputMirrored);
+    trackNoteHandFrame(results, selectedHandIndex);   // v148 只係記錄，畀追蹤提示用
     if(selectedHandIndex < 0) return { detected:false, reason:'affected-hand-not-detected' };
     const lm = results.landmarks[selectedHandIndex];
     const required = state.gameType === 'pinch'
@@ -11518,6 +11966,7 @@ function interpretHandResults(results, inputMirrored=false, videoEl=null){
       };
     }
   }
+  trackNoteHandFrame(results, -1);   // v148 只係記錄
   return { detected:false, reason:'no-hand-detected' };
 }
 
@@ -12721,6 +13170,7 @@ function resetPrivacySegmentation(){
 }
 
 function updateCalibrationCopy(){
+  try{ updateVoiceWarning(); }catch(_e){}
   const hint = document.getElementById('calibHint');
   const openCheck = document.getElementById('calibOpenCheck');
   const closeCheck = document.getElementById('calibCloseCheck');
@@ -13935,8 +14385,8 @@ const THEMES = {
   tsuenwan: mkTheme({
     id:'tsuenwan',title:'荃灣街景相片',goal:'把荃灣街景相片送到同名的大型相片目標',
     shoulderTitle:'香港遊', // v144 Level 3／4：坐車到站，舉起望遠鏡睇風景，集地標閃咭
-    shoulderGoal:'到站落車，舉起望遠鏡睇風景，望清楚就影到一張閃咭',
-    shoulderThumbnail:'img/advanced/hk_tour_thumb.jpg',shoulderThumbnailAlt:'望遠鏡同三張香港地標閃咭',
+    shoulderGoal:'到站落車，舉起望遠鏡睇風景，望清楚就影到一張風景卡',
+    shoulderThumbnail:'img/advanced/hk_tour_thumb.jpg',shoulderThumbnailAlt:'望遠鏡同三張香港風景卡',
     itemWord:'街景相片',difficulty:'容易至中等',targetStyle:'panel',
     thumbnail:'img/advanced/tsuenwan_market_street.jpg',thumbnailAlt:'荃灣街市街真實街景相片',
     categoriesFor(){return TSUEN_WAN_PHOTOS.map(photo=>({
@@ -14302,9 +14752,17 @@ function resetDimsumOrderGame(){
   dimsumOrderCelebrateUntil = 0;
   if(dimsumOrderTimerId){ clearTimeout(dimsumOrderTimerId); dimsumOrderTimerId = null; }
 }
+const DIMSUM_ORDER_DONE_TEXT = '上齊喇，多謝晒！';
 function dimsumOrderText(){
   if(!dimsumOrder) return '';
-  return '我想食' + dimsumOrder.lines.map(l=>l.need + '個' + l.label).join('，') + '。';
+  // v148：每單一款（讀出時數目會變中文數字，例如「我想食三個蝦餃。」）
+  const line = dimsumOrder.lines[0];
+  return line ? '我想食' + line.need + '個' + line.label + '。' : '';
+}
+function dimsumOrderTextEn(){
+  const line = dimsumOrder && dimsumOrder.lines[0];
+  const name = line ? enName(line.label, line.need) : '';
+  return name ? 'I would like ' + line.need + ' ' + name + '.' : 'Check the dim sum shown at the top.';
 }
 function newDimsumOrder(){
   const pool = DIMSUM_ORDER_MENU.slice();
@@ -14313,14 +14771,14 @@ function newDimsumOrder(){
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
   dimsumOrder = {
-    lines: pool.slice(0, 2).map(m=>({
+    lines: pool.slice(0, 1).map(m=>({   // v148：一次只落一款，做完先落下一張單
       type:m.type, label:m.label, need:2 + Math.floor(Math.random()*3), placed:0,
     })),
     done: false,
   };
   dimsumPlateContents = [];
   dimsumOrderCelebrateUntil = 0;
-  try{ speakCantonese(dimsumOrderText(), {rate:.82}); }catch(e){}
+  try{ stepSay(dealText(dimsumOrderText(), dimsumOrderTextEn()), {rate:.82}); }catch(e){}
   // 換新單後，畫面上可能仍是舊單嘅點心：確保至少有一件係新單需要嘅
   if(foods.length) ensureFoodCount();
   return dimsumOrder;
@@ -14350,7 +14808,8 @@ function dimsumOrderPlace(item){
     dimsumOrdersCompleted++;
     dimsumOrderCelebrateUntil = nowMs() + 2600;
     try{ playApplauseSound(); }catch(e){}
-    try{ speakCantonese('好嘢！上齊點心喇！多謝晒！', {rate:.85}); }catch(e){}
+    stepRepeatClear();
+    try{ speakCantonese(DIMSUM_ORDER_DONE_TEXT, {rate:.85}); }catch(e){}
     if(dimsumOrderTimerId) clearTimeout(dimsumOrderTimerId);
     dimsumOrderTimerId = setTimeout(()=>{
       dimsumOrderTimerId = null;
@@ -14516,9 +14975,21 @@ function laundryOrderText(){
   if(!laundryOrder) return '';
   if(isLaundryZoneGame()){
     const line = laundryOrder.lines[0];
-    return '將' + (line ? line.label : '件衫') + '夾去閃燈嗰個架。';   // v146 短句
+    return '將' + (line ? line.label : '件衫') + '擺去着燈嗰個架。';   // v148 統一「着燈」，衣夾遊戲唔用動詞「夾」
   }
-  return '將' + laundryOrder.lines.map(l=>l.need + l.unit + l.label).join('、') + '夾上衫架。';
+  // v148：每單一款（讀出時數目會變中文數字）
+  const first = laundryOrder.lines[0];
+  return first ? '將' + first.need + first.unit + first.label + '擺上衫架。' : '';
+}
+function laundryOrderTextEn(){
+  const line = laundryOrder && laundryOrder.lines[0];
+  if(!line) return '';
+  if(isLaundryZoneGame()){
+    const one = enName(line.label, 1);
+    return one ? 'Put the ' + one + ' on the lit rack.' : 'Put it on the lit rack.';
+  }
+  const name = enName(line.label, line.need);
+  return name ? 'Put ' + line.need + ' ' + name + ' on the rack.' : 'Put the garment on the rack.';
 }
 function laundryPickLitRack(){
   const count = laundryRackCount();
@@ -14542,7 +15013,7 @@ function newLaundryOrder(){
   laundryOrder = { lines, done:false };
   laundryLitRack = laundryPickLitRack();
   laundryOrderCelebrateUntil = 0;
-  try{ speakCantonese(laundryOrderText(), {rate:.82}); }catch(e){}
+  try{ stepSay(dealText(laundryOrderText(), laundryOrderTextEn()), {rate:.82}); }catch(e){}
   // 換新單後，畫面上可能仍是舊單嘅衣物：確保係新單需要嗰件
   if(foods.length) ensureFoodCount();
   return laundryOrder;
@@ -14564,7 +15035,7 @@ function laundryNoteWrongRack(rackIndex, msg){
   laundryWrongUntil = now + 1600;
   if(now - laundryWrongSpokenAt >= 1500){
     laundryWrongSpokenAt = now;
-    try{ speakCantonese(msg, {rate:.9}); }catch(e){}
+    try{ speakCantonese(msg, {rate:.9, priority:'correct'}); }catch(e){}
   }
 }
 // 四架模式：掛上第 rackIndex 個架；合共滿六件 → 拍手、短暫展示、清空再嚟。
@@ -14645,7 +15116,7 @@ function laundryRackAccepts(item, rack){
   if(isLaundryZoneGame()){
     if(!laundryOrderAccepts(item)) return false;
     if(idx !== laundryLitRack){
-      laundryNoteWrongRack(idx, '要夾喺閃燈嗰個架呀。');
+      laundryNoteWrongRack(idx, '擺去着燈嗰個架。');
       return false;
     }
     return true;
@@ -14655,8 +15126,9 @@ function laundryRackAccepts(item, rack){
     if(want < 0) return false;
     if(idx !== want){
       const racks = laundrySortRacks();
-      laundryNoteWrongRack(idx, (item.label || '呢件') + '係' + racks[want].label +
-        '，要夾喺「' + racks[want].label + '」嗰個架呀。');
+      const enItem = enName(item.label, 1), enRack = enName(racks[want].label, 1);
+      laundryNoteWrongRack(idx, dealText((item.label || '呢件') + '要擺去「' + racks[want].label + '」架。',
+        enRack ? 'The ' + (enItem || 'garment') + ' goes on the "' + enRack + '" rack.' : 'Put it on the matching rack.'));
       return false;
     }
     return true;
@@ -15358,6 +15830,59 @@ function playCorrectSound(){
     });
   }catch(e){}
 }
+/* v148 煮蛋炒飯：每一步有自己嘅廚房聲。全部由程式合成（冇新檔案），聲量細過讀出；
+   純粹係獎勵層——喺計完數之後先播，播唔播到都唔影響計數。 */
+const COOK_STEP_SOUNDS = ['rustle','crack','stir','water','chop','ignite','sizzle','sizzleBig','shake','sizzle','click','clang'];
+const COOK_SOUND_GAIN = 0.12;
+function cookNoiseBuffer(ctx, seconds){
+  const len = Math.max(1, Math.floor(ctx.sampleRate * seconds));
+  const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  for(let i=0;i<len;i++) d[i] = Math.random() * 2 - 1;
+  return buf;
+}
+function cookNoiseBurst(ctx, t0, dur, type, freq, q, gain, attack){
+  const src = ctx.createBufferSource(); src.buffer = cookNoiseBuffer(ctx, dur + 0.05);
+  const f = ctx.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = q || 0.8;
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(Math.max(0.0002, gain), t0 + (attack || 0.01));
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  src.connect(f); f.connect(g); g.connect(ctx.destination);
+  src.start(t0); src.stop(t0 + dur + 0.05);
+}
+function cookTone(ctx, t0, dur, type, f0, f1, gain){
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = type; o.frequency.setValueAtTime(f0, t0);
+  if(f1 && f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, t0 + dur);
+  g.gain.setValueAtTime(Math.max(0.0002, gain), t0);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g); g.connect(ctx.destination);
+  o.start(t0); o.stop(t0 + dur + 0.03);
+}
+function playCookStepSound(idx){
+  const kind = COOK_STEP_SOUNDS[idx];
+  if(!kind) return '';
+  try{
+    const ctx = getAudioCtx();
+    if(ctx.state === 'suspended' && typeof ctx.resume === 'function') ctx.resume();
+    const t = ctx.currentTime + 0.01, G = COOK_SOUND_GAIN;
+    switch(kind){
+      case 'rustle':    cookNoiseBurst(ctx, t, 0.22, 'highpass', 3200, 0.7, G*0.7, 0.04); break;                    // 抓鬆冷飯：輕輕沙沙聲
+      case 'crack':     cookNoiseBurst(ctx, t, 0.05, 'bandpass', 2400, 2.5, G, 0.002); cookTone(ctx, t, 0.05, 'triangle', 900, 300, G*0.6); break;   // 打蛋：「咔」
+      case 'stir':      cookNoiseBurst(ctx, t, 0.16, 'bandpass', 900, 1.2, G*0.8, 0.05); cookNoiseBurst(ctx, t + 0.17, 0.16, 'bandpass', 1200, 1.2, G*0.8, 0.05); break;   // 攪拌
+      case 'water':     cookNoiseBurst(ctx, t, 0.42, 'bandpass', 1800, 0.5, G*0.8, 0.08); cookTone(ctx, t + 0.05, 0.12, 'sine', 500, 1100, G*0.35); break;   // 水聲
+      case 'chop':      cookTone(ctx, t, 0.07, 'sine', 190, 90, G*1.1); cookNoiseBurst(ctx, t, 0.04, 'lowpass', 900, 0.7, G*0.9, 0.002); break;   // 刀落砧板「篤」
+      case 'ignite':    cookTone(ctx, t, 0.03, 'square', 1500, 1200, G*0.5); cookNoiseBurst(ctx, t + 0.06, 0.5, 'lowpass', 420, 0.6, G, 0.12); break;   // 「嗒」再有火聲
+      case 'sizzle':    cookNoiseBurst(ctx, t, 0.45, 'highpass', 4500, 0.6, G*0.75, 0.05); break;                    // 滋滋聲
+      case 'sizzleBig': cookNoiseBurst(ctx, t, 0.7, 'highpass', 3600, 0.6, G, 0.04); break;                          // 大聲啲嘅滋滋聲
+      case 'shake':     cookNoiseBurst(ctx, t, 0.07, 'highpass', 5200, 0.8, G*0.7, 0.01); cookNoiseBurst(ctx, t + 0.13, 0.07, 'highpass', 5200, 0.8, G*0.7, 0.01); break;   // 沙沙兩下
+      case 'click':     cookTone(ctx, t, 0.03, 'square', 1300, 900, G*0.5); break;                                    // 熄火「嗒」
+      case 'clang':     cookTone(ctx, t, 0.35, 'triangle', 1560, 1540, G*0.8); cookTone(ctx, t, 0.25, 'sine', 2340, 2320, G*0.4); break;   // 鑊鏟「鏘」
+    }
+  }catch(e){}
+  return kind;
+}
 /* Single short '嘟' confirmation used by 巴士拍卡. Degrades silently when Web
    Audio is unavailable or still suspended. */
 function playBusTapBeep(){
@@ -15590,7 +16115,7 @@ function initGame(){
 
   // 舊版【關卡說明 banner】已被 showLevelUpBanner() 取代（將在 state.running=true 之後觸發）
 
-  score = 0; correctCount = 0; grabCount = 0; totalWrong = 0; wrongStreak = 0;
+  score = 0; correctCount = 0; grabCount = 0; totalWrong = 0; wrongStreak = 0; lastWrongItemType = '';
   // Preserve target positions through resize, but vary their left/right order
   // between sessions so one dim sum type is not permanently tied to one side.
   level5TargetSideFlip = Math.random() < 0.5;
@@ -15705,6 +16230,7 @@ function initGame(){
 
   state.running = true;
   state.paused = false;
+  trackPromptReset(true);
   /* Safety counters are per game session: reset here as well as on entering
      calibration, so a session started directly (or re-started) begins clean. */
   resetSessionSafety();
@@ -16356,6 +16882,19 @@ function makeFoodAt(def, existingFoods){
     if(positionIsClear(x, y)) return createFood(x, y);
   }
 
+  // v148：橫向時落單圖示佔咗上方中間、大碟佔咗下方中間，中間格放唔落點心。
+  // 改放喺左／右邊點心嘅正下方（固定位置），唔再靠隨機位——細畫面會疊埋一齊。
+  if(isDimsumOrderGame() && !portrait && !research.active){
+    const sideGap = Math.max(16, r * 0.12) + 2;
+    const edge = Math.max(14, r * 0.18);
+    for(const ratio of [slotRatios[0], slotRatios[slotRatios.length - 1]]){
+      const x = Math.max(centerMin, Math.min(centerMax, cw * ratio[0]));
+      const y = Math.max(spawnYmin, Math.min(spawnYmax, ch * ratio[1])) + r * 2 + sideGap;
+      if(y + r > ch - edge) continue;
+      if(positionIsClear(x, y)) return createFood(x, y);
+    }
+  }
+
   // 多嘗試一些次，升高間隔成功率
   for(let attempt=0; attempt<120; attempt++){
     const x = randRange(centerMin, centerMax);
@@ -16613,8 +17152,8 @@ renderSpeedDisplaySetting();
 function speedDisplayText(p){
   const english = !!(window.YCHLanguage && window.YCHLanguage.isEnglish());
   return english
-    ? `Speed v147  ${Math.round(p.fps)} frames/s\nTracking ${Math.round(p.trackMs)} ms  Camera ${p.video[0]}×${p.video[1]}`
-    : `速度 v147  每秒 ${Math.round(p.fps)} 幀\n追蹤 ${Math.round(p.trackMs)} 毫秒  鏡頭 ${p.video[0]}×${p.video[1]}`;
+    ? `Speed v148  ${Math.round(p.fps)} frames/s\nTracking ${Math.round(p.trackMs)} ms  Camera ${p.video[0]}×${p.video[1]}`
+    : `速度 v148  每秒 ${Math.round(p.fps)} 幀\n追蹤 ${Math.round(p.trackMs)} 毫秒  鏡頭 ${p.video[0]}×${p.video[1]}`;
 }
 function updateFramePerfOverlay(now){
   const detailed = framePerfOverlayEnabled();
@@ -16639,7 +17178,7 @@ function updateFramePerfOverlay(now){
     el.style.display = state.running ? 'block' : 'none';
     return;
   }
-  el.textContent = `perf v147  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
+  el.textContent = `perf v148  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
     + `鏡頭 ${p.video[0]}×${p.video[1]}  畫布 ${p.canvas[0]}×${p.canvas[1]}  dpr ${p.dpr}  手模型 ${p.handDelegate || '-'}  姿勢模型 ${poseDelegateUsed || '-'}\n`
     + `偵測框 ${detectBoxRegion(gameVideo, 0) ? Math.round(detectBox.x0*100) + '–' + Math.round(detectBox.x1*100) + '%' : '全闊'}  主角鎖定 ${subjectLock ? subjectLock.state.lastReason : '-'}  路人拒絕 ${subjectLock ? subjectLock.state.rejected : 0}\n`
     + `手 ${p.hand.hands} 隻  標籤 ${p.hand.label || '-'} ${p.hand.score}  接納 ${p.hand.path || '-'}  嚴格 ${p.hand.strict} 連續 ${p.hand.continuity} 單手 ${p.hand.lone} 拒絕 ${p.hand.rejected}\n`
@@ -16700,7 +17239,7 @@ function publicCameraStallWatchdog(frame, now){
   if(trackLive && staleFor < PUBLIC_CAMERA_STALL_REACQUIRE_MS && publicCameraStall.playAttempts < 2){
     publicCameraStall.playAttempts++;
     console.warn('camera stall watchdog: replay video', Math.round(staleFor), reason);
-    try{ setActionPrompt('鏡頭畫面停頓，重新連接中', '請稍等'); }catch(_e){}
+    try{ setActionPrompt('鏡頭重新連接緊', '等一等'); }catch(_e){}
     if(gameVideo.srcObject !== state.stream && state.stream) gameVideo.srcObject = state.stream;
     gameVideo.play().catch(()=>{});
     return;
@@ -16709,7 +17248,7 @@ function publicCameraStallWatchdog(frame, now){
   publicCameraStall.reacquireAttempts++;
   publicCameraStall.busy = true;
   console.warn('camera stall watchdog: re-acquire camera', Math.round(staleFor), reason, trackLive ? 'track live' : 'track not live');
-  try{ setActionPrompt('鏡頭畫面停頓，重新連接中', '請稍等'); }catch(_e){}
+  try{ setActionPrompt('鏡頭重新連接緊', '等一等'); }catch(_e){}
   cameraRequestAttempted = false;
   resetHandFrameAdmission();
   startCamera('gameVideo')
@@ -16750,6 +17289,10 @@ function gameLoop(rafNow){
         console.error('game frame failed', e);
       }
     }
+  }
+  // v148 追蹤提示：只出字同讀出，唔影響分數同計時（測試模式要另外開先行）
+  if(!research.active && (!state.qaMode || trackQa.mode !== 'off')){
+    try{ trackPromptTick(); }catch(e){ if(state.qaMode) throw e; }
   }
   gameRAF = requestAnimationFrame(gameLoop);
 }
@@ -18136,6 +18679,7 @@ function updateGameLogic(){
           } else {
             score = Math.max(0, score - 3);
             wrongStreak++; totalWrong++;
+            lastWrongItemType = heldItem.targetType || '';
             triggerFeedback(false);
             researchLog('drop_wrong', {item:heldItem.label, target:onPlate.label});
             adaptiveNoteTrial('transport_place', 'failure', {reason:'wrong_target'});
@@ -18383,14 +18927,15 @@ function publicPatientVoiceEligible(){
   return !research.active && isPatientVisualCueMode() && state.running && !state.paused;
 }
 function publicPatientVoicePhrase(phase){
-  if(phase === 'contact') return state.level === '5' ? '揸拳頭' : '夾住';
-  if(phase === 'reopen') return level6AutoPlaceEnabled() ? '張開手' : '';
-  if(phase === 'raise') return '舉高手';
+  // v148：筷子用「夾住」，其餘 Level 6（三隻手指、衣夾）用「捏住」；到目的地講「等一等」
+  if(phase === 'contact') return state.level === '5' ? '揸拳頭' : (isLevel6Chopsticks() ? PLAIN_VERB_CHOPSTICK_HOLD : PLAIN_VERB_PINCH_HOLD);
+  if(phase === 'reopen') return level6AutoPlaceEnabled() ? '打開隻手' : '';
+  if(phase === 'raise') return '舉高隻手';
   if(phase === 'target'){
     if(state.level === '5') return '打開隻手';
-    if(isLevel6Chopsticks()) return '打開筷子';
-    if(isLevel6Peg()) return (laundryAutoHangEnabled() || isLaundryPegStoryGame()) ? '停住' : '放手';
-    if(level6AutoPlaceEnabled()) return '停住';
+    if(isLevel6Chopsticks()) return '鬆開筷子';
+    if(isLevel6Peg()) return (laundryAutoHangEnabled() || isLaundryPegStoryGame()) ? '等一等' : '放手';
+    if(level6AutoPlaceEnabled()) return '等一等';
     return '打開隻手';
   }
   return '';
@@ -18516,7 +19061,7 @@ function setActionPrompt(main, detail){
   }
   // Classify the internal Cantonese action key before translating it. This
   // keeps the visual gesture correct in every display language.
-  const openWords = /張開|放鬆|鬆開|放下|放低|已放開|對準|等待|入鏡/;
+  const openWords = /張開|打開|放鬆|鬆開|放下|放低|已放開|對準|等待|入鏡/;
   const gestureCue = openWords.test(main) ? 'open' : 'close';
   const toolHint = toolPinchLiveHint();
   if(toolHint){
@@ -18554,14 +19099,14 @@ function graspPrompt(key){
   if(laundryAutoHangEnabled() && isLevel6RealToolTask()){
     // v129: the garment hangs itself at the rack; no release instruction there.
     if(key === 'prep') return '鬆開衣夾';
-    if(key === 'hold') return '揸實衣夾拿起';
+    if(key === 'hold') return '捏住衣夾攞起';
     if(key === 'carry') return '舉高去衣架';
     return '對準衣架，自動掛上';
   }
   if(isLevel6RealToolTask()){
     const w = level6ToolWords();
     if(key === 'prep') return w.open + w.noun;
-    if(key === 'hold') return w.close + w.noun + '拿起';
+    if(key === 'hold') return state.level6Task === 'peg' ? '捏住衣夾攞起' : w.close + w.noun + '拿起';
     if(key === 'carry') return '保持夾住';
     return w.open + w.noun + '放下';
   }
@@ -18855,6 +19400,7 @@ function updateGraspLogic(){
           } else {
             score = Math.max(0, score - 3);
             wrongStreak++; totalWrong++;
+            lastWrongItemType = heldItem.targetType || '';
             pilotBump('wrong');
             triggerFeedback(false);
             researchLog('drop_wrong', {item:heldItem.label, target:onPlate.label});
@@ -19052,80 +19598,103 @@ function drawBigPlateTarget(ctx, t){
   ctx.restore();
 }
 
-// v69 落單橫幅：顯示而家張單（例：我想食2個牛肉球，3個蝦餃）同每款進度
+// v148 落單圖示：畫面上方長期顯示「點心圖 × N」同 N 個格仔，夾咗幾多個就着幾多格。
+// 靠圖唔靠字：聽漏咗落單都隨時睇得返。上齊嗰陣成條變綠色，寫「上齊喇，多謝晒！」。
 function drawDimsumOrderBanner(ctx, cw, ch){
-  if(!isDimsumOrderGame() || !dimsumOrder) return;
-  if(!research.active){
-    dimsumOrderBannerRect = null;
-    return;
-  }
+  if(!isDimsumOrderGame() || !dimsumOrder){ dimsumOrderBannerRect = null; return; }
+  const line = dimsumOrder.lines[0];
+  if(!line){ dimsumOrderBannerRect = null; return; }
   const celebrating = nowMs() < dimsumOrderCelebrateUntil;
-  const title = celebrating ? '👏 好嘢！上齊點心喇！' : '落單：' + dimsumOrderText();
-  const prog = dimsumOrder.lines
-    .map(l=>l.label + ' ' + Math.min(l.placed, l.need) + '/' + l.need)
-    .join('　');
-  let titleSize = Math.max(26, Math.round(cw * 0.028));
-  let progSize = Math.round(titleSize * 0.8);
+  const menu = DIMSUM_ORDER_MENU.find(m=>m.type === line.type);
+  const img = menu ? menu.img() : null;
   const font = '"PingFang TC","Noto Sans TC",-apple-system,sans-serif';
-  ctx.save();
-  ctx.font = `bold ${titleSize}px ${font}`;
-  let titleW = ctx.measureText(title).width;
-  ctx.font = `bold ${progSize}px ${font}`;
-  let progW = ctx.measureText(prog).width;
-  const pad = 20;
-  // 橫向中央下方係大碟，橫額必須窄過兩側點心生成位（v69 landscape fix）：
-  // 收窄到最多 38% 畫面闊，唔夠位就縮字（下限 18px，語音會讀埋落單內容）。
-  const maxBw = isPortrait() ? cw - 24 : Math.min(cw - 24, cw * 0.38);
-  const widest = () => Math.max(titleW, progW);
-  if(widest() + pad * 2 > maxBw){
-    const fit = Math.max(0.5, (maxBw - pad * 2) / widest());
-    titleSize = Math.max(18, Math.floor(titleSize * fit));
-    progSize = Math.max(15, Math.floor(titleSize * 0.8));
-    ctx.font = `bold ${titleSize}px ${font}`;
-    titleW = ctx.measureText(title).width;
-    ctx.font = `bold ${progSize}px ${font}`;
-    progW = ctx.measureText(prog).width;
+  let maxBw = isPortrait() ? cw - 24 : Math.min(cw - 24, cw * 0.38);
+  if(!isPortrait()){
+    // 橫向：圖示唔可以伸到左右兩邊點心嘅位置，否則細畫面會將點心逼走、疊埋一齊。
+    const sample = foods.find(f=>!f.removed && !f.isDistractor);
+    const itemR = (sample && sample.r) || 116;
+    const sideReach = Math.max(cw * 0.20, itemR * 1.5) + itemR + Math.max(18, itemR * 0.16) + 12;
+    maxBw = Math.max(200, Math.min(maxBw, cw - sideReach * 2 - 20));
   }
-  const bw = Math.min(maxBw, Math.max(titleW, progW) + pad * 2);
-  const bh = titleSize + progSize + pad * 1.9;
+  let s = Math.max(44, Math.min(72, Math.round(Math.min(cw, ch) * 0.075)));   // 大點心圖
+  if(isPortrait()) s = Math.min(s, 56);   // 直向：按鈕列喺圖示正下方，圖示唔可以掂到按鈕
+  const pad = 14, gap = 10;
+  const layout = size=>{
+    const box = Math.round(size * 0.78);
+    const numW = Math.round(size * 1.05);
+    return { box, numW, w: pad*2 + size + gap + numW + gap + line.need * box + (line.need - 1) * 8 };
+  };
+  let lay = layout(s);
+  if(lay.w > maxBw){ s = Math.max(34, Math.floor(s * maxBw / lay.w)); lay = layout(s); }
+  while(lay.w > maxBw && s > 30){ s -= 2; lay = layout(s); }
+  const bw = lay.w, bh = s + pad * 1.4;
   const bx = cw / 2 - bw / 2;
-  // Sit below any DOM HUD/instruction islands that share this horizontal span,
-  // so the order text is never hidden behind the score pills or hint boxes.
-  // v72：橫向時頂部 DOM 按鈕列（返回／暫停等）會遮住橫額，橫額要由按鈕列下面開始
-  let by = isPortrait() ? 10 : 76;
+  // v72：橫向時頂部按鈕列會遮住橫額，橫額要由按鈕列下面開始
+  let by = isPortrait() ? 5 : 76;
+  // 量度其他提示位置嗰陣唔好計埋圖示自己上一格嘅位置，否則圖示會一格一格向下跌。
+  const prevRect = dimsumOrderBannerRect;
+  dimsumOrderBannerRect = null;
   const islands = getInstructionExclusionRect(cw, ch, 6);
+  dimsumOrderBannerRect = prevRect;
   if(islands){
     for(const isl of islands){
       if(isl.right > bx && isl.left < bx + bw) by = Math.max(by, isl.bottom + 6);
     }
   }
   by = Math.min(by, ch * 0.34 - bh);
-  const prevRect = dimsumOrderBannerRect;
   dimsumOrderBannerRect = {left:bx - 10, top:by - 10, right:bx + bw + 10, bottom:by + bh + 10};
-  // The first time the banner appears (or when a new order resizes it), push any
-  // dim sum hiding underneath out to clear space — initial spawn happens before
-  // the first render, so it cannot know the banner bounds yet.
+  // 圖示第一次出現（或者新單令佢變闊）就將壓喺下面嘅點心推開
   if(!prevRect
     || Math.abs(prevRect.left - dimsumOrderBannerRect.left) > 8
     || Math.abs(prevRect.right - dimsumOrderBannerRect.right) > 8
     || Math.abs(prevRect.bottom - dimsumOrderBannerRect.bottom) > 8){
     ensureFoodsClearOfInstructions();
   }
+  ctx.save();
   ctx.fillStyle = celebrating ? 'rgba(27,111,74,0.94)' : 'rgba(255,255,255,0.94)';
-  rrPath(ctx, bx, by, bw, bh, 18);
-  ctx.fill();
-  ctx.strokeStyle = celebrating ? '#14523A' : '#1A6B5A';
-  ctx.lineWidth = 3;
-  rrPath(ctx, bx, by, bw, bh, 18);
-  ctx.stroke();
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'top';
-  ctx.fillStyle = celebrating ? '#FFFFFF' : '#173F32';
-  ctx.font = `bold ${titleSize}px ${font}`;
-  ctx.fillText(title, cw / 2, by + pad * 0.6);
-  ctx.fillStyle = celebrating ? 'rgba(255,255,255,0.92)' : '#5A5142';
-  ctx.font = `bold ${progSize}px ${font}`;
-  ctx.fillText(prog, cw / 2, by + pad * 0.6 + titleSize + 8);
+  rrPath(ctx, bx, by, bw, bh, 18); ctx.fill();
+  ctx.strokeStyle = celebrating ? '#14523A' : '#1A6B5A'; ctx.lineWidth = 3;
+  rrPath(ctx, bx, by, bw, bh, 18); ctx.stroke();
+  const cy = by + bh / 2;
+  if(celebrating){
+    let fs = Math.round(s * 0.5);
+    ctx.font = `bold ${fs}px ${font}`;
+    const shown = dealText(DIMSUM_ORDER_DONE_TEXT, 'All served. Thank you!');
+    const tw = ctx.measureText(shown).width;
+    if(tw > bw - pad * 2){ fs = Math.max(16, Math.floor(fs * (bw - pad * 2) / tw)); ctx.font = `bold ${fs}px ${font}`; }
+    ctx.fillStyle = '#FFFFFF'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(shown, cw / 2, cy);
+    ctx.restore();
+    return;
+  }
+  let x = bx + pad;
+  if(img && img.complete && img.naturalWidth) drawSprite(ctx, img, x + s / 2, cy, s);
+  x += s + gap;
+  ctx.fillStyle = '#173F32'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = `900 ${Math.round(s * 0.5)}px ${font}`;
+  ctx.fillText('× ' + line.need, x + lay.numW / 2, cy + s * 0.02);
+  x += lay.numW + gap;
+  const done = Math.min(line.placed, line.need);
+  for(let i = 0; i < line.need; i++){
+    const lit = i < done, b = lay.box, bx2 = x + i * (b + 8), by2 = cy - b / 2;
+    rrPath(ctx, bx2, by2, b, b, 10);
+    ctx.fillStyle = lit ? '#E4F5EC' : '#F1EEE6'; ctx.fill();
+    ctx.lineWidth = lit ? 4 : 2; ctx.strokeStyle = lit ? '#1B8A5A' : '#B9B2A2';
+    if(!lit) ctx.setLineDash([5, 4]);
+    rrPath(ctx, bx2, by2, b, b, 10); ctx.stroke();
+    ctx.setLineDash([]);
+    if(img && img.complete && img.naturalWidth){
+      ctx.save(); ctx.globalAlpha = lit ? 1 : 0.22;
+      drawSprite(ctx, img, bx2 + b / 2, by2 + b / 2, b * 0.82);
+      ctx.restore();
+    }
+    if(lit){
+      const r = Math.max(8, b * 0.2), tx = bx2 + b - r * 0.7, ty = by2 + r * 0.7;
+      ctx.beginPath(); ctx.arc(tx, ty, r, 0, Math.PI * 2); ctx.fillStyle = '#1B8A5A'; ctx.fill();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = Math.max(2, r * 0.28); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      ctx.beginPath(); ctx.moveTo(tx - r*0.45, ty); ctx.lineTo(tx - r*0.1, ty + r*0.35); ctx.lineTo(tx + r*0.48, ty - r*0.35); ctx.stroke();
+    }
+  }
   ctx.restore();
 }
 
@@ -19916,6 +20485,7 @@ function roundRect(ctx, x, y, w, h, r){
    nothing is exported automatically and no recorded data is lost. */
 function endGame(endReason){
   const reason = endReason || 'time_up';
+  try{ trackPromptReset(false); stepRepeatClear(); }catch(_e){}
   try{ recordHandDelegatePerformance(); }catch(_e){}
   if(typeof sessionSafety === 'object'){
     if(restPauseActive) endRest();
@@ -20158,7 +20728,7 @@ function usesAdvancedThemeModule(id){
   // Level 6 Flowers intentionally reuses the public Level 5 arrangement layout;
   // its state.gameType remains the Level 6 selected-hand tripod pinch.
   // v123: Level 6 Mahjong and Playing Cards also reuse the Level 5 modules
-  // (hand of tiles → side 放牌區; suit chip → side 收牌區) so both levels show
+  // (hand of tiles → side 放牌區; suit chip → side 放牌區) so both levels show
   // the same game interface. Only the gesture differs (Level 6 tripod pinch).
   if(isLevel6() && LEVEL6_SHARED_LEVEL5_THEMES.includes(theme)) return true;
   // v131: public Level 6 cooking runs the 12-step egg-fried-rice module as a
@@ -20544,7 +21114,7 @@ function advSetNote(text){
    語氣為成人尊重式，不使用兒語。
    ================================================================== */
 const ENCOURAGE = ['做得好，繼續保持。','好準，再嚟一次。','控制得好穩。','非常好，繼續動。','掌握得好，再嚟一局。'];
-const ENCOURAGE_PLAIN = ['做得好！','好準呀！','好穩陣！','好叻呀！','好嘢！'];   // v146 短句口語，輪流講
+const ENCOURAGE_PLAIN = ['做得好！','手勢好準！','好穩陣！','夠晒力！','師傅級喎！','好嘢！'];   // v148 對成年人嘅肯定，輪流講
 let encourageIdx = 0;
 function nextEncourage(){ const list = research.active ? ENCOURAGE : ENCOURAGE_PLAIN; const t = list[encourageIdx % list.length]; encourageIdx++; return t; }
 
@@ -20614,7 +21184,7 @@ function rewardSmall(o){
   }
   if(o.x != null){ fxBurst(o.x, o.y, { count: o.big ? 34 : 20 }); fxRing(o.x, o.y); }
   if(!o.silent){ playCorrectSound(); }
-  if(o.tts !== false){ speakCantonese(o.tts || nextEncourage()); }
+  if(o.tts !== false){ speakCantonese(o.tts || nextEncourage(), {priority:'praise'}); }   // v148 讚好唔會截斷步驟指示
   lastRewardLog.push({ achievement:o.achievement || '', detail:o.detail || '', progress:o.progressLabel || '' });
   if(lastRewardLog.length > 12) lastRewardLog.shift();
 }
@@ -20771,14 +21341,14 @@ function updateHeldReleasePrompt(){
 }
 // v146：公開版攞住之後只講一句短句：去邊度、點放低
 function plainHeldWhere(){
-  if(advCurrent === 'cards') return '擺去收牌區';
+  if(advCurrent === 'cards') return '擺去放牌區';
   if(advCurrent === 'mahjong') return '擺去放牌區';
-  if(advCurrent === 'flowers') return isLevel6() ? '擺去花盤' : '擺入花瓶';
+  if(advCurrent === 'flowers') return isLevel6() ? '擺去花瓶' : '擺入花瓶';
   if(advCurrent === 'laundry') return '擺入同色嘅籃';
   return '擺過去';
 }
 function plainHeldSpeech(){
-  if(isLevel6RealToolTask()) return isLaundryPegStoryGame() ? '夾住喇，擺過去。' : '夾住喇，擺去衫架。';
+  if(isLevel6RealToolTask()) return isLaundryPegStoryGame() ? '攞住喇，擺過去。' : '攞住喇，擺去衫架。';
   if(level6AutoPlaceEnabled()) return '攞住喇，' + plainHeldWhere() + '。';
   return '攞住喇。' + plainHeldWhere() + '，打開隻手。';
 }
@@ -20792,7 +21362,7 @@ function advDrawHeldReleasePrompt(ctx, held){
     : level6AutoPlaceEnabled()
     ? ((advCurrent === 'mahjong' || advCurrent === 'cards')
       ? '已拿住 · 移到放牌區，停住自動放低'
-      : '已拿住 · 移到花盤，停住自動放低')
+      : '已拿住 · 移到花瓶，停住自動放低')
     : (advCurrent === 'mahjong' || advCurrent === 'cards')
     ? '已拿住 · 移到放牌區'
     : (isLevel67BareMode()
@@ -20814,7 +21384,7 @@ function advHeldPromptShown(text){
   if(!simpleScreenText()) return text;
   const short = String(text).replace(/^已[拿夾捏]住 · /,'').replace(/，停住自動放低$/,'');
   // v146 口語短句，同讀出嚟嘅字一樣
-  const plain = {'請張開手放下':'打開隻手', '移到放牌區':'擺去放牌區', '移到花盤':'擺去花盤', '請放鬆夾仔':'放鬆衣夾'};
+  const plain = {'請張開手放下':'打開隻手', '移到放牌區':'擺去放牌區', '移到花瓶':'擺去花瓶', '請放鬆夾仔':'擺過去，放鬆衣夾', '鬆開衣夾放下':'擺過去，放鬆衣夾'};
   return plain[short] || short;
 }
 
@@ -21382,9 +21952,9 @@ function cookTh(){ return COOK_TH[state.level] || COOK_TH['4']; }
 
 /* ---- v131：Level 6 握力器（Digi-Flex）版 —— 每一步「揸實→放鬆」計一下 ----
    次數由少到多遞增；治療師可揀 少／中／多（×0.5／×1／×1.5）。 */
-const COOK_DIGIFLEX_NEED = [3,4,4,3,5,2,2,3,4,5,1,8];
+const COOK_DIGIFLEX_NEED = [2,2,2,2,2,1,1,2,2,2,1,3];   // v148：中 22 下（以前 44）
 const COOK_SQUEEZE_AMOUNTS = { less:0.5, normal:1, more:1.5 };
-const COOK_SQUEEZE_LABELS = { less:'少（25 下）', normal:'中（44 下）', more:'多（69 下）' };
+const COOK_SQUEEZE_LABELS = { less:'少（13 下）', normal:'中（22 下）', more:'多（35 下）' };
 function cookSqueezeAmountKey(){
   return COOK_SQUEEZE_AMOUNTS[state.cookSqueezeAmount] ? state.cookSqueezeAmount : 'normal';
 }
@@ -21400,13 +21970,14 @@ function cookStepNeed(st){
   return isLevel6DigiflexTask() ? cookDigiflexNeed(cook.idx) : st.need;
 }
 function cookStepGoal(st){
-  return isLevel6DigiflexTask() ? ('揸實握力器再放鬆，' + cookStepNeed(st) + ' 下') : st.goal;
+  return isLevel6DigiflexTask() ? ('揸一下握力器再放鬆，' + cookStepNeed(st) + ' 次') : st.goal;
 }
 function cookStepTts(st){
   if(!isLevel6DigiflexTask()) return st.tts;
-  // v146 短句：步驟名 + 揸實、放鬆、做幾多下
-  return dealText((COOK_DIGIFLEX_TITLES[st.id] || st.text) + '。揸實，放鬆，做' + cookStepNeed(st) + '下。',
-    (COOK_DIGIFLEX_TITLES_EN[st.id] || 'Next step') + '. Squeeze, then relax, ' + cookStepNeed(st) + ' times.');
+  // v148 短句：步驟名 + 揸一下、放鬆、做幾多次（讀出時數目會變中文數字）
+  const n = cookStepNeed(st);
+  return dealText((COOK_DIGIFLEX_TITLES[st.id] || st.text) + '。揸一下，放鬆，做' + n + '次。',
+    (COOK_DIGIFLEX_TITLES_EN[st.id] || 'Next step') + '. Squeeze once, then relax. Do it ' + n + (n === 1 ? ' time.' : ' times.'));
 }
 /* 相對判斷（v132 放寬）：只同病人自己嘅放鬆位比較，唔再用校準嘅絕對門檻——
    升幅 ≥ 校準範圍 25%（下限 0.03、上限 0.08）就算揸實；由峰值跌返四成就算放鬆。
@@ -21440,6 +22011,7 @@ const cook = {
   // v131 Digi-Flex squeeze tracker
   digi:{ hist:[], base:[], baseline:null, peak:0, squeezing:false, since:0, lastOnAt:0, unsettledSince:0, rise:DIGIFLEX_MIN_RISE, level:0, animAt:0, animSign:1, lastScore:NaN },
   introUntil:0,
+  rest:{ phase:'', until:0 },   // v148 每碟之間：'rest' 休息 20 秒 → 'wait' 等病人揸一下
   reset(){
     this.idx = 0; this.reps = 0; this.holdStart = 0; this.done = false;
     this.msg = ''; this.metric = ''; this.ring = []; this.angAccum = 0;
@@ -21453,6 +22025,7 @@ const cook = {
     this.outcomeIdx = -1; this.outcomeUntil = 0; this.announceAt = 0;
     this.digi = { hist:[], base:[], baseline:null, peak:0, squeezing:false, since:0, lastOnAt:0, unsettledSince:0, rise:DIGIFLEX_MIN_RISE, level:0, animAt:0, animSign:1, lastScore:NaN };
     this.introUntil = 0;
+    this.rest = { phase:'', until:0 };
   },
   step(){ return COOK_STEPS[Math.min(this.idx, COOK_STEPS.length - 1)]; },
 };
@@ -21513,6 +22086,7 @@ function pinchDist(lm){
 /* ---- 每一步的動作偵測 ---- */
 function cookDetect(){
   if(cook.done) return;
+  if(cook.rest.phase){ cookRestUpdate(nowMs()); return; }   // v148 每碟之間休息
   const st = cook.step();
   const th = cookTh();
   const now = nowMs();
@@ -21535,9 +22109,12 @@ function cookDetect(){
     if(now - cook.lastRepAt < th.repCooldown) return false;
     cook.lastRepAt = now;
     cook.reps++;
-    if(isLevel6DigiflexTask()){ cook.digi.animAt = now; cook.digi.animSign = -cook.digi.animSign; }
+    if(isLevel6DigiflexTask()){
+      cook.digi.animAt = now; cook.digi.animSign = -cook.digi.animSign;
+      playCookStepSound(cook.idx);   // v148 每一步有自己嘅廚房聲（只係聲，唔影響計數）
+    }
     if(cook.reps < cookStepNeed(st)){
-      playCorrectSound();
+      if(!isLevel6DigiflexTask()) playCorrectSound();
       rewardSmall({ achievement:'第 ' + (cook.idx+1) + ' 步 · ' + cook.reps + '/' + cookStepNeed(st),
         detail: cookStepGoal(st), x: cursorX > 0 ? cursorX : gameCanvas.width/2,
         y: cursorY > 0 ? cursorY : gameCanvas.height/2, silent:true, tts:false, simpleHide:true });
@@ -21796,8 +22373,8 @@ function cookDetect(){
 function cookDigiflexDetect(st, now, bumpRep){
   const d = cook.digi;
   if(!handDetected || !Number.isFinite(lastGraspScore)){
-    cook.metric = '未偵測到患手，請將揸住握力器嘅手放入鏡頭。';
-    setActionPrompt('等待偵測手部', '');
+    cook.metric = TRACK_PROMPTS.T1.say;   // v148：同其他遊戲用同一句
+    setActionPrompt(TRACK_PROMPTS.T1.chip, '');
     d.level = 0;
     return;
   }
@@ -21853,8 +22430,8 @@ function cookDigiflexDetect(st, now, bumpRep){
       d.squeezing = false; d.base = [{ t:now, v:sc }]; d.baseline = sc; d.unsettledSince = 0;
     }
   }
-  cook.metric = d.squeezing ? '揸實中 ✊ — 而家放鬆' : '放鬆 🖐 — 而家揸實握力器';
-  setActionPrompt(d.squeezing ? '放鬆' : '揸實', '');
+  cook.metric = d.squeezing ? '揸緊 ✊ — 而家放鬆' : '放鬆 🖐 — 而家揸一下握力器';
+  setActionPrompt(d.squeezing ? '放鬆' : '揸一下', '');
 }
 
 /* 即時動作回饋：只更新面板內的文字／進度，避免每幀重建 DOM */
@@ -21926,7 +22503,7 @@ function cookAdvance(earned){
       sub:(cook.rounds > 1 ? '第 ' + cook.rounds + ' 碟 · ' : '') + '12 / 12 步全部完成 · 成就：一人一鍋蛋炒飯',
       // v142 握力器版：只講返真正做咗嘅動作（揸實 → 放鬆），唔再列舊手勢版嘅動作
       detail: isLevel6DigiflexTask()
-        ? '你完成咗全部 12 個步驟，每一步都係揸實握力器、再放鬆，一下一下煮出嚟。' +
+        ? '你完成咗全部 12 個步驟，每一步都係揸一下握力器、再放鬆，一次一次煮出嚟。' +
           '<br><small>本活動為虛擬煮食訓練；網頁不識別實體工具，亦不量度握力或捏力。</small>'
         : '你完成了所有 12 個步驟，包括握放、手腕畫圈、前臂旋轉估算、手肘屈伸、伸手及舀取轉移。' +
           '<br><small>本活動為虛擬煮食訓練，動作回饋屬估算，並非臨床運動學量度。</small>',
@@ -21973,7 +22550,17 @@ function cookAdvance(earned){
 
 /* v141 煮蛋炒飯自動再玩：煮好一碟而時間未夠，慶祝畫面閂咗之後由第 1 步再煮多一碟。
    分數／次數繼續累積；握力器嘅放鬆基準（digi）照用返之前嗰個，偵測完全唔變。 */
-const COOK_REPEAT_MIN_LEFT_S = 15;
+const COOK_REPEAT_MIN_LEFT_S = 40;   // v148：15 → 40，夠時間休息完再煮
+/* v148 每碟之間休息（預防攰同手緊）：
+   煮好一碟 → 慶祝畫面 → 讀「煮好一碟喇，放鬆隻手，休息一陣。」→ 休息 20 秒（期間點揸都唔計、唔開始）
+   → 讀「想再煮，就揸一下。攰就休息。」→ 病人自己揸一下先開始下一碟（呢一下唔計入第 1 步）。
+   病人唔揸就一直休息到夠鐘。握力器嘅偵測方法同門檻完全冇改。 */
+const COOK_REST_MS = 20000;
+const COOK_REST_SAY = '煮好一碟喇，放鬆隻手，休息一陣。';
+const COOK_REST_READY_SAY = '想再煮，就揸一下。攰就休息。';
+const COOK_REST_BANNER = '休息一陣';
+const COOK_REST_READY_BANNER = '想再煮？揸一下';
+function cookPlateBannerText(){ return '第 ' + (cook.rounds + 1) + ' 碟'; }
 function cookStartNextRound(){
   if(advCurrent !== 'cooking' || !state.running || !cook.done) return;
   const digi = cook.digi;
@@ -21983,15 +22570,45 @@ function cookStartNextRound(){
   cook.digi.squeezing = false; cook.digi.hist = []; cook.digi.peak = 0; cook.digi.animAt = 0;
   cook.layout = cookLayout();
   if(isLevel6DigiflexTask()){
-    cook.introUntil = nowMs() + 2600;
-    cook.readyAt = cook.introUntil + 400;
+    cook.rest = { phase:'rest', until: nowMs() + COOK_REST_MS };
+    cook.readyAt = 0;
     cookRenderPanel();
-    speakCantonese('做得好，再煮多一碟蛋炒飯。');
-    cook.announceAt = cook.introUntil - 400;
-    setActionPrompt('揸實', '');
+    speakCantonese(COOK_REST_SAY);
+    setActionPrompt(COOK_REST_BANNER, '');
   } else {
     cookAnnounce();
   }
+}
+function cookRestUpdate(now){
+  const st = cook.step();
+  if(cook.rest.phase === 'rest'){
+    // 休息期間照樣跟住隻手嘅放鬆位（唔計數、唔開始），等之後第一下一樣咁易計到
+    cookDigiflexDetect(st, now, ()=>false);
+    cook.metric = COOK_REST_BANNER;
+    setActionPrompt(COOK_REST_BANNER, '');
+    if(now >= cook.rest.until){
+      cook.rest = { phase:'wait', until:0 };
+      speakCantonese(COOK_REST_READY_SAY);
+    }
+    return;
+  }
+  // 'wait'：病人自己揸一下（揸完放鬆）先開始下一碟；呢一下唔計入第 1 步
+  let started = false;
+  cookDigiflexDetect(st, now, ()=>{ started = true; return true; });
+  cook.metric = COOK_REST_READY_BANNER;
+  setActionPrompt(COOK_REST_READY_BANNER, '');
+  if(started) cookBeginNextPlate(now);
+}
+function cookBeginNextPlate(now){
+  cook.rest = { phase:'', until:0 };
+  cook.reps = 0; cook.lastRepAt = 0;
+  cook.digi.squeezing = false; cook.digi.hist = []; cook.digi.peak = 0; cook.digi.animAt = 0;
+  cook.introUntil = now + 2600;
+  cook.readyAt = cook.introUntil + 400;
+  cook.announceAt = cook.introUntil - 400;
+  playCorrectSound();
+  cookRenderPanel();
+  setActionPrompt('揸一下', '');
 }
 // v141 成績頁一句：今次煮好咗幾多碟（未煮好一碟就唔顯示，同以前一樣）
 function cookRoundSummaryText(){
@@ -22004,7 +22621,7 @@ function cookRoundSummaryText(){
 function cookAnnounce(){
   const st = cook.step();
   cookRenderPanel();
-  speakCantonese(cookStepTts(st));
+  stepSay(cookStepTts(st));
 }
 
 function cookRenderPanel(){
@@ -22570,12 +23187,15 @@ function cookRenderDigiflex(ctx){
   }
 
   // 開場橫額（超市延續）
-  if(now < cook.introUntil){
-    if(cook.rounds > 0) drawCookDigiflexBanner(ctx, cw, g, '再煮多一碟蛋炒飯！', '第 ' + (cook.rounds + 1) + ' 碟 · 揸實 → 放鬆 ＝ 1 下');
-    else drawCookDigiflexBanner(ctx, cw, g, '買完餸返到屋企，而家煮蛋炒飯！', '揸住握力器：揸實 → 放鬆 ＝ 1 下');
+  if(cook.rest.phase){
+    drawCookDigiflexBanner(ctx, cw, g, dealText(cook.rest.phase === 'rest' ? COOK_REST_BANNER : COOK_REST_READY_BANNER,
+      cook.rest.phase === 'rest' ? 'Rest for a moment' : 'Cook again? Squeeze once'), '');
+  }else if(now < cook.introUntil){
+    if(cook.rounds > 0) drawCookDigiflexBanner(ctx, cw, g, dealText(cookPlateBannerText(), 'Plate ' + (cook.rounds + 1)), '揸一下 → 放鬆 ＝ 1 次');
+    else drawCookDigiflexBanner(ctx, cw, g, '返到屋企喇，而家煮蛋炒飯！', '揸住握力器：揸一下 → 放鬆 ＝ 1 次');
   }
-  // 左上：而家做緊邊一步
-  {
+  // 左上：而家做緊邊一步（v148 休息期間唔顯示）
+  if(!cook.rest.phase){
     const f = g.titleFont;
     ctx.save();
     ctx.font = '900 ' + f + 'px "PingFang TC","Noto Sans TC",sans-serif';
@@ -22590,11 +23210,12 @@ function cookRenderDigiflex(ctx){
     ctx.restore();
   }
 
-  // 次數圓牌
+  // 次數圓牌（v148 休息期間唔顯示）
+  if(!cook.rest.phase){
   ctx.save();
   const pillFont = Math.round(Math.min(cw, ch) * 0.055);
   ctx.font = '900 ' + pillFont + 'px "PingFang TC","Noto Sans TC",sans-serif';
-  const label = '已揸 ' + cook.reps + ' / ' + need + ' 下';
+  const label = '已揸 ' + cook.reps + ' / ' + need + ' 次';
   const tw = ctx.measureText(label).width;
   const pw = tw + pillFont * 1.6, ph = pillFont * 1.7;
   rrPath(ctx, cx - pw/2, g.countY - ph/2, pw, ph, ph/2);
@@ -22603,6 +23224,7 @@ function cookRenderDigiflex(ctx){
   ctx.fillStyle = '#17463d'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillText(label, cx, g.countY + pillFont*0.04);
   ctx.restore();
+  }
 
   // 每完成一步先展示成果卡（同原版）
   if(cook.outcomeIdx >= 0 && now < cook.outcomeUntil){
@@ -22671,7 +23293,7 @@ function drawCookDigiflexBadge(ctx, g, now){
   }
   const f = Math.round(g.badgeS * 0.17);
   ctx.font = '900 ' + f + 'px "PingFang TC","Noto Sans TC",sans-serif';
-  const txt = !handDetected ? '請將手入鏡' : (sq ? '揸實 ✊' : '放鬆 🖐');
+  const txt = !handDetected ? '請將手入鏡' : (sq ? '揸緊 ✊' : '放鬆 🖐');
   const tw = ctx.measureText(txt).width;
   const pw = tw + f*1.2, ph = f*1.6, px = g.badgeX, py = g.badgeY + g.badgeS*0.5 + 8 * g.cssScale + ph/2;
   rrPath(ctx, px - pw/2, py - ph/2, pw, ph, ph/2);
@@ -22915,7 +23537,7 @@ function mjStartRound(idx){
   mj.hint = def.hint;
   picker.reset();
   mjPanel();
-  speakCantonese(plainSay('新一局。揀一組牌，砌到食糊。',
+  stepSay(plainSay('新一局。揀一組牌，擺去放牌區。',
     '新一局。手上有 ' + mj.hand.length + ' 隻牌，仲需要 ' + (14 - mj.hand.length) +
     ' 隻。睇清楚，揀一組牌拼出和牌。'));
 }
@@ -23388,8 +24010,8 @@ function cardsPanel(){
       ' · 連續正確 ' + cards.combo + ' 次',
     text:isPatientVisualCueMode()
       ? '拿起' + CARD_SUIT_NAME[cards.suit] + '牌，放到' +
-        (isPublicLevel5VerticalFlow() ? '上方收牌區。'
-          : (affectedSideSign() > 0 ? '右邊' : '左邊') + '收牌區。')
+        (isPublicLevel5VerticalFlow() ? '上方放牌區。'
+          : (affectedSideSign() > 0 ? '右邊' : '左邊') + '放牌區。')
       : '收集 ' + CARD_SUIT_NAME[cards.suit] + ' ' + CARD_SUIT_SYM[cards.suit] +
         '：' + cards.got + ' / ' + cards.need,
     goal: cards.msg || (isLevel4Tabletop()
@@ -23491,8 +24113,10 @@ function cardsUpdate(){
     adaptiveNoteTrial('cards_place', 'failure', {reason:'wrong_suit'});
     // v146：病人放低咗揀錯嘅牌，隻牌就收走，唔再彈返原位（每局指定花色嘅牌數唔變，一定砌得完）
     if(!research.active){ c.gone = true; fxRing(c.x, c.y); }
-    cards.msg = '呢張係' + CARD_SUIT_NAME[c.suit] + '，要揀' + CARD_SUIT_NAME[cards.suit] + '。';
-    speakCantonese('呢張係' + CARD_SUIT_NAME[c.suit] + '。要揀' + CARD_SUIT_NAME[cards.suit] + '。');
+    // v148：只講要做咩（一個糾正步驟）
+    const pickEn = 'Pick ' + (enName(CARD_SUIT_NAME[cards.suit]) || 'the suit shown at the top') + '.';
+    cards.msg = plainSay(dealText('要揀' + CARD_SUIT_NAME[cards.suit] + '。', pickEn), '呢張係' + CARD_SUIT_NAME[c.suit] + '，要揀' + CARD_SUIT_NAME[cards.suit] + '。');
+    speakCantonese(plainSay(dealText('要揀' + CARD_SUIT_NAME[cards.suit] + '。', pickEn), '呢張係' + CARD_SUIT_NAME[c.suit] + '。要揀' + CARD_SUIT_NAME[cards.suit] + '。'), {priority:'correct'});
   }
   cardsPanel();
 }
@@ -23562,7 +24186,7 @@ function cardsRender(ctx){
 
   const hover = picker.hoverId;
   const held = picker.heldId;
-  drawAffectedSelectionZone(ctx, '收牌區');
+  drawAffectedSelectionZone(ctx, '放牌區');
   for(const c of cards.field){
     if(c.gone) continue;
     const heldAt = held === c.id ? level6HeldDrawPoint() : null;   // v140: stays with the hand picture
@@ -23861,9 +24485,13 @@ function laundryUpdate(){
       updateHUD();
       triggerFeedback(false);
       adaptiveNoteTrial('laundry_place', 'failure', {reason:'wrong_basket'});
-      laundry.msg = b ? ('呢個係' + LAUNDRY_COLORS[b.color].name + '籃，' + g.name + '要放' +
-        LAUNDRY_COLORS[g.color].name + '籃。') : plainSay('未放入籃，再試過。', '未放入衫籃，衣物返回原位。');
-      speakCantonese(laundry.msg);
+      // v148：只講要做咩（一個糾正步驟）
+      const gEn = EN_GARMENT_NAMES[g.name], cEn = enName(LAUNDRY_COLORS[g.color].name);
+      laundry.msg = b ? plainSay(dealText(g.name + '放去' + LAUNDRY_COLORS[g.color].name + '籃。',
+          (gEn && cEn) ? 'The ' + gEn[0] + (gEn[1] ? ' go' : ' goes') + ' in the ' + cEn + ' basket.' : 'Put it in the basket of the same colour.'),
+        '呢個係' + LAUNDRY_COLORS[b.color].name + '籃，' + g.name + '要放' + LAUNDRY_COLORS[g.color].name + '籃。')
+        : plainSay('未放入籃，再試過。', '未放入衫籃，衣物返回原位。');
+      speakCantonese(laundry.msg, {priority:'correct'});
     }
     laundryPanel();
   }
@@ -24635,9 +25263,9 @@ function advInit(){
       cook.readyAt = cook.introUntil + 400;
       advSetNote('');
       cookRenderPanel();
-      speakCantonese('買完餸返到屋企，而家煮蛋炒飯。');
+      speakCantonese('返到屋企喇，而家煮蛋炒飯。');
       cook.announceAt = cook.introUntil - 400;
-      setActionPrompt('揸實', '');
+      setActionPrompt('揸一下', '');
     } else {
     advSetNote(poseFailed
       ? '姿勢追蹤（肩／肘）未能載入，已轉為手部動作練習：追蹤有限，可用「跳過此步」繼續。'
@@ -24710,19 +25338,19 @@ function advUpdate(){
     const advancedHover = !!(carrier.hoverId || picker.hoverId);
     if(advCurrent === 'peg_laundry'){
       // v143: move → clip; the garment places itself at the destination
-      setActionPrompt(advancedHeld ? '移到目的地停住' : (advancedHover ? '揸實衣夾' : '移手去着燈位置'), '');
+      setActionPrompt(advancedHeld ? '移到目的地，等一等' : (advancedHover ? '捏住衣夾' : '移手去着燈位置'), '');
     }else if(advancedHeld){
       // v129: public Level 6 flowers / cards / mahjong place themselves on the target
-      setActionPrompt(level6AutoPlaceEnabled() ? '移到目標停住' : (isGrasping ? '保持揸住' : '張開手放低'), '');
+      setActionPrompt(level6AutoPlaceEnabled() ? '移到目標，等一等' : (isGrasping ? '保持捏住' : '打開隻手放低'), '');
     }else if(advancedHover){
       // v130: after an automatic placement the hand is still closed; tell the
-      // patient to open first instead of showing "揸實" over the next item.
+      // patient to open first instead of showing the pinch cue over the next item.
       const advancedArmed = !!(carrier.armed || picker.armed);
       setActionPrompt(isGrasping
-        ? (level6AutoPlaceEnabled() && !advancedArmed && !level6QuickReadyEnabled() ? '先張開手' : '揸實')
-        : '揸實拿起', '');
+        ? (level6AutoPlaceEnabled() && !advancedArmed && !level6QuickReadyEnabled() ? '先打開隻手' : '捏住')
+        : '捏住攞起', '');
     }else{
-      setActionPrompt('張開手', '');
+      setActionPrompt('打開隻手', '');
     }
   }
   if(rewardIsOpen()) return;                      // 慶祝畫面期間暫停操作
@@ -25806,6 +26434,39 @@ window.__qa = {
   resetHandTrack(){ resetHandLock(); return true; },
   setHandednessCheck(on){ setHandednessCheck(on !== false); return state.handednessCheck; },
   handLock(){ return { ...handLock, track:{ ...affectedHandTrack }, diag:{ ...handAdmitDiag } }; },
+  // v148 追蹤提示測試：mode 'manual'（直接畀情況）／'live'（用注入嘅手／姿勢資料）／'off'
+  trackPrompt(mode, input){
+    trackQa = { mode:['manual','live'].includes(mode) ? mode : 'off', input:input || null };
+    if(trackQa.mode === 'off') trackPromptReset(false);
+    return trackQa.mode;
+  },
+  trackPromptTick(){ return trackPromptTick(); },
+  trackPromptSnapshot(){
+    const el = document.getElementById('trackChip');
+    return { chip:el && !el.hidden ? el.textContent : '', code:el && !el.hidden ? el.dataset.code : '',
+      log:trackPromptLog.slice(), state:{ ...trackPromptState, drops:trackPromptState.drops.slice(), lastSaid:{ ...trackPromptState.lastSaid } },
+      hand:{ ...trackHandSnap }, startedAt:trackGameStartedAt, suppressed:trackPromptSuppressed(nowMs()),
+      step:{ text:stepRepeat.text, count:stepRepeat.count } };
+  },
+  trackPromptSkipGrace(){ trackGameStartedAt = nowMs() - TRACK_GRACE_MS - 1; return true; },
+  trackPoseCondition(lm, opts){ return trackPoseCondition(lm, opts); },
+  trackHandCondition(){ return trackHandCondition(nowMs()); },
+  // v148 連續做錯暫停畫面測試：可以指定「啱啱放錯」邊一款
+  recoveryPause(wrongType){
+    if(wrongType != null) lastWrongItemType = String(wrongType);
+    triggerRecoveryPause();
+    const ov = document.getElementById('recoveryOverlay');
+    return { active:recoveryPauseActive, text:ov ? ov.innerText : '', tier:getDistractorCount(),
+      cats:getCategories().map(c=>({ type:c.type, item:c.itemLabel, target:c.targetLabel })) };
+  },
+  recoverySentence(tier, cat){ return recoveryPlainSentence(tier, cat); },
+  speech(){ return { busy:speechBusyRank(), waiting:speechWaiting ? speechWaiting.text : '' }; },
+  say(text, priority){ return !!speakCantonese(text, priority ? { priority } : undefined); },
+  stepSay(text){ return !!stepSay(text); },
+  voiceWarning(voices, english){
+    const el = document.getElementById('voiceWarning');
+    return { missing:cantoneseVoiceMissing(voices, !!english), shown:updateVoiceWarning(), hidden:el ? el.hidden : true, text:el ? el.textContent : '' };
+  },
   setPrivacyBlur(on){ setPrivacyBlur(on !== false); return privacyBlurEnabled(); },
   privacyPersonComponent(prob, w, h, seed, threshold){
     return privacyPersonComponent(prob instanceof Float32Array ? prob : Float32Array.from(prob), w, h, seed || null, threshold ?? PRIVACY_SEG_THRESHOLD);
@@ -25977,6 +26638,7 @@ window.__qa = {
         lines: dimsumOrder.lines.map(l=>({type:l.type, need:l.need, placed:l.placed})),
         plateCount: dimsumPlateContents.length,
         ordersCompleted: dimsumOrdersCompleted,
+        strip: dimsumOrderBannerRect ? {left:dimsumOrderBannerRect.left, top:dimsumOrderBannerRect.top, right:dimsumOrderBannerRect.right, bottom:dimsumOrderBannerRect.bottom} : null,
       } : null,
       laundryRack: isLaundryRackGame() ? {
         mode: laundryDifficultyMode(),
@@ -26275,6 +26937,7 @@ window.__qa = {
       text:s.text, need:cookStepNeed(s), reps:cook.reps, done:cook.done, metric:cook.metric,
       poseOn:cook.poseOn, poseFailed:poseFailed,
       digiflex:isLevel6DigiflexTask(), squeezing:cook.digi.squeezing, baseline:cook.digi.baseline,
+      rest:cook.rest.phase, restLeftMs:cook.rest.phase === 'rest' ? Math.max(0, Math.round(cook.rest.until - nowMs())) : 0,
       rounds:cook.rounds, summary:cookRoundSummaryText(), timeLeft, reward:rewardIsOpen(),
       prompt:document.getElementById('statusBar')?.dataset.actionRenderKey || '' }; },
     /* v131：合成握力器「揸實→放鬆」一下（graspScore 高→低），回傳步驟／次數 */
@@ -27285,7 +27948,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v147-20261127-detect-box";
+  const LEVEL_APP_BUILD = "v148-20261127-wording";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

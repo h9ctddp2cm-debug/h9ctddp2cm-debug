@@ -101,7 +101,7 @@ test('four looks finish one stop: a card is collected and the next stop is a dif
   assert.equal(api.photoCards.stop, 2);
   assert.equal(api.photoCards.revealed, 0);
   assert.deepEqual(Array.from(api.photoCards.shown), [false, false, false, false]);
-  assert.match(api.photoCardSummaryText(), /集到 1 張閃咭/);
+  assert.match(api.photoCardSummaryText(), /集到 1 張風景卡/);
 });
 
 test('a second lift during the animation is ignored and the four quarters are each cleared once', () => {
@@ -155,14 +155,14 @@ test('the scene is public Level 3/4 only and stays a reward layer on top of the 
 
 test('the scene card, the result page and the English text are wired up', () => {
   assert.match(html, /shoulderTitle:'香港遊'/);
-  assert.match(html, /shoulderGoal:'到站落車，舉起望遠鏡睇風景，望清楚就影到一張閃咭'/);
+  assert.match(html, /shoulderGoal:'到站落車，舉起望遠鏡睇風景，望清楚就影到一張風景卡'/);
   assert.match(html, /shoulderThumbnail:'img\/advanced\/hk_tour_thumb\.jpg'/);
   assert.equal(existsSync(path.join(root, 'img/advanced/hk_tour_thumb.jpg')), true);
   assert.match(html, /<div id="cardAlbumSummary" class="card-album" hidden><\/div>/);
   assert.match(html, /renderPhotoCardAlbumSummary\(\);/);
   assert.match(html, /const cardLine=isPhotoCardTheme\(\)\?photoCardSummaryText\(\):'';/);
   assert.match(localization, /'香港遊':'Hong Kong Tour'/);
-  assert.match(localization, /'到站落車，舉起望遠鏡睇風景，望清楚就影到一張閃咭':/);
+  assert.match(localization, /'到站落車，舉起望遠鏡睇風景，望清楚就影到一張風景卡':/);
   for(const en of ['Lift the binoculars', 'Next stop: \\?\\?\\?', 'We have arrived!', 'Where is this\\?']){
     assert.match(moduleSrc, new RegExp(en));
   }

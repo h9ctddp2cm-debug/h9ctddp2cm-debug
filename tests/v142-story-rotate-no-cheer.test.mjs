@@ -47,10 +47,10 @@ const laundry = new Function([
 const ids = list => list.map(l => l.id);
 
 test('v142 release markers', () => {
-  assert.match(sw, /const CACHE_VERSION = "fthue-rehab-v147-20261127-detect-box";/);
-  assert.match(manifest, /index\.html\?build=v147-20261127-detect-box/);
-  assert.match(html, /const LEVEL_APP_BUILD = "v147-20261127-detect-box";/);
-  assert.match(html, /perf v147 {2}/);
+  assert.match(sw, /const CACHE_VERSION = "fthue-rehab-v148-20261127-wording";/);
+  assert.match(manifest, /index\.html\?build=v148-20261127-wording/);
+  assert.match(html, /const LEVEL_APP_BUILD = "v148-20261127-wording";/);
+  assert.match(html, /perf v148 {2}/);
 });
 
 test('storyRoundPick walks through the pool round by round and wraps around', () => {
@@ -149,7 +149,7 @@ test('the 「好波」 cheer is played for bowling and basketball only', () => {
 
 test('fried-rice celebration: the gripper version names squeeze → relax, not the old gesture list', () => {
   const adv = fnSource('cookAdvance');
-  assert.match(adv, /detail: isLevel6DigiflexTask\(\)\s*\? '你完成咗全部 12 個步驟，每一步都係揸實握力器、再放鬆，一下一下煮出嚟。' \+\s*'<br><small>本活動為虛擬煮食訓練；網頁不識別實體工具，亦不量度握力或捏力。<\/small>'/);
+  assert.match(adv, /detail: isLevel6DigiflexTask\(\)\s*\? '你完成咗全部 12 個步驟，每一步都係揸一下握力器、再放鬆，一次一次煮出嚟。' \+\s*'<br><small>本活動為虛擬煮食訓練；網頁不識別實體工具，亦不量度握力或捏力。<\/small>'/);
   // the old sentence stays only for the non-gripper branch
   assert.equal((html.match(/手腕畫圈、前臂旋轉估算/g) || []).length, 1);
 });

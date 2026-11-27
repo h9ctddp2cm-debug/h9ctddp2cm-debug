@@ -1,4 +1,4 @@
-const CACHE_VERSION = "fthue-rehab-v147-20261127-detect-box";
+const CACHE_VERSION = "fthue-rehab-v148-20261127-wording";
 const OFFLINE_PAGE = "./offline.html";
 
 importScripts("./offline-assets.js");

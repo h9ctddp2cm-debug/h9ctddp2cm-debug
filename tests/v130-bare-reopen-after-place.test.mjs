@@ -11,7 +11,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 // is hard to reach with the hand raised / turned; the prompt still said 揸實.
 // Fix (public Level 6 flowers / cards / mahjong only, nothing held): a posture
 // that is merely "not clearly closed" for 300 ms ends the pinch hysteresis, the
-// prompt says 先張開手 and the voice says 張開手 until then.
+// prompt says 先打開隻手 and the voice says 打開隻手 until then (v148 wording).
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const src = readFileSync(path.join(root, 'index.html'), 'utf8');
@@ -33,8 +33,8 @@ test('v130 source wiring: idle reopen rule, gate, prompt and voice', () => {
   assert.match(src, /bareUnpinchedSinceMs = 0;\n\s*pegRelativeReset\(\);/);
   // prompt over the next item while the hand is still closed and not armed
   // (v140: not in cards / mahjong, where a squeezing hand resting on the item picks it up)
-  assert.match(src, /\? \(level6AutoPlaceEnabled\(\) && !advancedArmed && !level6QuickReadyEnabled\(\) \? '先張開手' : '揸實'\)/);
-  assert.match(src, /if\(phase === 'reopen'\) return level6AutoPlaceEnabled\(\) \? '張開手' : '';/);
+  assert.match(src, /\? \(level6AutoPlaceEnabled\(\) && !advancedArmed && !level6QuickReadyEnabled\(\) \? '先打開隻手' : '捏住'\)/);
+  assert.match(src, /if\(phase === 'reopen'\) return level6AutoPlaceEnabled\(\) \? '打開隻手' : '';/);
   assert.match(src, /if\(s\.touching&&isGrasping&&level6AutoPlaceEnabled\(\)&&!level6QuickReadyEnabled\(\)\) return publicPatientVoiceSay\('reopen',itemId,!!s\.silent\);/);
   // peg / chopsticks / Level 5 excluded through level6AutoPlaceEnabled()
   assert.match(src, /function level6AutoPlaceEnabled\(\)\{\n\s*return !research\.active && typeof isLevel6 === 'function' && isLevel6\(\)\n\s*&& isGraspStyleMode\(\) && !isLevel6RealToolTask\(\)/);
@@ -102,7 +102,7 @@ for(const start of [
   { level: '67', level6Task: 'flowers' },
   { level: '67', level6Task: 'cards' },
 ]){
-  test(`Level 6 ${start.level6Task} e2e: after an automatic placement a relaxed (not clearly closed) hand re-arms once reopened to 40% of range for 0.3 s; prompt says 先張開手 meanwhile`, async t => {
+  test(`Level 6 ${start.level6Task} e2e: after an automatic placement a relaxed (not clearly closed) hand re-arms once reopened to 40% of range for 0.3 s; prompt says 先打開隻手 meanwhile`, async t => {
     if(!browser) return t.skip('playwright unavailable');
     const context = await browser.newContext({ viewport: { width: 1180, height: 820 } });
     const page = await context.newPage();
@@ -130,18 +130,18 @@ for(const start of [
         // v140: in cards the still-squeezing hand resting on the next card picks
         // it up without letting go first, and is never told to open first.
         assert.ok(out.slight.held, 'cards: a squeezing hand resting on the next card picks it up');
-        assert.doesNotMatch(String(out.slight.prompt), /先張開手/);
+        assert.doesNotMatch(String(out.slight.prompt), /先打開隻手/);
         assert.deepEqual(errors, []);
         return;
       }
       // 130 ms of a relaxed-but-not-open hand: still counted as closed, told to open first
       assert.equal(out.relaxedBrief.grasping, true, 'a brief relaxation is still a closed hand');
       assert.equal(out.relaxedBrief.openPrep, false);
-      assert.match(String(out.relaxedBrief.prompt), /先張開手/, 'patient is told to open first, not 揸實');
+      assert.match(String(out.relaxedBrief.prompt), /先打開隻手/, 'patient is told to open first, not to pinch');
       // 600 ms: idle reopen rule ends the hysteresis → open preparation → armed
       assert.equal(out.relaxedHeld.grasping, false, 'sustained relaxed hand counts as reopened');
       assert.equal(out.relaxedHeld.openPrep, true);
-      assert.match(String(out.relaxedHeld.prompt), /揸實拿起/, 'prompt moves on to the pick-up cue');
+      assert.match(String(out.relaxedHeld.prompt), /捏住攞起/, 'prompt moves on to the pick-up cue');
       assert.ok(out.graspAgain.held, 'closing again picks up the next object');
       assert.deepEqual(errors, []);
     }finally{

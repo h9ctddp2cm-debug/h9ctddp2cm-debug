@@ -10,7 +10,7 @@ const html = readFileSync(path.join(root, 'index.html'), 'utf8');
 test('current build markers stay aligned', () => {
   const manifest = readFileSync(path.join(root, 'manifest.webmanifest'), 'utf8');
   const worker = readFileSync(path.join(root, 'service-worker.js'), 'utf8');
-  const version = 'v147-20261127-detect-box';
+  const version = 'v148-20261127-wording';
   assert.match(html, new RegExp(version));
   assert.match(manifest, new RegExp(version));
   assert.match(worker, new RegExp(version));
@@ -70,10 +70,11 @@ test('large canvas cues and advanced enlargements are public-only', () => {
 test('advanced Level 6 activities receive phase-specific grasp and release cues', () => {
   assert.match(html, /const advancedHeld = !!\(carrier\.heldId \|\| picker\.heldId\);/);
   // v129: public Level 6 flowers / cards / mahjong place themselves on the target
-  assert.match(html, /setActionPrompt\(level6AutoPlaceEnabled\(\) \? '移到目標停住' : \(isGrasping \? '保持揸住' : '張開手放低'\), ''\)/);
+  // v148 wording: 捏住 / 打開隻手 / 等一等 (the cue picture logic is unchanged)
+  assert.match(html, /setActionPrompt\(level6AutoPlaceEnabled\(\) \? '移到目標，等一等' : \(isGrasping \? '保持捏住' : '打開隻手放低'\), ''\)/);
   // v130: a still-closed hand over the next object (not yet re-armed) is told to open first
-  assert.match(html, /setActionPrompt\(isGrasping\n\s*\? \(level6AutoPlaceEnabled\(\) && !advancedArmed && !level6QuickReadyEnabled\(\) \? '先張開手' : '揸實'\)\n\s*: '揸實拿起', ''\);/);
-  assert.match(html, /setActionPrompt\('張開手', ''\)/);
+  assert.match(html, /setActionPrompt\(isGrasping\n\s*\? \(level6AutoPlaceEnabled\(\) && !advancedArmed && !level6QuickReadyEnabled\(\) \? '先打開隻手' : '捏住'\)\n\s*: '捏住攞起', ''\);/);
+  assert.match(html, /setActionPrompt\('打開隻手', ''\)/);
 });
 
 test('Level 5 and 6 objects and targets are enlarged without changing gesture gates', () => {

@@ -246,7 +246,7 @@ test('v123 Level 6 mahjong and cards reuse the Level 5 modules', () => {
   // Level 6 no longer uses the old two-pile instruction text.
   assert.doesNotMatch(functionSource('level5PatientInstructionText'), /拿起啤牌，放到相同花色牌堆/);
   // Level 6 task hints describe the shared interface.
-  assert.match(html, /指定花色嘅啤牌，移到患側收牌區/);
+  assert.match(html, /指定花色嘅啤牌，移到患側放牌區/);
   assert.match(html, /一組麻雀，移到患側放牌區/);
 });
 
