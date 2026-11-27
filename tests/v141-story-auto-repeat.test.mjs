@@ -35,10 +35,10 @@ function lineConst(name){
 }
 
 test('release markers (current build)', () => {
-  assert.match(sw, /const CACHE_VERSION = "fthue-rehab-v145-20261127-yum-cha";/);
-  assert.match(manifest, /index\.html\?build=v145-20261127-yum-cha/);
-  assert.match(html, /const LEVEL_APP_BUILD = "v145-20261127-yum-cha";/);
-  assert.match(html, /perf v145 {2}/);
+  assert.match(sw, /const CACHE_VERSION = "fthue-rehab-v146-20261127-plain-instructions";/);
+  assert.match(manifest, /index\.html\?build=v146-20261127-plain-instructions/);
+  assert.match(html, /const LEVEL_APP_BUILD = "v146-20261127-plain-instructions";/);
+  assert.match(html, /perf v146 {2}/);
 });
 
 test('a new round starts only while the game runs and enough session time is left', () => {

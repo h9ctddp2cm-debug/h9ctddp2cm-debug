@@ -4434,7 +4434,7 @@ function updateSupermarketStory(){
   const cur=shopCurrentStep();
   if(cur&&cur.kind==='rep'&&shopStory.spokenIdx!==shopStory.idx&&shopStory.anim.phase==='idle'){
     shopStory.spokenIdx=shopStory.idx;
-    try{ speakCantonese(cur.text); }catch(e){}
+    try{ speakCantonese(storySay(cur.text)); }catch(e){}
   }
 }
 // 抬臂達標：執行而家呢個 rep 步驟嘅動畫（如果而家仲喺 scene，就跳去下一個 rep）
@@ -5036,7 +5036,7 @@ function updateLaundryStory(){
     if(key&&laundryStory.spokenKey!==key){
       laundryStory.spokenKey=key;
       const pegSay=isLaundryPegStoryGame()&&cur.kind==='rep'&&LAUNDRY_PEG_TEXT[cur.action];
-      try{ speakCantonese(pegSay?pegSay.say:cur.text); }catch(e){}
+      try{ speakCantonese(pegSay?pegSay.say:storySay(cur.text)); }catch(e){}
     }
   }
 }
@@ -9504,6 +9504,72 @@ const ADV_RULES = {
   },
 };
 
+/* ==================== v146 病人版開局指示 ====================
+   病人話指示太長、聽唔明。規則：一句一件事、每句約十個字內、只講動作、
+   用口語；畫面大字同讀出嚟嘅字一樣；同一樣嘢唔講兩次。
+   治療師用嘅字眼（角度、相機、患側）只留喺設定頁同成績頁，唔讀畀病人聽。 */
+const PLAIN_SHOULDER_DO = {
+  bowlinglane:'打保齡', basketball:'射籃', supermarket:'買餸', tsuenwan:'用望遠鏡睇風景',
+  laundry:'洗衫晾衫', cards:'揭牌', mahjong:'摸牌',
+};
+const PLAIN_TAIL = '慢慢嚟，唔使急';
+// 公開版用口語短句（plain）；另一條流程保留原有標準字句（formal）
+function plainSay(plain, formal){ return research.active ? formal : plain; }
+// 故事步驟讀出嚟同開局指示用同一個講法：「舉高隻手，……」
+function storySay(text){
+  const english = !!(window.YCHLanguage && window.YCHLanguage.isEnglish && window.YCHLanguage.isEnglish());
+  return (research.active || english) ? text : String(text||'').replace(/^抬高手，/, '舉高隻手，');
+}
+function plainStartLines(){
+  const th = getTheme();
+  const theme = state.theme;
+  const item = (th && th.itemWord) || '物件';
+  if(state.level === '3' || state.level === '4'){
+    const act = theme === 'dimsum'
+      ? (isTeahouseDimsumMode() ? '揭開蒸籠' : '攞點心')
+      : (PLAIN_SHOULDER_DO[theme] || ('攞'+item));
+    return state.shoulderExerciseMode === 'assisted-stick'
+      ? ['兩隻手揸住支棍', '一齊舉高，'+act, '放低支棍，再嚟過']
+      : ['舉高隻手，'+act, '放低隻手，再嚟過'];
+  }
+  if(state.level === '67'){
+    const task = state.level6Task;
+    if(task === 'cooking') return ['揸實握力器', '再放鬆', '咁就計一下'];
+    if(task === 'chopsticks'){
+      return state.dimsumDifficulty === 'complex'
+        ? ['聽清楚要邊款點心', '筷子尖指住佢，停一停', '夾去隻碟，停一停']
+        : ['筷子尖指住點心', '停一停，就夾起', '夾去隻碟，停一停'];
+    }
+    if(task === 'peg'){
+      return state.laundryPegStory !== false
+        ? ['隻手去着燈嗰度', '揸實衣夾，夾起', '擺到目的地，停一停']
+        : ['揸實衣夾，夾起件衫', '舉高，擺去衫架', '停一停，就掛好'];
+    }
+    if(task === 'cards') return ['睇上面要邊隻花', '三隻手指，揸起張牌', '擺去收牌區，停一停'];
+    if(task === 'mahjong') return ['揀一組牌', '三隻手指，揸起佢', '擺去放牌區，停一停'];
+    return ['三隻手指，揸起枝花', '擺去花盤', '停一停，就放低'];
+  }
+  // Level 5：揸拳頭攞起 → 擺過去 → 打開隻手（玩法冇變，只係改字）
+  if(theme === 'cards') return ['睇上面要邊隻花', '揸拳頭，攞起張牌', '擺去收牌區，打開隻手'];
+  if(theme === 'mahjong') return ['揀一組牌', '揸拳頭，攞起佢', '擺去放牌區，打開隻手'];
+  if(theme === 'flowers') return ['揸拳頭，攞起枝花', '擺入花瓶', '打開隻手，放低'];
+  if(theme === 'laundry') return ['揸拳頭，攞起件衫', '擺入同色嘅籃', '打開隻手，放低'];
+  if(theme === 'fridge') return ['揸拳頭，攞起食物', isFridgeZoneMode() ? '擺入着燈嗰格' : '擺入雪櫃', '打開隻手，放低'];
+  if(theme === 'dimsum') return ['揸拳頭，攞起點心', '擺去同款嗰籠', '打開隻手，放低'];
+  return ['揸拳頭，攞起'+item, '擺去同款嗰度', '打開隻手，放低'];
+}
+function plainStartSpeech(){
+  return plainStartLines().concat([PLAIN_TAIL]).join('。') + '。';
+}
+function plainRulesHtml(title){
+  const rows = plainStartLines().map((line, i) =>
+    '<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">' +
+    '<span style="flex:0 0 auto;display:inline-block;width:46px;height:46px;line-height:46px;text-align:center;background:#1a1a1a;color:#fff;border-radius:50%;font-weight:800;font-size:24px;">' + (i+1) + '</span>' +
+    '<span style="font-size:clamp(28px,4.4vw,40px);font-weight:900;line-height:1.3;">' + line + '</span></div>').join('');
+  return '<div style="font-size:22px;font-weight:800;color:#0a7d75;margin-bottom:14px;">' + title + '</div>' + rows +
+    '<div style="padding-top:12px;margin-top:6px;border-top:1px dashed #d0c9be;color:#5a5a5a;font-size:22px;font-weight:700;">' + PLAIN_TAIL + '</div>';
+}
+
 // 根據目前活動（theme）及級別更新規則文字及廣東話內容
 function updateRulesForActivity(){
   const th = getTheme();
@@ -9540,6 +9606,13 @@ function updateRulesForActivity(){
         (advanced ? '只拿目標物件，不要拿動物。' : '')
       : '先張開手，輕輕合手拿起物件（不用大力握實）。移到相同目標，再張開手放下。' +
         '由中線向患側外下方移動。' + (advanced ? '只拿目標物件，不要拿動物。' : '');
+    return;
+  }
+  if(state.level !== '2'){
+    // v146：公開版 Level 3–6 一律用短句口語；畫面大字同讀出嚟嘅一樣
+    const rulesPlain = document.getElementById('rulesContent');
+    if(rulesPlain) rulesPlain.innerHTML = plainRulesHtml(themeShownTitle(th));
+    window.__CURRENT_RULES_CANTONESE = plainStartSpeech();
     return;
   }
   if(usesAdvancedThemeModule()){
@@ -9937,6 +10010,8 @@ function showLevelUpBanner(){
       : (state.level === '67'
         ? `遊戲開始。${activeLevel67ToolProfile().actionCue}。將${itemWord0}移到同款目標。`
         : `遊戲開始。張開手，輕輕合手拿起${itemWord0}。移到同款目標，再張開手放下。`));
+    // v146：公開版喺規則畫面已經讀咗一次開局指示，呢度唔再重複講
+    if(!research.active && state.level !== '2') cantoneseMsg = '';
     persistText = okTag;
   } else if(tier === 1){
     msg = research.active
@@ -9944,7 +10019,7 @@ function showLevelUpBanner(){
       : `<div style="font-size:20px;font-weight:900;">動物阻路可搬開</div>`;
     cantoneseMsg = research.active
       ? `好耶。而家會有動物出現。唔好拿動物。只拿${itemWord0}。`
-      : `有動物阻路，可以拿起，搬到空白位置再放手。`;
+      : '有動物阻住，搬開佢。';
     persistText = okTag + '<br>' + animalTag;
   } else {
     msg = research.active
@@ -9952,7 +10027,7 @@ function showLevelUpBanner(){
       : `<div style="font-size:20px;font-weight:900;">${tier} 隻動物 · 阻路可搬開</div>`;
     cantoneseMsg = research.active
       ? `好耶。而家有${tier}隻動物。記住：拿${itemWord0}，唔好拿動物。`
-      : `有${tier}隻動物。阻住目標時，可以搬到空白位置再放手。`;
+      : `有${tier}隻動物。阻住就搬開佢。`;
     persistText = okTag + '<br>' + animalTag;
   }
 
@@ -10008,6 +10083,10 @@ function triggerRecoveryPause(){
                 `<div style="font-size:26px; line-height:1.5;">✓ 只拿<b style="color:#8fe388;">${itemWordR}</b>（${fAR}、${fBR}）</div>` +
                 '<div style="font-size:26px; line-height:1.5; margin-top:8px;">✗ <b style="color:#ff8b8b;">不要拿動物</b></div>';
     simpleCanto = `慢慢來。只拿${itemWordR}。就係${fAR}和${fBR}。大象、貓、狗、都不要拿。`;
+  }
+  if(!research.active){
+    // v146：公開版用短句口語；動物只係阻路，可以搬開
+    simpleCanto = `慢慢嚟。${fAR}放去${tAR}。${fBR}放去${tBR}。` + (tier === 0 ? '' : '動物阻住就搬開佢。');
   }
 
   // 建立全螢幕 recovery 遮罩
@@ -14196,9 +14275,9 @@ function laundryOrderText(){
   if(!laundryOrder) return '';
   if(isLaundryZoneGame()){
     const line = laundryOrder.lines[0];
-    return '請將' + (line ? line.label : '衣物') + '夾到閃燈嗰個晾衫架。';
+    return '將' + (line ? line.label : '件衫') + '夾去閃燈嗰個架。';   // v146 短句
   }
-  return '請將' + laundryOrder.lines.map(l=>l.need + l.unit + l.label).join('、') + '放上晾衫架。';
+  return '將' + laundryOrder.lines.map(l=>l.need + l.unit + l.label).join('、') + '夾上衫架。';
 }
 function laundryPickLitRack(){
   const count = laundryRackCount();
@@ -14464,8 +14543,8 @@ function newFridgeRound(){
   fridgeCrashPoint = null;
   try{
     if(!firstRound) speakCantonese('又有新食物要放喇！', {rate:.85});
-    else if(isFridgeZoneMode()) speakCantonese('買完餸返嚟喇！請將食物放入雪櫃着燈嗰格。', {rate:.82});
-    else speakCantonese('買完餸返嚟喇！請將啲食物一樣一樣放入雪櫃。', {rate:.82});
+    else if(isFridgeZoneMode()) speakCantonese('買完餸返嚟喇！放入着燈嗰格。', {rate:.82});
+    else speakCantonese('買完餸返嚟喇！將啲嘢放入雪櫃。', {rate:.82});
   }catch(e){}
   // v72 修正：開局時 spawnInitialFoods() 行先過本函數，嗰陣隊列仲未有，
   // 而之後嘅補貨路徑全部有 `if(foods.length)` 門檻——所以呢度必須無條件補貨，
@@ -15222,7 +15301,7 @@ function syncTargetHoldFeedback(){
     shoulderHoldSpokenSecond=null;
     if(!shoulderHoldInterruptedSpoken){
       shoulderHoldInterruptedSpoken=true;
-      speakCantonese('請再抬高手臂，保持住。',{rate:.82});
+      speakCantonese('舉高啲，停住。',{rate:.82});
     }
     return;
   }
@@ -15242,7 +15321,7 @@ function syncTargetHoldFeedback(){
     if(remaining!==shoulderHoldSpokenSecond){
       shoulderHoldSpokenSecond=remaining;
       speakCantonese((remaining===Math.ceil(Number(shoulder.holdDurationMs)/1000)
-        ? '保持舉高手臂。':'')+(SHOULDER_HOLD_COUNT_CANTONESE[remaining]||remaining)+'。',{rate:.76});
+        ? '舉住唔好放。':'')+(SHOULDER_HOLD_COUNT_CANTONESE[remaining]||remaining)+'。',{rate:.76});
     }
     return;
   }
@@ -16273,7 +16352,7 @@ function updateFramePerfOverlay(now){
     framePerf.overlayEl = el;
   }
   const p = framePerfSnapshot();
-  el.textContent = `perf v145  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
+  el.textContent = `perf v146  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
     + `鏡頭 ${p.video[0]}×${p.video[1]}  畫布 ${p.canvas[0]}×${p.canvas[1]}  dpr ${p.dpr}  手模型 ${p.handDelegate || '-'}\n`
     + `手 ${p.hand.hands} 隻  標籤 ${p.hand.label || '-'} ${p.hand.score}  接納 ${p.hand.path || '-'}  嚴格 ${p.hand.strict} 連續 ${p.hand.continuity} 單手 ${p.hand.lone} 拒絕 ${p.hand.rejected}\n`
     + `左右手檢查 ${p.hand.check === 'off' ? '關' : '開'}  鎖定手形 ${p.hand.lockSize || '-'}  大小拒絕 ${p.hand.sizeRejected}  遠處拒絕 ${p.hand.farRejected}`
@@ -20156,8 +20235,9 @@ function advSetNote(text){
    語氣為成人尊重式，不使用兒語。
    ================================================================== */
 const ENCOURAGE = ['做得好，繼續保持。','好準，再嚟一次。','控制得好穩。','非常好，繼續動。','掌握得好，再嚟一局。'];
+const ENCOURAGE_PLAIN = ['做得好！','好準呀！','好穩陣！','好叻呀！','好嘢！'];   // v146 短句口語，輪流講
 let encourageIdx = 0;
-function nextEncourage(){ const t = ENCOURAGE[encourageIdx % ENCOURAGE.length]; encourageIdx++; return t; }
+function nextEncourage(){ const list = research.active ? ENCOURAGE : ENCOURAGE_PLAIN; const t = list[encourageIdx % list.length]; encourageIdx++; return t; }
 
 /* 畫布慶祝粒子（confetti / sparkle） */
 let fxParticles = [];
@@ -20378,7 +20458,20 @@ function updateHeldReleasePrompt(){
     : ((advCurrent === 'mahjong' || advCurrent === 'cards')
       ? '攞住咗。移到患側外方放牌區，再張開手。'
       : '攞住咗。移到目標後，請張開手放低。'));
-  speakCantonese(text);
+  speakCantonese(research.active ? text : plainHeldSpeech());
+}
+// v146：公開版攞住之後只講一句短句：去邊度、點放低
+function plainHeldWhere(){
+  if(advCurrent === 'cards') return '擺去收牌區';
+  if(advCurrent === 'mahjong') return '擺去放牌區';
+  if(advCurrent === 'flowers') return isLevel6() ? '擺去花盤' : '擺入花瓶';
+  if(advCurrent === 'laundry') return '擺入同色嘅籃';
+  return '擺過去';
+}
+function plainHeldSpeech(){
+  if(isLevel6RealToolTask()) return isLaundryPegStoryGame() ? '夾住喇，擺過去。' : '夾住喇，擺去衫架。';
+  if(level6AutoPlaceEnabled()) return '攞住喇，' + plainHeldWhere() + '。';
+  return '攞住喇。' + plainHeldWhere() + '，打開隻手。';
 }
 
 function advDrawHeldReleasePrompt(ctx, held){
@@ -20410,7 +20503,10 @@ function advDrawHeldReleasePrompt(ctx, held){
 /* v143 拿住之後嘅提示只留動作（例如「請張開手放下」「移到放牌區」），唔再講前半句同規則 */
 function advHeldPromptShown(text){
   if(!simpleScreenText()) return text;
-  return String(text).replace(/^已[拿夾捏]住 · /,'').replace(/，停住自動放低$/,'');
+  const short = String(text).replace(/^已[拿夾捏]住 · /,'').replace(/，停住自動放低$/,'');
+  // v146 口語短句，同讀出嚟嘅字一樣
+  const plain = {'請張開手放下':'打開隻手', '移到放牌區':'擺去放牌區', '移到花盤':'擺去花盤', '請放鬆夾仔':'放鬆衣夾'};
+  return plain[short] || short;
 }
 
 function nearestItem(items){
@@ -20980,7 +21076,9 @@ function cookStepGoal(st){
 }
 function cookStepTts(st){
   if(!isLevel6DigiflexTask()) return st.tts;
-  return st.text + '。揸實握力器，再放鬆，做' + cookStepNeed(st) + '下。';
+  // v146 短句：步驟名 + 揸實、放鬆、做幾多下
+  return dealText((COOK_DIGIFLEX_TITLES[st.id] || st.text) + '。揸實，放鬆，做' + cookStepNeed(st) + '下。',
+    (COOK_DIGIFLEX_TITLES_EN[st.id] || 'Next step') + '. Squeeze, then relax, ' + cookStepNeed(st) + ' times.');
 }
 /* 相對判斷（v132 放寬）：只同病人自己嘅放鬆位比較，唔再用校準嘅絕對門檻——
    升幅 ≥ 校準範圍 25%（下限 0.03、上限 0.08）就算揸實；由峰值跌返四成就算放鬆。
@@ -21463,6 +21561,15 @@ const COOK_OUTCOME_LABELS = [
   '蛋炒飯已上碟',
 ];
 
+// v146 公開版（握力器）每步做完嘅口語短句；畫面同讀出一樣
+const COOK_PLAIN_DONE = [
+  '啲飯抓鬆喇', '打好蛋喇', '蛋同飯撈勻喇', '洗好蔥喇', '切好蔥花喇', '個鑊熱喇',
+  '落咗油喇', '啲飯落鑊喇', '落咗鹽喇', '落咗蔥花喇', '熄咗火喇', '上碟喇',
+];
+function cookOutcomeLabel(idx){
+  return (isLevel6DigiflexTask() ? COOK_PLAIN_DONE[idx] : COOK_OUTCOME_LABELS[idx]) || '';
+}
+
 function cookAdvance(earned){
   const st = cook.step();
   const total = COOK_STEPS.length;
@@ -21499,7 +21606,7 @@ function cookAdvance(earned){
       progressPct:1,
       canvasH:280,
       draw:(c,w,h)=> drawCookSummary(c,w,h),
-      tts:'恭喜，蛋炒飯完成。十二個步驟全部做完，做得非常好。',
+      tts:isLevel6DigiflexTask() ? '蛋炒飯煮好喇！好叻呀！' : '恭喜，蛋炒飯完成。十二個步驟全部做完，做得非常好。',
       autoMs:6500,
       onContinue: again ? cookStartNextRound : null,
     });
@@ -21527,7 +21634,7 @@ function cookAdvance(earned){
       big:true,
       tts:false,
     });
-    speakCantonese('完成。' + COOK_OUTCOME_LABELS[finishedIdx] + '。');
+    speakCantonese(isLevel6DigiflexTask() ? cookOutcomeLabel(finishedIdx) + '。' : '完成。' + COOK_OUTCOME_LABELS[finishedIdx] + '。');
     cook.announceAt = cook.outcomeUntil + 250;
   } else {
     cook.outcomeUntil = 0;
@@ -21645,7 +21752,7 @@ function drawCookOutcomeVisual(ctx, idx, cx, cy, size, withCard){
     ctx.fillText('這一步完成', cx, cy - h/2 + 12);
     ctx.fillStyle = '#222';
     ctx.font = '900 20px "PingFang TC","Noto Sans TC",sans-serif';
-    ctx.fillText(COOK_OUTCOME_LABELS[idx] || '已完成', cx, cy - h/2 + 34);
+    ctx.fillText(cookOutcomeLabel(idx) || '已完成', cx, cy - h/2 + 34);
     cy += 26;
   }
 
@@ -21787,6 +21894,9 @@ function cookDigiflexGeometry(cw, ch){
 }
 const COOK_DIGIFLEX_TITLES = { loosen:'抓鬆冷飯', beat:'打蛋', mix:'蛋液拌飯', wash:'洗蔥', chop:'切蔥花', heat:'開火熱鑊',
   oil:'落油', pour:'倒飯落鑊', salt:'落鹽', onion:'落蔥花', off:'熄火', plate:'上碟' };
+const COOK_DIGIFLEX_TITLES_EN = { loosen:'Loosen the rice', beat:'Beat the eggs', mix:'Mix egg and rice', wash:'Wash the spring onion',
+  chop:'Chop the spring onion', heat:'Heat the wok', oil:'Add oil', pour:'Rice into the wok', salt:'Add salt', onion:'Add spring onion',
+  off:'Turn off the heat', plate:'Serve' };
 function cookDigiflexAnim(now){
   const d = cook.digi;
   const p = d.animAt ? clamp01((now - d.animAt) / DIGIFLEX_ANIM_MS) : 1;
@@ -22477,8 +22587,9 @@ function mjStartRound(idx){
   mj.hint = def.hint;
   picker.reset();
   mjPanel();
-  speakCantonese('新一局。手上有 ' + mj.hand.length + ' 隻牌，仲需要 ' + (14 - mj.hand.length) +
-    ' 隻。睇清楚，揀一組牌拼出和牌。');
+  speakCantonese(plainSay('新一局。揀一組牌，砌到食糊。',
+    '新一局。手上有 ' + mj.hand.length + ' 隻牌，仲需要 ' + (14 - mj.hand.length) +
+    ' 隻。睇清楚，揀一組牌拼出和牌。'));
 }
 
 function mjNeed(){ return 14 - mj.hand.length; }
@@ -22605,7 +22716,7 @@ function mjWinRound(res){
   const nextTierFan = mj.fanTotal < 3 ? 3 : mj.fanTotal < 5 ? 5 : mj.fanTotal < 10 ? 10 : null;
   rewardBig({
     tier: tier.label + ' · ' + res.fan + ' 番',
-    title:'和牌！',
+    title:plainSay('食糊！', '和牌！'),
     sub: res.names.join('　'),
     simpleSub: res.names.join('　'),
     detail,
@@ -22615,7 +22726,7 @@ function mjWinRound(res){
     progressPct: nextTierFan ? mj.fanTotal / nextTierFan : 1,
     canvasH: 250,
     draw:(c,w,h)=> mjDrawWinHand(c, w, h, res),
-    tts:'和牌！' + res.names.join('，') + '，' + res.fan + '番。' + nextEncourage(),
+    tts:plainSay('食糊！', '和牌！') + res.names.join('，') + '，' + res.fan + '番。' + nextEncourage(),
     onContinue:()=> mjStartRound(),
   });
 }
@@ -22936,7 +23047,9 @@ function cardsNewBoard(newSuit){
   if(cfg.bonus) cards.bonusEndsAt = nowMs() + 30000;
   picker.reset();
   cardsPanel();
-  speakCantonese('新一輪。請收集' + CARD_SUIT_NAME[cards.suit] + '，共' + cards.need + '張。');
+  speakCantonese(plainSay(dealText('新一輪。攞' + cards.need + '張' + CARD_SUIT_NAME[cards.suit] + '。',
+      'New round. Collect ' + cards.need + ' ' + ({S:'spades',H:'hearts',D:'diamonds',C:'clubs'})[cards.suit] + '.'),
+    '新一輪。請收集' + CARD_SUIT_NAME[cards.suit] + '，共' + cards.need + '張。'));
 }
 function cardsPanel(){
   updatePatientGameInstruction();
@@ -23018,7 +23131,7 @@ function cardsUpdate(){
                 w/2 + (i - (n-1)/2) * (cwid + 8), h/2, cwid);
             }
           },
-          tts:'完成一輪。升級到' + CARD_TIERS[cards.tierIdx].label + '。' + nextEncourage(),
+          tts:plainSay('完成一輪，升級喇！', '完成一輪。升級到' + CARD_TIERS[cards.tierIdx].label + '。') + nextEncourage(),
           onContinue:()=> cardsNewBoard(true),
         });
       } else {
@@ -23048,6 +23161,8 @@ function cardsUpdate(){
     updateHUD();
     triggerFeedback(false);
     adaptiveNoteTrial('cards_place', 'failure', {reason:'wrong_suit'});
+    // v146：病人放低咗揀錯嘅牌，隻牌就收走，唔再彈返原位（每局指定花色嘅牌數唔變，一定砌得完）
+    if(!research.active){ c.gone = true; fxRing(c.x, c.y); }
     cards.msg = '呢張係' + CARD_SUIT_NAME[c.suit] + '，要揀' + CARD_SUIT_NAME[cards.suit] + '。';
     speakCantonese('呢張係' + CARD_SUIT_NAME[c.suit] + '。要揀' + CARD_SUIT_NAME[cards.suit] + '。');
   }
@@ -23279,7 +23394,7 @@ function laundrySetup(){
   laundryRefill();
   carrier.reset();
   laundryPanel();
-  speakCantonese('把衣物放入相同顏色的衫籃。');
+  speakCantonese(plainSay('將件衫放入同色嘅籃。', '把衣物放入相同顏色的衫籃。'));
 }
 function laundryRefill(){
   const cfg = laundryConfig(laundry.tier);
@@ -23395,7 +23510,7 @@ function laundryUpdate(){
               cx.fillText(LAUNDRY_COLORS[c].name, x, h*0.80);
             });
           },
-          tts:'升級。現在有' + laundry.colors.length + '種顏色。' + nextEncourage(),
+          tts:plainSay(dealText('升級喇，而家有' + laundry.colors.length + '隻色。', 'Level up. Now ' + laundry.colors.length + ' colours. '), '升級。現在有' + laundry.colors.length + '種顏色。') + nextEncourage(),
           onContinue:()=>{},
         });
       } else {
@@ -23419,7 +23534,7 @@ function laundryUpdate(){
       triggerFeedback(false);
       adaptiveNoteTrial('laundry_place', 'failure', {reason:'wrong_basket'});
       laundry.msg = b ? ('呢個係' + LAUNDRY_COLORS[b.color].name + '籃，' + g.name + '要放' +
-        LAUNDRY_COLORS[g.color].name + '籃。') : '未放入衫籃，衣物返回原位。';
+        LAUNDRY_COLORS[g.color].name + '籃。') : plainSay('未放入籃，再試過。', '未放入衫籃，衣物返回原位。');
       speakCantonese(laundry.msg);
     }
     laundryPanel();
@@ -23748,7 +23863,7 @@ function flowersUpdate(){
       totalWrong++;
       if(!isLevel6()) grabCount++;
       updateHUD();
-      speakCantonese('請將花材放到花瓶口。');
+      speakCantonese(plainSay('將枝花插入花瓶。', '請將花材放到花瓶口。'));
     }
     if(p){
       flowers.movingId = '';
@@ -23872,7 +23987,7 @@ function startFlowersKeepsake(){
   bindKeepsake();
   ksRedraw();
   playApplause();
-  speakCantonese('作品完成。可以寫上你的名字，然後下載留念。' + nextEncourage());
+  speakCantonese(plainSay('插好喇，好靚！可以寫個名，下載留念。', '作品完成。可以寫上你的名字，然後下載留念。' + nextEncourage()));
 }
 function bindKeepsake(){
   if(ksBound) return;
@@ -24026,7 +24141,7 @@ function ksDownload(){
 
 const flowersFinishApi = (typeof startFlowersKeepsake === 'function')
   ? { run(){ return startFlowersKeepsake(); } }
-  : { run(){ playApplause(); speakCantonese('作品完成，非常好！' + nextEncourage()); endGame(); } };
+  : { run(){ playApplause(); speakCantonese(plainSay('插好喇，好靚！', '作品完成，非常好！' + nextEncourage())); endGame(); } };
 function flowersFinish(){ return flowersFinishApi.run(); }
 
 /* ==================================================================
@@ -25697,6 +25812,18 @@ window.__qa = {
         .map(c=>({type:c.type, item:c.itemLabel, target:c.targetLabel})),
     }));
   },
+  // v146: read the rules-screen text and the spoken start instruction for one game
+  rulesFor(opts){
+    opts = opts || {};
+    if(opts.level) state.level = opts.level;
+    if(opts.shoulderExerciseMode && SHOULDER_EXERCISE_MODES[opts.shoulderExerciseMode]) state.shoulderExerciseMode = opts.shoulderExerciseMode;
+    if(opts.theme){ if(state.level==='67') lockLevel6Activity(opts.theme); else state.theme = opts.theme; }
+    applyInteractionModeForLevel();
+    updateRulesForActivity();
+    if(opts.show) showScreen('rules');
+    const el = document.getElementById('rulesContent');
+    return { title: themeShownTitle(getTheme()), rules: Array.from(el.children).map(c=>c.textContent.trim()), tts: window.__CURRENT_RULES_CANTONESE || '' };
+  },
   level4SessionThemes(){ return [...state.level4SessionThemes]; },
   setLevel4SessionThemes(){
     state.level4SessionThemes = ['bilateral'];
@@ -25896,6 +26023,26 @@ window.__qa = {
         if(!window.__qa.cards.pickCorrect()) break;
       }
       return window.__qa.cards.state();
+    },
+    // v146: carry one card into the collecting area and put it down there
+    place(wantCorrect){
+      const c = cards.field.find(f=>!f.gone && (f.suit === cards.suit) === !!wantCorrect);
+      if(!c) return null;
+      const z = affectedSelectionZone();
+      const fromX = c.x, fromY = c.y;
+      if(isLevel6()){
+        const W = gameCanvas.width, H = gameCanvas.height;
+        const walk = (x, y, gesture, frames)=>{
+          for(let i=0;i<frames;i++) window.__qa.setLevel6ToolFrame({ gesture, stepMs:33, poseMissing:['shoulder','elbow','wrist'], nx:x/W, ny:y/H });
+        };
+        walk(fromX, fromY, 'open', 12); walk(fromX, fromY, 'closed', 14);
+        walk((fromX+z.x)/2, (fromY+z.y)/2, 'closed', 12);
+        walk(z.x, z.y, 'closed', 24); walk(z.x, z.y, 'open', 30);
+      } else {
+        window.__qa.adv.carryTo(fromX, fromY, z.x, z.y);
+        window.advanceTime(1600);
+      }
+      return Object.assign({ cardId:c.id, cardGone:!!c.gone, cardX:Math.round(c.x), cardY:Math.round(c.y) }, window.__qa.cards.state());
     },
   },
   dimsumPlate:{
@@ -26741,7 +26888,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v145-20261127-yum-cha";
+  const LEVEL_APP_BUILD = "v146-20261127-plain-instructions";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

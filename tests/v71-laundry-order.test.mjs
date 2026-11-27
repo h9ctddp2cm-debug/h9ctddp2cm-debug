@@ -149,7 +149,7 @@ test('v123 zones: every order asks for exactly one garment and lights one of the
     assert.ok(mod.litRack >= 0 && mod.litRack <= 3, `lit rack index: ${mod.litRack}`);
     // The instruction is spoken aloud in Cantonese and shown via laundryOrderText.
     assert.equal(calls.speak.length, 1);
-    assert.match(calls.speak[0], /^請將[^。]+夾到閃燈嗰個晾衫架。$/);
+    assert.match(calls.speak[0], /^將[^。]+夾去閃燈嗰個架。$/);   // v146 shorter wording
     assert.equal(calls.speak[0], mod.laundryOrderText());
   }
 });

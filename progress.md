@@ -2078,3 +2078,22 @@ Original prompt: Fix Level 6–7 interactions: make light clothes-peg press dete
 - Validation：Node 測試兩組 297 ＋ 523 ＝ 820：817 pass／3 skip／0 fail；`tools/checkjs.sh` 11 OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 338 files（public index sanitized）；dist 冇 `__qa`、載入冇 page error，Level 3 揀遊戲頁見到新封面。
 - QA 對照表 `ych_rehab_qa_artifacts/v145/v145-qa-contact-sheet.png`（iPad 橫向全流程、iPad 直向、手機、部門筆電、成績頁、新封面）同 `v145-all-dimsum.jpg`（30 款點心一覽）。Playwright 測試假動作；未喺真機／真病人試過。
 - 已知：手機直向畫面細，點心紙字較細；屋企人冇名牌；封面圖喺揀遊戲頁比較細。
+
+## 2026-11-27 v146 — 全部遊戲指示改短句口語；啤牌放錯牌會收走
+- 治療師回饋：「all the games instructions are too complicated. just now the patient said he didn't understand. the verbal instructions sentences are too long and not clear (maybe not local cantonese enough)」。另問啤牌可否由病人自己決定幾時放牌；確認後嘅做法：「when the patient placed the wrong card, the card will disappear, instead of putting back to its original position」。
+- 字句做法（只係公開版 Level 3–6；另一條流程字句原封不動）：一句一件事、每句約十個字內（最長 12 字）、只講動作、用口語；畫面大字同讀出嚟嘅字一樣；同一樣嘢唔講兩次；治療師用嘅字眼（角度、相機、患側）唔讀畀病人聽。
+  - 規則頁：標題＋兩至三句有編號嘅大字＋「慢慢嚟，唔使急」。讀出＝畫面嗰幾句。新函式 `plainStartLines()`／`plainStartSpeech()`／`plainRulesHtml()`／`plainSay(plain, formal)`／`storySay()`。
+    - Level 3／4：「舉高隻手，X」「放低隻手，再嚟過」（X＝打保齡／射籃／買餸／用望遠鏡睇風景／揭開蒸籠／洗衫晾衫／揭牌／摸牌）；雙手舉棍：「兩隻手揸住支棍」「一齊舉高，X」「放低支棍，再嚟過」。
+    - Level 5：「揸拳頭，攞起…」「擺入／擺去…」「打開隻手，放低」；啤牌「睇上面要邊隻花」、麻雀「揀一組牌」行先。
+    - Level 6：「三隻手指，揸起…」「擺去…」「停一停，就放低」；筷子「筷子尖指住點心／停一停，就夾起／夾去隻碟，停一停」；衣夾「隻手去着燈嗰度／揸實衣夾，夾起／擺到目的地，停一停」；煮蛋炒飯「揸實握力器／再放鬆／咁就計一下」。
+  - 以前規則頁讀完，一開波又再讀一次「遊戲開始。……」，而且 Level 3 讀嘅係「張開手，輕輕合手拿起…」、Level 4 讀嘅係「前臂放在桌面…」，同舉手動作唔啱。公開版而家唔再讀呢句。開局總字數由約 41–93 字減到 24–46 字。
+  - 玩緊嘅短句：攞住之後「攞住喇，擺去收牌區。」「攞住喇。擺入同色嘅籃，打開隻手。」「夾住喇，擺去衫架。」；畫面標籤「打開隻手／擺去放牌區／擺去花盤／放鬆衣夾」；讚好輪流講「做得好！／好準呀！／好穩陣！／好叻呀！／好嘢！」；麻雀「新一局。揀一組牌，砌到食糊。」「食糊！」；啤牌「新一輪。攞N張紅心。」；雪櫃「買完餸返嚟喇！將啲嘢放入雪櫃。」；膊頭「舉高啲，停住。」「舉住唔好放。」；煮蛋炒飯每步「步驟名＋揸實，放鬆，做N下。」，做完一步講「打好蛋喇」等，最後「蛋炒飯煮好喇！好叻呀！」；動物提示「有動物阻住，搬開佢。」；故事步驟讀出時「抬高手，」統一做「舉高隻手，」。
+  - `localization.js` 加咗 104 條英文對照。
+- 啤牌（Level 5 同 Level 6 共用）：錯花色嘅牌放低喺收牌區 → 隻牌收走（`c.gone = true`＋一個圈），唔再彈返原位。照舊扣 3 分、有提示聲同「呢張係X。要揀Y。」。要嘅花色牌數冇變，一定砌得完一輪。喺收牌區外面鬆手：隻牌照舊返原位（冇改）。麻雀冇改。
+- 冇改：所有偵測、判定門檻、計分、時間、遊戲步驟；冇任何嘢變嚴。Level 6 筷子仍然 `gameType:'dwell'`；`numHands:2`、信心值 0.20／0.18／0.18、`runningMode:'VIDEO'`、`PUBLIC_GAME_WORK_INTERVAL_MS=1000/30`、`PUBLIC_CANVAS_MAX_EDGE=1600` 不變。校準頁、設定頁、成績頁字句冇改；免責字句（網頁不識別實體工具，亦不量度握力或捏力）仍然喺校準頁嘅治療師說明，「角度只屬相機訓練估算」仍然喺揀 Level 頁；只係唔再喺規則頁顯示同讀畀病人聽。舊嘅公開版規則字句程式保留喺原位（唔再用）。
+- 標記 → `v146-20261127-plain-instructions`（`CACHE_VERSION`、`LEVEL_APP_BUILD`、manifest `start_url`、`perf v146`）。
+- QA hook（公開版冇）：`__qa.rulesFor({level,theme,show})`、`__qa.cards.place(wantCorrect)`（將一張牌搬入收牌區放低；Level 6 用假手部畫格）。
+- Tests：新增 `tests/v146-plain-instructions.test.mjs`（11：全部設定組合嘅開局句子 2–3 句、每句 ≤12 字、冇箭咀／括號／治療師字眼；讀出＝畫面；每句有英文；另一條流程字句仍在；玩緊嘅短句有英文；錯牌收走（原始碼＋Level 5／Level 6 實跑，一輪仍然完成到）；收牌區外鬆手照舊；28 個遊戲規則頁實跑；開波唔再重複讀）。更新 `v143-simple-setup`（拿住提示新字、「食糊！」）、`v71-laundry-order`（閃燈嗰個架）。19 個測試檔嘅版本標記更新。
+- Validation：Node 測試兩組 297 ＋ 534 ＝ 831：828 pass／3 skip／0 fail；`tools/checkjs.sh` 11 OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 338 files（public index sanitized）；dist 冇 `__qa`、載入冇 page error。
+- QA 對照表 `ych_rehab_qa_artifacts/v146/v146-wording-before-after.png`（20 個遊戲開局讀出字句前後對照）同 `v146-qa-contact-sheet.png`（規則頁前後、啤牌錯牌四格）。Playwright 測試假動作；未喺真機／真病人試過，亦未聽過真機讀出嚟嘅效果（口音視乎部機嘅廣東話語音）。
+- 已知／未做：規則頁標題仍然係「遊戲規則」；Level 3／4 洗衫晾衫開局句「舉高隻手，洗衫晾衫」較籠統（之後每步會讀「舉高隻手，將衫放入洗衣機」等）；玩緊嘅畫面提示（揸拳頭／夾住／停住等）同點心落單句冇改；錯牌照扣 3 分。

@@ -34,10 +34,10 @@ const advanced = setup.slice(setup.indexOf('<details class="advanced-settings" i
 const beforeAdvanced = setup.slice(0, setup.indexOf('<details class="advanced-settings" id="advancedSettings"'));
 
 test('v143 release markers', () => {
-  assert.match(sw, /const CACHE_VERSION = "fthue-rehab-v145-20261127-yum-cha";/);
-  assert.match(manifest, /index\.html\?build=v145-20261127-yum-cha/);
-  assert.match(html, /const LEVEL_APP_BUILD = "v145-20261127-yum-cha";/);
-  assert.match(html, /perf v145 {2}/);
+  assert.match(sw, /const CACHE_VERSION = "fthue-rehab-v146-20261127-plain-instructions";/);
+  assert.match(manifest, /index\.html\?build=v146-20261127-plain-instructions/);
+  assert.match(html, /const LEVEL_APP_BUILD = "v146-20261127-plain-instructions";/);
+  assert.match(html, /perf v146 {2}/);
 });
 
 test('game time defaults to the longest choice; the shorter ones stay available', () => {
@@ -115,9 +115,9 @@ test('mahjong / cards table: the small status line is not drawn on top of the wi
 test('held prompt keeps the action words only', () => {
   const shown = new Function('simpleScreenText', fnSource('advHeldPromptShown') + '\nreturn advHeldPromptShown;');
   const s = shown(() => true);
-  assert.equal(s('已拿住 · 請張開手放下'), '請張開手放下');
-  assert.equal(s('已拿住 · 移到放牌區，停住自動放低'), '移到放牌區');
-  assert.equal(s('已夾住 · 請放鬆夾仔'), '請放鬆夾仔');
+  assert.equal(s('已拿住 · 請張開手放下'), '打開隻手');   // v146 colloquial wording
+  assert.equal(s('已拿住 · 移到放牌區，停住自動放低'), '擺去放牌區');
+  assert.equal(s('已夾住 · 請放鬆夾仔'), '放鬆衣夾');
   assert.equal(s('已捏住 · 請張開三指放下'), '請張開三指放下');
   assert.equal(shown(() => false)('已拿住 · 請張開手放下'), '已拿住 · 請張開手放下');
 });
@@ -300,7 +300,7 @@ test('Level 5 game screen: no rule line, no streak line; toast is one line; mahj
         words: document.getElementById('rewardOverlay').innerText.replace(/\s+/g, ' ').trim() };
     });
     assert.equal(win.open, true);
-    assert.equal(win.title, '和牌！');
+    assert.equal(win.title, '食糊！');
     assert.deepEqual([win.tier, win.detail, win.prog, win.auto], [false, false, false, false]);
     assert.equal(win.canvas, true);
     assert.doesNotMatch(win.words, /累積|下一個目標|並非官方|自動繼續|連勝/);
