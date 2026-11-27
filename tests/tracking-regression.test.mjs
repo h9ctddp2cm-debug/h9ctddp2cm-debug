@@ -20,14 +20,19 @@ test("public calibration mirrors the video once and leaves mapped overlay coordi
 });
 
 test("iPad tracking uses CPU-compatible MediaPipe creation with a CPU retry", () => {
-  assert.match(publicSource, /delegate:\s*isAppleTouchDevice\(\)\s*\?\s*"CPU"\s*:\s*"GPU"/);
+  // v147: the pose delegate choice moved into preferredPoseDelegate() (same default).
+  assert.match(publicSource, /delegate:\s*preferredPoseDelegate\(\)/);
+  assert.match(publicSource, /return isAppleTouchDevice\(\) \? 'CPU' : 'GPU';/);
   assert.match(publicSource, /baseOptions:\{\.\.\.options\.baseOptions,\s*delegate:"CPU"\}/);
 });
 
 test("camera capture follows portrait or landscape orientation instead of forcing a cropped landscape frame", () => {
   assert.match(publicSource, /const portraitCamera = window\.innerHeight > window\.innerWidth/);
-  assert.match(publicSource, /width:\{ideal:540\},\s*height:\{ideal:960\}/);
-  assert.match(publicSource, /width:\{ideal:960\},\s*height:\{ideal:540\}/);
+  // v147: 640×360 (was 960×540), same 16:9 / 9:16 framing, 30 frames a second.
+  assert.match(publicSource, /const CAMERA_LONG_EDGE = 640;\s*const CAMERA_SHORT_EDGE = 360;\s*const CAMERA_FRAME_RATE = 30;/);
+  assert.match(publicSource, /width:\{ideal:cameraShortEdge\},\s*height:\{ideal:cameraLongEdge\}/);
+  assert.match(publicSource, /width:\{ideal:cameraLongEdge\},\s*height:\{ideal:cameraShortEdge\}/);
+  assert.match(publicSource, /frameRate:\{ideal:CAMERA_FRAME_RATE\}/);
   assert.match(publicSource, /aspectRatio:\{ideal:9\/16\}/);
   assert.match(publicSource, /video: cameraVideoConstraints/);
 });
@@ -40,7 +45,7 @@ test("portrait phones keep the camera inline in a compact preview instead of ful
   assert.match(publicSource, /height:min\(25dvh,210px\)/);
   assert.ok(publicSource.includes("videoEl.setAttribute('webkit-playsinline', '')"));
   assert.ok(publicSource.includes("videoEl.controls = false"));
-  assert.match(serviceWorkerSource, /fthue-rehab-v146-20261127-plain-instructions/);
+  assert.match(serviceWorkerSource, /fthue-rehab-v147-20261127-detect-box/);
 });
 
 test("Levels 3 and 4 can use Pose when tabletop hands occlude the finger model", () => {
@@ -184,9 +189,9 @@ test("all items stay clear of targets and can be parked in blank space", () => {
 test("offline worker forces the current build instead of serving the stale game", () => {
   const manifest = JSON.parse(readFileSync(path.join(root, "manifest.webmanifest"), "utf8"));
   assert.ok(publicSource.includes('updateViaCache:"none"'));
-  assert.match(serviceWorkerSource, /fthue-rehab-v146-20261127-plain-instructions/);
-  assert.ok(publicSource.includes('const LEVEL_APP_BUILD = "v146-20261127-plain-instructions"'));
-  assert.equal(manifest.start_url, "./index.html?build=v146-20261127-plain-instructions");
+  assert.match(serviceWorkerSource, /fthue-rehab-v147-20261127-detect-box/);
+  assert.ok(publicSource.includes('const LEVEL_APP_BUILD = "v147-20261127-detect-box"'));
+  assert.equal(manifest.start_url, "./index.html?build=v147-20261127-detect-box");
   assert.ok(publicSource.includes('const levelAppHadController = Boolean(navigator.serviceWorker.controller)'));
   assert.ok(publicSource.includes('if (!levelAppHadController || levelAppReloading) return'));
   assert.ok(publicSource.includes('navigator.serviceWorker.addEventListener("controllerchange"'));

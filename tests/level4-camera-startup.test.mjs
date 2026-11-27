@@ -33,6 +33,14 @@ function extractFunction(source, signature) {
 
 const startCameraSource = extractFunction(html, 'async function startCamera(videoElId, opts)');
 const reusableCameraSource = extractFunction(html, 'function reusableCameraStream()');
+// v147: the camera request reads its size and frame rate from named constants.
+const cameraHdSource = extractFunction(html, 'function cameraHdRequested()');
+const cameraConstantsSource = ['CAMERA_LONG_EDGE', 'CAMERA_SHORT_EDGE', 'CAMERA_FRAME_RATE']
+  .map((name) => {
+    const found = html.match(new RegExp(`const ${name} = \\d+;`));
+    assert.ok(found, `could not find ${name}`);
+    return found[0];
+  }).join('\n');
 
 function makeHarness() {
   const videos = new Map();
@@ -59,7 +67,8 @@ function makeHarness() {
 
   const context = {
     state: { stream: null },
-    window: { innerWidth: 390, innerHeight: 844 },
+    window: { innerWidth: 390, innerHeight: 844, location: { search: '' } },
+    URLSearchParams,
     navigator: {
       mediaDevices: {
         async getUserMedia(constraints) {
@@ -90,6 +99,7 @@ function makeHarness() {
   };
   vm.createContext(context);
   new vm.Script(`let cameraRequestPromise=null; let cameraRequestAttempted=false;
+    ${cameraConstantsSource}; ${cameraHdSource};
     ${reusableCameraSource}; ${startCameraSource};
     globalThis.__startCamera = startCamera;`).runInContext(context);
 
@@ -115,6 +125,10 @@ test('startCamera attaches a mocked calibration stream and starts decoded-frame 
   assert.equal(calibVideo.playCalls, 1);
   assert.equal(harness.getUserMediaCalls.length, 1);
   assert.equal(harness.getUserMediaCalls[0].audio, false);
+  // v147: portrait window → 360×640 request at 30 frames a second.
+  assert.equal(harness.getUserMediaCalls[0].video.width.ideal, 360);
+  assert.equal(harness.getUserMediaCalls[0].video.height.ideal, 640);
+  assert.equal(harness.getUserMediaCalls[0].video.frameRate.ideal, 30);
   assert.deepEqual(harness.freshnessWaits, [calibVideo]);
   assert.deepEqual(harness.cameraErrors, []);
   assert.equal(harness.hideErrors, 1);

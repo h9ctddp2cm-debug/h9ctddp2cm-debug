@@ -177,10 +177,10 @@ test('the centre tick no longer covers the revealed tile; the chime stays', () =
 test('release markers are v138', () => {
   const sw = readFileSync(path.join(root, 'service-worker.js'), 'utf8');
   const manifest = readFileSync(path.join(root, 'manifest.webmanifest'), 'utf8');
-  assert.match(html, /const LEVEL_APP_BUILD = "v146-20261127-plain-instructions";/);
-  assert.match(html, /perf v146/);
-  assert.match(sw, /^const CACHE_VERSION = "fthue-rehab-v146-20261127-plain-instructions";/);
-  assert.match(manifest, /v146-20261127-plain-instructions/);
+  assert.match(html, /const LEVEL_APP_BUILD = "v147-20261127-detect-box";/);
+  assert.match(html, /perf v147/);
+  assert.match(sw, /^const CACHE_VERSION = "fthue-rehab-v147-20261127-detect-box";/);
+  assert.match(manifest, /v147-20261127-detect-box/);
 });
 
 test('every new on-canvas and spoken string has an English counterpart', () => {

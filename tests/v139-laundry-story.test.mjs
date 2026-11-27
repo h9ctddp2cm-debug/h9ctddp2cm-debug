@@ -224,8 +224,8 @@ test('other Level 3/4 scenes and the Level 5/6 laundry games are not rerouted', 
 test('release markers are v139', () => {
   const sw = readFileSync(path.join(root, 'service-worker.js'), 'utf8');
   const manifest = readFileSync(path.join(root, 'manifest.webmanifest'), 'utf8');
-  assert.match(html, /const LEVEL_APP_BUILD = "v146-20261127-plain-instructions";/);
-  assert.match(html, /perf v146/);
-  assert.match(sw, /^const CACHE_VERSION = "fthue-rehab-v146-20261127-plain-instructions";/);
-  assert.match(manifest, /v146-20261127-plain-instructions/);
+  assert.match(html, /const LEVEL_APP_BUILD = "v147-20261127-detect-box";/);
+  assert.match(html, /perf v147/);
+  assert.match(sw, /^const CACHE_VERSION = "fthue-rehab-v147-20261127-detect-box";/);
+  assert.match(manifest, /v147-20261127-detect-box/);
 });

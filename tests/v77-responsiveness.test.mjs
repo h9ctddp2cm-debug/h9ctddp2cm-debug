@@ -29,6 +29,9 @@ test('hand inference is cached only for one fresh decoded generation and video s
     const handLandmarker={detectForVideo(){ calls++; return {interpreted:{detected:true,call:calls}}; }};
     const nextTs=()=>1;
     const interpretHandResults=results=>results?.interpreted || {detected:false};
+    // v147: detection box not in use here (full frame goes to the model).
+    const DETECT_BOX_HAND_MARGIN=0.06;
+    const detectBoxCropSource=()=>null;
     ${resetSource}
     ${detectSource}
     return {detectWrist,calls:()=>calls,cache:()=>handFrameCache};

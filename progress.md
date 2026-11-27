@@ -2097,3 +2097,35 @@ Original prompt: Fix Level 6–7 interactions: make light clothes-peg press dete
 - Validation：Node 測試兩組 297 ＋ 534 ＝ 831：828 pass／3 skip／0 fail；`tools/checkjs.sh` 11 OK；`node --check service-worker.js`；`git diff --check` 乾淨；`./scripts/build-dist.sh` → 338 files（public index sanitized）；dist 冇 `__qa`、載入冇 page error。
 - QA 對照表 `ych_rehab_qa_artifacts/v146/v146-wording-before-after.png`（20 個遊戲開局讀出字句前後對照）同 `v146-qa-contact-sheet.png`（規則頁前後、啤牌錯牌四格）。Playwright 測試假動作；未喺真機／真病人試過，亦未聽過真機讀出嚟嘅效果（口音視乎部機嘅廣東話語音）。
 - 已知／未做：規則頁標題仍然係「遊戲規則」；Level 3／4 洗衫晾衫開局句「舉高隻手，洗衫晾衫」較籠統（之後每步會讀「舉高隻手，將衫放入洗衣機」等）；玩緊嘅畫面提示（揸拳頭／夾住／停住等）同點心落單句冇改；錯牌照扣 3 分。
+
+## 2026-11-27 v147 — 大電視：綠色偵測框、Level 3／4 主角鎖定、鏡頭 640×360、顯示速度
+- 治療師回饋：平板同大電視玩嘅時候有延遲；大電視擺喺門口，行過嘅人會搶走追蹤。現場裝置：大電視接 HP Windows 手提電腦，用手提電腦自己個鏡頭，Level 3–6 都會玩。治療師指示：「ROI 綠色偵測裁剪框…預設 76% 闊度，支援左右拉桿並存入 localStorage…遊戲時隱藏綠框」「Level 3/4 主角鎖定：校準時記低膊頭闊度與中心位置，細過 60% 或單幀異常大跳躍即拒絕」「鏡頭解像度改為 640×360（理想幀率 30）；移除隱形鏡頭畫面多餘模糊濾鏡，指示框模糊改純色；維持現有偵測門檻及 Level 5/6 無平滑」「設定頁加「顯示速度」開關（預設關閉）」。
+- 綠色偵測框（校準頁）：
+  - 新卡 `#detectBoxCard`「偵測範圍（綠框）」：兩條拉桿（左邊界／右邊界）、「還原預設（中間 76%）」、闊度標籤。只喺橫向鏡頭畫面出現；直向畫面（企起嘅平板）唔裁剪。設定存喺 `localStorage`（`fthue.detectBox.v147`，只有兩個數）。最窄 30%。
+  - 校準畫面顯示成幅鏡頭畫面（`.calib-wrap.full-frame`），綠框外面變暗；遊戲入面冇綠框。
+  - 做法：每一幀先將綠框範圍畫落一塊記憶體入面嘅細畫布（`detectBoxCropSource`），模型只睇呢塊畫布；交返嚟嘅座標用 `detectBoxRemapLandmarks` 換算返成幅畫面嘅比例，之後所有遊戲邏輯照舊。手模型左右各留 6% 邊（手喺框邊唔會被切走）；Level 3／4 嘅姿勢模型用正綠框。綠框拉到全闊＝唔裁剪，行返以前條路。
+  - `cameraPointToCanvas`：手可以去到嘅範圍＝原本安全範圍同綠框嘅重疊位，所以預設框同以前一樣；收窄咗個框，隻手仍然去到畫面兩邊。
+- Level 3／4 主角鎖定（`shoulder-flexion-controller.js`：`SUBJECT_LOCK_CONFIG`、`subjectMeasure`、`createSubjectLock`）：
+  - 校準時記低膊頭闊度同中心位。遊戲入面，膊頭闊度細過記低嗰個嘅 60%（＝遠處嘅人），或者中心位一幀之內跳遠過一個膊頭闊度（＝換咗人），呢一幀唔交畀遊戲。
+  - 唔交嘅時候：遊戲停喺原狀（沿用現有「冇新畫面」嘅處理），唔扣分、唔當放低手。位置跳 2.5 秒後、大細 6 秒後自動重新認人，所以病人真係移咗位都唔會卡死。重新校準會清走記錄。
+  - 冇改任何動作判定門檻；Level 5／6 原有嘅手部鎖定冇改、冇收緊。
+- 效能：
+  - 鏡頭要求由 960×540 改做 640×360，理想每秒 30 幀（`CAMERA_LONG_EDGE`／`CAMERA_SHORT_EDGE`／`CAMERA_FRAME_RATE`）。網址加 `?cam=hd` 用返 960×540 做現場對比。
+  - 白色背景遊戲入面睇唔到嘅鏡頭畫面唔再做模糊濾鏡；指示框（`.adv-panel`）由半透明模糊改做純白色。
+  - 姿勢模型加現場測試開關 `?poseDelegate=cpu|gpu`（預設冇變）。
+- 顯示速度：設定頁「進階設定」入面新卡 `#speedDisplayCard`「顯示速度」（預設關，`fthue.speedDisplay.v147`）。開咗之後遊戲左下角顯示「速度 v147 每秒 N 幀／追蹤 N 毫秒／鏡頭 W×H」。`?perf=1` 嘅詳細框照舊，另加 姿勢模型、偵測框、主角鎖定、路人拒絕。
+- 冇改：所有偵測同判定門檻、計分、遊戲步驟、字句；冇任何嘢變嚴。`numHands:2`、信心值 0.20／0.18／0.18、`runningMode:'VIDEO'`、`PUBLIC_GAME_WORK_INTERVAL_MS=1000/30`、`PUBLIC_CANVAS_MAX_EDGE=1600`、Level 5／6 冇平滑、Level 6 筷子 `gameType:'dwell'` 全部不變。
+- 標記 → `v147-20261127-detect-box`（`CACHE_VERSION`、`LEVEL_APP_BUILD`、manifest `start_url`、`perf v147`）。
+- QA hook（公開版冇）：`__qa.detectBox.*`、`__qa.subjectLock.*`、`__qa.speedDisplay.*`、`__qa.cameraProbe({model,box,frames})`（用鏡頭行真模型，回報偵測到幾多幀同位置）。
+- Tests：新增 `tests/v147-detect-box-subject-lock.test.mjs`（19：偵測框預設／儲存／最窄闊度／直向唔裁剪、裁剪區同座標換算、手可去範圍、主角鎖定（太細／跳位／重新認人／冇校準時學習）、鎖定拒絕時遊戲唔計分亦唔扣分、鏡頭要求、速度顯示、濾鏡同純色、門檻同設定冇變）。因應改動更新：`level4-camera-startup`（抽出鏡頭常數，加 360×640／30 幀斷言）、`v77-responsiveness`（測試用嘅手部偵測加偵測框替身）、`v143-simple-setup`（進階設定多一張「顯示速度」卡）、`tracking-regression`（姿勢模型開關、鏡頭常數）。
+- Validation：Node tests 兩組 297（294 pass／3 skip／0 fail）＋ 553（553 pass／0 fail）＝850；`tools/checkjs.sh` 11 OK；`node --check service-worker.js`；`git diff --check` clean；`./scripts/build-dist.sh` → 338 files；dist 入面冇 `__qa`。
+- 瀏覽器實測（測試用鏡頭檔 640×360＋真模型，唔係自動測試）：鏡頭交出 640×360／30 幀。手喺畫面中間，全闊／預設／窄框都偵測到而且位置一樣；手喺畫面邊，全闊同預設框偵測到，窄框偵測唔到。人喺中間，三種框都偵測到；人喺畫面最邊，窄框偵測唔到，預設框只有零星極細嘅假偵測（膊頭闊度得返正常嘅二十分之一左右，過唔到 60% 規則）。校準頁：人喺框內 → 可以開始；人喺框外 →「尚未偵測」，開始掣鎖住。遊戲入面主角鎖定 130 幀全收、0 幀拒絕，綠框卡冇出現。
+- QA 對照表：`ych_rehab_qa_artifacts/v147/v147-qa-contact-sheet.png`（預設綠框、收窄綠框、人喺框外、顯示速度開關、遊戲入面速度字、`?perf=1` 詳細框）。另備存：`games-score-compare-L34.jpg`／`-L5.jpg`／`-L6.jpg`（20 個遊戲「未得分／得分」畫面對照）同 `games-score-compare.md`。
+- 已知／未做：
+  - 未喺 HP 手提電腦、大電視、平板或者病人身上試過；測試機嘅速度數字唔代表現場。快咗幾多要等現場開「顯示速度」或者 `?perf=1` 先知。
+  - 真路人被主角鎖定拒絕，只有單元測試覆蓋（測試用鏡頭檔換唔到人）。
+  - 姿勢模型每幀只跟一個人：路人如果喺綠框入面而且模型揀咗佢，遊戲會停住等，唔會幫路人計分，但都唔會即刻跳返去病人。主要靠校準時收窄綠框。之後可以考慮一次睇兩個人再揀返主角。
+  - 綠框只用喺橫向鏡頭畫面；直向平板唔裁剪。
+  - 640×360 之下遠距離嘅手指細動作（Level 5／6）要現場對比 `?cam=hd`。
+  - Level 6 插花：手揸住花而鏡頭跟丟隻手時，朵花會畫咗喺左上角（v146 已有，今次冇改，留待之後一齊處理）。
+  - 字句修訂順延做 v148，《佈置聖誕樹》順延做 v149。

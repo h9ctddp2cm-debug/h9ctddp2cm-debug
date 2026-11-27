@@ -592,7 +592,124 @@
     return {config,state,reset,setTarget,completeHeldRepetition,setHoldDuration,setExerciseMode,startChoices,update,snapshot,guidance,toText};
   }
 
-  const api={CONFIG,createController,exerciseModeAvailable,shoulderFlexionLevel,selectedArm,shoulderFlexion2D,shoulderFlexionWorld,torsoSignature,armVector2D,clamp01,median};
+  /* v147 — main-subject lock for Levels 3–4 (wall-mounted screen near a doorway).
+     The Pose model follows one person. When it drops the seated patient it can
+     re-acquire somebody walking past behind, and that person's arm would then
+     drive the game. This lock remembers the patient's shoulder width and
+     shoulder-centre position from the calibration page and refuses a pose that
+     is clearly somebody else:
+       - shoulder width below minSizeRatio of the remembered width (further away);
+       - shoulder centre jumping more than jumpScale shoulder-widths in one frame.
+     A refused frame is simply not used (the game holds its last state); it is
+     never scored against the patient. The lock always lets go by itself
+     (jumpForgetMs / sizeForgetMs) so a patient who really moved is picked up
+     again without recalibrating. It never changes a movement threshold. */
+  const SUBJECT_LOCK_CONFIG = {
+    minSizeRatio: 0.60,
+    jumpScale: 1.0,
+    jumpForgetMs: 2500,
+    sizeForgetMs: 6000,
+    learnFrames: 6,
+    calibWindow: 15,
+    calibMinSamples: 3,
+    sizeUpAlpha: 0.20,
+    sizeDownAlpha: 0.03,
+  };
+  function subjectMeasure(lm, imageAspect) {
+    if (!Array.isArray(lm)) return null;
+    const a = lm[11], b = lm[12];
+    if (!pointUsable(a) || !pointUsable(b)) return null;
+    const aspect = Number.isFinite(imageAspect) && imageAspect > 0 ? imageAspect : 1;
+    const width = Math.hypot((a.x - b.x) * aspect, a.y - b.y);
+    if (!Number.isFinite(width)) return null;
+    return { width, cx: (a.x + b.x) / 2 * aspect, cy: (a.y + b.y) / 2 };
+  }
+  function createSubjectLock(options) {
+    const config = Object.assign({}, SUBJECT_LOCK_CONFIG, options || {});
+    const state = {};
+    function reset() {
+      state.baselineWidth = null; state.cx = null; state.cy = null;
+      state.fromCalibration = false;
+      state.rejectSinceMs = null; state.learn = []; state.calib = [];
+      state.accepted = 0; state.rejected = 0; state.sizeRejected = 0;
+      state.jumpRejected = 0; state.relocked = 0; state.lastReason = 'idle';
+    }
+    reset();
+    function adopt(samples) {
+      state.baselineWidth = median(samples.map(m => m.width));
+      state.cx = median(samples.map(m => m.cx));
+      state.cy = median(samples.map(m => m.cy));
+    }
+    /* Calibration page: remember the last few good frames of the patient. */
+    function observeCalibration(lm, imageAspect) {
+      const m = subjectMeasure(lm, imageAspect);
+      if (!m || !(m.width > 0.005)) return false;
+      state.calib.push(m);
+      while (state.calib.length > config.calibWindow) state.calib.shift();
+      return true;
+    }
+    /* Game start: fix the baseline from calibration (or learn in-game). */
+    function begin() {
+      state.rejectSinceMs = null; state.learn = [];
+      state.accepted = 0; state.rejected = 0; state.sizeRejected = 0;
+      state.jumpRejected = 0; state.relocked = 0;
+      if (state.calib.length >= config.calibMinSamples) {
+        adopt(state.calib); state.fromCalibration = true; state.lastReason = 'calibrated';
+      } else {
+        state.baselineWidth = null; state.cx = null; state.cy = null;
+        state.fromCalibration = false; state.lastReason = 'learning';
+      }
+      return snapshot();
+    }
+    function admit(lm, imageAspect, nowMs) {
+      const m = subjectMeasure(lm, imageAspect);
+      // Nothing measurable: leave today's behaviour untouched for this frame.
+      if (!m) { state.lastReason = 'unmeasured'; return { accept: true, reason: 'unmeasured' }; }
+      const now = Number.isFinite(nowMs) ? nowMs : 0;
+      if (!Number.isFinite(state.baselineWidth)) {
+        // A side-on body (shoulders overlapping) cannot set the baseline.
+        if (m.width > 0.005) state.learn.push(m);
+        if (state.learn.length >= config.learnFrames) { adopt(state.learn); state.learn = []; }
+        state.accepted++; state.lastReason = 'learning';
+        return { accept: true, reason: 'learning' };
+      }
+      const sizeOk = m.width >= state.baselineWidth * config.minSizeRatio;
+      const jump = Math.hypot(m.cx - state.cx, m.cy - state.cy);
+      const jumpOk = jump <= state.baselineWidth * config.jumpScale;
+      if (sizeOk && jumpOk) {
+        const alpha = m.width > state.baselineWidth ? config.sizeUpAlpha : config.sizeDownAlpha;
+        state.baselineWidth += alpha * (m.width - state.baselineWidth);
+        state.cx = m.cx; state.cy = m.cy; state.rejectSinceMs = null;
+        state.accepted++; state.lastReason = 'locked';
+        return { accept: true, reason: 'locked' };
+      }
+      if (!Number.isFinite(state.rejectSinceMs)) state.rejectSinceMs = now;
+      const limit = sizeOk ? config.jumpForgetMs : config.sizeForgetMs;
+      if (now - state.rejectSinceMs >= limit) {
+        // Let go: whoever is in front of the camera now is the player.
+        state.baselineWidth = m.width; state.cx = m.cx; state.cy = m.cy;
+        state.rejectSinceMs = null; state.relocked++; state.accepted++;
+        state.lastReason = 'relocked';
+        return { accept: true, reason: 'relocked' };
+      }
+      state.rejected++;
+      if (sizeOk) state.jumpRejected++; else state.sizeRejected++;
+      state.lastReason = sizeOk ? 'jump' : 'too-small';
+      return { accept: false, reason: state.lastReason };
+    }
+    function snapshot() {
+      return {
+        baselineWidth: state.baselineWidth, cx: state.cx, cy: state.cy,
+        fromCalibration: state.fromCalibration, calibSamples: state.calib.length,
+        accepted: state.accepted, rejected: state.rejected,
+        sizeRejected: state.sizeRejected, jumpRejected: state.jumpRejected,
+        relocked: state.relocked, lastReason: state.lastReason,
+      };
+    }
+    return { config, state, reset, observeCalibration, begin, admit, snapshot };
+  }
+
+  const api={CONFIG,SUBJECT_LOCK_CONFIG,subjectMeasure,createSubjectLock,createController,exerciseModeAvailable,shoulderFlexionLevel,selectedArm,shoulderFlexion2D,shoulderFlexionWorld,torsoSignature,armVector2D,clamp01,median};
   global.ShoulderFlexionController=api;
   if(typeof module!=='undefined'&&module.exports) module.exports=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

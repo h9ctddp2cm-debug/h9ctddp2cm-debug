@@ -29,10 +29,10 @@ const BANNED = /[→（）()\[\]【】°·]|治療師|患側|患手|相機|鏡�
 const hasEnglish = zh => localization.includes("'" + zh + "':'");
 
 test('release markers', () => {
-  assert.match(sw, /const CACHE_VERSION = "fthue-rehab-v146-20261127-plain-instructions";/);
-  assert.match(html, /const LEVEL_APP_BUILD = "v146-20261127-plain-instructions";/);
-  assert.match(manifest, /"start_url": "\.\/index\.html\?build=v146-20261127-plain-instructions"/);
-  assert.match(html, /perf v146/);
+  assert.match(sw, /const CACHE_VERSION = "fthue-rehab-v147-20261127-detect-box";/);
+  assert.match(html, /const LEVEL_APP_BUILD = "v147-20261127-detect-box";/);
+  assert.match(manifest, /"start_url": "\.\/index\.html\?build=v147-20261127-detect-box"/);
+  assert.match(html, /perf v147/);
 });
 
 // ---- the start-line builder, run on its own with every setting combination ----

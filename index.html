@@ -198,6 +198,28 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
    keep the camera as background blur the video element. v120: always on in the
    public build (toggle hidden). */
 .game-stage.face-hide video#gameVideo{ filter:blur(18px) saturate(.85); }
+/* v147: with the white game background the camera picture is fully transparent,
+   so blurring it every frame was wasted work. The blur stays whenever the
+   camera is actually visible (自拍 background and camera-backed scenes). */
+.game-stage.face-hide.white-game-background video#gameVideo{ filter:none; }
+/* v147 detection box: the calibration picture shows the whole camera frame
+   (not a 4:3 cut-out) so the therapist can see what lies outside the box. */
+.calib-wrap.full-frame{
+  width:min(94vw,calc(56dvh * var(--cam-ar,1.3333))); aspect-ratio:var(--cam-ar,1.3333);
+}
+.detect-box-card{
+  margin-top:10px; padding:10px 12px 12px; border:2px solid #2f9e44; border-radius:14px;
+  background:#f1faf1; text-align:left;
+}
+.detect-box-card[hidden]{ display:none; }
+.detect-box-title{ display:flex; justify-content:space-between; align-items:baseline; gap:8px;
+  font-size:17px; font-weight:800; color:#1e6b2c; }
+.detect-box-title span{ font-size:15px; font-weight:800; color:#1e6b2c; white-space:nowrap; }
+.detect-box-note{ margin:4px 0 8px; font-size:14px; line-height:1.45; color:#3d4a3f; font-weight:600; }
+.detect-box-row{ display:flex; align-items:center; gap:10px; margin-top:6px; font-size:15px; font-weight:800; color:#1e6b2c; }
+.detect-box-row span{ flex:0 0 4.2em; }
+.detect-box-row input[type=range]{ flex:1; min-width:0; height:34px; accent-color:#2f9e44; }
+.detect-box-card .btn-secondary{ margin-top:10px; padding:8px; font-size:15px; }
 #btnPrivacyBlur.face-hide-on{ background:var(--teal); color:#fff; }
 .calib-controls{
   display:flex; flex-direction:column; align-items:stretch;
@@ -224,6 +246,9 @@ html[data-screen="game"] .language-switcher{ top:max(68px,calc(env(safe-area-ins
     grid-column:1; grid-row:1;
     width:100%; max-width:calc((100dvh - 32px) * 4 / 3);
     justify-self:center;
+  }
+  #screen-calib .calib-wrap.full-frame{
+    width:100%; max-width:calc((100dvh - 32px) * var(--cam-ar,1.3333));
   }
   #screen-calib .calib-controls{
     grid-column:2; grid-row:1;
@@ -527,8 +552,8 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
 }
 .game-stage.patient-simple-hud .adv-panel{
   left:12px; right:auto; top:72px; width:min(70vw,680px); min-width:0;
-  padding:8px 11px; border:0; background:rgba(255,255,255,.91);
-  box-shadow:0 3px 14px rgba(0,0,0,.18); backdrop-filter:blur(5px);
+  padding:8px 11px; border:0; background:#fff;
+  box-shadow:0 3px 14px rgba(0,0,0,.18);
 }
 .game-stage.patient-simple-hud .adv-panel > :not(.ap-text):not(.adv-btnrow){ display:none; }
 .game-stage.patient-simple-hud .adv-panel .ap-text{
@@ -2052,6 +2077,19 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
       </div>
     </div>
 
+    <div class="card collapsible collapsed" id="speedDisplayCard" data-accordion="speed-display">
+      <h2><span>顯示速度</span><span class="selected-preview" id="preview-speed-display">關</span></h2>
+      <div class="card-body">
+      <div class="option-row" id="speedDisplayOptions">
+        <button class="option-btn selected" type="button" data-speed-display="off" data-testid="button-speed-display-off">關（預設）</button>
+        <button class="option-btn" type="button" data-speed-display="on" data-testid="button-speed-display-on">開（顯示）</button>
+      </div>
+      <p style="margin:8px 0 0;color:#555;text-align:center;font-weight:700;">
+        開咗之後，遊戲畫面左下角會顯示每秒幀數、追蹤時間同鏡頭解像度。
+      </p>
+      </div>
+    </div>
+
       </div>
     </details>
 
@@ -2112,6 +2150,15 @@ html[lang^="en"] .game-stage.patient-simple-hud .action-main{
       </div>
       <button class="btn-secondary" id="btnMirrorX" type="button"
         style="padding:9px;margin-top:8px;">左右反轉</button>
+      <div class="detect-box-card" id="detectBoxCard" data-testid="panel-detect-box" hidden>
+        <div class="detect-box-title">偵測範圍（綠框）<span id="detectBoxWidthLabel" data-testid="text-detect-box-width">闊 76%</span></div>
+        <p class="detect-box-note">病人坐喺綠框入面。框外嘅人唔會被追蹤。</p>
+        <label class="detect-box-row"><span>左邊界</span>
+          <input type="range" id="detectBoxLeft" data-testid="range-detect-box-left" min="0" max="45" step="1" value="12" aria-label="偵測範圍左邊界"></label>
+        <label class="detect-box-row"><span>右邊界</span>
+          <input type="range" id="detectBoxRight" data-testid="range-detect-box-right" min="55" max="100" step="1" value="88" aria-label="偵測範圍右邊界"></label>
+        <button class="btn-secondary" id="btnDetectBoxReset" type="button" data-testid="button-detect-box-reset">還原預設（中間 76%）</button>
+      </div>
       <button class="btn-secondary" id="btnPrivacyBlur" type="button" data-testid="button-privacy-blur" hidden
         aria-pressed="true" style="display:none;padding:9px;margin-top:8px;">遮面：開（只見手）</button>
       <div class="calib-checklist" id="calibChecklist" hidden>
@@ -9855,6 +9902,7 @@ function recalibrateFromCalibrationScreen(){
   }
   resetToolPinchAdapt();
   resetHandAdmissionAndLock();
+  if(subjectLock) subjectLock.reset();
   detectedGestureState = {mode:'', stable:false, candidate:false, candidateAt:0};
   calibDetectedOnce = false;
   calibDotEmaX = -1; calibDotEmaY = -1;
@@ -10689,18 +10737,27 @@ async function startCamera(videoElId, opts){
     // portrait iPhones/iPads, often leaving the elbow, wrist and fingers outside
     // the source image even though the participant could see their face.
     const portraitCamera = window.innerHeight > window.innerWidth;
+    // v147: ask for a smaller 16:9 frame (was 960×540) at 30 frames a second.
+    // The hand and pose models shrink every frame to about 256 px anyway, so
+    // the smaller frame costs no tracking range but is lighter to decode and
+    // copy, and a webcam in a dim doorway keeps a steadier frame rate.
+    // ?cam=hd restores the previous 960×540 request for on-site comparison.
+    const cameraLongEdge = cameraHdRequested() ? 960 : CAMERA_LONG_EDGE;
+    const cameraShortEdge = cameraHdRequested() ? 540 : CAMERA_SHORT_EDGE;
     const cameraVideoConstraints = portraitCamera
       ? {
           facingMode:'user',
-          width:{ideal:540},
-          height:{ideal:960},
+          width:{ideal:cameraShortEdge},
+          height:{ideal:cameraLongEdge},
           aspectRatio:{ideal:9/16},
+          frameRate:{ideal:CAMERA_FRAME_RATE},
         }
       : {
           facingMode:'user',
-          width:{ideal:960},
-          height:{ideal:540},
+          width:{ideal:cameraLongEdge},
+          height:{ideal:cameraShortEdge},
           aspectRatio:{ideal:16/9},
+          frameRate:{ideal:CAMERA_FRAME_RATE},
         };
     // One in-flight request and one active stream per page session. Screen,
     // level and game transitions only rebind this stream to the current video.
@@ -10896,6 +10953,101 @@ function noteAffectedHandTrack(lm){
         : span;
     }
   }
+}
+
+const CAMERA_LONG_EDGE = 640;
+const CAMERA_SHORT_EDGE = 360;
+const CAMERA_FRAME_RATE = 30;
+function cameraHdRequested(){
+  try{ return String(new URLSearchParams(window.location.search).get('cam') || '').toLowerCase() === 'hd'; }
+  catch(_e){ return false; }
+}
+
+/* ---------- v147：偵測框（只睇鏡頭中間一段）----------
+   大電視放喺門口，走廊行過嘅人會入鏡。校準頁有一個綠色框，治療師用兩條
+   拉桿調左右邊界；框外嘅畫面唔會送去手／姿勢模型，所以框外嘅人唔會被追蹤。
+   做法：每一幀先將綠框範圍畫落一塊細畫布，模型只睇呢塊畫布；模型交返嚟嘅
+   座標再換算返成幅鏡頭畫面嘅比例，之後所有遊戲邏輯同門檻完全照舊。
+   - 設定存喺呢部機（localStorage），因為電視同輪椅位置固定。
+   - 預設中間 76%（同 Level 5／6 游標原本用嘅範圍一樣）。
+   - 只用於橫向鏡頭畫面；直向（企身平板）畫面本身已經窄，唔裁。
+   - Level 5／6 隻手會伸到框邊，所以送去手模型嗰塊畫布兩邊多留少少邊位。 */
+const DETECT_BOX_STORAGE_KEY = 'fthue.detectBox.v147';
+const DETECT_BOX_DEFAULT = Object.freeze({ x0:0.12, x1:0.88 });
+const DETECT_BOX_MIN_WIDTH = 0.30;
+const DETECT_BOX_HAND_MARGIN = 0.06;
+function normaliseDetectBox(box){
+  let x0 = Number(box && box.x0), x1 = Number(box && box.x1);
+  if(!Number.isFinite(x0) || !Number.isFinite(x1)) return { ...DETECT_BOX_DEFAULT };
+  x0 = Math.max(0, Math.min(1, x0)); x1 = Math.max(0, Math.min(1, x1));
+  if(x1 < x0){ const t = x0; x0 = x1; x1 = t; }
+  if(x1 - x0 < DETECT_BOX_MIN_WIDTH){
+    const mid = Math.max(DETECT_BOX_MIN_WIDTH / 2, Math.min(1 - DETECT_BOX_MIN_WIDTH / 2, (x0 + x1) / 2));
+    x0 = mid - DETECT_BOX_MIN_WIDTH / 2; x1 = mid + DETECT_BOX_MIN_WIDTH / 2;
+  }
+  return { x0:+x0.toFixed(3), x1:+x1.toFixed(3) };
+}
+function loadDetectBox(){
+  try{
+    const raw = localStorage.getItem(DETECT_BOX_STORAGE_KEY);
+    if(raw) return normaliseDetectBox(JSON.parse(raw));
+  }catch(_e){}
+  return { ...DETECT_BOX_DEFAULT };
+}
+let detectBox = loadDetectBox();   // 以未鏡像嘅鏡頭畫面計（0 = 鏡頭畫面最左）
+function saveDetectBox(box){
+  detectBox = normaliseDetectBox(box);
+  try{ localStorage.setItem(DETECT_BOX_STORAGE_KEY, JSON.stringify(detectBox)); }catch(_e){}
+  return detectBox;
+}
+function detectBoxAppliesTo(videoEl){
+  const w = Number(videoEl && videoEl.videoWidth), h = Number(videoEl && videoEl.videoHeight);
+  return w > 0 && h > 0 && w > h;
+}
+/* 送去模型嘅範圍（未鏡像）。冇裁剪（直向／全闊）就交 null，行返原本路徑。 */
+function detectBoxRegion(videoEl, margin){
+  if(!detectBoxAppliesTo(videoEl)) return null;
+  const m = Number.isFinite(margin) ? margin : 0;
+  const x0 = Math.max(0, detectBox.x0 - m), x1 = Math.min(1, detectBox.x1 + m);
+  if(x0 <= 0.001 && x1 >= 0.999) return null;
+  return { x0, x1 };
+}
+/* 畫面上（已鏡像）見到嘅左右邊界。 */
+function detectBoxDisplayRange(videoEl){
+  if(!detectBoxAppliesTo(videoEl)) return null;
+  return state.mirrorX
+    ? { left:1 - detectBox.x1, right:1 - detectBox.x0 }
+    : { left:detectBox.x0, right:detectBox.x1 };
+}
+const detectBoxCanvases = {};
+const detectBoxStats = { crops:0, lastWidth:0, lastHeight:0 };
+function detectBoxCropSource(videoEl, margin, key){
+  const region = detectBoxRegion(videoEl, margin);
+  if(!region) return null;
+  const vw = videoEl.videoWidth, vh = videoEl.videoHeight;
+  const sx = Math.round(region.x0 * vw);
+  const sw = Math.max(2, Math.min(vw - sx, Math.round((region.x1 - region.x0) * vw)));
+  let canvas = detectBoxCanvases[key];
+  if(!canvas){ canvas = document.createElement('canvas'); detectBoxCanvases[key] = canvas; }
+  if(canvas.width !== sw) canvas.width = sw;
+  if(canvas.height !== vh) canvas.height = vh;
+  const ctx = canvas.getContext('2d', { alpha:false });
+  ctx.drawImage(videoEl, sx, 0, sw, vh, 0, 0, sw, vh);
+  detectBoxStats.crops++; detectBoxStats.lastWidth = sw; detectBoxStats.lastHeight = vh;
+  return { canvas, x0:sx / vw, scale:sw / vw };
+}
+/* 模型座標係以細畫布計；換算返以成幅鏡頭畫面計（y 冇變；z 同 x 用同一把尺）。 */
+function detectBoxRemapLandmarks(lists, crop){
+  if(!crop || !Array.isArray(lists)) return lists;
+  for(const lm of lists){
+    if(!Array.isArray(lm)) continue;
+    for(const p of lm){
+      if(!p) continue;
+      if(Number.isFinite(p.x)) p.x = crop.x0 + p.x * crop.scale;
+      if(Number.isFinite(p.z)) p.z = p.z * crop.scale;
+    }
+  }
+  return lists;
 }
 
 function isAppleTouchDevice(){
@@ -11391,7 +11543,10 @@ function detectWrist(videoEl, frame){
   let results = null;
   if(handLandmarker){
     try{
-      results = handLandmarker.detectForVideo(videoEl, nextTs('hand'));
+      // v147: the hand model only sees the green detection box (plus a small margin).
+      const crop = detectBoxCropSource(videoEl, DETECT_BOX_HAND_MARGIN, 'hand');
+      results = handLandmarker.detectForVideo(crop ? crop.canvas : videoEl, nextTs('hand'));
+      if(crop && results) detectBoxRemapLandmarks(results.landmarks, crop);
       handDetectFailStreak = 0;
     }catch(e){
       results = null;
@@ -12185,9 +12340,18 @@ function cameraPointToCanvas(nx, ny, width, height, sourceWidth=width, sourceHei
   // existing safe-area expansion; otherwise a portrait iPad can drive the
   // cursor toward a different edge than the visible hand.
   const crop=cameraCoverCrop(width,height,sourceWidth,sourceHeight);
-  const safeLeft=crop.left+crop.visibleWidth*CAMERA_SAFE_X;
+  let safeLeft=crop.left+crop.visibleWidth*CAMERA_SAFE_X;
   const safeTop=crop.top+crop.visibleHeight*CAMERA_SAFE_TOP;
-  const safeWidth=crop.visibleWidth*(1-CAMERA_SAFE_X*2);
+  let safeWidth=crop.visibleWidth*(1-CAMERA_SAFE_X*2);
+  // v147: when the therapist narrows the detection box below this range, the
+  // box itself becomes the reach range, so the cursor can still get to both
+  // screen edges. A box at the default width (or wider) changes nothing here.
+  const boxRange=detectBoxDisplayRange(gameVideo);
+  if(boxRange){
+    const left=Math.max(safeLeft,boxRange.left);
+    const right=Math.min(safeLeft+safeWidth,boxRange.right);
+    if(right-left>=0.05){ safeLeft=left; safeWidth=right-left; }
+  }
   const safeHeight=crop.visibleHeight*(1-CAMERA_SAFE_TOP-CAMERA_SAFE_BOTTOM);
   const mappedX = clamp01((nx - safeLeft) / Math.max(safeWidth,.001));
   const mappedY = clamp01((ny - safeTop) / Math.max(safeHeight,.001));
@@ -12238,6 +12402,7 @@ document.getElementById('btnMirrorX').addEventListener('click', ()=>{
   calibDotEmaY = -1;
   trackingPointHistory = [];
   applyMirrorMode();
+  if(typeof renderDetectBoxControls === 'function') renderDetectBoxControls();
 });
 applyMirrorMode();
 
@@ -12662,6 +12827,77 @@ function renderCalibCheck(id, done){
   const next = (done ? '✓ ' : '○ ') + label;
   if(el.textContent !== next) el.textContent = next;
 }
+/* v147 偵測框：校準頁嘅拉桿同綠框。拉桿用「畫面上見到嘅左／右」計，
+   儲存就用未鏡像嘅鏡頭座標，所以撳「左右反轉」之後框住嘅仍然係同一段實景。 */
+function detectBoxSliderValues(){
+  const range = state.mirrorX
+    ? { left:1 - detectBox.x1, right:1 - detectBox.x0 }
+    : { left:detectBox.x0, right:detectBox.x1 };
+  return { left:Math.round(range.left * 100), right:Math.round(range.right * 100) };
+}
+function renderDetectBoxControls(){
+  const left = document.getElementById('detectBoxLeft');
+  const right = document.getElementById('detectBoxRight');
+  const label = document.getElementById('detectBoxWidthLabel');
+  const v = detectBoxSliderValues();
+  if(left && Number(left.value) !== v.left) left.value = String(v.left);
+  if(right && Number(right.value) !== v.right) right.value = String(v.right);
+  if(label){
+    const pct = Math.round((detectBox.x1 - detectBox.x0) * 100);
+    const text = window.YCHLanguage ? window.YCHLanguage.text('闊 ' + pct + '%', 'Width ' + pct + '%') : '闊 ' + pct + '%';
+    if(label.textContent !== text) label.textContent = text;
+  }
+}
+function setDetectBoxFromSliders(){
+  const left = Number(document.getElementById('detectBoxLeft').value) / 100;
+  const right = Number(document.getElementById('detectBoxRight').value) / 100;
+  saveDetectBox(state.mirrorX ? { x0:1 - right, x1:1 - left } : { x0:left, x1:right });
+  renderDetectBoxControls();
+}
+document.getElementById('detectBoxLeft').addEventListener('input', setDetectBoxFromSliders);
+document.getElementById('detectBoxRight').addEventListener('input', setDetectBoxFromSliders);
+document.getElementById('btnDetectBoxReset').addEventListener('click', ()=>{
+  saveDetectBox(DETECT_BOX_DEFAULT);
+  renderDetectBoxControls();
+});
+let detectBoxControlsShown = null, detectBoxAspectShown = '';
+function syncDetectBoxControls(video, wrap){
+  const applies = detectBoxAppliesTo(video);
+  if(applies !== detectBoxControlsShown){
+    detectBoxControlsShown = applies;
+    const card = document.getElementById('detectBoxCard');
+    if(card) card.hidden = !applies;
+    if(wrap) wrap.classList.toggle('full-frame', applies);
+    if(applies) renderDetectBoxControls();
+  }
+  if(applies && wrap){
+    const aspect = Math.max(1, Math.min(2.4, video.videoWidth / video.videoHeight)).toFixed(4);
+    if(aspect !== detectBoxAspectShown){
+      detectBoxAspectShown = aspect;
+      wrap.style.setProperty('--cam-ar', aspect);
+    }
+  }
+}
+function drawDetectBoxOverlay(ctx, video, width, height){
+  const range = detectBoxDisplayRange(video);
+  if(!range) return;
+  const crop = cameraCoverCrop(width, height, video.videoWidth, video.videoHeight);
+  const toX = v => (v - crop.left) / Math.max(crop.visibleWidth, .001) * width;
+  const x0 = Math.max(0, Math.min(width, toX(range.left)));
+  const x1 = Math.max(0, Math.min(width, toX(range.right)));
+  ctx.save();
+  // 框外：壓暗，表示模型睇唔到
+  ctx.fillStyle = 'rgba(15,25,20,.55)';
+  if(x0 > 0) ctx.fillRect(0, 0, x0, height);
+  if(x1 < width) ctx.fillRect(x1, 0, width - x1, height);
+  // 框內：半透明綠
+  ctx.fillStyle = 'rgba(47,158,68,.10)';
+  ctx.fillRect(x0, 0, x1 - x0, height);
+  const inset = 3;
+  ctx.lineWidth = 6; ctx.strokeStyle = 'rgba(64,192,87,.95)';
+  ctx.strokeRect(x0 + inset, inset, Math.max(0, x1 - x0 - inset * 2), height - inset * 2);
+  ctx.restore();
+}
 function startCalibLoop(){
   updateCalibrationCopy();
   const video = document.getElementById('calibVideo');
@@ -12669,9 +12905,11 @@ function startCalibLoop(){
   resetPrivacySegmentation();
   if(privacyBlurEnabled() && !faceHideEnabled()) ensurePrivacySegmenter();
   const hint = document.getElementById('calibHint');
+  if(subjectLock) subjectLock.reset();   // v147 每次入校準頁重新認人
   function loop(){
     if(!screens.calib.classList.contains('active')){ return; }
     const wrap = calibCanvas.parentElement;
+    syncDetectBoxControls(video, wrap);
     const rectW = wrap.clientWidth, rectH = wrap.clientHeight;
     if(calibCanvas.width !== rectW) calibCanvas.width = rectW;
     if(calibCanvas.height !== rectH) calibCanvas.height = rectH;
@@ -12704,6 +12942,8 @@ function startCalibLoop(){
       const needsWrist=!isShoulderFlexionLevel();
       const poseReady=[shoulder,elbow,otherShoulder].every(level4PosePointUsable)
         &&(!needsWrist||level4PosePointUsable(wrist));
+      // v147 主角鎖定：記低校準頁最後幾幀病人嘅膊頭闊度同位置。
+      if(poseReady && subjectLock) subjectLock.observeCalibration(pose, level4VideoAspect(video));
       const point=needsWrist?wrist:elbow;
       res=poseReady
         ? {detected:true,nx:point.x,ny:point.y,lm:pose}
@@ -13068,6 +13308,7 @@ function startCalibLoop(){
       }
       calibDotEmaX = -1; calibDotEmaY = -1;
     }
+    drawDetectBoxOverlay(ctx, video, rectW, rectH);
     calibRAF = requestAnimationFrame(loop);
   }
   calibRAF = requestAnimationFrame(loop);
@@ -15395,6 +15636,8 @@ function initGame(){
   level2LateralLastTargetHit = 0;
   level4Reach.reset();
   if(shoulderFlexionController){
+    subjectLockHeldLm = null;
+    if(subjectLock) subjectLock.begin();
     shoulderFlexionController.reset(state.level,state.shoulderTargetDeg);
     shoulderFlexionController.setTarget(state.shoulderTargetDeg,state.level);
     shoulderFlexionController.setHoldDuration(isShoulderFlexionLevel()?Number(state.dwellMs)/1000:0);
@@ -16336,8 +16579,46 @@ function framePerfOverlayEnabled(){
   try{ return new URLSearchParams(window.location.search).get('perf') === '1'; }
   catch(_e){ return false; }
 }
+/* v147 設定頁「顯示速度」：預設關。開咗就喺遊戲畫面左下角顯示簡化版速度
+   （每秒幀數、追蹤時間、鏡頭解像度），數字同 ?perf=1 用同一個來源。 */
+const SPEED_DISPLAY_STORAGE_KEY = 'fthue.speedDisplay.v147';
+function loadSpeedDisplay(){
+  try{ return localStorage.getItem(SPEED_DISPLAY_STORAGE_KEY) === 'on'; }catch(_e){ return false; }
+}
+let speedDisplayOn = loadSpeedDisplay();
+function renderSpeedDisplaySetting(){
+  document.querySelectorAll('#speedDisplayOptions .option-btn').forEach(b=>{
+    const selected = (b.dataset.speedDisplay === 'on') === speedDisplayOn;
+    b.classList.toggle('selected', selected);
+    b.setAttribute('aria-pressed', selected ? 'true' : 'false');
+  });
+  updatePreview('preview-speed-display', window.YCHLanguage
+    ? window.YCHLanguage.text(speedDisplayOn ? '開' : '關', speedDisplayOn ? 'On' : 'Off')
+    : (speedDisplayOn ? '開' : '關'));
+}
+function setSpeedDisplay(on){
+  speedDisplayOn = on === true;
+  try{ localStorage.setItem(SPEED_DISPLAY_STORAGE_KEY, speedDisplayOn ? 'on' : 'off'); }catch(_e){}
+  renderSpeedDisplaySetting();
+  if(!speedDisplayOn && !framePerfOverlayEnabled() && framePerf.overlayEl){
+    framePerf.overlayEl.style.display = 'none';
+  }
+  return speedDisplayOn;
+}
+document.getElementById('speedDisplayOptions').addEventListener('click', e=>{
+  const btn = e.target.closest('.option-btn'); if(!btn) return;
+  setSpeedDisplay(btn.dataset.speedDisplay === 'on');
+});
+renderSpeedDisplaySetting();
+function speedDisplayText(p){
+  const english = !!(window.YCHLanguage && window.YCHLanguage.isEnglish());
+  return english
+    ? `Speed v147  ${Math.round(p.fps)} frames/s\nTracking ${Math.round(p.trackMs)} ms  Camera ${p.video[0]}×${p.video[1]}`
+    : `速度 v147  每秒 ${Math.round(p.fps)} 幀\n追蹤 ${Math.round(p.trackMs)} 毫秒  鏡頭 ${p.video[0]}×${p.video[1]}`;
+}
 function updateFramePerfOverlay(now){
-  if(!framePerfOverlayEnabled()) return;
+  const detailed = framePerfOverlayEnabled();
+  if(!detailed && !speedDisplayOn) return;
   if(now - framePerf.overlayAt < 500) return;
   framePerf.overlayAt = now;
   let el = framePerf.overlayEl;
@@ -16352,8 +16633,15 @@ function updateFramePerfOverlay(now){
     framePerf.overlayEl = el;
   }
   const p = framePerfSnapshot();
-  el.textContent = `perf v146  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
-    + `鏡頭 ${p.video[0]}×${p.video[1]}  畫布 ${p.canvas[0]}×${p.canvas[1]}  dpr ${p.dpr}  手模型 ${p.handDelegate || '-'}\n`
+  if(!detailed){
+    el.style.font = '700 17px/1.45 -apple-system,"PingFang TC",sans-serif';
+    el.textContent = speedDisplayText(p);
+    el.style.display = state.running ? 'block' : 'none';
+    return;
+  }
+  el.textContent = `perf v147  ${p.fps} fps  幀 ${p.frameMs} ms\n追蹤 ${p.trackMs} ms  繪圖 ${p.renderMs} ms  長幀 ${p.longFrames}\n`
+    + `鏡頭 ${p.video[0]}×${p.video[1]}  畫布 ${p.canvas[0]}×${p.canvas[1]}  dpr ${p.dpr}  手模型 ${p.handDelegate || '-'}  姿勢模型 ${poseDelegateUsed || '-'}\n`
+    + `偵測框 ${detectBoxRegion(gameVideo, 0) ? Math.round(detectBox.x0*100) + '–' + Math.round(detectBox.x1*100) + '%' : '全闊'}  主角鎖定 ${subjectLock ? subjectLock.state.lastReason : '-'}  路人拒絕 ${subjectLock ? subjectLock.state.rejected : 0}\n`
     + `手 ${p.hand.hands} 隻  標籤 ${p.hand.label || '-'} ${p.hand.score}  接納 ${p.hand.path || '-'}  嚴格 ${p.hand.strict} 連續 ${p.hand.continuity} 單手 ${p.hand.lone} 拒絕 ${p.hand.rejected}\n`
     + `左右手檢查 ${p.hand.check === 'off' ? '關' : '開'}  鎖定手形 ${p.hand.lockSize || '-'}  大小拒絕 ${p.hand.sizeRejected}  遠處拒絕 ${p.hand.farRejected}`
     + (p.tool
@@ -16699,6 +16987,21 @@ const level4Controller = level4Calibration ? level4Calibration.createController(
 const level4AutoCalibration = level4Calibration && level4Controller
   ? level4Calibration.createAutoCalibration() : null;
 const shoulderFlexionApi = window.ShoulderFlexionController || null;
+/* v147 Level 3–4 主角鎖定：校準頁記低病人膊頭闊度同位置；遊戲入面見到「細過六成」
+   或者「一幀之內跳開成個膊頭位以上」嘅人，就當係路人，嗰一幀唔用（遊戲停喺原狀，
+   唔扣分），幾秒後會自動放手再認人。完全冇改任何動作判定門檻。 */
+const subjectLock = shoulderFlexionApi && shoulderFlexionApi.createSubjectLock
+  ? shoulderFlexionApi.createSubjectLock() : null;
+let subjectLockHeldLm = null;
+function subjectLockActive(){
+  return !!subjectLock && isShoulderFlexionLevel() && (!state.qaMode || state.qaSubjectLock === true);
+}
+function admitSubjectPose(lm, now){
+  if(!subjectLockActive() || !Array.isArray(lm)) return { lm, held:false };
+  const decision = subjectLock.admit(lm, level4VideoAspect(gameVideo), now);
+  if(decision.accept){ subjectLockHeldLm = lm; return { lm, held:false }; }
+  return { lm:subjectLockHeldLm, held:true };
+}
 const shoulderFlexionController = shoulderFlexionApi
   ? shoulderFlexionApi.createController({level:'3'}) : null;
 let shoulderFlexionState = shoulderFlexionController
@@ -17424,6 +17727,12 @@ function updateTracking(frameOverride){
         || (lastPoseFrameGeneration === frame.generation ? lastPoseLm : null);
     }
   }
+  // v147: a pose that is clearly not the calibrated patient is not used. The
+  // shoulder controller is handed a frame without a generation number, which it
+  // already treats as "nothing new" — it keeps its state instead of failing.
+  const subjectDecision = admitSubjectPose(grossPose, now);
+  grossPose = subjectDecision.lm;
+  const shoulderFrame = subjectDecision.held ? { ...frame, generation:NaN } : frame;
   const level3Motion = updateLevel3LateralController(grossPose, frame);
   const level4WorldPose = state.qaMode
     ? (qaHand?.poseWorldLm || null)
@@ -17432,7 +17741,7 @@ function updateTracking(frameOverride){
   const level4Motion = usesLegacyLevel4Reach()
     ? updateLevel4ReachController(grossPose, level4WorldPose, frame)
     : level4Reach;
-  const shoulderMotion = updateShoulderFlexionController(grossPose, level4WorldPose, frame);
+  const shoulderMotion = updateShoulderFlexionController(grossPose, level4WorldPose, shoulderFrame);
   // Exclude a detector dropout from every gesture/dwell clock. Resume before
   // readHand(), because that function also owns the Level 6 hysteresis timer.
   resumeInteractionTracking(now);
@@ -20057,9 +20366,9 @@ function buildAdvDom(){
   const css = document.createElement('style');
   css.textContent = `
 .adv-panel{position:absolute;right:12px;top:72px;z-index:12;
-  width:clamp(250px,28vw,340px);background:rgba(255,255,255,0.93);border-radius:12px;
+  width:clamp(250px,28vw,340px);background:#fff;border-radius:12px;
   padding:7px 10px 8px;box-shadow:0 3px 14px rgba(0,0,0,0.18);text-align:left;
-  backdrop-filter:blur(5px);pointer-events:none;}
+  pointer-events:none;}
 .adv-panel .ap-step{font-size:12px;font-weight:800;color:#0a7d75;letter-spacing:0.02em;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .adv-panel .ap-text{font-size:clamp(16px,1.65vw,19px);font-weight:800;color:#1f1f1f;line-height:1.22;
@@ -20939,7 +21248,7 @@ async function ensurePoseLandmarker(){
     const options = {
       baseOptions: {
         modelAssetPath: "./vendor/mediapipe/models/pose_landmarker_lite.task",
-        delegate: isAppleTouchDevice() ? "CPU" : "GPU"
+        delegate: preferredPoseDelegate()
       },
       runningMode: "VIDEO",
       numPoses: 1,
@@ -20949,11 +21258,13 @@ async function ensurePoseLandmarker(){
     };
     try{
       poseLandmarker = await PoseLandmarker.createFromOptions(vision, options);
+      poseDelegateUsed = options.baseOptions.delegate;
     }catch(error){
       poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
         ...options,
         baseOptions:{...options.baseOptions, delegate:"CPU"}
       });
+      poseDelegateUsed = "CPU";
     }
     return poseLandmarker;
   })();
@@ -20964,6 +21275,18 @@ async function ensurePoseLandmarker(){
     return null;
   }
 }
+/* v147: the pose model (Levels 3–4) has no automatic speed comparison like the
+   hand model. For on-site checking, ?poseDelegate=cpu or =gpu forces one path;
+   without it nothing changes (iPad/iPhone CPU, other devices GPU then CPU). */
+let poseDelegateUsed = '';
+function preferredPoseDelegate(){
+  try{
+    const v = String(new URLSearchParams(window.location.search).get('poseDelegate') || '').toLowerCase();
+    if(v === 'cpu') return 'CPU';
+    if(v === 'gpu') return 'GPU';
+  }catch(_e){}
+  return isAppleTouchDevice() ? 'CPU' : 'GPU';
+}
 function detectPose(videoEl, frameGeneration){
   if(!poseLandmarker || !videoEl || videoEl.readyState < 2) return null;
   if(Number.isFinite(frameGeneration)){
@@ -20971,7 +21294,12 @@ function detectPose(videoEl, frameGeneration){
     lastPoseAttemptFrameGeneration = frameGeneration;
   }
   try{
-    const res = poseLandmarker.detectForVideo(videoEl, nextTs('pose'));
+    // v147: Levels 3–4 see exactly the green detection box; hand levels keep the
+    // same small margin as the hand model so both agree on one picture.
+    const crop = detectBoxCropSource(videoEl,
+      needsGrossPoseInference() ? 0 : DETECT_BOX_HAND_MARGIN, 'pose');
+    const res = poseLandmarker.detectForVideo(crop ? crop.canvas : videoEl, nextTs('pose'));
+    if(crop && res) detectBoxRemapLandmarks(res.landmarks, crop);
     if(res && res.landmarks && res.landmarks.length){
       lastPoseLm = res.landmarks[0];
       lastPoseWorldLm = (res.worldLandmarks && res.worldLandmarks.length)
@@ -25697,6 +26025,75 @@ window.__qa = {
   resetPerf(){ resetFramePerf(); return framePerfSnapshot(); },
   handDelegate(){ return { preferred:preferredHandDelegate(), record:readHandDelegateRecord(), active:framePerf.handDelegate }; },
   recordHandDelegate(perf){ return recordHandDelegatePerformance(perf); },
+  // v147 QA：偵測框、Level 3–4 主角鎖定、顯示速度
+  detectBox:{
+    get(){ return { ...detectBox }; },
+    set(box){ return { ...saveDetectBox(box) }; },
+    reset(){ return { ...saveDetectBox(DETECT_BOX_DEFAULT) }; },
+    reload(){ detectBox = loadDetectBox(); renderDetectBoxControls(); return { ...detectBox }; },
+    region(width, height, margin){ return detectBoxRegion({ videoWidth:width, videoHeight:height }, margin); },
+    displayRange(width, height){ return detectBoxDisplayRange({ videoWidth:width, videoHeight:height }); },
+    sliders(){ return detectBoxSliderValues(); },
+    crop(source, margin){
+      const c = detectBoxCropSource(source, margin, 'qa');
+      return c ? { x0:c.x0, scale:c.scale, width:c.canvas.width, height:c.canvas.height,
+        pixel:Array.from(c.canvas.getContext('2d').getImageData(0, 0, 1, 1).data) } : null;
+    },
+    remap(lists, crop){ return detectBoxRemapLandmarks(lists, crop); },
+    mapPoint(nx, ny, width, height, sourceWidth, sourceHeight){
+      return cameraPointToCanvas(nx, ny, width, height, sourceWidth, sourceHeight);
+    },
+    stats(){ return { ...detectBoxStats }; },
+    camera(){ return { long:CAMERA_LONG_EDGE, short:CAMERA_SHORT_EDGE, fps:CAMERA_FRAME_RATE, hd:cameraHdRequested() }; },
+  },
+  // v147 QA：用真鏡頭（或者測試用假鏡頭片）行真模型，核對裁剪同座標換算。
+  async cameraProbe(spec){
+    spec = spec || {};
+    const video = document.getElementById('calibVideo');
+    if(!state.stream) await startCamera('calibVideo');
+    const usePose = spec.model === 'pose';
+    if(usePose) await ensurePoseLandmarker(); else await ensureHandLandmarker();
+    if(spec.box) saveDetectBox(spec.box);
+    resetHandAdmissionAndLock();
+    const want = Math.max(1, Number(spec.frames) || 20), started = performance.now();
+    const seen = [];
+    let frames = 0, trackMs = 0;
+    while(frames < want && performance.now() - started < 12000){
+      await new Promise(resolve => requestAnimationFrame(resolve));
+      const frame = level4FrameStatus(video);
+      if(!frame.fresh) continue;
+      const t0 = performance.now();
+      if(usePose){
+        const lm = detectPose(video);
+        if(lm) seen.push({ x:(lm[11].x + lm[12].x) / 2, y:(lm[11].y + lm[12].y) / 2, w:Math.abs(lm[11].x - lm[12].x) });
+      }else{
+        const res = detectWrist(video, frame);
+        if(res.detected && res.lm) seen.push({ x:res.lm[0].x, y:res.lm[0].y, w:Math.hypot(res.lm[5].x - res.lm[17].x, res.lm[5].y - res.lm[17].y) });
+      }
+      trackMs += performance.now() - t0;
+      frames++;
+    }
+    const median = list => list.length ? +list.slice().sort((a,b)=>a-b)[Math.floor(list.length / 2)].toFixed(3) : null;
+    return { video:[video.videoWidth, video.videoHeight], frames, detected:seen.length,
+      x:median(seen.map(p=>p.x)), y:median(seen.map(p=>p.y)), size:median(seen.map(p=>p.w)),
+      trackMs:frames ? +(trackMs / frames).toFixed(1) : null,
+      region:detectBoxRegion(video, usePose ? 0 : DETECT_BOX_HAND_MARGIN),
+      settings:state.stream ? state.stream.getVideoTracks()[0].getSettings() : null };
+  },
+  subjectLock:{
+    enable(on){ state.qaSubjectLock = on !== false; return state.qaSubjectLock; },
+    snapshot(){ return subjectLock ? subjectLock.snapshot() : null; },
+    reset(){ if(subjectLock) subjectLock.reset(); subjectLockHeldLm = null; return this.snapshot(); },
+    begin(){ return subjectLock ? subjectLock.begin() : null; },
+    observe(lm, aspect){ return subjectLock ? subjectLock.observeCalibration(lm, aspect || 1) : false; },
+  },
+  speedDisplay:{
+    get(){ return speedDisplayOn; },
+    set(on){ return setSpeedDisplay(on === true); },
+    text(p){ return speedDisplayText(p || framePerfSnapshot()); },
+    tick(){ framePerf.overlayAt = -1e9; updateFramePerfOverlay(performance.now()); return framePerf.overlayEl ? { text:framePerf.overlayEl.textContent, display:framePerf.overlayEl.style.display } : null; },
+    poseDelegate(){ return preferredPoseDelegate(); },
+  },
   state(){ return {
     screen: currentScreen, level: state.level, sessionMode: state.sessionMode, theme: state.theme, gameType: state.gameType,
     level6Task: state.level6Task, level6LockedTheme: state.level6LockedTheme,
@@ -26888,7 +27285,7 @@ window.addEventListener('ychlanguagechange', ()=>{
 <!-- PUBLIC_BUILD_REMOVE_END -->
 <script>
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-  const LEVEL_APP_BUILD = "v146-20261127-plain-instructions";
+  const LEVEL_APP_BUILD = "v147-20261127-detect-box";
   const levelAppHadController = Boolean(navigator.serviceWorker.controller);
   let levelAppReloading = false;
 

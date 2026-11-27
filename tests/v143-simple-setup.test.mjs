@@ -34,10 +34,10 @@ const advanced = setup.slice(setup.indexOf('<details class="advanced-settings" i
 const beforeAdvanced = setup.slice(0, setup.indexOf('<details class="advanced-settings" id="advancedSettings"'));
 
 test('v143 release markers', () => {
-  assert.match(sw, /const CACHE_VERSION = "fthue-rehab-v146-20261127-plain-instructions";/);
-  assert.match(manifest, /index\.html\?build=v146-20261127-plain-instructions/);
-  assert.match(html, /const LEVEL_APP_BUILD = "v146-20261127-plain-instructions";/);
-  assert.match(html, /perf v146 {2}/);
+  assert.match(sw, /const CACHE_VERSION = "fthue-rehab-v147-20261127-detect-box";/);
+  assert.match(manifest, /index\.html\?build=v147-20261127-detect-box/);
+  assert.match(html, /const LEVEL_APP_BUILD = "v147-20261127-detect-box";/);
+  assert.match(html, /perf v147 {2}/);
 });
 
 test('game time defaults to the longest choice; the shorter ones stay available', () => {
@@ -229,7 +229,8 @@ test('Level 4 setup: three cards on the page, five angles, the rest behind 「�
     await page.click('#advancedSettings > summary');
     await page.waitForTimeout(200);
     const cards = await page.evaluate(visibleCards);
-    assert.deepEqual(cards, ['患側方向', '肩屈曲目標', '遊戲時間', '訓練方式', '訓練模式', '目標保持', '字體大小']);
+    // v147: the speed display switch sits in the advanced section, off by default
+    assert.deepEqual(cards, ['患側方向', '肩屈曲目標', '遊戲時間', '訓練方式', '訓練模式', '目標保持', '字體大小', '顯示速度']);
     assert.equal(await page.locator('#sceneOptionSlot [data-shop-list]').count(), 3);
     assert.equal(await page.locator('#sceneOptionSlot [data-shop-list].selected').getAttribute('data-shop-list'), 'medium');
     await page.click('#sceneOptionSlot [data-shop-list="long"]');
